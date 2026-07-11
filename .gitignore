@@ -5,5 +5,6 @@ bench/*.db-shm
 bench-quality/.venv/
 bench-quality/data/
 bench-quality/cache*/
-bench-quality/results*/
-bench-quality/*.log
+integrations/claude-code/.venv/
+# per-question results and run logs ARE committed (auditability);
+# only regenerable heavyweight artifacts are ignored.

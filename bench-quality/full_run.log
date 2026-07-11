@@ -1,0 +1,40 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6475.21it/s]
+25/500 instances
+50/500 instances
+75/500 instances
+100/500 instances
+125/500 instances
+150/500 instances
+175/500 instances
+200/500 instances
+225/500 instances
+250/500 instances
+275/500 instances
+300/500 instances
+325/500 instances
+350/500 instances
+375/500 instances
+400/500 instances
+425/500 instances
+450/500 instances
+475/500 instances
+500/500 instances
+
+=== k=10, 500 instances ===
+| condition | turn recall | turn hit | session recall | NDCG |
+|---|---|---|---|---|
+| sim | 0.728 | 0.818 | 0.908 | 0.522 |
+| sim_recency | 0.558 | 0.720 | 0.709 | 0.397 |
+| genagents | 0.429 | 0.586 | 0.584 | 0.312 |
+| rfm | 0.708 | 0.800 | 0.896 | 0.506 |
+| rfm_wv0 | 0.379 | 0.504 | 0.599 | 0.189 |
+
+turn recall by question type:
+| condition | knowledge-update | multi-session | single-session-assistant | single-session-preference | single-session-user | temporal-reasoning |
+|---|---|---|---|---|---|---|
+| sim | 0.843 | 0.621 | 0.982 | 0.667 | 0.898 | 0.591 |
+| sim_recency | 0.345 | 0.458 | 0.857 | 0.533 | 0.742 | 0.560 |
+| genagents | 0.241 | 0.364 | 0.589 | 0.406 | 0.422 | 0.534 |
+| rfm | 0.780 | 0.626 | 0.982 | 0.667 | 0.898 | 0.547 |
+| rfm_wv0 | 0.322 | 0.263 | 0.357 | 0.300 | 0.578 | 0.450 |

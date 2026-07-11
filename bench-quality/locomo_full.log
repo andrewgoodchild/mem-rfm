@@ -1,0 +1,33 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 16677.47it/s]
+conv-26: 150 questions done
+conv-30: 81 questions done
+conv-41: 152 questions done
+conv-42: 199 questions done
+conv-43: 178 questions done
+conv-44: 123 questions done
+conv-47: 150 questions done
+conv-48: 191 questions done
+conv-49: 156 questions done
+conv-50: 156 questions done
+
+=== LoCoMo sequential feedback, k=10 ===
+| condition | split | recall | hit | NDCG | n |
+|---|---|---|---|---|---|
+| sim | all | 0.446 | 0.507 | 0.303 | 1531 |
+| sim | overlap=True | 0.396 | 0.490 | 0.278 | 670 |
+| sim | overlap=False | 0.485 | 0.520 | 0.322 | 861 |
+| rfm_wv0 | all | 0.015 | 0.019 | 0.011 | 1531 |
+| rfm_wv0 | overlap=True | 0.014 | 0.021 | 0.010 | 670 |
+| rfm_wv0 | overlap=False | 0.017 | 0.017 | 0.011 | 861 |
+| rfm | all | 0.415 | 0.479 | 0.250 | 1531 |
+| rfm | overlap=True | 0.388 | 0.487 | 0.248 | 670 |
+| rfm | overlap=False | 0.437 | 0.474 | 0.251 | 861 |
+
+paired NDCG deltas (rfm minus baseline), mean [95% bootstrap CI]:
+  vs rfm_wv0  all             +0.2395  [+0.2234, +0.2559]  n=1531
+  vs rfm_wv0  overlap=False   +0.2406  [+0.2189, +0.2632]  n=861
+  vs rfm_wv0  overlap=True    +0.2381  [+0.2142, +0.2635]  n=670
+  vs sim      all             -0.0527  [-0.0670, -0.0388]  n=1531
+  vs sim      overlap=False   -0.0705  [-0.0877, -0.0539]  n=861
+  vs sim      overlap=True    -0.0298  [-0.0528, -0.0073]  n=670

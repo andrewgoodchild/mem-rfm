@@ -1,0 +1,43 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights:  54%|█████▍    | 167/310 [00:00<00:00, 1660.76it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 1901.08it/s]
+conversation 1: 18 questions done
+conversation 2: 18 questions done
+conversation 3: 18 questions done
+conversation 4: 18 questions done
+conversation 5: 18 questions done
+conversation 6: 18 questions done
+conversation 7: 18 questions done
+conversation 8: 18 questions done
+conversation 9: 17 questions done
+conversation 10: 18 questions done
+conversation 11: 18 questions done
+conversation 12: 18 questions done
+conversation 13: 18 questions done
+conversation 14: 18 questions done
+conversation 15: 18 questions done
+conversation 16: 18 questions done
+conversation 17: 18 questions done
+conversation 18: 16 questions done
+conversation 19: 18 questions done
+conversation 20: 16 questions done
+
+=== BEAM 128K sequential feedback, k=10 ===
+| condition | split | recall | hit | NDCG | n |
+|---|---|---|---|---|---|
+| sim | all | 0.614 | 0.811 | 0.509 | 355 |
+| sim | overlap=True | 0.512 | 0.796 | 0.436 | 108 |
+| sim | overlap=False | 0.659 | 0.818 | 0.541 | 247 |
+| rfm_wv0 | all | 0.011 | 0.034 | 0.011 | 355 |
+| rfm_wv0 | overlap=True | 0.010 | 0.046 | 0.011 | 108 |
+| rfm_wv0 | overlap=False | 0.011 | 0.028 | 0.011 | 247 |
+| rfm | all | 0.514 | 0.718 | 0.359 | 355 |
+| rfm | overlap=True | 0.450 | 0.778 | 0.369 | 108 |
+| rfm | overlap=False | 0.542 | 0.692 | 0.354 | 247 |
+
+paired NDCG deltas (rfm minus baseline), mean [95% bootstrap CI]:
+  vs rfm_wv0  all             +0.3474  [+0.3127, +0.3829]  n=355
+  vs rfm_wv0  overlap=False   +0.3427  [+0.3012, +0.3866]  n=247
+  vs rfm_wv0  overlap=True    +0.3582  [+0.2977, +0.4210]  n=108
+  vs sim      all             -0.1503  [-0.1747, -0.1257]  n=355
+  vs sim      overlap=False   -0.1869  [-0.2135, -0.1605]  n=247
+  vs sim      overlap=True    -0.0665  [-0.1140, -0.0194]  n=108

@@ -1,0 +1,13 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 7973.37it/s]
+25/78
+50/78
+
+=== LongMemEval knowledge-update (n=70), k=10 ===
+| condition | update-pref | fresh recall | fresh NDCG | stale in top-k |
+|---|---|---|---|---|
+| sim | 0.429 | 0.829 | 0.431 | 0.843 |
+| rfm_no_signal | 0.429 | 0.800 | 0.404 | 0.786 |
+| rfm_stale_penalty | 0.657 | 0.800 | 0.412 | 0.500 |
+
+paired update-preference delta (stale_penalty - no_signal): +0.2286 [+0.1286, +0.3429] n=70
