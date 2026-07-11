@@ -84,3 +84,20 @@ hybrid_w0.3 is WORSE than sim on held-out repos: 0.486 vs 0.542 (MiniLM),
 Step H is dead in both domains under the registered bars. BM25 hybrid is NOT
 shipped. (Note: the rfm prior on top of hybrid was cost-safe — +0.003
 [+0.000,+0.006] vs hybrid on Qwen3 — consistent with the frozen-β result.)
+
+## Step P dev (BEAM) — FAILED
+No (V, N) config passes the cost bar on both embedders: N=1 catastrophic
+(+0.081/+0.146 — single bad outcomes exclude future evidence), N=2 fails
+2-4x over, N=3 misses narrowly on Qwen3 (+0.0105/+0.0126 vs 0.010) and
+cannot fire on KU's single-penalty protocol regardless. Conclusion:
+candidate exclusion cannot be both retrieval-safe and forgetting-potent.
+Confident-negative exclusion is NOT shipped. KU forgetting remains governed
+by the documented beta dial (raise beta when forgetting > rank safety).
+
+## Campaign summary (Amendments 1-3)
+Both hypothesized benchmark improvements FAILED honest evaluation:
+hybrid BM25 (failed conversational dev; dev win on 2 code repos reversed on
+6 held-out repos) and negative-exclusion pruning (cost bars). The frozen
+beta=0.3 composition from the main protocol remains the best known
+configuration. Remaining roadmap features (capture, inspectability,
+injection cap) are adoption/parity work and carry no benchmark claims.
