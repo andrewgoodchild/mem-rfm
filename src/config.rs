@@ -1,0 +1,100 @@
+/// Per-connection tunables. One instance is created when the extension loads
+/// into a connection and shared (Arc<Mutex<_>>) across all registered
+/// functions, so `rfm_config` changes are visible connection-wide but never
+/// cross-process or cross-connection.
+#[derive(Clone, Debug)]
+pub struct RfmConfig {
+    /// Recency time constant in seconds (rfm_recency only).
+    pub tau: f64,
+    /// ACT-R base-level decay d. Must be in (0, 1): the Petrov tail term
+    /// divides by (1 - d).
+    pub decay: f64,
+    /// EWMA weight for outcome feedback.
+    pub lambda: f64,
+    /// Weight of normalized activation in rfm_score.
+    pub w_a: f64,
+    /// Weight of normalized value in rfm_score.
+    pub w_v: f64,
+    /// Confidence-shrink constant k: effective value = value * n/(n + k).
+    pub shrink_k: f64,
+    /// When set via rfm_config('now', t), all functions read this instead of
+    /// the wall clock. Cleared with rfm_config('now', NULL).
+    pub frozen_now: Option<f64>,
+}
+
+impl Default for RfmConfig {
+    fn default() -> Self {
+        RfmConfig {
+            tau: 86_400.0,
+            decay: 0.5,
+            lambda: 0.3,
+            w_a: 0.7,
+            w_v: 0.3,
+            shrink_k: 3.0,
+            frozen_now: None,
+        }
+    }
+}
+
+/// Per-parameter range rules. Single owner of what a valid value is (and of
+/// the error strings) for both the rfm_config path and rfm_score_w overrides.
+pub fn check_tau(v: f64) -> Result<(), String> {
+    if v > 0.0 { Ok(()) } else { Err("rfm: tau must be > 0".into()) }
+}
+
+pub fn check_decay(v: f64) -> Result<(), String> {
+    // (0, 1) exclusive: the Petrov tail term divides by (1 - d).
+    if v > 0.0 && v < 1.0 { Ok(()) } else { Err("rfm: decay must be in (0, 1)".into()) }
+}
+
+pub fn check_lambda(v: f64) -> Result<(), String> {
+    if v > 0.0 && v <= 1.0 { Ok(()) } else { Err("rfm: lambda must be in (0, 1]".into()) }
+}
+
+pub fn check_nonnegative(key: &str, v: f64) -> Result<(), String> {
+    if v >= 0.0 { Ok(()) } else { Err(format!("rfm: {key} must be >= 0")) }
+}
+
+impl RfmConfig {
+    pub fn get(&self, key: &str) -> Result<Option<f64>, String> {
+        match key {
+            "tau" => Ok(Some(self.tau)),
+            "decay" => Ok(Some(self.decay)),
+            "lambda" => Ok(Some(self.lambda)),
+            "w_a" => Ok(Some(self.w_a)),
+            "w_v" => Ok(Some(self.w_v)),
+            "shrink_k" => Ok(Some(self.shrink_k)),
+            "now" => Ok(self.frozen_now),
+            _ => Err(format!("rfm: unknown config key '{key}'")),
+        }
+    }
+
+    /// Set a key; `None` clears 'now' (invalid for other keys). Returns the
+    /// stored value.
+    pub fn set(&mut self, key: &str, value: Option<f64>) -> Result<Option<f64>, String> {
+        let v = match value {
+            Some(v) if !v.is_finite() => {
+                return Err(format!("rfm: config '{key}' must be finite"));
+            }
+            Some(v) => v,
+            None => {
+                if key == "now" {
+                    self.frozen_now = None;
+                    return Ok(None);
+                }
+                return Err(format!("rfm: config '{key}' cannot be NULL"));
+            }
+        };
+        match key {
+            "tau" => { check_tau(v)?; self.tau = v }
+            "decay" => { check_decay(v)?; self.decay = v }
+            "lambda" => { check_lambda(v)?; self.lambda = v }
+            "w_a" => { check_nonnegative(key, v)?; self.w_a = v }
+            "w_v" => { check_nonnegative(key, v)?; self.w_v = v }
+            "shrink_k" => { check_nonnegative(key, v)?; self.shrink_k = v }
+            "now" => self.frozen_now = Some(v),
+            _ => return Err(format!("rfm: unknown config key '{key}'")),
+        }
+        Ok(Some(v))
+    }
+}

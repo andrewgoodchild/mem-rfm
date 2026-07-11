@@ -1,0 +1,9 @@
+/target
+bench/*.db
+bench/*.db-wal
+bench/*.db-shm
+bench-quality/.venv/
+bench-quality/data/
+bench-quality/cache*/
+bench-quality/results*/
+bench-quality/*.log
