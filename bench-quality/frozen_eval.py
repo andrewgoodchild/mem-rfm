@@ -10,7 +10,6 @@ stale_penalty under the frozen composition).
 Usage: frozen_eval.py --bench locomo|swe|ku [--k 10]
 """
 import argparse
-import datetime as dt
 import json
 import os
 import random
@@ -165,8 +164,20 @@ def run_ku(k, out):
                     (stale if si == early_si else fresh if si == late_si else set()).add(mem_id)
         if not stale or not fresh:
             continue
-        z = np.load(os.path.join(common.HERE, "cache", f"{inst['question_id']}.npz"))
-        turn_embs, q_emb = z["turns"], z["question"]
+        # Embedder-suffixed cache + encode-on-miss, matching the locomo/swe
+        # branches: the plain "cache/" dir is MiniLM-only (replay.py's), and
+        # loading it under a different RFM_EMBEDDER would silently mislabel
+        # the results header.
+        cache_dir = os.path.join(common.HERE, "cache" + common.cache_suffix())
+        os.makedirs(cache_dir, exist_ok=True)
+        cache = os.path.join(cache_dir, f"{inst['question_id']}.npz")
+        if os.path.exists(cache):
+            z = np.load(cache)
+            turn_embs, q_emb = z["turns"], z["question"]
+        else:
+            turn_embs = common.encode(embedder, [t for _m, t, _ts in rows])
+            q_emb = common.encode(embedder, [inst["question"]], kind="query")[0]
+            np.savez_compressed(cache, turns=turn_embs, question=q_emb)
         late_ts = ku_eval.parse_ts(inst["haystack_dates"][late_si])
         q_ts = ku_eval.parse_ts(inst["question_date"])
         all_ids = [m for m, _t, _ts in rows]

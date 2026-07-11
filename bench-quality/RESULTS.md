@@ -101,3 +101,11 @@ hybrid BM25 (failed conversational dev; dev win on 2 code repos reversed on
 beta=0.3 composition from the main protocol remains the best known
 configuration. Remaining roadmap features (capture, inspectability,
 injection cap) are adoption/parity work and carry no benchmark claims.
+
+## Post-review disclosure (Amendment 2 hybrid runs)
+Code review found temporal leakage in swe_hybrid_dev/test: the FTS5 index was
+built over ALL sequence tasks, so BM25 corpus statistics (IDF/avgdl) included
+future task text in a sequential protocol. The leakage could only have
+FLATTERED the bm25-bearing arms; since the registered verdict was that hybrid
+FAILS on held-out repos, the negative conclusion stands a fortiori. Disclosed
+for reproducibility; the scripts are archival and will not be re-run.

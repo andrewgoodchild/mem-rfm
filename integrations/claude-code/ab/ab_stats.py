@@ -2,37 +2,45 @@
 """A/B stats: mem-rfm arm vs control arm from real Claude Code sessions.
 
 Joins three local sources:
-  1. ab_log.jsonl        — arm assignments with start/end epochs (ab-claude)
+  1. ab_log.jsonl        — arm assignments (ab-claude), incl. forced flag and
+                           an ab_session marker
   2. Claude Code session transcripts (~/.claude/projects/<munged-cwd>/*.jsonl)
-     matched to assignments by first-timestamp-in-window
-  3. the rfm memory DB   — searches/outcomes in each rfm session's window
+     matched by the injected [rfm-memory:<ab_session>] marker when present,
+     else by first-timestamp-in-window; transcripts carrying an rfm injection
+     marker are never attributed to control assignments
+  3. the rfm memory DB   — accesses/outcomes in each rfm session's window
 
-Per-session metrics: user turns (interaction effort), assistant output
-tokens, wall duration, Edit/Write tool calls, rfm tool usage. Reports per-arm
-means/medians and a bootstrap CI on the arm difference. Honest caveats
-printed with every report: self-experiment, task heterogeneity, small n —
-treat as directional until n >= ~20 per arm on comparable task labels.
+Metrics per session: human user turns (isMeta records excluded), assistant
+output tokens (deduplicated by message.id — Claude Code repeats usage across
+one record per content block), Edit/Write calls, wall duration, rfm tool
+usage. Forced-arm sessions are EXCLUDED from the stats by default
+(self-selection); include with --include-forced.
 
-Usage: ab_stats.py [--log ab/ab_log.jsonl] [--min-turns 2]
+Usage: ab_stats.py [--log ab/ab_log.jsonl] [--min-turns 2] [--include-forced]
 """
 import argparse
+import datetime as dt
 import glob
 import json
 import os
+import re
 import sqlite3
 
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
+MARKER_RE = re.compile(r"\[rfm-memory:([^\]]+)\]")
 
 
 def munge(cwd: str) -> str:
-    return cwd.replace("/", "-").replace(".", "-").replace("_", "-")
+    """Claude Code's project-dir munging: every non-alphanumeric becomes '-'.
+    (Very long paths additionally get truncated+hashed — unhandled here; if
+    your cwd path is >~100 chars, pass transcripts explicitly.)"""
+    return re.sub(r"[^a-zA-Z0-9]", "-", cwd)
 
 
 def parse_iso(ts: str) -> float:
-    import datetime as dt
     return dt.datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
 
 
@@ -40,6 +48,8 @@ def transcript_metrics(path):
     """Best-effort parse of one Claude Code session JSONL."""
     user_turns = out_tokens = edits = rfm_calls = 0
     first_ts = last_ts = None
+    seen_msg_ids = set()
+    marker = None
     with open(path) as f:
         for line in f:
             try:
@@ -52,11 +62,26 @@ def transcript_metrics(path):
                 first_ts = t if first_ts is None else min(first_ts, t)
                 last_ts = t if last_ts is None else max(last_ts, t)
             msg = rec.get("message") or {}
-            if rec.get("type") == "user" and isinstance(msg.get("content"), str):
-                user_turns += 1
+            if rec.get("type") == "user":
+                content = msg.get("content")
+                if isinstance(content, str):
+                    m = MARKER_RE.search(content)
+                    if m:
+                        marker = m.group(1)
+                    # Count only genuine human prompts: hook injections,
+                    # command caveats etc. are isMeta and would otherwise
+                    # inflate the rfm arm (whose hook injects context).
+                    if not rec.get("isMeta"):
+                        user_turns += 1
             if rec.get("type") == "assistant":
                 usage = msg.get("usage") or {}
-                out_tokens += usage.get("output_tokens", 0) or 0
+                # One API message is written as one record PER CONTENT BLOCK,
+                # each repeating the same usage — dedup by message id
+                # (measured ~2.9x overcount otherwise).
+                mid = msg.get("id")
+                if mid is None or mid not in seen_msg_ids:
+                    seen_msg_ids.add(mid)
+                    out_tokens += usage.get("output_tokens", 0) or 0
                 for block in msg.get("content") or []:
                     if isinstance(block, dict) and block.get("type") == "tool_use":
                         name = block.get("name", "")
@@ -65,7 +90,8 @@ def transcript_metrics(path):
                         if "memory_" in name:
                             rfm_calls += 1
     return {"user_turns": user_turns, "out_tokens": out_tokens, "edits": edits,
-            "rfm_calls": rfm_calls, "first_ts": first_ts, "last_ts": last_ts}
+            "rfm_calls": rfm_calls, "first_ts": first_ts, "last_ts": last_ts,
+            "marker": marker}
 
 
 def rfm_db_window(start, end):
@@ -82,41 +108,79 @@ def rfm_db_window(start, end):
 
 
 def bootstrap_ci(a, b, n=10_000, seed=7):
-    """CI on mean(a) - mean(b)."""
+    """Vectorized CI on mean(a) - mean(b)."""
     rng = np.random.default_rng(seed)
     a, b = np.asarray(a, float), np.asarray(b, float)
-    diffs = [rng.choice(a, len(a)).mean() - rng.choice(b, len(b)).mean() for _ in range(n)]
+    means_a = rng.choice(a, size=(n, len(a)), replace=True).mean(axis=1)
+    means_b = rng.choice(b, size=(n, len(b)), replace=True).mean(axis=1)
+    diffs = means_a - means_b
     return float(np.percentile(diffs, 2.5)), float(np.percentile(diffs, 97.5))
+
+
+def load_assignments(log_path):
+    out, bad = [], 0
+    for i, line in enumerate(open(log_path), 1):
+        if not line.strip():
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            bad += 1
+            print(f"WARNING: skipping malformed log line {i}")
+    if bad:
+        print(f"WARNING: {bad} malformed assignment line(s) skipped")
+    return out
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--log", default=os.path.join(HERE, "ab_log.jsonl"))
     ap.add_argument("--min-turns", type=int, default=2,
-                    help="ignore trivial sessions with fewer user turns")
+                    help="ignore trivial sessions with fewer human turns")
+    ap.add_argument("--include-forced", action="store_true",
+                    help="include --arm forced sessions (self-selected!)")
     args = ap.parse_args()
     if not os.path.exists(args.log):
         raise SystemExit(f"no assignment log at {args.log} — run some ab-claude sessions first")
 
-    assignments = [json.loads(l) for l in open(args.log) if l.strip()]
+    assignments = load_assignments(args.log)
+    forced = [a for a in assignments if a.get("forced")]
+    if forced and not args.include_forced:
+        print(f"note: excluding {len(forced)} forced-arm session(s) "
+              "(self-selected; --include-forced to keep)")
+        assignments = [a for a in assignments if not a.get("forced")]
+
+    metrics_cache = {}  # parse each transcript exactly once
+
+    def metrics_of(path):
+        if path not in metrics_cache:
+            metrics_cache[path] = transcript_metrics(path)
+        return metrics_cache[path]
+
     sessions = []
-    claimed = set()  # each transcript belongs to at most one assignment
+    claimed = set()
     for asg in assignments:
         proj_dir = os.path.expanduser(f"~/.claude/projects/{munge(asg['cwd'])}")
-        best, best_path = None, None
+        candidates = []
         for path in glob.glob(os.path.join(proj_dir, "*.jsonl")):
             if path in claimed:
                 continue
-            m = transcript_metrics(path)
+            m = metrics_of(path)
             if m["first_ts"] is None:
                 continue
-            # transcript belongs to this assignment if it started in-window;
-            # among candidates prefer the one starting closest to launch time
+            # Identity match beats window match; a transcript with an rfm
+            # injection marker can never belong to a control assignment.
+            if m["marker"] and m["marker"] == asg.get("ab_session"):
+                candidates = [(0.0, path, m)]
+                break
+            if asg["arm"] == "control" and m["marker"]:
+                continue
             if asg["start"] - 60 <= m["first_ts"] <= asg["end"] + 60:
-                if best is None or (abs(m["first_ts"] - asg["start"])
-                                    < abs(best["first_ts"] - asg["start"])):
-                    best, best_path = m, path
-        if best is None or best["user_turns"] < args.min_turns:
+                candidates.append((abs(m["first_ts"] - asg["start"]), path, m))
+        if not candidates:
+            continue
+        _, best_path, best = sorted(candidates)[0]
+        if best["user_turns"] < args.min_turns:
             continue
         claimed.add(best_path)
         row = {"arm": asg["arm"], "label": asg.get("label", ""),
@@ -128,7 +192,7 @@ def main():
     arms = {"rfm": [s for s in sessions if s["arm"] == "rfm"],
             "control": [s for s in sessions if s["arm"] == "control"]}
     print(f"matched sessions: rfm={len(arms['rfm'])}, control={len(arms['control'])} "
-          f"(from {len(assignments)} assignments)")
+          f"(from {len(assignments)} randomized assignments)")
     if not arms["rfm"] or not arms["control"]:
         raise SystemExit("need sessions in BOTH arms before stats mean anything")
 

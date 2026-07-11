@@ -58,7 +58,6 @@ def main():
     ap.add_argument("--out", default="results-compose")
     args = ap.parse_args()
 
-    embedder = common.get_embedder()
     slug = common.cache_suffix() or "-minilm"
     os.makedirs(args.out, exist_ok=True)
     sink = open(os.path.join(args.out, f"per_question{slug}.jsonl"), "w")

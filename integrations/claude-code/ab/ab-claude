@@ -2,20 +2,22 @@
 # A/B launcher: control = Claude Code built-in memory only; rfm = built-in
 # PLUS the mem-rfm MCP server. Both arms run with --strict-mcp-config so the
 # tool environment is identical except for the memory server. Assignment is
-# random per session and logged for ab_stats.py.
+# random per session (or forced via --arm, which is recorded as forced=true)
+# and logged as JSON for ab_stats.py.
 #
 # Usage: ab-claude [--label "task description"] [claude args...]
-#        ab-claude --arm rfm|control ...   (force an arm)
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
+PY="$HERE/../.venv/bin/python"
 LOG="$HERE/ab_log.jsonl"
 LABEL=""
 ARM=""
+FORCED="false"
 ARGS=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --label) LABEL="$2"; shift 2 ;;
-    --arm) ARM="$2"; shift 2 ;;
+    --arm) ARM="$2"; FORCED="true"; shift 2 ;;
     *) ARGS+=("$1"); shift ;;
   esac
 done
@@ -23,21 +25,43 @@ if [ -z "$ARM" ]; then
   if [ $((RANDOM % 2)) -eq 0 ]; then ARM="control"; else ARM="rfm"; fi
 fi
 
+# Session marker lets ab_stats match transcripts by identity, not just time.
+AB_SESSION="$(date +%s)-$$"
 START=$(date +%s)
 export RFM_AB_ARM="$ARM"
+export RFM_AB_SESSION="$AB_SESSION"
+
 if [ "$ARM" = "rfm" ]; then
-  CFG="$HERE/mcp-rfm.json"
+  # Generate the MCP config from this checkout's real paths at launch —
+  # a committed config with baked absolute paths breaks every other clone.
+  CFG="$(mktemp -t mcp-rfm)"
+  "$PY" - "$PY" "$HERE/../server.py" > "$CFG" << 'EOF'
+import json, sys
+print(json.dumps({"mcpServers": {"rfm-memory": {
+    "command": sys.argv[1], "args": [sys.argv[2]]}}}))
+EOF
 else
   CFG="$HERE/mcp-empty.json"
 fi
 
-echo "[ab-claude] arm=$ARM  (label: ${LABEL:-none})" >&2
+echo "[ab-claude] arm=$ARM forced=$FORCED (label: ${LABEL:-none})" >&2
 set +e
-claude --strict-mcp-config --mcp-config "$CFG" "${ARGS[@]}"
+# ${ARGS[@]+...} guard: bare "${ARGS[@]}" on an empty array aborts under
+# set -u on macOS's default bash 3.2.
+claude --strict-mcp-config --mcp-config "$CFG" ${ARGS[@]+"${ARGS[@]}"}
 STATUS=$?
 set -e
 END=$(date +%s)
-printf '{"arm":"%s","label":"%s","start":%s,"end":%s,"exit":%s,"cwd":"%s"}\n' \
-  "$ARM" "${LABEL//\"/\\\"}" "$START" "$END" "$STATUS" "$PWD" >> "$LOG"
+LABEL="$LABEL" ARM="$ARM" FORCED="$FORCED" AB_SESSION="$AB_SESSION" \
+  START="$START" END="$END" STATUS="$STATUS" "$PY" - >> "$LOG" << 'EOF'
+import json, os
+print(json.dumps({
+    "arm": os.environ["ARM"], "label": os.environ["LABEL"],
+    "forced": os.environ["FORCED"] == "true",
+    "ab_session": os.environ["AB_SESSION"],
+    "start": int(os.environ["START"]), "end": int(os.environ["END"]),
+    "exit": int(os.environ["STATUS"]), "cwd": os.getcwd(),
+}))
+EOF
 echo "[ab-claude] session logged: arm=$ARM $((END-START))s" >&2
 exit $STATUS

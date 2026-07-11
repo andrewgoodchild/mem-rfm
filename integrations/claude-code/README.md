@@ -2,7 +2,7 @@
 
 Persistent, outcome-ranked memory as an MCP server. Searching a memory records
 an access (recency + frequency); telling it whether the memory helped records
-an outcome (value). Ranking = embedding similarity × `rfm_score(id)`, all
+an outcome (value). Ranking = clamped similarity × `rfm_prior(id)` (the frozen bounded composition), all
 local — no API keys, one SQLite file.
 
 ## Setup
@@ -57,8 +57,8 @@ on top of Claude Code's built-in memory (which stays on in both arms):
 ```sh
 # instead of `claude`, launch sessions with:
 integrations/claude-code/ab/ab-claude --label "fix auth bug"
-# arm assigned randomly: control = no memory server; rfm = memory server +
-# session-start injection. Logged to ab/ab_log.jsonl. Force with --arm rfm.
+# arm assigned randomly (forced --arm sessions are excluded from stats by
+# default). The rfm MCP config is generated from this checkout at launch.
 
 # after accumulating sessions in both arms:
 integrations/claude-code/ab/ab_stats.py

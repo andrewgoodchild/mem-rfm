@@ -1,5 +1,11 @@
 # Agent-decided capture (paste into your project CLAUDE.md or ~/.claude/CLAUDE.md)
 
+> **A/B WARNING:** do NOT keep this snippet in CLAUDE.md while running
+> `ab/ab-claude` experiments — CLAUDE.md loads in BOTH arms, so control
+> sessions would chase nonexistent memory tools and bias results toward
+> mem-rfm. During A/B runs the SessionStart hook injects equivalent guidance
+> in the rfm arm only; this snippet is for normal (non-experiment) use.
+
 Copy the block below. This is the capture model the 2026 tool retreat
 converged on: the agent decides what's durable (no extraction pipeline, no
 capture-everything hooks, no surprise token bills).

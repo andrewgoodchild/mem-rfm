@@ -9,3 +9,6 @@ integrations/claude-code/.venv/
 # per-question results and run logs ARE committed (auditability);
 # only regenerable heavyweight artifacts are ignored.
 integrations/claude-code/ab/ab_log.jsonl
+__pycache__/
+*.pyc
+integrations/claude-code/ab/mcp-rfm.json

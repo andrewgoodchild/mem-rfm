@@ -59,10 +59,16 @@ def main():
         used += len(line) + 1
     if not lines:
         sys.exit(0)
+    # The marker lets ab_stats attribute transcripts by identity (and detect
+    # injected sessions) instead of trusting time windows alone.
+    marker = f"[rfm-memory:{os.environ.get('RFM_AB_SESSION', 'standalone')}]"
     context = (
-        "Long-term memories most likely to matter (ranked by recency, "
-        "frequency, and past usefulness — use memory_search for more, and "
-        "memory_feedback when one helps):\n" + "\n".join(lines))
+        f"{marker} Long-term memories most likely to matter (ranked by "
+        "recency, frequency, and past usefulness):\n" + "\n".join(lines) +
+        "\n\nMemory usage: memory_search before exploring from scratch; "
+        "memory_feedback(id, helped) after a memory proves useful or wrong; "
+        "memory_save for durable facts only (preferences, decisions, "
+        "lessons); memory_delete honors 'forget that'.")
     print(json.dumps({
         "hookSpecificOutput": {
             "hookEventName": "SessionStart",
