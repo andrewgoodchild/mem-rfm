@@ -1,0 +1,33 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights:  45%|████▌     | 141/310 [00:00<00:00, 1392.12it/s]Loading weights:  91%|█████████ | 281/310 [00:00<00:00, 1382.92it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 1510.37it/s]
+conversation 1 done
+conversation 2 done
+conversation 3 done
+conversation 4 done
+conversation 5 done
+conversation 6 done
+conversation 7 done
+conversation 8 done
+conversation 9 done
+conversation 10 done
+conversation 11 done
+conversation 12 done
+conversation 13 done
+conversation 14 done
+conversation 15 done
+conversation 16 done
+conversation 17 done
+conversation 18 done
+conversation 19 done
+conversation 20 done
+
+=== Composition bake-off (dev: BEAM), embedder=Qwen/Qwen3-Embedding-0.6B, k=10 ===
+| candidate | NDCG all | cost vs sim (overlap=F) [CI] | adaptivity ON-OFF (overlap=T) [CI] |
+|---|---|---|---|
+| beta0.1 | 0.511 | +0.0031 [+0.0007,+0.0063] | +0.0122 [+0.0030,+0.0245] |
+| beta0.2 | 0.511 | +0.0042 [+0.0005,+0.0083] | +0.0144 [+0.0025,+0.0283] |
+| beta0.3 | 0.508 | +0.0081 [+0.0031,+0.0139] | +0.0149 [+0.0024,+0.0293] |
+| beta0.5 | 0.503 | +0.0172 [+0.0096,+0.0256] | +0.0260 [+0.0091,+0.0429] |
+| rrf | 0.065 | +0.4759 [+0.4300,+0.5245] | +0.0107 [-0.0081,+0.0306] |
+| shortlist | 0.109 | +0.4488 [+0.4033,+0.4969] | +0.0536 [+0.0233,+0.0865] |
+| sim | 0.509 | — | — |

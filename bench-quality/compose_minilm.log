@@ -1,0 +1,33 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 1958.95it/s]
+conversation 1 done
+conversation 2 done
+conversation 3 done
+conversation 4 done
+conversation 5 done
+conversation 6 done
+conversation 7 done
+conversation 8 done
+conversation 9 done
+conversation 10 done
+conversation 11 done
+conversation 12 done
+conversation 13 done
+conversation 14 done
+conversation 15 done
+conversation 16 done
+conversation 17 done
+conversation 18 done
+conversation 19 done
+conversation 20 done
+
+=== Composition bake-off (dev: BEAM), embedder=sentence-transformers/all-MiniLM-L6-v2, k=10 ===
+| candidate | NDCG all | cost vs sim (overlap=F) [CI] | adaptivity ON-OFF (overlap=T) [CI] |
+|---|---|---|---|
+| beta0.1 | 0.428 | -0.0000 [-0.0001,+0.0000] | +0.0035 [+0.0005,+0.0078] |
+| beta0.2 | 0.428 | +0.0003 [+0.0000,+0.0007] | +0.0037 [-0.0004,+0.0082] |
+| beta0.3 | 0.427 | +0.0028 [+0.0002,+0.0064] | +0.0091 [+0.0022,+0.0167] |
+| beta0.5 | 0.428 | +0.0038 [-0.0014,+0.0091] | +0.0258 [+0.0133,+0.0410] |
+| rrf | 0.058 | +0.3826 [+0.3353,+0.4315] | +0.0160 [-0.0055,+0.0382] |
+| shortlist | 0.095 | +0.3658 [+0.3216,+0.4119] | +0.0646 [+0.0327,+0.0971] |
+| sim | 0.427 | — | — |
