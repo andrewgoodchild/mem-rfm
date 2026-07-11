@@ -8,3 +8,4 @@ bench-quality/cache*/
 integrations/claude-code/.venv/
 # per-question results and run logs ARE committed (auditability);
 # only regenerable heavyweight artifacts are ignored.
+integrations/claude-code/ab/ab_log.jsonl

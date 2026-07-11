@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rfm-memory": {
+      "command": "/Users/andrewgoodchild/code/mem-rfm/integrations/claude-code/.venv/bin/python",
+      "args": ["/Users/andrewgoodchild/code/mem-rfm/integrations/claude-code/server.py"]
+    }
+  }
+}
