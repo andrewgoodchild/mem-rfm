@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "rfm-memory": {
-      "command": "<repo>/integrations/claude-code/.venv/bin/python",
-      "args": ["<repo>/integrations/claude-code/server.py"]
-    }
-  }
-}

@@ -30,11 +30,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--k", type=int, default=10)
     args = ap.parse_args()
-    embedder = common.get_embedder()
     arms = ["sim", "bm25"] + [f"hybrid_w{w}" for w in WS] + ["rrf"]
     agg = defaultdict(list)
 
-    import os, json
+    import os
     for ci in range(1, 21):
         conv_dir = os.path.join(beam_eval.DATA, str(ci))
         if not os.path.isdir(conv_dir):

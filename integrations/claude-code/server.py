@@ -87,9 +87,12 @@ def _save(content: str) -> dict:
 
 def _search(query: str, k: int = 5) -> list:
     d = db()
+    # The FROZEN composition (PROTOCOL.md): clamped similarity x bounded prior
+    # rfm_prior(id) = (1-beta) + beta*rfm_score(id), beta = 0.3. The unbounded
+    # sim x rfm_score variant was falsified by the pre-registered experiment.
     rows = d.execute(
         """SELECT id, content,
-                  (1.0 - vec_distance_cosine(embedding, ?)) * rfm_score(id) AS score
+                  max(1.0 - vec_distance_cosine(embedding, ?), 0) * rfm_prior(id) AS score
            FROM rfm_memories WHERE embedding IS NOT NULL
            ORDER BY score DESC LIMIT ?""",
         (embed(query), k)).fetchall()

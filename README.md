@@ -28,10 +28,12 @@ connection:
 
 ```sql
 SELECT id, content,
-       (1.0 - vec_distance_cosine(embedding, :query)) * rfm_prior(id) AS score
+       max(1.0 - vec_distance_cosine(embedding, :query), 0) * rfm_prior(id) AS score
 FROM rfm_memories
 ORDER BY score DESC
 LIMIT 5;
+-- max(sim, 0) is part of the frozen formula: without it, a larger prior
+-- LOWERS the score of negative-similarity candidates.
 ```
 
 (Why bounded, and why β = 0.3: chosen by a pre-registered experiment —
