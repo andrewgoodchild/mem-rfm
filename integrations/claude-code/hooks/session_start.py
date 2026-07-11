@@ -33,7 +33,34 @@ def resolve_dylib():
     return None
 
 
+def write_sidecar():
+    """During A/B runs, record {ab_session -> transcript identity} for BOTH
+    arms so ab_stats can join by identity instead of time windows. Claude
+    Code hands hooks a JSON object on stdin with session_id and
+    transcript_path; runs outside Claude Code (manual tests) get no stdin
+    JSON and skip silently."""
+    ab_session = os.environ.get("RFM_AB_SESSION")
+    if not ab_session:
+        return
+    try:
+        hook_input = json.load(sys.stdin)
+    except (json.JSONDecodeError, ValueError):
+        return
+    record = {
+        "ab_session": ab_session,
+        "arm": os.environ.get("RFM_AB_ARM", "rfm"),
+        "session_id": hook_input.get("session_id"),
+        "transcript_path": hook_input.get("transcript_path"),
+    }
+    sidecar = os.path.join(HERE, "..", "ab", "ab_sessions.jsonl")
+    with open(sidecar, "a") as f:
+        f.write(json.dumps(record) + "\n")
+
+
 def main():
+    # Sidecar first — it must be written for BOTH arms, before any of the
+    # injection early-exits below.
+    write_sidecar()
     # A/B gating: when an experiment is running (ab/ab-claude sets
     # RFM_AB_ARM), inject only in the rfm arm so the control stays clean.
     if os.environ.get("RFM_AB_ARM", "rfm") != "rfm":
@@ -59,8 +86,10 @@ def main():
         used += len(line) + 1
     if not lines:
         sys.exit(0)
-    # The marker lets ab_stats attribute transcripts by identity (and detect
-    # injected sessions) instead of trusting time windows alone.
+    # Injection marker: lets ab_stats detect injected transcripts (a marked
+    # transcript must never be attributed to a control assignment) and serves
+    # as a fallback identity when the sidecar is unavailable. Format is a
+    # contract with MARKER_RE in ab/ab_stats.py.
     marker = f"[rfm-memory:{os.environ.get('RFM_AB_SESSION', 'standalone')}]"
     context = (
         f"{marker} Long-term memories most likely to matter (ranked by "
