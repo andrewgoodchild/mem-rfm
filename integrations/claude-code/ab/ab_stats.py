@@ -20,6 +20,7 @@ Usage: ab_stats.py [--log ab/ab_log.jsonl] [--min-turns 2] [--include-forced]
 """
 import argparse
 import datetime as dt
+import functools
 import glob
 import json
 import os
@@ -30,6 +31,8 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
+SIDECAR = os.path.join(HERE, "ab_sessions.jsonl")
+# Format contract with hooks/session_start.py's injection marker.
 MARKER_RE = re.compile(r"\[rfm-memory:([^\]]+)\]")
 
 
@@ -44,6 +47,31 @@ def parse_iso(ts: str) -> float:
     return dt.datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
 
 
+def peek(path, max_lines=20):
+    """Cheap look at a transcript's opening records: first timestamp and any
+    injection marker, without parsing the whole file."""
+    first_ts, marker = None, None
+    with open(path) as f:
+        for _ in range(max_lines):
+            line = f.readline()
+            if not line:
+                break
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            ts = rec.get("timestamp")
+            if ts and first_ts is None:
+                first_ts = parse_iso(ts)
+            content = (rec.get("message") or {}).get("content")
+            if isinstance(content, str) and marker is None:
+                m = MARKER_RE.search(content)
+                if m:
+                    marker = m.group(1)
+    return first_ts, marker
+
+
+@functools.cache
 def transcript_metrics(path):
     """Best-effort parse of one Claude Code session JSONL."""
     user_turns = out_tokens = edits = rfm_calls = 0
@@ -150,36 +178,49 @@ def main():
               "(self-selected; --include-forced to keep)")
         assignments = [a for a in assignments if not a.get("forced")]
 
-    metrics_cache = {}  # parse each transcript exactly once
-
-    def metrics_of(path):
-        if path not in metrics_cache:
-            metrics_cache[path] = transcript_metrics(path)
-        return metrics_cache[path]
+    # Primary join: the sidecar the SessionStart hook writes for both arms
+    # (ab_session -> exact transcript path). Marker/window matching remains
+    # as fallback for sessions predating the sidecar or missing hook setup.
+    sidecar = {}
+    if os.path.exists(SIDECAR):
+        for line in open(SIDECAR):
+            try:
+                rec = json.loads(line)
+                if rec.get("transcript_path"):
+                    sidecar[rec["ab_session"]] = rec["transcript_path"]
+            except json.JSONDecodeError:
+                continue
 
     sessions = []
     claimed = set()
     for asg in assignments:
-        proj_dir = os.path.expanduser(f"~/.claude/projects/{munge(asg['cwd'])}")
-        candidates = []
-        for path in glob.glob(os.path.join(proj_dir, "*.jsonl")):
-            if path in claimed:
+        best_path = sidecar.get(asg.get("ab_session"))
+        if best_path and (best_path in claimed or not os.path.exists(best_path)):
+            best_path = None
+        if best_path is None:
+            # Fallback: cheap peek over the project dir, full parse only on
+            # the chosen candidate.
+            proj_dir = os.path.expanduser(f"~/.claude/projects/{munge(asg['cwd'])}")
+            candidates = []
+            for path in glob.glob(os.path.join(proj_dir, "*.jsonl")):
+                if path in claimed:
+                    continue
+                first_ts, marker = peek(path)
+                if first_ts is None:
+                    continue
+                # Identity beats window; a transcript with an rfm injection
+                # marker can never belong to a control assignment.
+                if marker and marker == asg.get("ab_session"):
+                    candidates = [(0.0, path)]
+                    break
+                if asg["arm"] == "control" and marker:
+                    continue
+                if asg["start"] - 60 <= first_ts <= asg["end"] + 60:
+                    candidates.append((abs(first_ts - asg["start"]), path))
+            if not candidates:
                 continue
-            m = metrics_of(path)
-            if m["first_ts"] is None:
-                continue
-            # Identity match beats window match; a transcript with an rfm
-            # injection marker can never belong to a control assignment.
-            if m["marker"] and m["marker"] == asg.get("ab_session"):
-                candidates = [(0.0, path, m)]
-                break
-            if asg["arm"] == "control" and m["marker"]:
-                continue
-            if asg["start"] - 60 <= m["first_ts"] <= asg["end"] + 60:
-                candidates.append((abs(m["first_ts"] - asg["start"]), path, m))
-        if not candidates:
-            continue
-        _, best_path, best = sorted(candidates)[0]
+            _, best_path = min(candidates)
+        best = transcript_metrics(best_path)
         if best["user_turns"] < args.min_turns:
             continue
         claimed.add(best_path)

@@ -11,4 +11,4 @@ integrations/claude-code/.venv/
 integrations/claude-code/ab/ab_log.jsonl
 __pycache__/
 *.pyc
-integrations/claude-code/ab/mcp-rfm.json
+integrations/claude-code/ab/ab_sessions.jsonl

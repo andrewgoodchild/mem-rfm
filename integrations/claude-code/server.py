@@ -147,8 +147,8 @@ def _delete(memory_id: int) -> dict:
 def _export() -> str:
     d = db()
     rows = d.execute(
-        "SELECT id, content, created_at, access_count, value_score, rfm_score(id) "
-        "FROM rfm_memories ORDER BY rfm_score(id) DESC").fetchall()
+        "SELECT id, content, created_at, access_count, value_score, "
+        "rfm_score(id) AS score FROM rfm_memories ORDER BY score DESC").fetchall()
     if not rows:
         return "# mem-rfm export\n\n(no memories)"
     lines = ["# mem-rfm export", ""]

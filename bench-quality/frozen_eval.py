@@ -142,6 +142,10 @@ def run_ku(k, out):
     import ku_eval
     os.makedirs(out, exist_ok=True)
     embedder = common.get_embedder()
+    # Embedder-suffixed cache dir (loop-invariant): the plain "cache/" dir is
+    # MiniLM-only, so cache_suffix() keeps MiniLM back-compatible.
+    cache_dir = os.path.join(common.HERE, "cache" + common.cache_suffix())
+    os.makedirs(cache_dir, exist_ok=True)
     data = [i for i in json.load(open(ku_eval.DATA)) if i["question_type"] == "knowledge-update"]
     agg = defaultdict(lambda: defaultdict(list))
     conditions = ["sim", "no_signal", "stale_penalty"]
@@ -164,12 +168,6 @@ def run_ku(k, out):
                     (stale if si == early_si else fresh if si == late_si else set()).add(mem_id)
         if not stale or not fresh:
             continue
-        # Embedder-suffixed cache + encode-on-miss, matching the locomo/swe
-        # branches: the plain "cache/" dir is MiniLM-only (replay.py's), and
-        # loading it under a different RFM_EMBEDDER would silently mislabel
-        # the results header.
-        cache_dir = os.path.join(common.HERE, "cache" + common.cache_suffix())
-        os.makedirs(cache_dir, exist_ok=True)
         cache = os.path.join(cache_dir, f"{inst['question_id']}.npz")
         if os.path.exists(cache):
             z = np.load(cache)
