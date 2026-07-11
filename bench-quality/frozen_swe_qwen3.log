@@ -1,0 +1,17 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights:  75%|███████▌  | 234/310 [00:00<00:00, 2135.99it/s]Loading weights: 100%|██████████| 310/310 [00:00<00:00, 905.24it/s] 
+django_django_sequence done
+sympy_sympy_sequence done
+sphinx-doc_sphinx_sequence done
+matplotlib_matplotlib_sequence done
+scikit-learn_scikit-learn_sequence done
+astropy_astropy_sequence done
+pydata_xarray_sequence done
+pytest-dev_pytest_sequence done
+
+=== FROZEN test: swe, Qwen/Qwen3-Embedding-0.6B, k=5 ===
+sim: NDCG 0.582 (n=88)
+frozen_on: NDCG 0.585 (n=88)
+frozen_off: NDCG 0.582 (n=88)
+PRIMARY cost vs sim (overlap=False): -0.0013 [-0.0082,+0.0043] n=48
+adaptivity ON-OFF (overlap=True): +0.0045 [-0.0227,+0.0343] n=40

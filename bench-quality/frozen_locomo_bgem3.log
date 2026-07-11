@@ -1,0 +1,19 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/391 [00:00<?, ?it/s]Loading weights: 100%|██████████| 391/391 [00:00<00:00, 55665.89it/s]
+conv-26 done
+conv-30 done
+conv-41 done
+conv-42 done
+conv-43 done
+conv-44 done
+conv-47 done
+conv-48 done
+conv-49 done
+conv-50 done
+
+=== FROZEN test: locomo, BAAI/bge-m3, k=10 ===
+sim: NDCG 0.391 (n=1531)
+frozen_on: NDCG 0.409 (n=1531)
+frozen_off: NDCG 0.345 (n=1531)
+PRIMARY cost vs sim (overlap=False): -0.0049 [-0.0103,+0.0005] n=861
+adaptivity ON-OFF (overlap=True): +0.0784 [+0.0677,+0.0898] n=670

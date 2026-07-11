@@ -131,6 +131,10 @@ SELECT 'value1', rfm_value(1);
 SELECT 'score1', rfm_score(1);
 SELECT 'score_w3', rfm_score_w(1, 1.0, 0.0);
 SELECT 'score_w5', rfm_score_w(1, 0.5, 0.5, 3600.0, 0.3);
+SELECT 'prior', rfm_prior(1);
+SELECT 'set_beta', rfm_config('beta', 0.5);
+SELECT 'prior_b5', rfm_prior(1);
+SELECT 'reset_beta', rfm_config('beta', 0.3);
 SELECT 'set_tau', rfm_config('tau', 3600.0);
 SELECT 'get_tau', rfm_config('tau');
 SELECT 'recency1b', rfm_recency(1);
@@ -175,6 +179,11 @@ SELECT 'row1', access_count || ',' || last_access || ',' || bla_cache || ',' || 
     assert_close(&map, "score_w3", math::score(act1, v_eff, 1.0, 0.0));
     let act1_d03 = math::bla_hybrid_k2(2, Some(5_000.0), Some(10_000.0), 110_000.0, 0.3);
     assert_close(&map, "score_w5", math::score(act1_d03, v_eff, 0.5, 0.5));
+
+    // rfm_prior: bounded multiplier (1-beta) + beta*rfm_score, beta configurable.
+    let score1 = math::score(act1, v_eff, defaults().w_a, defaults().w_v);
+    assert_close(&map, "prior", (1.0 - defaults().beta) + defaults().beta * score1);
+    assert_close(&map, "prior_b5", 0.5 + 0.5 * score1);
 
     // Config round-trip; recency now uses tau = 3600.
     assert_close(&map, "set_tau", 3_600.0);

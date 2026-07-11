@@ -165,6 +165,10 @@ def rank(store: MemoryStore, condition: str, query_emb, candidate_ids, now: floa
         scores = np.maximum(sims, 0.0) * store.rfm_scores(ids)
     elif condition == "rfm_wv0":
         scores = np.maximum(sims, 0.0) * store.rfm_scores(ids, w=(0.7, 0.0))
+    elif condition.startswith("rfm_beta"):
+        # Bounded blend (PROTOCOL.md frozen composition): sim × ((1−β) + β·rfm).
+        b = float(condition[len("rfm_beta"):])
+        scores = np.maximum(sims, 0.0) * ((1.0 - b) + b * store.rfm_scores(ids))
     else:
         raise ValueError(condition)
     top = np.argsort(-scores, kind="stable")[:k]

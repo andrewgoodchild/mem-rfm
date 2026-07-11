@@ -1,0 +1,19 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6226.59it/s]
+conv-26 done
+conv-30 done
+conv-41 done
+conv-42 done
+conv-43 done
+conv-44 done
+conv-47 done
+conv-48 done
+conv-49 done
+conv-50 done
+
+=== FROZEN test: locomo, sentence-transformers/all-MiniLM-L6-v2, k=10 ===
+sim: NDCG 0.303 (n=1531)
+frozen_on: NDCG 0.308 (n=1531)
+frozen_off: NDCG 0.286 (n=1531)
+PRIMARY cost vs sim (overlap=False): -0.0011 [-0.0045,+0.0022] n=861
+adaptivity ON-OFF (overlap=True): +0.0234 [+0.0169,+0.0303] n=670

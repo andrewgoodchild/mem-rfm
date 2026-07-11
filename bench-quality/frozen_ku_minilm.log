@@ -1,0 +1,8 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6751.79it/s]
+
+=== FROZEN test: knowledge-update, sentence-transformers/all-MiniLM-L6-v2, k=10 ===
+sim: update-pref 0.429, fresh recall 0.829, stale-in-topk 0.843 (n=70)
+no_signal: update-pref 0.429, fresh recall 0.829, stale-in-topk 0.843 (n=70)
+stale_penalty: update-pref 0.443, fresh recall 0.829, stale-in-topk 0.843 (n=70)
+update-pref delta (penalty - no_signal): +0.0143 [+0.0000,+0.0429]

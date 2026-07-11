@@ -17,6 +17,10 @@ pub struct RfmConfig {
     pub w_v: f64,
     /// Confidence-shrink constant k: effective value = value * n/(n + k).
     pub shrink_k: f64,
+    /// Prior strength for rfm_prior: (1-beta) + beta*rfm_score. Bounds how
+    /// much usage history can perturb a similarity ranking. Default frozen
+    /// at 0.3 by the pre-registered composition experiment (PROTOCOL.md).
+    pub beta: f64,
     /// When set via rfm_config('now', t), all functions read this instead of
     /// the wall clock. Cleared with rfm_config('now', NULL).
     pub frozen_now: Option<f64>,
@@ -31,6 +35,7 @@ impl Default for RfmConfig {
             w_a: 0.7,
             w_v: 0.3,
             shrink_k: 3.0,
+            beta: 0.3,
             frozen_now: None,
         }
     }
@@ -55,6 +60,10 @@ pub fn check_nonnegative(key: &str, v: f64) -> Result<(), String> {
     if v >= 0.0 { Ok(()) } else { Err(format!("rfm: {key} must be >= 0")) }
 }
 
+pub fn check_beta(v: f64) -> Result<(), String> {
+    if (0.0..=1.0).contains(&v) { Ok(()) } else { Err("rfm: beta must be in [0, 1]".into()) }
+}
+
 impl RfmConfig {
     pub fn get(&self, key: &str) -> Result<Option<f64>, String> {
         match key {
@@ -64,6 +73,7 @@ impl RfmConfig {
             "w_a" => Ok(Some(self.w_a)),
             "w_v" => Ok(Some(self.w_v)),
             "shrink_k" => Ok(Some(self.shrink_k)),
+            "beta" => Ok(Some(self.beta)),
             "now" => Ok(self.frozen_now),
             _ => Err(format!("rfm: unknown config key '{key}'")),
         }
@@ -92,6 +102,7 @@ impl RfmConfig {
             "w_a" => { check_nonnegative(key, v)?; self.w_a = v }
             "w_v" => { check_nonnegative(key, v)?; self.w_v = v }
             "shrink_k" => { check_nonnegative(key, v)?; self.shrink_k = v }
+            "beta" => { check_beta(v)?; self.beta = v }
             "now" => self.frozen_now = Some(v),
             _ => return Err(format!("rfm: unknown config key '{key}'")),
         }

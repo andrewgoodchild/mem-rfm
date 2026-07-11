@@ -282,6 +282,24 @@ pub fn rfm_score(
     Ok(())
 }
 
+/// rfm_prior(id) = (1-beta) + beta*rfm_score(id) — the bounded multiplier to
+/// compose with similarity search: ORDER BY sim * rfm_prior(id) DESC. beta
+/// (config key, default 0.3) caps how much usage history can perturb the
+/// similarity ranking; the default was frozen by the pre-registered
+/// composition experiment (PROTOCOL.md).
+pub fn rfm_prior(
+    context: *mut sqlite3_context,
+    values: &[*mut sqlite3_value],
+    aux: &SharedConfig,
+) -> Result<()> {
+    let c = cfg(aux)?;
+    let row = load_mem(db_of(context), value_id(values)?)?;
+    let now = clock::now(&c);
+    let s = score_of(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k);
+    api::result_double(context, (1.0 - c.beta) + c.beta * s);
+    Ok(())
+}
+
 /// rfm_score_w(id, w_a, w_v[, tau, decay]) — parameterised scoring for tuning.
 /// tau is accepted for API compatibility but unused: activation subsumes the
 /// exponential-recency term (see DESIGN_NOTES).

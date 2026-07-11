@@ -36,3 +36,23 @@ BAAI/bge-m3 (LoCoMo, SWE) — secondary. Results appended below after the runs;
 no re-tuning regardless of outcome.
 
 ## Test phase — PENDING
+
+## Test phase — one shot, frozen beta=0.3 (logs: frozen_*.log; rows: results-frozen/)
+
+| endpoint | pre-registered bar | result | verdict |
+|---|---|---|---|
+| LoCoMo cost, MiniLM | ≤ 0.010 | −0.0011 [−0.0045,+0.0022] | PASS |
+| LoCoMo cost, Qwen3 (primary) | ≤ 0.010 | +0.0040 [−0.0007,+0.0087] | PASS |
+| LoCoMo adaptivity, MiniLM | CI > 0 | +0.0234 [+0.0169,+0.0303] | PASS |
+| LoCoMo adaptivity, Qwen3 | CI > 0 | +0.0323 [+0.0236,+0.0411] | PASS |
+| SWE cost, MiniLM | n.s. | −0.0130 [−0.0423,+0.0082] | PASS |
+| SWE cost, Qwen3 | n.s. | −0.0013 [−0.0082,+0.0043] | PASS |
+| KU forgetting delta | > 0 | +0.0143 [+0.0000,+0.0429] | WEAK — point est. > 0, CI touches 0 |
+| bge-m3 generalization | cost ≤ 0.010 | pending | — |
+
+Interpretation committed with the numbers: bounding the prior eliminates the
+retrieval cost on every setting and keeps feedback adaptivity (test deltas
+LARGER than dev — anti-overfitting signature), but sacrifices most of the
+knowledge-update forgetting effect (+0.229 unbounded → +0.014 at β=0.3).
+β is a protection-vs-plasticity dial; forgetting-critical deployments should
+raise β or apply penalties outside the bounded path.

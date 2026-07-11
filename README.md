@@ -20,16 +20,23 @@ score (O(1) regardless of access-history length).
 
 `rfm_score` is a **prior, not a ranker**: it knows what has been useful
 lately, and only an embedding knows what is relevant *now*. Compose it with
-any similarity search — here with [sqlite-vec](https://github.com/asg017/sqlite-vec)
-in the same connection:
+any similarity search via `rfm_prior(id)` — the bounded multiplier
+`(1−β) + β·rfm_score(id)` (β = 0.3 by default, `rfm_config('beta', …)`), so
+usage history adjusts a similarity ranking but can never overwhelm it — here
+with [sqlite-vec](https://github.com/asg017/sqlite-vec) in the same
+connection:
 
 ```sql
 SELECT id, content,
-       (1.0 - vec_distance_cosine(embedding, :query)) * rfm_score(id) AS score
+       (1.0 - vec_distance_cosine(embedding, :query)) * rfm_prior(id) AS score
 FROM rfm_memories
 ORDER BY score DESC
 LIMIT 5;
 ```
+
+(Why bounded, and why β = 0.3: chosen by a pre-registered experiment —
+`PROTOCOL.md` — after an embedder-robustness check showed the unbounded
+composition penalizes strong retrievers. Results below.)
 
 ## Why
 
@@ -141,8 +148,9 @@ db.load_extension("./target/release/librfm")
 | `rfm_activation(id)` | ACT-R base-level activation (Petrov k = 2) |
 | `rfm_value(id)` | raw outcome EWMA in [-1, 1] |
 | `rfm_score(id)` | `w_a·P(activation) + w_v·value₀₁`, defaults 0.7 / 0.3 |
+| `rfm_prior(id)` | `(1−β) + β·rfm_score(id)` — the bounded multiplier to compose with similarity (β config, default 0.3) |
 | `rfm_score_w(id, w_a, w_v[, tau, decay])` | parameterised variant (τ reserved; see DESIGN_NOTES) |
-| `rfm_config(key[, value])` | get/set per-connection defaults: `tau, decay, lambda, w_a, w_v, shrink_k, now` |
+| `rfm_config(key[, value])` | get/set per-connection defaults: `tau, decay, lambda, w_a, w_v, shrink_k, beta, now` |
 
 `rfm_config('now', t)` freezes the clock for tests and replay;
 `rfm_config('now', NULL)` unfreezes. All state changes are explicit — SQLite
@@ -251,6 +259,33 @@ Three cross-benchmark findings:
    **0.66** (paired +0.229 [+0.129, +0.343]) and halves stale-fact retrievals
    (0.79 → 0.50) with **no loss** of fresh-fact recall (0.80 both ways) — the
    value axis removes the outdated memory without collateral damage.
+
+### Embedder robustness and the bounded composition (pre-registered)
+
+Re-running the sequential evals with a strong retriever
+(Qwen3-Embedding-0.6B) exposed a real flaw in the original composition:
+`sim × rfm_score`'s cost vs similarity-only inflated from −0.05/−0.06
+(MiniLM) to **−0.32/−0.15** (LoCoMo/BEAM) — the activation prior's ~6×
+multiplicative range overwhelms well-calibrated similarities — while the
+value axis's isolated contribution stayed stable (+0.17…+0.35). The fix was
+chosen by a **pre-registered protocol** (`PROTOCOL.md`: candidates, dev/test
+split, selection rule, and falsification criteria committed to git before
+any experiment ran; dev = BEAM only): rank-fusion and shortlist-rerank
+failed feasibility by ~40×; the bounded blend passed, frozen at **β = 0.3**
+— now shipped as `rfm_prior()`. One-shot test results (never touched during
+development):
+
+| endpoint | result |
+|---|---|
+| LoCoMo cost vs sim ≤ 0.010 (MiniLM / Qwen3) | **pass**: −0.001 / +0.004 |
+| LoCoMo adaptivity (feedback ON−OFF, recurred qs) | **pass**: +0.023 / +0.032, CIs > 0 |
+| SWE-Bench-CL cost vs sim n.s. | **pass**: −0.013 / −0.001 (frozen slightly *ahead*) |
+| knowledge-update forgetting delta | **weak**: +0.014 [+0.000, +0.043] — bounding the prior sacrifices most of the forgetting power (was +0.229 unbounded); raise β when forgetting matters more than rank safety |
+
+The trade-off is the finding: β is a dial between protecting relevance and
+empowering feedback. On coding experience-selection (SWE-Bench-CL, 88 tasks,
+heuristic file-overlap gold links — disclosed), the frozen composition is
+the first configuration to edge ahead of similarity-only.
 
 Protocols, dataset licenses (LoCoMo is CC BY-NC), and disclosed caveats (BEAM
 evidence is model-generated + human-reviewed) are in `bench-quality/README.md`.
