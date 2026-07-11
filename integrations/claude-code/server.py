@@ -120,6 +120,42 @@ def _status() -> dict:
     return {"memories": n, "accesses": accesses, "outcomes": outcomes, "db": DB_PATH}
 
 
+def _list(limit: int = 20, offset: int = 0) -> list:
+    d = db()
+    rows = d.execute(
+        """SELECT id, content, created_at, access_count, value_score, outcome_count,
+                  rfm_score(id) AS score
+           FROM rfm_memories ORDER BY score DESC LIMIT ? OFFSET ?""",
+        (max(1, min(int(limit), 200)), max(0, int(offset)))).fetchall()
+    return [{"id": r[0], "content": r[1],
+             "created": time.strftime("%Y-%m-%d", time.localtime(r[2])),
+             "accesses": r[3], "value": round(r[4], 3), "outcomes": r[5],
+             "score": round(r[6], 4)} for r in rows]
+
+
+def _delete(memory_id: int) -> dict:
+    d = db()
+    gone = d.execute("DELETE FROM rfm_memories WHERE id = ?", (memory_id,)).rowcount
+    d.execute("DELETE FROM rfm_accesses WHERE memory_id = ?", (memory_id,))
+    d.commit()
+    return {"id": memory_id, "deleted": bool(gone)}
+
+
+def _export() -> str:
+    d = db()
+    rows = d.execute(
+        "SELECT id, content, created_at, access_count, value_score, rfm_score(id) "
+        "FROM rfm_memories ORDER BY rfm_score(id) DESC").fetchall()
+    if not rows:
+        return "# mem-rfm export\n\n(no memories)"
+    lines = ["# mem-rfm export", ""]
+    for mid, content, created, acc, val, score in rows:
+        day = time.strftime("%Y-%m-%d", time.localtime(created))
+        lines.append(f"- [{mid}] ({day}, {acc} uses, value {val:+.2f}, "
+                     f"score {score:.3f}) {content}")
+    return "\n".join(lines)
+
+
 @mcp.tool()
 def memory_save(content: str) -> dict:
     """Store a durable memory: user preferences, project facts, decisions,
@@ -149,6 +185,27 @@ def memory_feedback(memory_id: int, helped: bool) -> dict:
 def memory_status() -> dict:
     """Memory store statistics: counts of memories, accesses, and outcomes."""
     return _status()
+
+
+@mcp.tool()
+def memory_list(limit: int = 20, offset: int = 0) -> list:
+    """List stored memories ranked by current usefulness score, with usage and
+    value stats — for inspecting or auditing what is remembered."""
+    return _list(limit, offset)
+
+
+@mcp.tool()
+def memory_delete(memory_id: int) -> dict:
+    """Permanently delete a memory (and its access history) by id. Use when a
+    memory is wrong, stale, or the user asks to forget something."""
+    return _delete(memory_id)
+
+
+@mcp.tool()
+def memory_export() -> str:
+    """Export every memory as human-readable markdown (id, date, usage, value,
+    content) — for review, backup, or migration."""
+    return _export()
 
 
 if __name__ == "__main__":

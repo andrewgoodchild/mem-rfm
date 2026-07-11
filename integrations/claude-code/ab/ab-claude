@@ -1,0 +1,43 @@
+#!/bin/bash
+# A/B launcher: control = Claude Code built-in memory only; rfm = built-in
+# PLUS the mem-rfm MCP server. Both arms run with --strict-mcp-config so the
+# tool environment is identical except for the memory server. Assignment is
+# random per session and logged for ab_stats.py.
+#
+# Usage: ab-claude [--label "task description"] [claude args...]
+#        ab-claude --arm rfm|control ...   (force an arm)
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+LOG="$HERE/ab_log.jsonl"
+LABEL=""
+ARM=""
+ARGS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --label) LABEL="$2"; shift 2 ;;
+    --arm) ARM="$2"; shift 2 ;;
+    *) ARGS+=("$1"); shift ;;
+  esac
+done
+if [ -z "$ARM" ]; then
+  if [ $((RANDOM % 2)) -eq 0 ]; then ARM="control"; else ARM="rfm"; fi
+fi
+
+START=$(date +%s)
+export RFM_AB_ARM="$ARM"
+if [ "$ARM" = "rfm" ]; then
+  CFG="$HERE/mcp-rfm.json"
+else
+  CFG="$HERE/mcp-empty.json"
+fi
+
+echo "[ab-claude] arm=$ARM  (label: ${LABEL:-none})" >&2
+set +e
+claude --strict-mcp-config --mcp-config "$CFG" "${ARGS[@]}"
+STATUS=$?
+set -e
+END=$(date +%s)
+printf '{"arm":"%s","label":"%s","start":%s,"end":%s,"exit":%s,"cwd":"%s"}\n' \
+  "$ARM" "${LABEL//\"/\\\"}" "$START" "$END" "$STATUS" "$PWD" >> "$LOG"
+echo "[ab-claude] session logged: arm=$ARM $((END-START))s" >&2
+exit $STATUS

@@ -16,6 +16,9 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 TOP_K = 5
+# Hard injection budget: token bloat is a leading abandonment cause for
+# memory tools; stay far under Claude Code's own 25KB MEMORY.md discipline.
+CHAR_BUDGET = 1500
 
 
 def resolve_dylib():
@@ -31,6 +34,10 @@ def resolve_dylib():
 
 
 def main():
+    # A/B gating: when an experiment is running (ab/ab-claude sets
+    # RFM_AB_ARM), inject only in the rfm arm so the control stays clean.
+    if os.environ.get("RFM_AB_ARM", "rfm") != "rfm":
+        sys.exit(0)
     dylib = resolve_dylib()
     if dylib is None or not os.path.exists(DB_PATH):
         sys.exit(0)  # nothing to inject; stay silent
@@ -43,7 +50,15 @@ def main():
         "ORDER BY s DESC LIMIT ?", (TOP_K,)).fetchall()
     if not rows:
         sys.exit(0)
-    lines = [f"- [{mid}] {content}" for mid, content, _s in rows]
+    lines, used = [], 0
+    for mid, content, _s in rows:
+        line = f"- [{mid}] {content[:300]}"
+        if used + len(line) > CHAR_BUDGET:
+            break
+        lines.append(line)
+        used += len(line) + 1
+    if not lines:
+        sys.exit(0)
     context = (
         "Long-term memories most likely to matter (ranked by recency, "
         "frequency, and past usefulness — use memory_search for more, and "
