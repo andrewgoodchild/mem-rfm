@@ -102,3 +102,16 @@ been computed before this registration. Dev selection: same rule as
 Amendment 1, on dev repos, both embedders. If frozen, one-shot on the six
 test repos; the claim, if earned, is scoped to code retrieval. LoCoMo remains
 untouched by hybrid (failed its domain's dev).
+
+---
+
+# Amendment 3 (registered before any Step P run)
+
+Discovered pre-run: the knowledge-update protocol records exactly ONE
+penalty per stale memory, so the registered grid (N ≥ 2) can never fire
+there — the KU success bar would be unreachable by construction. Corrected
+grid, registered before any Step P number exists: V ∈ {−0.5, −0.8},
+N ∈ {1, 2, 3}. Selection among BEAM-cost-safe configs (cost ≤ 0.010, both
+embedders): the most aggressive (smallest N, then higher V threshold), since
+the target effect is forgetting. One-shot test unchanged: KU (delta ≥ +0.10,
+fresh recall unchanged) and LoCoMo cost bar.

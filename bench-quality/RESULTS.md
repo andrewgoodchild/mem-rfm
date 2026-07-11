@@ -71,3 +71,16 @@ No fusion beat the better single signal: hybrid_w0.7 ties sim on MiniLM
 alone 0.3251. BM25 does not advance to conversational test sets. Full
 numbers above committed logs (hybrid dev printed inline; per PROTOCOL
 Amendment 1). Hypothesis for code domain registered as Amendment 2.
+
+## Amendment 2 dev (SWE django+sympy, n=25) — hybrid_w0.3 FROZEN
+On code, bm25 alone beats sim (0.546 vs 0.459 MiniLM / 0.534 Qwen3). Only
+hybrid_w0.3 (0.3·norm(sim) + 0.7·norm(bm25)) beats the better single signal
+under BOTH embedders (0.558 / 0.582). w0.5, w0.7, rrf fail on MiniLM.
+Frozen before any test-repo run. Small dev n disclosed.
+
+## Amendment 2 one-shot (6 held-out repos, n=63) — hybrid FAILED
+hybrid_w0.3 is WORSE than sim on held-out repos: 0.486 vs 0.542 (MiniLM),
+0.504 vs 0.602 (Qwen3, CI excludes 0). The n=25 dev win was repo-specific.
+Step H is dead in both domains under the registered bars. BM25 hybrid is NOT
+shipped. (Note: the rfm prior on top of hybrid was cost-safe — +0.003
+[+0.000,+0.006] vs hybrid on Qwen3 — consistent with the frozen-β result.)
