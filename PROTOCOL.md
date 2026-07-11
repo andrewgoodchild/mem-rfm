@@ -63,3 +63,28 @@ adaptation and forgetting within a shortlist supplied by the caller.
 
 Runner: `bench-quality/compose_eval.py` (dev) and the frozen-config test
 invocations recorded in `bench-quality/RESULTS.md` as they happen.
+
+---
+
+# Amendment 1 (registered before any hybrid/pruning run)
+
+## Step H — hybrid retrieval (BM25 + vector)
+Candidates: weighted fusion `w·norm(sim) + (1−w)·norm(bm25)`, w ∈ {0.3, 0.5,
+0.7} (per-query min-max norm; non-matching FTS rows score 0), and RRF(k=60)
+over the two rankings. BM25 = SQLite FTS5 over full turn text. Dev: BEAM,
+both embedders. Selection: maximize NDCG@10 (all questions) subject to not
+losing to the better single signal on either embedder. Frozen fusion then
+composes with rfm_prior exactly as before. One-shot test: LoCoMo + SWE
+(MiniLM, Qwen3). Success bar: hybrid×prior ≥ sim-only NDCG on both test
+benches (CI-supported on at least one).
+
+## Step P — confident-negative exclusion (pruning)
+Rule: a memory is excluded from candidates when value_score ≤ V and
+outcome_count ≥ N. Grid: V ∈ {−0.5, −0.8}, N ∈ {2, 3}. Dev: BEAM (cost on
+overlap=False must stay ≤ 0.010) + tuning of nothing else. One-shot test:
+knowledge-update (success: update-preference delta ≥ +0.10 with fresh recall
+unchanged) and LoCoMo (cost bar as before). Motivation: restore forgetting
+lost to the bounded prior via exclusion rather than score influence.
+
+Parity features (capture skill, list/delete/export, injection cap) carry NO
+benchmark claims; they are verified by unit/integration tests only.
