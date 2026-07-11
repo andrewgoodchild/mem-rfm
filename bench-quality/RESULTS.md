@@ -64,3 +64,10 @@ raise β or apply penalties outside the bounded path.
 
 The frozen configuration was never exposed to bge-m3 during development;
 its LoCoMo adaptivity under bge-m3 exceeds both development embedders.
+
+## Step H dev (BEAM) — FAILED the registered bar
+No fusion beat the better single signal: hybrid_w0.7 ties sim on MiniLM
+(0.4268) and loses on Qwen3 (0.4926 vs 0.5090); RRF loses on both; bm25
+alone 0.3251. BM25 does not advance to conversational test sets. Full
+numbers above committed logs (hybrid dev printed inline; per PROTOCOL
+Amendment 1). Hypothesis for code domain registered as Amendment 2.

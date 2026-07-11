@@ -76,7 +76,7 @@ class MemoryStore:
     rows: list of (mem_id, text, created_at); embs: matrix aligned with rows.
     """
 
-    def __init__(self, rows, embs):
+    def __init__(self, rows, embs, fts=False):
         self.db = sqlite3.connect(":memory:")
         self.db.enable_load_extension(True)
         self.db.load_extension(DYLIB)
@@ -87,6 +87,31 @@ class MemoryStore:
             [(m, t[:200], ts) for m, t, ts in rows])
         self.embs = embs
         self.row_of = {m: i for i, (m, _t, _ts) in enumerate(rows)}
+        if fts:
+            # Full-text index over the FULL turn text (rfm_memories.content is
+            # truncated); rowid = mem_id so scores join trivially.
+            self.db.execute("CREATE VIRTUAL TABLE fts USING fts5(content)")
+            self.db.executemany(
+                "INSERT INTO fts(rowid, content) VALUES (?,?)",
+                [(m, t) for m, t, _ts in rows])
+
+    def bm25_scores(self, query_text, ids):
+        """Positive BM25 per candidate (0 = no match). SQLite's bm25() is
+        negated (smaller = better), so flip sign. Query text is sanitized to
+        an OR of bare tokens — FTS5 syntax characters would otherwise error."""
+        import re
+        tokens = re.findall(r"[A-Za-z0-9_]+", query_text)[:32]
+        if not tokens:
+            return np.zeros(len(ids))
+        match = " OR ".join(f'"{t}"' for t in tokens)
+        got = {}
+        try:
+            for rowid, s in self.db.execute(
+                    "SELECT rowid, bm25(fts) FROM fts WHERE fts MATCH ?", (match,)):
+                got[rowid] = -s
+        except sqlite3.OperationalError:
+            return np.zeros(len(ids))
+        return np.array([got.get(m, 0.0) for m in ids])
 
     def close(self):
         self.db.close()

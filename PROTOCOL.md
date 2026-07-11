@@ -88,3 +88,17 @@ lost to the bounded prior via exclusion rather than score influence.
 
 Parity features (capture skill, list/delete/export, injection cap) carry NO
 benchmark claims; they are verified by unit/integration tests only.
+
+---
+
+# Amendment 2 (registered before any SWE hybrid run)
+
+Step H failed its bar on conversational dev (BEAM) — recorded in RESULTS.md.
+The remaining hypothesis is domain-specific: BM25 helps CODE retrieval
+(identifiers, error strings). To test it without contaminating the SWE test
+set: **SWE-Bench-CL is split by repo — dev = django + sympy sequences (the
+two largest); test = the remaining six repos.** No SWE hybrid number has
+been computed before this registration. Dev selection: same rule as
+Amendment 1, on dev repos, both embedders. If frozen, one-shot on the six
+test repos; the claim, if earned, is scoped to code retrieval. LoCoMo remains
+untouched by hybrid (failed its domain's dev).
