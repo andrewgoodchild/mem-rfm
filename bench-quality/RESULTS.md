@@ -35,8 +35,6 @@ knowledge-update (MiniLM), SWE-Bench-CL (MiniLM, Qwen3), and unseen-embedder
 BAAI/bge-m3 (LoCoMo, SWE) — secondary. Results appended below after the runs;
 no re-tuning regardless of outcome.
 
-## Test phase — PENDING
-
 ## Test phase — one shot, frozen beta=0.3 (logs: frozen_*.log; rows: results-frozen/)
 
 | endpoint | pre-registered bar | result | verdict |
@@ -56,3 +54,13 @@ LARGER than dev — anti-overfitting signature), but sacrifices most of the
 knowledge-update forgetting effect (+0.229 unbounded → +0.014 at β=0.3).
 β is a protection-vs-plasticity dial; forgetting-critical deployments should
 raise β or apply penalties outside the bounded path.
+
+## Unseen-embedder endpoint (BAAI/bge-m3, declared in PROTOCOL.md (d))
+
+| setting | cost vs sim | adaptivity ON−OFF | verdict |
+|---|---|---|---|
+| LoCoMo | −0.0049 [−0.0103,+0.0005] | +0.0784 [+0.0677,+0.0898] | PASS (cost bar met; largest adaptivity of any embedder) |
+| SWE | +0.0167 [−0.0289,+0.0626] n=48 | +0.0390 [+0.0121,+0.0666] | n.s. (passes the SWE bar as declared); point estimate above 0.010 disclosed — small n |
+
+The frozen configuration was never exposed to bge-m3 during development;
+its LoCoMo adaptivity under bge-m3 exceeds both development embedders.
