@@ -109,3 +109,14 @@ future task text in a sequential protocol. The leakage could only have
 FLATTERED the bm25-bearing arms; since the registered verdict was that hybrid
 FAILS on held-out repos, the negative conclusion stands a fortiori. Disclosed
 for reproducibility; the scripts are archival and will not be re-run.
+
+## Exploratory pilot (NOT pre-registered): live agent A/B on real pytest bugs
+experiments/swe-ab/: 8 chronological SWE-Bench-CL pytest tasks, paired
+headless Claude Code sessions (control vs rfm arm, separate clones, gold-test
+scoring). Results: 8/8 resolved in BOTH arms (ceiling — tasks too easy to
+differentiate); rfm overhead +21.8s/session [+0.8,+44.0] (mostly MCP server
+startup, proportionally trivial in interactive sessions); tokens +808 n.s.;
+edits identical. Mechanism verification in the wild: 7/8 rfm sessions used
+memory tools unprompted, 7 specific codebase lessons captured, 20 retrievals,
+and the agent gave NEGATIVE feedback to irrelevant retrieved memories — the
+demotion loop operated end-to-end with no oracle. n=8: directional only.
