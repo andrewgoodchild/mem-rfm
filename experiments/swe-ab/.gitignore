@@ -1,0 +1,5 @@
+clones/
+*.db
+*.db-wal
+*.db-shm
+sessions/
