@@ -89,6 +89,50 @@ journal — it's an *operational profile* that earns rank through outcomes.
 Capture environment quirks, conventions, decisions, and preferences; let
 per-task trivia fade; and bound how much any of it can override relevance.
 
+### The favorable case, quantified: team memory for support work
+
+If recurrence is what memory needs, maximum-recurrence workloads should show
+maximum value — so we tested customer support on
+[ABCD](https://github.com/asappresearch/abcd) (10k real support
+conversations, 55 annotated procedures, MIT): 3,000-call streams, 8
+simulated agents, no LLM anywhere (the dataset's own procedure annotations
+judge whether memory surfaced the right playbook). Four results, all
+exploratory (not pre-registered), all with per-condition curves committed:
+
+1. **Team pooling is the headline: +14.5 points hit@5** [+13.0, +16.1] for
+   one shared store vs per-agent solo stores. The shared store starts its
+   first quintile at the hit-rate solo agents need most of the stream to
+   reach — pooling multiplies effective recurrence by roughly team size.
+2. **Outcome-ranking beat plain similarity in a live-shaped workload for
+   the first time** — at rank-1, the position that matters when handing an
+   agent one suggestion: +1.2 points overall, **+2.0 in the last thousand
+   calls** [+0.7, +3.4], growing as feedback accumulates. At rank-5 the
+   bounded-cost guarantee held yet again (−0.4 points, n.s.). Replicated in
+   the combined-store variant (+1.1, CI > 0).
+3. **Staleness is real, and outcomes are the only layer that fixes it.**
+   After a simulated policy revision, similarity-only kept recommending
+   dead procedures 1,500 calls later (hit@1 0.20 vs 0.76 pre-change) —
+   stale entries stay semantically similar forever. Outcome feedback
+   (the ticket-reopen signal) retired them **~2.8× faster** (0.56 and
+   climbing). Production design: explicit invalidation for announced
+   changes, outcome-driven forgetting as the safety net for unannounced.
+4. **The authored knowledge base is not a substitute for experience.**
+   RAG over the actual ABCD agent manual scores a flat 0.29 hit@1 — no
+   learning possible, and procedure docs describe agent actions, not
+   customer phrasing; the *diagnosis mapping* (messy customer words →
+   correct procedure) exists only in accumulated calls. Experience memory
+   beats the manual by **+42 points** [+40, +44]; the manual's real value
+   is cold-start scaffolding (+3.8 points in the first 500 calls, fading to
+   nothing at steady state).
+
+Layered conclusion for any support/ops deployment: **manual for day one,
+shared experience for diagnosis, outcomes for maintenance** — and the
+outcome layer is the part that is not "just RAG," and that no other memory
+system ships. (Privacy note for shared stores: the team store should hold
+delexicalized procedure patterns, never transcripts; customer-specific
+context belongs in per-customer scoped stores where its recurrence lives —
+one DB per scope, and erasure is deleting a file.)
+
 ---
 
 ## The composition that survived falsification
