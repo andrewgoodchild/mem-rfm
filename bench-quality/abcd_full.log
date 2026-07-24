@@ -1,0 +1,34 @@
+3000 calls, 55 intents, 21 confusable intents
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6604.60it/s]
+500/3000
+1000/3000
+1500/3000
+2000/3000
+2500/3000
+3000/3000
+
+=== ABCD team memory, k=5, 8 agents, sentence-transformers/all-MiniLM-L6-v2 ===
+| condition | hit@k | hit@1 | hit@k conf | hit@1 conf | n |
+|---|---|---|---|---|---|
+| solo_sim | 0.730 | 0.555 | 0.710 | 0.492 | 2992 |
+| solo_rfm | 0.725 | 0.549 | 0.706 | 0.485 | 2992 |
+| team_sim | 0.874 | 0.711 | 0.864 | 0.637 | 2999 |
+| team_rfm | 0.870 | 0.723 | 0.851 | 0.644 | 2999 |
+
+learning curves (hit@k by call-index quintile):
+| condition | Q1 | Q2 | Q3 | Q4 | Q5 |
+|---|---|---|---|---|---|
+| solo_sim | 0.421 | 0.740 | 0.824 | 0.831 | 0.836 |
+| solo_rfm | 0.421 | 0.741 | 0.818 | 0.821 | 0.826 |
+| team_sim | 0.800 | 0.892 | 0.893 | 0.887 | 0.896 |
+| team_rfm | 0.798 | 0.883 | 0.892 | 0.888 | 0.888 |
+
+paired hit-rate deltas:
+  team_sim - solo_sim (pooling):         +0.1451 [+0.1297,+0.1608] n=2992
+  team_rfm - team_sim (ranking, all):    -0.0037 [-0.0083,+0.0010] n=2999
+  team_rfm - team_sim (last 1000):       -0.0050 [-0.0140,+0.0030] n=1000
+  solo_rfm - solo_sim (ranking, solo):   -0.0050 [-0.0090,-0.0010] n=2992
+  [hit@1] team_rfm - team_sim:           +0.0123 [+0.0047,+0.0203] n=2999
+  [hit@1] team_rfm - team_sim last1000:  +0.0200 [+0.0070,+0.0340] n=1000
+  [hit@1 conf] team_rfm - team_sim:      +0.0068 [-0.0077,+0.0213] n=1033

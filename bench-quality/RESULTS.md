@@ -132,3 +132,20 @@ loop measured that honestly). The ONLY memory earning sustained positive
 value (+0.58 over 5 uses) was an ENVIRONMENT/operational fact (sphinx venv
 gotcha), not code knowledge. Insight: in episodic bug-fixing, operational
 memory transfers; per-bug code lessons mostly don't.
+
+## Exploratory: ABCD team memory (support calls; NOT pre-registered)
+abcd_eval.py: 3,000 real support calls (ABCD, MIT), 55 procedures, 8
+simulated agents, sequential leakage-free protocol, no LLM (gold procedure
+annotations judge retrieval). Findings:
+1. POOLING: team-shared store beats per-agent solo stores +0.145 hit@5
+   [+0.130,+0.161]; team reaches in Q1 (0.80) what solo needs ~3 quintiles
+   to approach — the "team knowledge edge" quantified.
+2. RANKING: rfm (frozen beta=0.3) vs similarity — hit@5 parity (-0.004
+   n.s.: the bounded-cost guarantee holds), but hit@1 IMPROVES: +0.012
+   [+0.005,+0.020] overall, growing to +0.020 [+0.007,+0.034] over the last
+   1,000 calls as feedback accumulates. First live-workload setting where
+   outcome-ranking beats similarity on a primary metric with CI > 0 — at
+   rank-1, the position that matters when handing an agent ONE playbook.
+Caveats: exploratory, oracle evidence-hit outcomes, imposed call ordering,
+one embedder. Consistent with the recurrence law: ABCD is the
+maximal-recurrence workload, and it is where memory finally pays.
