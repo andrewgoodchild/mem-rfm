@@ -149,3 +149,15 @@ annotations judge retrieval). Findings:
 Caveats: exploratory, oracle evidence-hit outcomes, imposed call ordering,
 one embedder. Consistent with the recurrence law: ABCD is the
 maximal-recurrence workload, and it is where memory finally pays.
+
+## Exploratory: staleness under procedure change (ABCD, NOT pre-registered)
+abcd_staleness.py: at call 1,500 the 8 highest-volume procedures are
+"revised" — all pre-change memories for them become wrong (retrieval = miss,
+rfm arm receives -1, the ticket-reopen signal). Pre-revision hit@1 ~0.76
+both arms. Recovery at hit@1 by +1,500 calls: similarity-only 0.197 vs
+rfm 0.561 — outcome feedback retires stale procedures ~2.8x faster; at
+hit@5 rfm is nearly recovered (0.894) vs sim 0.773. Similarity recovers
+only by dilution; feedback demotion compounds. Honest note: neither arm
+fully recovers within 1,500 calls — production wants explicit write-time
+invalidation on announced policy changes (bulk demote/delete), with
+outcome-driven forgetting as the safety net for unannounced ones.

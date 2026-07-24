@@ -1,0 +1,23 @@
+3000 calls; revised intents at call 1500: ['boots', 'missing', 'recover_password', 'recover_username', 'reset_2fa', 'search_results', 'status', 'timing']
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 5835.10it/s]
+500/3000
+1000/3000
+1500/3000
+2000/3000
+2500/3000
+3000/3000
+
+=== Staleness recovery (affected intents, k=5) ===
+team_sim: pre-revision hit@1 baseline = 0.767
+team_rfm: pre-revision hit@1 baseline = 0.753
+
+hit@1 by 250-call bins after the revision:
+| condition | +250 | +500 | +750 | +1000 | +1250 | +1500 |
+|---|---|---|---|---|---|---|
+| team_sim | 0.065 | 0.116 | 0.137 | 0.143 | 0.207 | 0.197 |
+| team_rfm | 0.097 | 0.145 | 0.255 | 0.286 | 0.379 | 0.561 |
+
+hit@5 by bins:
+  team_sim: 0.274 0.478 0.529 0.571 0.741 0.773
+  team_rfm: 0.323 0.522 0.529 0.657 0.828 0.894
