@@ -14,3 +14,57 @@
 {"instance_id": "pytest-dev__pytest-7571", "arm": "rfm", "resolved": true, "wall_s": 99, "timed_out": false, "detail": "1 passed in 0.16s"}
 {"instance_id": "pytest-dev__pytest-7982", "arm": "control", "resolved": true, "wall_s": 48, "timed_out": false, "detail": "1 passed in 0.26s"}
 {"instance_id": "pytest-dev__pytest-7982", "arm": "rfm", "resolved": true, "wall_s": 80, "timed_out": false, "detail": "1 passed in 0.27s"}
+{"instance_id": "pytest-dev__pytest-5631", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": true, "wall_s": 105, "timed_out": false, "detail": "1 passed in 0.30 seconds"}
+{"instance_id": "pytest-dev__pytest-5631", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": true, "wall_s": 174, "timed_out": false, "detail": "1 passed in 0.30 seconds"}
+{"instance_id": "pytest-dev__pytest-5787", "repo": "pytest", "difficulty": "1-4 hours", "arm": "control", "resolved": true, "wall_s": 181, "timed_out": false, "detail": "2 passed in 0.47s"}
+{"instance_id": "pytest-dev__pytest-5787", "repo": "pytest", "difficulty": "1-4 hours", "arm": "rfm", "resolved": true, "wall_s": 158, "timed_out": false, "detail": "2 passed in 0.49s"}
+{"instance_id": "pytest-dev__pytest-5809", "repo": "pytest", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 68, "timed_out": false, "detail": "1 passed in 0.15 seconds"}
+{"instance_id": "pytest-dev__pytest-5809", "repo": "pytest", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 88, "timed_out": false, "detail": "1 passed in 0.19 seconds"}
+{"instance_id": "pytest-dev__pytest-5840", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": false, "wall_s": 535, "timed_out": false, "detail": "2 failed in 0.35s"}
+{"instance_id": "pytest-dev__pytest-5840", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": false, "wall_s": 489, "timed_out": false, "detail": "2 failed in 0.36s"}
+{"instance_id": "pytest-dev__pytest-6197", "repo": "pytest", "difficulty": "1-4 hours", "arm": "control", "resolved": true, "wall_s": 273, "timed_out": false, "detail": "2 passed in 0.82s"}
+{"instance_id": "pytest-dev__pytest-6197", "repo": "pytest", "difficulty": "1-4 hours", "arm": "rfm", "resolved": true, "wall_s": 449, "timed_out": false, "detail": "2 passed in 0.66s"}
+{"instance_id": "pytest-dev__pytest-6202", "repo": "pytest", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 138, "timed_out": false, "detail": "1 passed in 0.48s"}
+{"instance_id": "pytest-dev__pytest-6202", "repo": "pytest", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 154, "timed_out": false, "detail": "1 passed in 0.36s"}
+{"instance_id": "pytest-dev__pytest-8399", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": true, "wall_s": 184, "timed_out": false, "detail": "1 passed in 0.21s"}
+{"instance_id": "pytest-dev__pytest-8399", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": true, "wall_s": 100, "timed_out": false, "detail": "1 passed in 0.19s"}
+{"instance_id": "pytest-dev__pytest-10051", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": true, "wall_s": 161, "timed_out": false, "detail": "1 passed in 0.16s"}
+{"instance_id": "pytest-dev__pytest-10051", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": true, "wall_s": 112, "timed_out": false, "detail": "1 passed in 0.15s"}
+{"instance_id": "pytest-dev__pytest-10081", "repo": "pytest", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 81, "timed_out": false, "detail": "1 passed in 0.17s"}
+{"instance_id": "pytest-dev__pytest-10081", "repo": "pytest", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 112, "timed_out": false, "detail": "1 passed in 0.20s"}
+{"instance_id": "pytest-dev__pytest-10356", "repo": "pytest", "difficulty": "1-4 hours", "arm": "control", "resolved": true, "wall_s": 120, "timed_out": false, "detail": "1 passed in 0.19s"}
+{"instance_id": "pytest-dev__pytest-10356", "repo": "pytest", "difficulty": "1-4 hours", "arm": "rfm", "resolved": false, "wall_s": 202, "timed_out": false, "detail": "1 failed in 0.17s"}
+{"instance_id": "sphinx-doc__sphinx-7454", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 213, "timed_out": false, "detail": "1 passed, 2 warnings in 0.06s"}
+{"instance_id": "sphinx-doc__sphinx-7454", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 264, "timed_out": false, "detail": "1 passed, 2 warnings in 0.06s"}
+{"instance_id": "sphinx-doc__sphinx-7462", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "control", "resolved": false, "wall_s": 69, "timed_out": false, "detail": "1 failed, 1 passed, 2 warnings in 0.09s"}
+{"instance_id": "sphinx-doc__sphinx-7462", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "resolved": false, "wall_s": 99, "timed_out": false, "detail": "1 failed, 1 passed, 2 warnings in 0.10s"}
+{"instance_id": "sphinx-doc__sphinx-7590", "repo": "sphinx", "difficulty": ">4 hours", "arm": "control", "resolved": true, "wall_s": 288, "timed_out": false, "detail": "1 passed, 2 warnings in 0.91s"}
+{"instance_id": "sphinx-doc__sphinx-7590", "repo": "sphinx", "difficulty": ">4 hours", "arm": "rfm", "resolved": false, "wall_s": 330, "timed_out": false, "detail": "1 failed, 2 warnings in 0.63s"}
+{"instance_id": "sphinx-doc__sphinx-7757", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": true, "wall_s": 121, "timed_out": false, "detail": "1 passed, 2 warnings in 0.07s"}
+{"instance_id": "sphinx-doc__sphinx-7757", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": true, "wall_s": 172, "timed_out": false, "detail": "1 passed, 2 warnings in 0.08s"}
+{"instance_id": "sphinx-doc__sphinx-7889", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 84, "timed_out": false, "detail": "1 passed, 2 warnings in 0.02s"}
+{"instance_id": "sphinx-doc__sphinx-7889", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 69, "timed_out": false, "detail": "1 passed, 2 warnings in 0.02s"}
+{"instance_id": "sphinx-doc__sphinx-7910", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 100, "timed_out": false, "detail": "1 passed, 2 warnings in 0.03s"}
+{"instance_id": "sphinx-doc__sphinx-7910", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 160, "timed_out": false, "detail": "1 passed, 2 warnings in 0.02s"}
+{"instance_id": "sphinx-doc__sphinx-8056", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": true, "wall_s": 323, "timed_out": false, "detail": "1 passed, 2 warnings in 0.03s"}
+{"instance_id": "sphinx-doc__sphinx-8056", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": true, "wall_s": 274, "timed_out": false, "detail": "1 passed, 2 warnings in 0.04s"}
+{"instance_id": "sphinx-doc__sphinx-9281", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 72, "timed_out": false, "detail": "1 passed in 0.10s"}
+{"instance_id": "sphinx-doc__sphinx-9281", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 94, "timed_out": false, "detail": "1 passed in 0.09s"}
+{"instance_id": "sphinx-doc__sphinx-9320", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 75, "timed_out": false, "detail": "1 passed in 0.03s"}
+{"instance_id": "sphinx-doc__sphinx-9320", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 70, "timed_out": false, "detail": "1 passed in 0.03s"}
+{"instance_id": "sphinx-doc__sphinx-9367", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 56, "timed_out": false, "detail": "1 passed in 0.01s"}
+{"instance_id": "sphinx-doc__sphinx-9367", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 67, "timed_out": false, "detail": "1 passed in 0.01s"}
+{"instance_id": "sphinx-doc__sphinx-9658", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": true, "wall_s": 297, "timed_out": false, "detail": "1 passed in 0.05s"}
+{"instance_id": "sphinx-doc__sphinx-9658", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": true, "wall_s": 219, "timed_out": false, "detail": "1 passed in 0.05s"}
+{"instance_id": "sphinx-doc__sphinx-10323", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 99, "timed_out": false, "detail": "1 passed in 0.04s"}
+{"instance_id": "sphinx-doc__sphinx-10323", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 100, "timed_out": false, "detail": "1 passed in 0.04s"}
+{"instance_id": "sphinx-doc__sphinx-10449", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "control", "resolved": true, "wall_s": 226, "timed_out": false, "detail": "1 passed, 1 warning in 0.27s"}
+{"instance_id": "sphinx-doc__sphinx-10449", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "resolved": true, "wall_s": 152, "timed_out": false, "detail": "1 passed, 1 warning in 0.28s"}
+{"instance_id": "sphinx-doc__sphinx-10466", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": true, "wall_s": 83, "timed_out": false, "detail": "1 passed in 0.02s"}
+{"instance_id": "sphinx-doc__sphinx-10466", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": true, "wall_s": 144, "timed_out": false, "detail": "1 passed in 0.02s"}
+{"instance_id": "sphinx-doc__sphinx-10673", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": true, "wall_s": 218, "timed_out": false, "detail": "1 passed, 1 warning in 0.17s"}
+{"instance_id": "sphinx-doc__sphinx-10673", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": true, "wall_s": 274, "timed_out": false, "detail": "1 passed, 1 warning in 0.18s"}
+{"instance_id": "sphinx-doc__sphinx-11445", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "control", "resolved": true, "wall_s": 140, "timed_out": false, "detail": "2 passed, 1 warning in 0.18s"}
+{"instance_id": "sphinx-doc__sphinx-11445", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "rfm", "resolved": true, "wall_s": 86, "timed_out": false, "detail": "2 passed, 1 warning in 0.16s"}
+{"instance_id": "sphinx-doc__sphinx-11510", "repo": "sphinx", "difficulty": "1-4 hours", "arm": "control", "resolved": true, "wall_s": 172, "timed_out": false, "detail": "2 passed, 1 warning in 0.19s"}
+{"instance_id": "sphinx-doc__sphinx-11510", "repo": "sphinx", "difficulty": "1-4 hours", "arm": "rfm", "resolved": true, "wall_s": 99, "timed_out": false, "detail": "2 passed, 1 warning in 0.17s"}

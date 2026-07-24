@@ -120,3 +120,15 @@ edits identical. Mechanism verification in the wild: 7/8 rfm sessions used
 memory tools unprompted, 7 specific codebase lessons captured, 20 retrievals,
 and the agent gave NEGATIVE feedback to irrelevant retrieved memories — the
 demotion loop operated end-to-end with no oracle. n=8: directional only.
+
+## Extended live A/B (NOT pre-registered): 27 paired tasks, pytest + sphinx
+run_stream.py: 54 sessions, real bugs, gold-test scoring, era-pinned envs.
+Resolution: control 25/27, rfm 23/27. Both discordant pairs (pytest-10356
+1-4h; sphinx-7590 >4h) favor CONTROL — the two hardest tasks. McNemar p=0.5
+(n.s.) but directionally negative on hard tasks. Wall overhead +8.5s/session.
+Memory audit: pytest 17 memories/65 accesses/16 outcomes — 15 of 16 NEGATIVE
+(bug-fix lessons rarely transfer across scattered subsystems; the demotion
+loop measured that honestly). The ONLY memory earning sustained positive
+value (+0.58 over 5 uses) was an ENVIRONMENT/operational fact (sphinx venv
+gotcha), not code knowledge. Insight: in episodic bug-fixing, operational
+memory transfers; per-bug code lessons mostly don't.

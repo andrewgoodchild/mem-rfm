@@ -1,0 +1,55 @@
+{"instance_id": "pytest-dev__pytest-5262", "repo": "pytest", "valid": false, "reason": "F2P fails WITH gold patch:  877, in _checkversion\n    from pkg_resources import parse_version\nModuleNotFoundError: No module named 'pkg_resources'\n"}
+{"instance_id": "pytest-dev__pytest-5631", "repo": "pytest", "valid": true}
+{"instance_id": "pytest-dev__pytest-5787", "repo": "pytest", "valid": true}
+{"instance_id": "pytest-dev__pytest-5809", "repo": "pytest", "valid": true}
+{"instance_id": "pytest-dev__pytest-5840", "repo": "pytest", "valid": true}
+{"instance_id": "pytest-dev__pytest-6197", "repo": "pytest", "valid": true}
+{"instance_id": "pytest-dev__pytest-6202", "repo": "pytest", "valid": true}
+{"instance_id": "pytest-dev__pytest-8399", "repo": "pytest", "valid": true}
+{"instance_id": "pytest-dev__pytest-10051", "repo": "pytest", "valid": true}
+{"instance_id": "pytest-dev__pytest-10081", "repo": "pytest", "valid": true}
+{"instance_id": "pytest-dev__pytest-10356", "repo": "pytest", "valid": true}
+{"instance_id": "sphinx-doc__sphinx-7440", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-7454", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-7462", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-7590", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-7748", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-7757", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-7889", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-7910", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-7985", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8035", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8056", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8120", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8265", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8269", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8459", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8475", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8548", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8551", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8593", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8595", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8621", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8638", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-8721", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9229", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9230", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9258", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9281", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9320", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9367", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9461", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9591", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9602", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9658", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9673", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9698", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-9711", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: import iter_entry_points\nImportError: Error importing plugin \"sphinx.testing.fixtures\": No module named 'pkg_resources'\n"}
+{"instance_id": "sphinx-doc__sphinx-10323", "repo": "sphinx", "valid": true}
+{"instance_id": "sphinx-doc__sphinx-10435", "repo": "sphinx", "valid": false, "reason": "F2P fails WITH gold patch: 1 failed, 1 warning in 0.33s"}
+{"instance_id": "sphinx-doc__sphinx-10449", "repo": "sphinx", "valid": true}
+{"instance_id": "sphinx-doc__sphinx-10466", "repo": "sphinx", "valid": true}
+{"instance_id": "sphinx-doc__sphinx-10614", "repo": "sphinx", "valid": false, "reason": "F2P passes pre-fix"}
+{"instance_id": "sphinx-doc__sphinx-10673", "repo": "sphinx", "valid": true}
+{"instance_id": "sphinx-doc__sphinx-11445", "repo": "sphinx", "valid": true}
+{"instance_id": "sphinx-doc__sphinx-11510", "repo": "sphinx", "valid": true}
