@@ -161,3 +161,17 @@ only by dilution; feedback demotion compounds. Honest note: neither arm
 fully recovers within 1,500 calls — production wants explicit write-time
 invalidation on announced policy changes (bulk demote/delete), with
 outcome-driven forgetting as the safety net for unannounced ones.
+
+## Exploratory: manual-RAG vs experience-memory vs both (ABCD)
+abcd_manual.py, 3,000 calls, 5 conditions. The authored agent manual (55
+procedure entries, guidelines.json) retrieved as a knowledge base scores
+0.29 hit@1 — FLAT across the whole stream (no learning possible) — because
+procedure docs describe agent actions, not customer phrasing: the
+diagnosis mapping is not in the manual. Shared experience memory beats it
+by +0.42 hit@1 [+0.40,+0.44]. Combining both wins the COLD START (+0.038
+hit@5 over experience-only in the first 500 calls [+0.020,+0.056]) and
+converges to experience at steady state. Outcome-ranking replicates its
+rank-1 edge in the combined store (+0.011 [+0.004,+0.019]; manual entries
+earn outcome scores like any memory). Layered conclusion: manual = day-one
+scaffolding, experience = the diagnosis engine, outcomes = the maintenance
+policy.
