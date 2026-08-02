@@ -70,10 +70,25 @@ def embed(text: str) -> bytes:
     return struct.pack(f"{len(vec)}f", *vec.tolist())
 
 
+MAX_CONTENT = 4000
+
+
+def _sanitize(content: str) -> str:
+    """Memory content is DATA that gets re-injected into future sessions'
+    context: collapse newlines/control chars (prevents fabricating extra
+    injected lines) and strip the hook's marker prefix (prevents spoofing
+    A/B attribution). See the security notes in README."""
+    content = "".join(ch if ch.isprintable() else " " for ch in content)
+    return " ".join(content.replace("[rfm-memory:", "[rfm-memory ").split())
+
+
 def _save(content: str) -> dict:
-    content = content.strip()
+    content = _sanitize(content.strip())
     if not content:
         return {"error": "empty content"}
+    if len(content) > MAX_CONTENT:
+        return {"error": f"content too long ({len(content)} > {MAX_CONTENT} chars); "
+                         "save one self-contained fact per call"}
     d = db()
     dup = d.execute("SELECT id FROM rfm_memories WHERE content = ?", (content,)).fetchone()
     if dup:
@@ -144,6 +159,9 @@ def _delete(memory_id: int) -> dict:
     return {"id": memory_id, "deleted": bool(gone)}
 
 
+EXPORT_CAP = 200_000  # chars; keeps a hostile/huge store from flooding context
+
+
 def _export() -> str:
     d = db()
     rows = d.execute(
@@ -152,10 +170,17 @@ def _export() -> str:
     if not rows:
         return "# mem-rfm export\n\n(no memories)"
     lines = ["# mem-rfm export", ""]
+    used = 0
     for mid, content, created, acc, val, score in rows:
         day = time.strftime("%Y-%m-%d", time.localtime(created))
-        lines.append(f"- [{mid}] ({day}, {acc} uses, value {val:+.2f}, "
-                     f"score {score:.3f}) {content}")
+        line = (f"- [{mid}] ({day}, {acc} uses, value {val:+.2f}, "
+                f"score {score:.3f}) {content}")
+        if used + len(line) > EXPORT_CAP:
+            lines.append(f"... truncated at {EXPORT_CAP} chars "
+                         f"({len(rows)} memories total)")
+            break
+        lines.append(line)
+        used += len(line) + 1
     return "\n".join(lines)
 
 
@@ -197,10 +222,11 @@ def memory_list(limit: int = 20, offset: int = 0) -> list:
     return _list(limit, offset)
 
 
-@mcp.tool()
+@mcp.tool(annotations={"destructiveHint": True})
 def memory_delete(memory_id: int) -> dict:
-    """Permanently delete a memory (and its access history) by id. Use when a
-    memory is wrong, stale, or the user asks to forget something."""
+    """PERMANENTLY delete a memory (and its access history) by id — not
+    undoable. Use when a memory is wrong, stale, or the user asks to forget
+    something. Clients should keep this behind a permission prompt."""
     return _delete(memory_id)
 
 

@@ -69,7 +69,9 @@ def paths(repo, arm):
 
 def prepare(repo, arm, task):
     clone, venv = paths(repo, arm)
-    sh(["git", "-C", clone, "checkout", "-qf", task["base_commit"]])
+    r = sh(["git", "-C", clone, "checkout", "-qf", task["base_commit"]])
+    if r.returncode != 0:
+        raise RuntimeError(f"checkout {task['base_commit']} failed: {r.stderr[-200:]}")
     sh(["git", "-C", clone, "clean", "-fdq"])
     spec = f"{clone}[test]" if repo == "sphinx" else clone
     r = sh(["uv", "pip", "install", "-q", "-e", spec, *era_pins(repo, task)],
@@ -145,8 +147,14 @@ def run_session(repo, arm, task, clone, venv):
         r, timed_out = e, True
     wall = time.time() - t0
     os.makedirs(os.path.join(HERE, "sessions"), exist_ok=True)
+    def _text(x):
+        if isinstance(x, bytes):
+            return x.decode("utf-8", errors="replace")
+        return x if isinstance(x, str) else ""
     with open(os.path.join(HERE, "sessions", f"{task['instance_id']}.{arm}.log"), "w") as f:
-        f.write((getattr(r, "stdout", "") or "") if isinstance(getattr(r, "stdout", ""), str) else "")
+        f.write(_text(getattr(r, "stdout", "")))
+        f.write("\n--- STDERR ---\n")
+        f.write(_text(getattr(r, "stderr", "")))
     return wall, timed_out
 
 
@@ -175,8 +183,13 @@ def main():
                       flush=True)
                 clone, venv = prepare(repo, arm, task)
                 wall, timed_out = run_session(repo, arm, task, clone, venv)
-                apply_test_patch(clone, task)
-                resolved, detail = run_f2p(clone, venv, task)
+                if not apply_test_patch(clone, task):
+                    resolved, detail = None, "SCORING ERROR: test_patch failed to apply"
+                else:
+                    try:
+                        resolved, detail = run_f2p(clone, venv, task)
+                    except subprocess.TimeoutExpired:
+                        resolved, detail = None, "SCORING ERROR: F2P run timed out"
                 rec = {"instance_id": task["instance_id"], "repo": repo,
                        "difficulty": task["difficulty"], "arm": arm,
                        "resolved": resolved, "wall_s": round(wall),

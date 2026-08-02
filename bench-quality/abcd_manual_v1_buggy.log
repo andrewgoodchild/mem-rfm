@@ -1,0 +1,34 @@
+3000 calls; manual entries mapped: 33, unmapped titles: ['Return Due to Stain', 'Return Due to Color', 'Return Due to Size', 'Reset Two-Factor Auth', 'Invalid Credit Card', 'Cart Not Updating', 'Search Not Working', 'Website Too Slow', 'Out-of-Stock General', 'Out-of-Stock One Item', 'Shipping Status', 'Manage Shipping', 'Missing Item', 'Shipping Cost', 'Boots FAQ', 'Shirt FAQ', 'Jeans FAQ', 'Jacket FAQ', 'Pricing FAQ', 'Membership FAQ', 'Timing FAQ', 'Policy FAQ']
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6358.84it/s]
+500/3000
+1000/3000
+1500/3000
+2000/3000
+2500/3000
+3000/3000
+
+=== Manual-RAG vs experience vs both, k=5, sentence-transformers/all-MiniLM-L6-v2 ===
+| condition | hit@5 | hit@1 | hit@5 first500 | hit@5 last500 | n |
+|---|---|---|---|---|---|
+| manual_sim | 0.403 | 0.290 | 0.402 | 0.410 | 3000 |
+| team_sim | 0.874 | 0.711 | 0.788 | 0.894 | 2999 |
+| team_rfm | 0.870 | 0.723 | 0.786 | 0.884 | 2999 |
+| both_sim | 0.880 | 0.714 | 0.826 | 0.894 | 3000 |
+| both_rfm | 0.876 | 0.726 | 0.822 | 0.884 | 3000 |
+
+learning curves hit@1 by quintile:
+| condition | Q1 | Q2 | Q3 | Q4 | Q5 |
+|---|---|---|---|---|---|
+| manual_sim | 0.283 | 0.280 | 0.298 | 0.295 | 0.295 |
+| team_sim | 0.613 | 0.725 | 0.740 | 0.725 | 0.751 |
+| team_rfm | 0.612 | 0.730 | 0.755 | 0.742 | 0.778 |
+| both_sim | 0.632 | 0.723 | 0.742 | 0.723 | 0.752 |
+| both_rfm | 0.625 | 0.728 | 0.757 | 0.740 | 0.778 |
+
+paired deltas:
+  [h@1] team_sim  - manual_sim: +0.4205 [+0.3985,+0.4418] n=2999
+  [h@1] both_rfm  - team_rfm:   +0.0027 [+0.0003,+0.0053] n=2999
+  [h@1] both_rfm  - manual_sim: +0.4353 [+0.4137,+0.4570] n=3000
+  [h@1] both_rfm  - both_sim:   +0.0113 [+0.0037,+0.0193] n=3000
+  [h@5] both_rfm - team_rfm (first 500 aligned calls): +0.0380 [+0.0200,+0.0560]

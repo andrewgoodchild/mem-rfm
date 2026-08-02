@@ -36,23 +36,46 @@ CACHE = os.path.join(common.HERE, "cache-abcd" + common.cache_suffix())
 GUIDELINES = os.path.join(common.HERE, "data", "abcd_guidelines.json")
 
 
+# Titles whose word-sets don't match their canonical intent (v1 of this
+# script missed these 22, silently dropping manual coverage for 52.7% of
+# calls — caught in pre-publication review; results were re-run).
+TITLE_ALIASES = {
+    "Return Due to Stain": "return_stain", "Return Due to Color": "return_color",
+    "Return Due to Size": "return_size", "Reset Two-Factor Auth": "reset_2fa",
+    "Invalid Credit Card": "credit_card", "Cart Not Updating": "shopping_cart",
+    "Search Not Working": "search_results", "Website Too Slow": "slow_speed",
+    "Out-of-Stock General": "out_of_stock_general",
+    "Out-of-Stock One Item": "out_of_stock_one_item",
+    "Shipping Status": "status", "Manage Shipping": "manage",
+    "Missing Item": "missing", "Shipping Cost": "cost",
+    "Boots FAQ": "boots", "Shirt FAQ": "shirt", "Jeans FAQ": "jeans",
+    "Jacket FAQ": "jacket", "Pricing FAQ": "pricing",
+    "Membership FAQ": "membership", "Timing FAQ": "timing",
+    "Policy FAQ": "policy",
+}
+
+
 def load_manual(intents):
-    """55 authored procedure entries, mapped to canonical intents by
-    word-set (titles reorder words: 'Initiate Refund' -> refund_initiate)."""
+    """All 55 authored procedure entries, mapped to canonical intents by
+    word-set (titles reorder words: 'Initiate Refund' -> refund_initiate)
+    with explicit aliases for the rest. Raises if any title fails to map —
+    silent partial coverage invalidates the manual arm."""
     g = json.load(open(GUIDELINES))
     by_words = {frozenset(i.split("_")): i for i in intents}
     entries, unmapped = [], []
     for flow_name, flow in g.items():
         for title, spec in flow["subflows"].items():
             words = frozenset(w.lower() for w in title.split())
-            intent = by_words.get(words)
-            if intent is None:
+            intent = TITLE_ALIASES.get(title) or by_words.get(words)
+            if intent is None or intent not in intents:
                 unmapped.append(title)
                 continue
             steps = "; ".join(a["text"] for a in spec["actions"][:6])
             text = (f"procedure: {title} ({flow_name}). "
                     f"{' '.join(spec.get('instructions', [])[:2])} steps: {steps}")
             entries.append({"intent": intent, "text": text[:1500]})
+    if unmapped:
+        raise RuntimeError(f"unmapped manual titles: {unmapped}")
     return entries, unmapped
 
 
@@ -81,9 +104,10 @@ def main():
         np.savez_compressed(cache, manual=man_embs, memories=mem_embs, queries=q_embs)
 
     n_man = len(manual)
-    # rows: manual entries first (ids 1..n_man, created a month before the
-    # stream), then call experiences (ids n_man+1 ...).
-    rows = [(i + 1, manual[i]["text"], BASE_TS - 30 * 86400.0)
+    # rows: manual entries first (ids 1..n_man, created AT stream start — an
+    # earlier draft aged them 30 days, handicapping them in rfm arms via
+    # recency decay; fixed in review), then call experiences (ids n_man+1..).
+    rows = [(i + 1, manual[i]["text"], BASE_TS)
             for i in range(n_man)]
     rows += [(n_man + i + 1, calls[i]["memory"], BASE_TS + i * CALL_SPACING)
              for i in range(len(calls))]
