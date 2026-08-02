@@ -76,10 +76,14 @@ MAX_CONTENT = 4000
 def _sanitize(content: str) -> str:
     """Memory content is DATA that gets re-injected into future sessions'
     context: collapse newlines/control chars (prevents fabricating extra
-    injected lines) and strip the hook's marker prefix (prevents spoofing
-    A/B attribution). See the security notes in README."""
+    injected lines), defuse the marker prefix (prevents spoofing A/B
+    attribution — format contract with hooks/session_start.py's injection
+    marker and ab/ab_stats.py MARKER_RE) and the hook's close tag (prevents
+    breaking out of its <memories> data block)."""
     content = "".join(ch if ch.isprintable() else " " for ch in content)
-    return " ".join(content.replace("[rfm-memory:", "[rfm-memory ").split())
+    content = content.replace("[rfm-memory:", "[rfm-memory ")
+    content = content.replace("</memories>", "(/memories)")
+    return " ".join(content.split())
 
 
 def _save(content: str) -> dict:

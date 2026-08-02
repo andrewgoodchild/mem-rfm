@@ -80,10 +80,12 @@ def main():
     lines, used = [], 0
     for mid, content, _s in rows:
         # Stored content is untrusted data headed into a model's context:
-        # flatten whitespace/control chars so one memory can't fabricate
-        # extra list items or instruction blocks (server sanitizes at save;
-        # this covers rows written by other clients).
-        flat = " ".join(str(content).split())[:300]
+        # flatten control chars/whitespace and defuse the </memories> close
+        # tag so one memory can't fabricate extra list items or break out of
+        # the data block (server sanitizes identically at save; this covers
+        # rows written by other clients).
+        flat = "".join(ch if ch.isprintable() else " " for ch in str(content))
+        flat = " ".join(flat.replace("</memories>", "(/memories)").split())[:300]
         line = f"- [{mid}] {flat}"
         if used + len(line) > CHAR_BUDGET:
             break
