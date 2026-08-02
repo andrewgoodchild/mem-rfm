@@ -11,15 +11,18 @@ when agent memory actually helps — including the failures.**
 > experiments say: memory pays where **work recurs** — team-pooled support
 > memory gained **+14.5 points** over per-agent stores, outcome-ranking beat
 > similarity at rank-1 (+1.2→+2.0, growing with use), and feedback retired
-> stale procedures **~2.8× faster** after a policy change — and does NOT pay
-> where work is episodic: on scattered real-bug fixing our own system honestly
-> measured a **~6% lesson-transfer rate** (15 of 16 outcomes negative) and no
-> resolution benefit. An authored knowledge base is not a substitute
-> (flat 0.29 hit@1 vs 0.73 for accumulated experience — the customer-phrasing
-> → procedure mapping isn't in any manual). Biggest caveats: the support
-> results are exploratory (not yet pre-registered replications), outcome
-> signals there are oracle evidence-hits, and the live coding A/B is n=27
-> with one executor model.
+> stale procedures markedly faster after a policy change (final-bin hit@1
+> 0.56 vs 0.20) — and does NOT pay where work is episodic: on scattered
+> real-bug fixing our own system honestly measured a **~6% lesson-transfer
+> rate** (15 of 16 outcomes negative) and no resolution benefit. An authored
+> knowledge base is a strong but STATIC baseline: accumulated experience
+> beats the actual agent manual by **+12 points hit@1** (0.71 vs 0.59, the
+> manual's curve flat while experience learns), and the layered system —
+> manual + experience + outcomes — wins outright. Biggest caveats: the
+> support results are exploratory (not yet pre-registered replications),
+> outcome signals there are oracle evidence-hits, and the live coding A/B is
+> n=27 with one executor model. One published number was corrected in
+> pre-publication review (see RESULTS.md “Corrections”).
 
 Memories are scored by **R**ecency and **F**requency (unified as ACT-R
 base-level activation, O(1) per score) plus a **M**onetary-analog value axis:
@@ -52,8 +55,11 @@ benchmarks (LoCoMo, LongMemEval, BEAM), a coding experience-selection
 benchmark (SWE-Bench-CL), a pre-registered composition experiment across
 three embedding models, and **70 live Claude Code sessions fixing real
 pytest and sphinx bugs in a paired A/B** (control vs memory arm, separate
-clones, gold-test scoring). Per-question results and session logs are in
-this repo.
+clones, gold-test scoring). Per-question results and run logs are committed;
+live-session transcripts and memory databases stay local (they can contain
+machine-specific detail), with a redacted audit of the memory stores
+committed at `experiments/swe-ab/memory-audit.md` so the coding-A/B memory
+numbers below are checkable.
 
 ### Memory helps when work RECURS
 
@@ -88,9 +94,11 @@ this repo.
   workload just has little to remember.
 - **On hard tasks under a turn budget, memory is directionally a tax.**
   Resolution across 27 paired real-bug tasks: control 25/27, memory arm
-  23/27 — with both discordant pairs (the two hardest tasks, 1–4h and >4h
-  rated) going to control. Not statistically significant (McNemar p = 0.5),
-  but consistent with the mechanism: retrieval calls and irrelevant lessons
+  23/27 — both discordant pairs going to control. Stated precisely: those
+  two are 2 of the 5 tasks rated above one hour (the other three hard tasks
+  were solved by both arms), so this is consistent with noise (McNemar
+  p = 0.5) as much as with a difficulty effect — though the mechanism is
+  plausible: retrieval calls and irrelevant lessons
   consume budget that hard tasks need. Overhead: ~8–22s/session, dominated
   by embedding-model startup — trivia in a 30-minute interactive session,
   material in 90-second headless ones.
@@ -129,18 +137,27 @@ exploratory (not pre-registered), all with per-condition curves committed:
 3. **Staleness is real, and outcomes are the only layer that fixes it.**
    After a simulated policy revision, similarity-only kept recommending
    dead procedures 1,500 calls later (hit@1 0.20 vs 0.76 pre-change) —
-   stale entries stay semantically similar forever. Outcome feedback
-   (the ticket-reopen signal) retired them **~2.8× faster** (0.56 and
-   climbing). Production design: explicit invalidation for announced
-   changes, outcome-driven forgetting as the safety net for unannounced.
-4. **The authored knowledge base is not a substitute for experience.**
-   RAG over the actual ABCD agent manual scores a flat 0.29 hit@1 — no
-   learning possible, and procedure docs describe agent actions, not
-   customer phrasing; the *diagnosis mapping* (messy customer words →
-   correct procedure) exists only in accumulated calls. Experience memory
-   beats the manual by **+42 points** [+40, +44]; the manual's real value
-   is cold-start scaffolding (+3.8 points in the first 500 calls, fading to
-   nothing at steady state).
+   stale entries stay semantically similar forever. With outcome feedback
+   (the ticket-reopen signal) the recovery curve is above similarity's in
+   every bin and the gap compounds: final-bin hit@1 **0.56 vs 0.20**
+   (point-estimate ratio ~2.8× there, ~1.8–1.9× in earlier bins; per-bin
+   n≈60–80, no CI — treat as a curve, not a rate constant). Production
+   design: explicit invalidation for announced changes, outcome-driven
+   forgetting as the safety net for unannounced ones.
+4. **The authored knowledge base is a strong but static baseline — not a
+   substitute for experience.** RAG over the actual ABCD agent manual (all
+   55 entries) scores 0.59 hit@1 / 0.84 hit@5 — respectable, but *flat*:
+   its curve never moves, while experience climbs to 0.75+ and beats it by
+   **+12.0 points hit@1** [+10.0, +13.9]. The manual's distinctive value is
+   the cold start: manual+experience beats experience-alone by **+7.0
+   points hit@5 over the first 500 calls** [+4.8, +9.4], converging later.
+   Outcome-ranking adds its rank-1 edge on top (+1.3 [+0.6, +2.1]), making
+   manual+experience+outcomes the best condition overall (0.730 hit@1).
+   *Correction disclosure:* the first published version of this experiment
+   claimed a +42-point gap off a title-mapping bug that silently dropped 22
+   of 55 manual entries (52.7% of calls uncovered). Pre-publication review
+   caught it from the committed logs; the experiment was re-run with full
+   coverage and un-aged manual timestamps. Details in RESULTS.md.
 
 Layered conclusion for any support/ops deployment: **manual for day one,
 shared experience for diagnosis, outcomes for maintenance** — and the

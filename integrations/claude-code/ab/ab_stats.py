@@ -33,7 +33,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 SIDECAR = os.path.join(HERE, "ab_sessions.jsonl")
 # Format contract with hooks/session_start.py's injection marker.
-MARKER_RE = re.compile(r"\[rfm-memory:([^\]]+)\]")
+MARKER_RE = re.compile(r"\A\[rfm-memory:([^\]]+)\]")
 
 
 def munge(cwd: str) -> str:
@@ -65,7 +65,7 @@ def peek(path, max_lines=20):
                 first_ts = parse_iso(ts)
             content = (rec.get("message") or {}).get("content")
             if isinstance(content, str) and marker is None:
-                m = MARKER_RE.search(content)
+                m = MARKER_RE.match(content)
                 if m:
                     marker = m.group(1)
     return first_ts, marker
@@ -93,9 +93,10 @@ def transcript_metrics(path):
             if rec.get("type") == "user":
                 content = msg.get("content")
                 if isinstance(content, str):
-                    m = MARKER_RE.search(content)
-                    if m:
-                        marker = m.group(1)
+                    if marker is None:
+                        m = MARKER_RE.match(content)
+                        if m:
+                            marker = m.group(1)
                     # Count only genuine human prompts: hook injections,
                     # command caveats etc. are isMeta and would otherwise
                     # inflate the rfm arm (whose hook injects context).

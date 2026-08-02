@@ -12,3 +12,8 @@ integrations/claude-code/ab/ab_log.jsonl
 __pycache__/
 *.pyc
 integrations/claude-code/ab/ab_sessions.jsonl
+# global safety nets (memory DBs and stray root logs must never publish)
+*.db
+*.db-wal
+*.db-shm
+/*.log

@@ -49,7 +49,9 @@ def sh(cmd, **kw):
 def prepare(arm, task):
     clone = os.path.join(HERE, "clones", arm)
     venv = os.path.join(HERE, "clones", f"{arm}-venv")
-    sh(["git", "-C", clone, "checkout", "-qf", task["base_commit"]])
+    r = sh(["git", "-C", clone, "checkout", "-qf", task["base_commit"]])
+    if r.returncode != 0:
+        raise RuntimeError(f"checkout {task['base_commit']} failed: {r.stderr[-200:]}")
     sh(["git", "-C", clone, "clean", "-fdq"])
     r = sh(["uv", "pip", "install", "-q", "-e", clone, "hypothesis"],
            env={**os.environ, "VIRTUAL_ENV": venv})
@@ -77,11 +79,14 @@ def run_session(arm, task, clone, venv):
     wall = time.time() - t0
     outdir = os.path.join(HERE, "sessions")
     os.makedirs(outdir, exist_ok=True)
+    def _text(x):
+        if isinstance(x, bytes):
+            return x.decode("utf-8", errors="replace")
+        return x if isinstance(x, str) else ""
     with open(os.path.join(outdir, f"{task['instance_id']}.{arm}.log"), "w") as f:
-        f.write((r.stdout or "") if hasattr(r, "stdout") else "")
+        f.write(_text(getattr(r, "stdout", "")))
         f.write("\n--- STDERR ---\n")
-        stderr = r.stderr if isinstance(getattr(r, "stderr", None), str) else ""
-        f.write(stderr or "")
+        f.write(_text(getattr(r, "stderr", "")))
     return wall, timed_out
 
 
@@ -122,7 +127,10 @@ def main():
                 print(f"=== {task['instance_id']} [{arm}] ===", flush=True)
                 clone, venv = prepare(arm, task)
                 wall, timed_out = run_session(arm, task, clone, venv)
-                resolved, detail = score(arm, task, clone, venv)
+                try:
+                    resolved, detail = score(arm, task, clone, venv)
+                except subprocess.TimeoutExpired:
+                    resolved, detail = None, "scoring timed out"
                 rec = {"instance_id": task["instance_id"], "arm": arm,
                        "resolved": resolved, "wall_s": round(wall),
                        "timed_out": timed_out, "detail": detail}

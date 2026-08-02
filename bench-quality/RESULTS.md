@@ -175,3 +175,37 @@ rank-1 edge in the combined store (+0.011 [+0.004,+0.019]; manual entries
 earn outcome scores like any memory). Layered conclusion: manual = day-one
 scaffolding, experience = the diagnosis engine, outcomes = the maintenance
 policy.
+
+## CORRECTIONS (pre-publication review, 2026-08-03)
+
+1. **Manual-RAG experiment re-run — headline number corrected.** v1 of
+   abcd_manual.py mapped only 33/55 manual titles (word-set matching missed
+   22, e.g. 'Reset Two-Factor Auth' -> reset_2fa), leaving 52.7% of calls
+   with no manual entry to retrieve, and aged manual entries 30 days,
+   handicapping them in rfm arms via recency decay. The committed log
+   disclosed "mapped: 33" on line 1; review caught it. Corrected run (55/55
+   mapped, manual created at stream start; abcd_manual.log; buggy log kept
+   as abcd_manual_v1_buggy.log): manual_sim 0.591 hit@1 / 0.844 hit@5
+   (was 0.290/0.403); experience advantage +0.120 hit@1 [+0.100,+0.139]
+   (was +0.435); cold-start value of manual+experience over experience
+   +0.070 hit@5 first-500 [+0.048,+0.094] (was +0.038); outcome-ranking
+   edge in combined store +0.013 [+0.006,+0.021], now free of the age
+   confound; both_rfm best overall (0.730 hit@1). Qualitative conclusions
+   (manual static, experience learns and wins, manual = cold-start value,
+   outcomes on top) unchanged; the "+42 points" magnitude was an artifact.
+2. **Staleness "2.8x" softened.** The multiplier was the final-bin
+   point-estimate ratio (0.561/0.197 at +1,500 calls); earlier bins give
+   1.8-1.9x, per-bin n≈60-80, no CI. Claims now describe the recovery
+   curve, not a rate constant.
+3. **"Both discordant pairs = the two hardest tasks" restated.** They are 2
+   of the 5 tasks rated above one hour; the other three hard tasks were
+   solved by both arms — consistent with noise (McNemar p=0.5).
+4. **Validation provenance documented.** experiments/swe-ab validation ran
+   three times while era pins evolved (validation.v1/.v2/.jsonl are all
+   committed); 8 sphinx tasks including sphinx-7590 (one of the two
+   discordant tasks) validated only under the final pins. 7590's harness
+   environment being marginal is an additional reason to treat the
+   hard-task direction as suggestive, not established.
+5. **Memory-audit artifact committed** (experiments/swe-ab/memory-audit.md)
+   so the 15-of-16-negative / ~6% transfer / +0.58 numbers are checkable;
+   session transcripts and DBs remain untracked.
