@@ -1,8 +1,25 @@
-# mem-rfm
+# mem-rfm — agent memory that ranks itself by outcomes
 
-**Agent memory that ranks itself by outcomes — a SQLite extension, an MCP
-server for Claude Code, and an honest measurement of when memory actually
-helps a coding agent.**
+**A SQLite extension, an MCP server for Claude Code, and ~20 experiments on
+when agent memory actually helps — including the failures.**
+
+> **TL;DR.** The deployable recipe is small: compose similarity search with a
+> **bounded usage prior** — `max(sim,0) × ((1−β) + β·rfm_score(id))`, β=0.3,
+> frozen by a pre-registered experiment after the unbounded version was
+> falsified (−0.32 NDCG under a strong embedder) — and close the loop with
+> **outcome feedback** (`rfm_record_outcome`: did the memory help?). What the
+> experiments say: memory pays where **work recurs** — team-pooled support
+> memory gained **+14.5 points** over per-agent stores, outcome-ranking beat
+> similarity at rank-1 (+1.2→+2.0, growing with use), and feedback retired
+> stale procedures **~2.8× faster** after a policy change — and does NOT pay
+> where work is episodic: on scattered real-bug fixing our own system honestly
+> measured a **~6% lesson-transfer rate** (15 of 16 outcomes negative) and no
+> resolution benefit. An authored knowledge base is not a substitute
+> (flat 0.29 hit@1 vs 0.73 for accumulated experience — the customer-phrasing
+> → procedure mapping isn't in any manual). Biggest caveats: the support
+> results are exploratory (not yet pre-registered replications), outcome
+> signals there are oracle evidence-hits, and the live coding A/B is n=27
+> with one executor model.
 
 Memories are scored by **R**ecency and **F**requency (unified as ACT-R
 base-level activation, O(1) per score) plus a **M**onetary-analog value axis:
@@ -265,3 +282,10 @@ integrations/claude-code/ MCP server, hooks, capture snippet, A/B kit
 PROTOCOL.md              pre-registrations and amendments
 DESIGN_NOTES.md          design decisions, trade-offs, limitations
 ```
+
+## License
+
+Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at
+your option. Datasets are downloaded, never redistributed — provenance and
+terms in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) (note LoCoMo is
+CC BY-NC).
