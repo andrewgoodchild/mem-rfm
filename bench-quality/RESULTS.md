@@ -151,6 +151,9 @@ one embedder. Consistent with the recurrence law: ABCD is the
 maximal-recurrence workload, and it is where memory finally pays.
 
 ## Exploratory: staleness under procedure change (ABCD, NOT pre-registered)
+> SUPERSEDED in part — the "~2.8x" framing below is retracted; see
+> CORRECTIONS #2 (2026-08-03).
+
 abcd_staleness.py: at call 1,500 the 8 highest-volume procedures are
 "revised" — all pre-change memories for them become wrong (retrieval = miss,
 rfm arm receives -1, the ticket-reopen signal). Pre-revision hit@1 ~0.76
@@ -163,6 +166,11 @@ invalidation on announced policy changes (bulk demote/delete), with
 outcome-driven forgetting as the safety net for unannounced ones.
 
 ## Exploratory: manual-RAG vs experience-memory vs both (ABCD)
+> SUPERSEDED — the numbers below are the buggy v1 run (33/55 manual titles
+> mapped, manual entries age-handicapped). See CORRECTIONS #1 (2026-08-03)
+> for the corrected run: manual_sim 0.591 hit@1, experience advantage
+> +0.120, cold-start +0.070.
+
 abcd_manual.py, 3,000 calls, 5 conditions. The authored agent manual (55
 procedure entries, guidelines.json) retrieved as a knowledge base scores
 0.29 hit@1 — FLAT across the whole stream (no learning possible) — because

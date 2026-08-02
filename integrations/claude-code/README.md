@@ -47,7 +47,8 @@ Register in `~/.claude/settings.json`:
 Remove with `claude mcp remove rfm-memory`. The database is plain SQLite —
 inspect it with any sqlite3 that can `.load` the extension. Session-start
 injection is capped at 1,500 characters (token bloat is a leading
-abandonment cause for memory tools).
+abandonment cause for memory tools); `memory_save` rejects content over
+4,000 characters, and `memory_export` truncates at 200,000.
 
 ## A/B testing vs Claude Code built-in memory
 

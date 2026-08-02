@@ -3,7 +3,7 @@
 Redacted export of the two experiment memory stores (content is the
 agent's own saved lessons; access/outcome counts back the README's
 15-of-16-negative / ~6% transfer / +0.58 claims). Generated from the
-local DBs, which stay untracked.
+local DBs, which stay untracked; regenerate with export_audit.py.
 
 ## pytest store: 17 memories, 65 accesses, 16 outcomes (15 negative)
 

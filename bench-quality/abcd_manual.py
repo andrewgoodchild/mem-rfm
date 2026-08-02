@@ -76,7 +76,7 @@ def load_manual(intents):
             entries.append({"intent": intent, "text": text[:1500]})
     if unmapped:
         raise RuntimeError(f"unmapped manual titles: {unmapped}")
-    return entries, unmapped
+    return entries
 
 
 def main():
@@ -87,9 +87,8 @@ def main():
 
     calls = load_calls(args.n)
     intents = {c["intent"] for c in calls}
-    manual, unmapped = load_manual(intents)
-    print(f"{len(calls)} calls; manual entries mapped: {len(manual)}, "
-          f"unmapped titles: {unmapped}", flush=True)
+    manual = load_manual(intents)
+    print(f"{len(calls)} calls; manual entries mapped: {len(manual)}", flush=True)
 
     embedder = common.get_embedder()
     os.makedirs(CACHE, exist_ok=True)
