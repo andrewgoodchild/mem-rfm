@@ -40,10 +40,24 @@ SELECT rfm_record_access(42);        -- retrieved it
 SELECT rfm_record_outcome(42, 1.0);  -- ...and it helped
 ```
 
-As far as we can determine, this is the only agent-memory system that closes
-the loop from *memory access → task outcome → ranking weight* (a 2026 survey
-of 13 coding-memory tools and 9 frameworks found zero others), and the only
-one whose every claim — including the negative ones below — is
+An August 2026 survey of 22 memory systems found the loop from *memory
+access → task outcome → ranking weight* shipping in exactly one other OSS
+system — [Cognee](https://docs.cognee.ai/guides/feedback-system)'s feedback
+weights, off by default and rating answers rather than task outcomes — plus
+two partial takes ([ReMe](https://github.com/agentscope-ai/ReMe) uses outcome
+utility only to prune; a [MemOS plugin](https://github.com/MemTensor/MemOS)
+credits the episode's new traces, not the memories retrieved). As far as we
+can determine, this remains the only system where outcome feedback is a
+**default-on term in the retrieval score**, attributed to **the retrieved
+memory itself**, with **signed negative outcomes** as a ranking force — and
+the only one shipped as an embeddable primitive rather than a service.
+Concurrent 2026 research is converging on the same loop
+([RoMeRL](https://arxiv.org/abs/2608.02508),
+[Chen & Cheng](https://arxiv.org/abs/2606.12945)); a Jul 2026
+mechanism-level review ([arXiv:2607.23942](https://arxiv.org/abs/2607.23942))
+still lists activation-plus-utility as unmigrated from cognitive
+architectures to language agents. And this is, as far as we know, the only
+memory system whose every claim — including the negative ones below — is
 pre-registered, reproducible, and committed to git in auditable order.
 
 ---
