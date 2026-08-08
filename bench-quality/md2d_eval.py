@@ -84,8 +84,9 @@ def main():
     team_common.run(
         "MultiDoc2Dial", calls, manual, args.k,
         CACHE, f"n{args.n}",
-        results_path=os.path.join(common.HERE, "results-md2d",
-                                  "per_call.jsonl") if args.n >= 4000 else None)
+        results_path=os.path.join(
+            common.HERE, "results-md2d",
+            f"per_call{common.cache_suffix()}.jsonl") if args.n >= 4000 else None)
 
 
 if __name__ == "__main__":

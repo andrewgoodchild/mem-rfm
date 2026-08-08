@@ -89,8 +89,9 @@ def main():
     team_common.run(
         "FloDial", calls, manual, args.k,
         CACHE, f"n{args.n}",
-        results_path=os.path.join(common.HERE, "results-flodial",
-                                  "per_call.jsonl") if args.n >= 1500 else None)
+        results_path=os.path.join(
+            common.HERE, "results-flodial",
+            f"per_call{common.cache_suffix()}.jsonl") if args.n >= 1500 else None)
 
 
 if __name__ == "__main__":
