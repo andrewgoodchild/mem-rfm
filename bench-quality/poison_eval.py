@@ -52,8 +52,13 @@ def build_poison(calls, rate, attacker, seed=41):
     memory whose bait is a past query of a top-8-volume intent."""
     from collections import Counter
     rng = random.Random(seed)
-    top = {i for i, _ in Counter(c["label"] if "label" in c else c["intent"]
-                                 for c in calls).most_common(8)}
+    # Sorted list, NOT a set: set iteration order follows the process hash
+    # seed, which diverges the rng stream across runs (caught when a cached
+    # embedding matrix mismatched a rebuilt plan) — the plan must be
+    # bit-identical for anyone re-running this script.
+    top = sorted(i for i, _ in Counter(
+        c["label"] if "label" in c else c["intent"]
+        for c in calls).most_common(8))
     label_key = "label" if "label" in calls[0] else "intent"
     past_by_intent = defaultdict(list)
     poisons = []  # (after_call_idx, ts, text)
@@ -96,6 +101,11 @@ def main():
     if os.path.exists(cache):
         z = np.load(cache)
         mem_embs, q_embs, poi_embs = z["memories"], z["queries"], z["poison"]
+        if len(poi_embs) != len(poisons):
+            raise RuntimeError(
+                f"cache {cache} has {len(poi_embs)} poison embeddings but the "
+                f"plan has {len(poisons)} — delete the cache (plan must be "
+                "deterministic; see build_poison)")
     else:
         mem_embs = common.encode(embedder, [c["memory"] for c in calls])
         q_embs = common.encode(embedder, [c["query"] for c in calls],

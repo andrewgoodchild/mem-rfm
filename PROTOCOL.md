@@ -223,3 +223,15 @@ E2 or E3 failing at r=0.20 kills "outcome feedback as pollution defense"
 pooled stores, and admission control is the only line). E1 failing means
 the mimic attack does not damage this workload — publishable as its own
 null, and the defense claim becomes untestable here rather than supported.
+
+**Post-registration runner fix (2026-08-08, before any ledger entry):** the
+first execution crashed the noise run and exposed hash-order
+nondeterminism in `build_poison` (set iteration diverged the rng stream
+across processes, so the injection plan was not exactly reproducible).
+Fixed to a sorted-order deterministic plan + cache validation; endpoints,
+bars, rates, and seeds unchanged. All five runs re-executed with the fixed
+runner as the official numbers; the aborted first-execution logs are not
+used. First-execution primary endpoints (E1 +0.0127, E2 +0.0084, E3
++0.0155, all CIs > 0) were seen before the fix — disclosed here; no
+selection occurred (the fix changes only plan determinism, and the re-run
+is one-shot regardless of outcome).
