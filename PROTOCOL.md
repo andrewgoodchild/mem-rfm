@@ -115,3 +115,64 @@ N ∈ {1, 2, 3}. Selection among BEAM-cost-safe configs (cost ≤ 0.010, both
 embedders): the most aggressive (smallest N, then higher V threshold), since
 the target effect is forgetting. One-shot test unchanged: KU (delta ≥ +0.10,
 fresh recall unchanged) and LoCoMo cost bar.
+
+---
+
+# Amendment 4 — team-memory replication campaign (STAR, MultiDoc2Dial, FloDial)
+
+**Status: registered before any full-stream run.** The four ABCD results
+(team pooling, outcome-ranking at rank-1, staleness recovery, manual-vs-
+experience) were exploratory. This amendment turns three of them into
+pre-registered replications on datasets with independently authored manuals.
+**Disclosure:** plumbing smoke runs at n ≤ 400 were executed before this
+registration to verify the loaders (star_eval/md2d_eval/flodial_eval,
+outputs in the session log, not committed); their small-n deltas were seen
+by the authors. They are dev evidence, not confirmatory. No full-stream
+number exists at registration time. The staleness result is NOT part of
+this amendment (no revision port exists yet); it remains ABCD-exploratory.
+
+## Datasets and fixed parameters (no tuning anywhere)
+
+Frozen throughout: β = 0.3 bounded composition (`rfm_beta0.3`), k = 5,
+MiniLM-L6-v2, oracle evidence-hit outcomes (+1 label match / −1 other),
+leakage-free sequential protocol. Loaders as committed in
+`bench-quality/{star,md2d,flodial}_eval.py` at this amendment's commit:
+
+- **STAR** n = 6,500: real wizard IDs for the solo/team split (~90 wizards),
+  real collection-time ordering (no shuffle), 24 tasks, manual = the 24
+  authored task definitions. Per-class recurrence ≈ 270 calls/task.
+- **MultiDoc2Dial** n = 4,700: seed-13 shuffle, 8 round-robin agents
+  (disclosed: no natural IDs), 488 document labels, manual = the 488
+  authored documents. Per-class recurrence ≈ 10 — the LOW-recurrence probe.
+- **FloDial** n = 1,844: seed-13 shuffle, 8 agents, 12 flowchart labels,
+  manual = the 12 authored flowcharts + FAQs. hit@5 saturates at 12 classes,
+  so FloDial endpoints bind to hit@1 only. Recurrence ≈ 154.
+
+## Pre-registered endpoints (per dataset unless stated)
+
+- **P1 pooling**: team_sim − solo_sim hit@5 CI > 0 on ALL THREE datasets.
+- **P2 recurrence hypothesis** (the load-bearing claim: experience beats
+  the authored manual where work recurs): team_sim − manual_sim hit@1
+  CI > 0 on STAR and FloDial (high recurrence); prediction: ≤ 0 on
+  MultiDoc2Dial (recurrence ~10 cannot cover 488 classes). A positive MD2D
+  delta would be a pleasant surprise, not a failure; a NEGATIVE STAR or
+  FloDial delta falsifies the recurrence claim.
+- **P3 rank-1 outcome-ranking**: team_rfm − team_sim hit@1 CI > 0 on at
+  least TWO of three datasets, with rank-safety everywhere: team_rfm −
+  team_sim hit@5 ≥ −0.010 (CI midpoint) on all three.
+- **P4 layered system**: both_rfm − manual_sim hit@1 CI > 0 on STAR and
+  FloDial; both_rfm − team_rfm hit@5 CI > 0 over the first 500 aligned
+  calls (cold-start value of the manual) on all three.
+
+Failures are published at full volume alongside successes, as always.
+Secondary (reported, no bars): full quintile curves; a single robustness
+re-run of STAR under Qwen3-Embedding-0.6B (declared now, compute-bounded).
+Per-call outputs committed to `bench-quality/results-{star,md2d,flodial}/`.
+
+## What would falsify the team-memory claims
+
+P1 failing anywhere kills the pooling headline. P2 failing on a
+high-recurrence dataset kills "experience outgrows the manual" (the README
+would then scope it to ABCD). P3 failing everywhere reduces the value axis
+to its bench-sequential evidence. P4 cold-start failing removes the
+"manual for day one" layer of the deployment recipe.
