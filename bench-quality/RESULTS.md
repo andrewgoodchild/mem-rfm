@@ -268,3 +268,34 @@ rank-1 +0.0127 [+0.0080,+0.0175] (essentially identical to MiniLM's
 +0.0125, and rank-safety is positive, +0.0077 h@5 — the bounded prior
 stays safe in the exact regime that falsified the unbounded one); P4
 layered +0.076 [+0.066,+0.087], cold-start +0.032 [+0.016,+0.048].
+
+## Amendment 5 one-shot: bad-actor poisoning of a pooled store
+
+Official runs 2026-08-08 with the deterministic runner (post-registration
+fix disclosed in PROTOCOL.md; first-execution numbers also disclosed
+there). Logs: `poison_star_r20.log` (primary), `poison_star_r05.log`,
+`poison_abcd_r20.log`, `poison_star_junk.log`, `poison_star_noise.log`.
+
+| run | E1 threat (h@1) | E2 defense (DiD, h@1) | E3 exposure (occupancy) |
+|---|---|---|---|
+| **STAR mimic r=0.20 (bars)** | **+0.0111** [+0.0082,+0.0143] **pass** | **+0.0086** [+0.0055,+0.0121] **pass** | **+0.0132** [+0.0113,+0.0152] **pass** |
+| STAR mimic r=0.05 | +0.0027 [+0.0014,+0.0043] | +0.0009 [−0.0007,+0.0025] n.s. | +0.0051 [+0.0041,+0.0063] |
+| ABCD mimic r=0.20 | +0.0210 [+0.0160,+0.0260] | +0.0140 [+0.0093,+0.0190] | +0.0193 [+0.0163,+0.0224] |
+| STAR junk r=0.20 | +0.0000 | +0.0000 | −0.0000 |
+| STAR mimic r=0.20 noise=0.2 | +0.0111 | +0.0055 [+0.0011,+0.0100] | +0.0102 [+0.0086,+0.0119] |
+
+**All three registered bars pass.** Outcome feedback absorbs ~77% of the
+attack's hit@1 damage on STAR (sim loses 1.11 pts, rfm 0.25) and ~67% on
+ABCD; poison's mean top-5 occupancy roughly halves (2.4%→1.1% STAR,
+grows over the stream under sim, held flat under rfm). Survival is the
+starkest view: a poisoned memory sustains up to **29 retrievals under
+similarity vs 6 under outcome ranking** on STAR (38 vs 13 on ABCD).
+The defense survives 20% sign-flipped feedback (E2 +0.0055, CI > 0; max
+survival 7). The junk attacker is completely inert (3 of 869 ever
+retrieved) — damage requires semantic mimicry, which is also why
+admission gates can't stop it. Honest bounds: absolute damage is small on
+these dense stores even at r=0.20 (hit@5 barely moves — abundant genuine
+recurrence is itself a defense), the low-rate r=0.05 DiD is n.s. (exposure
+defense still CI-positive), and outcome signals are oracle throughout;
+first-use damage before feedback lands is inherent to the mechanism and
+visible in the survival floor.
