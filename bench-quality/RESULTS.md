@@ -258,7 +258,8 @@ points over the first 500 aligned calls).
 
 ## Amendment 4 secondary: STAR robustness under Qwen3-Embedding-0.6B
 
-Declared in the registration; run 2026-08-08, log `star_qwen3.log`. All
+Declared in the registration; run 2026-08-08, log `star_qwen3.log`;
+rows: `results-star/per_call-qwen3.jsonl`. All
 four endpoint directions replicate under the stronger embedder: P1 pooling
 +0.240 [+0.225,+0.255]; P2 experience−manual +0.060 [+0.049,+0.071]
 (narrower than MiniLM's +0.211 — the authored manual gains more from the

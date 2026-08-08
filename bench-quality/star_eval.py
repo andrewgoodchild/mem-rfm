@@ -94,8 +94,9 @@ def main():
     team_common.run(
         "STAR", calls, [m for m in manual if m["label"] in labels], args.k,
         CACHE, f"n{args.n}",
-        results_path=os.path.join(common.HERE, "results-star",
-                                  "per_call.jsonl") if args.n >= 6000 else None)
+        results_path=os.path.join(
+            common.HERE, "results-star",
+            f"per_call{common.cache_suffix()}.jsonl") if args.n >= 6000 else None)
 
 
 if __name__ == "__main__":
