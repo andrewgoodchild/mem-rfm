@@ -21,6 +21,12 @@ pub struct RfmConfig {
     /// much usage history can perturb a similarity ranking. Default frozen
     /// at 0.3 by the pre-registered composition experiment (PROTOCOL.md).
     pub beta: f64,
+    /// Hardened mode (0 or 1, default 0): when 1, an actor-tagged
+    /// rfm_record_access / rfm_record_outcome whose actor equals the memory's
+    /// created_by is ignored entirely — closing the self-endorsement channel
+    /// (R/F inflation via self-access, M inflation via self-feedback).
+    /// Untagged calls and untagged memories are always counted (back-compat).
+    pub exclude_self: f64,
     /// When set via rfm_config('now', t), all functions read this instead of
     /// the wall clock. Cleared with rfm_config('now', NULL).
     pub frozen_now: Option<f64>,
@@ -36,9 +42,14 @@ impl Default for RfmConfig {
             w_v: 0.3,
             shrink_k: 3.0,
             beta: 0.3,
+            exclude_self: 0.0,
             frozen_now: None,
         }
     }
+}
+
+pub fn check_exclude_self(v: f64) -> Result<(), String> {
+    if v == 0.0 || v == 1.0 { Ok(()) } else { Err("rfm: exclude_self must be 0 or 1".into()) }
 }
 
 /// Per-parameter range rules. Single owner of what a valid value is (and of
@@ -74,6 +85,7 @@ impl RfmConfig {
             "w_v" => Ok(Some(self.w_v)),
             "shrink_k" => Ok(Some(self.shrink_k)),
             "beta" => Ok(Some(self.beta)),
+            "exclude_self" => Ok(Some(self.exclude_self)),
             "now" => Ok(self.frozen_now),
             _ => Err(format!("rfm: unknown config key '{key}'")),
         }
@@ -103,6 +115,7 @@ impl RfmConfig {
             "w_v" => { check_nonnegative(key, v)?; self.w_v = v }
             "shrink_k" => { check_nonnegative(key, v)?; self.shrink_k = v }
             "beta" => { check_beta(v)?; self.beta = v }
+            "exclude_self" => { check_exclude_self(v)?; self.exclude_self = v }
             "now" => self.frozen_now = Some(v),
             _ => return Err(format!("rfm: unknown config key '{key}'")),
         }

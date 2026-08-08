@@ -76,15 +76,18 @@ class MemoryStore:
     rows: list of (mem_id, text, created_at); embs: matrix aligned with rows.
     """
 
-    def __init__(self, rows, embs, fts=False):
+    def __init__(self, rows, embs, fts=False, creators=None):
         self.db = sqlite3.connect(":memory:")
         self.db.enable_load_extension(True)
         self.db.load_extension(DYLIB)
         self.db.enable_load_extension(False)
         self.db.execute("SELECT rfm_init()")
+        # creators: optional {mem_id: writer} for actor-tagged stores
+        # (hardened-mode evals; None keeps the untagged schema behavior).
         self.db.executemany(
-            "INSERT INTO rfm_memories(id, content, created_at) VALUES (?,?,?)",
-            [(m, t[:200], ts) for m, t, ts in rows])
+            "INSERT INTO rfm_memories(id, content, created_at, created_by) "
+            "VALUES (?,?,?,?)",
+            [(m, t[:200], ts, (creators or {}).get(m)) for m, t, ts in rows])
         self.embs = embs
         self.row_of = {m: i for i, (m, _t, _ts) in enumerate(rows)}
         if fts:
@@ -152,13 +155,28 @@ class MemoryStore:
             ids)}
         return [got[m] for m in ids]
 
-    def record_accesses(self, ids):
-        for m in ids:
-            self.db.execute("SELECT rfm_record_access(?)", (m,))
+    def set_exclude_self(self, on):
+        self.db.execute("SELECT rfm_config('exclude_self', ?)", (1 if on else 0,))
 
-    def record_outcomes(self, pairs):
+    def set_created_by(self, pairs):
+        """Tag memories with their writer (host principal); enables hardened
+        mode's self-endorsement check. pairs: list of (mem_id, actor)."""
+        for m, a in pairs:
+            self.db.execute("UPDATE rfm_memories SET created_by = ? WHERE id = ?", (a, m))
+
+    def record_accesses(self, ids, actor=None):
+        for m in ids:
+            if actor is None:
+                self.db.execute("SELECT rfm_record_access(?)", (m,))
+            else:
+                self.db.execute("SELECT rfm_record_access(?, ?)", (m, actor))
+
+    def record_outcomes(self, pairs, actor=None):
         for m, o in pairs:
-            self.db.execute("SELECT rfm_record_outcome(?, ?)", (m, o))
+            if actor is None:
+                self.db.execute("SELECT rfm_record_outcome(?, ?)", (m, o))
+            else:
+                self.db.execute("SELECT rfm_record_outcome(?, ?, ?)", (m, o, actor))
 
 
 def rank(store: MemoryStore, condition: str, query_emb, candidate_ids, now: float, k: int):

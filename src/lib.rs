@@ -31,7 +31,9 @@ pub fn sqlite3_rfm_init(db: *mut sqlite3) -> Result<()> {
 
     define_scalar_function_with_aux(db, "rfm_init", 0, functions::rfm_init, direct, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_record_access", 1, functions::rfm_record_access, direct, Arc::clone(&cfg))?;
+    define_scalar_function_with_aux(db, "rfm_record_access", 2, functions::rfm_record_access, direct, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_record_outcome", 2, functions::rfm_record_outcome, direct, Arc::clone(&cfg))?;
+    define_scalar_function_with_aux(db, "rfm_record_outcome", 3, functions::rfm_record_outcome, direct, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_recency", 1, functions::rfm_recency, plain, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_frequency", 1, functions::rfm_frequency, plain, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_activation", 1, functions::rfm_activation, plain, Arc::clone(&cfg))?;

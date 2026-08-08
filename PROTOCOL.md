@@ -235,3 +235,71 @@ used. First-execution primary endpoints (E1 +0.0127, E2 +0.0084, E3
 +0.0155, all CIs > 0) were seen before the fix — disclosed here; no
 selection occurred (the fix changes only plan determinism, and the re-run
 is one-shot regardless of outcome).
+
+---
+
+# Amendment 6 — score-gaming (R/F/M exploits) and the hardened defense
+
+**Status: registered before any full-stream exploit run.** Amendment 5's
+attacker gamed *content* (semantic mimicry). This one games the *scoring
+function*: a compromised team member self-accesses its own poison to pump
+Recency/Frequency (→ activation) and self-reports +1 outcomes to pump the
+value EWMA (M), using calls it is entitled to make. Question: does
+score-gaming help the attacker beyond mimicry, and does a `created_by`-based
+hardening remove it **without degrading legitimate memories** — the
+overzealous-protection failure mode.
+
+Extension change under test (committed with this amendment): a nullable
+`created_by` column on rfm_memories, an `actor` column on rfm_accesses,
+optional actor args on `rfm_record_access(id[, actor])` /
+`rfm_record_outcome(id, o[, actor])`, and `rfm_config('exclude_self', 1)`
+— when set, an access/outcome whose actor equals the memory's created_by is
+ignored (no log row, no summary change, no slot consumed). Default 0
+(exact back-compat; verified by the pre-existing integration suite plus a
+new `hardened_mode_ignores_self_endorsement` test). Runner:
+`bench-quality/exploit_eval.py` as committed.
+
+Design honesty: EVERY memory is authored — legit memories by their handling
+agent, poison by the attacker — so hardened mode also excludes an agent
+re-endorsing its OWN past memory. A version tagging only poison would rig
+the utility bars; this does not.
+
+## Conditions & endpoints (STAR primary, r=0.20, pump=50, exploit=both,
+## MiniLM, k=5, frozen β=0.3)
+
+sim (no prior — gaming can't touch it), rfm (prior, gaming allowed),
+rfm_hard (prior + exclude_self). Measured on the same injected stream.
+
+- **X1 exploit is real**: poison top-k occupancy, rfm − sim CI > 0 — i.e.
+  under score-gaming the value axis becomes a *liability*, admitting more
+  poison than plain similarity. (If this is ≤ 0, the bounded prior already
+  neutralized gaming and hardening is unnecessary — that null is the
+  finding.)
+- **X2 hardening removes the lift**: occupancy rfm − rfm_hard CI > 0, and
+  rfm_hard occupancy ≤ sim occupancy (CI midpoint) — the defense returns
+  exposure to at least the no-prior baseline.
+- **U1 utility preserved under attack**: legit hit@1, rfm_hard − rfm CI ≥ 0
+  (hardening must not cost clean-label ranking on the attacked store).
+- **U2 utility preserved on a clean store**: legit hit@1 on an
+  unattacked, fully-authored store, rfm_hard − rfm — **|Δ| ≤ 0.010 is the
+  pass; a drop below −0.010 FAILS and vetoes the defense** regardless of
+  X1/X2. This is the anti-overzealous bar: protection that degrades good
+  memories is rejected even if it stops the attack.
+
+Secondary (reported, no bars): exploit=rf and exploit=m alone (which axis
+is the hole); ABCD replication at r=0.20; a pump ∈ {10,50,200} sweep
+(does more gaming buy more exposure, or does β cap it?).
+
+**Disclosure:** plumbing smoke runs (STAR n≤600, r=0.08, pump=20) were run
+and seen before registration to build the runner; small-n directions
+(X1>0, X2>0, U2≈0) were visible. No full-stream number exists. Bars are set
+at the stronger r=0.20/pump=50 regime, one-shot.
+
+## What would falsify
+
+X1 ≤ 0: score-gaming doesn't beat the bounded prior — hardening is
+motivated only defensively, not empirically, and the README says so. X2
+failing: created_by-exclusion doesn't stop gaming (some other channel
+remains). U2 failing: the defense degrades legitimate memories — it is
+rejected and stays off by default with a documented warning, exactly as
+confident-negative pruning (Step P) was.

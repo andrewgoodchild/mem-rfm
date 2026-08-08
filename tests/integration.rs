@@ -350,3 +350,44 @@ SELECT 'alive', 1;
     assert!(stderr2.contains("outcome must be in [-1, 1]"), "{stderr2}");
     assert!(parse(&stdout).contains_key("alive"), "CLI session must survive errors");
 }
+
+#[test]
+fn hardened_mode_ignores_self_endorsement() {
+    // Amendment 6 hardening: with exclude_self=1, a writer's own accesses and
+    // outcomes on their memory are ignored entirely — the R/F (self-access)
+    // and M (self-feedback) inflation channels close. Other actors and
+    // untagged calls count as before; exclude_self=0 restores original
+    // behavior; the ignored self-outcome must not consume another actor's
+    // outcome slot.
+    let script = r#"
+SELECT rfm_init();
+SELECT rfm_config('now', 1000.0);
+INSERT INTO rfm_memories(id, content, created_at, created_by) VALUES (1, 'x', 0.0, 'mallory');
+SELECT rfm_config('exclude_self', 1);
+SELECT rfm_record_access(1, 'mallory');
+SELECT 'n_self', access_count FROM rfm_memories WHERE id = 1;
+SELECT 'log_self', count(*) FROM rfm_accesses WHERE memory_id = 1;
+SELECT rfm_record_access(1, 'alice');
+SELECT 'n_other', access_count FROM rfm_memories WHERE id = 1;
+SELECT rfm_record_outcome(1, 1.0, 'mallory');
+SELECT 'v_self', value_score FROM rfm_memories WHERE id = 1;
+SELECT 'slot_free', count(*) FROM rfm_accesses WHERE memory_id = 1 AND outcome IS NULL;
+SELECT rfm_record_outcome(1, -1.0, 'alice');
+SELECT 'v_other', value_score FROM rfm_memories WHERE id = 1;
+SELECT 'actor_log', actor FROM rfm_accesses WHERE memory_id = 1;
+SELECT rfm_config('exclude_self', 0);
+SELECT rfm_record_access(1, 'mallory');
+SELECT 'n_off', access_count FROM rfm_memories WHERE id = 1;
+"#;
+    let (stdout, stderr) = run_sql(script);
+    assert!(stderr.is_empty(), "unexpected stderr: {stderr}");
+    let map = parse(&stdout);
+    assert_eq!(map["n_self"], "0", "self-access must not touch the summary");
+    assert_eq!(map["log_self"], "0", "self-access must not log");
+    assert_eq!(map["n_other"], "1", "other-actor access counts");
+    assert_close(&map, "v_self", 0.0);
+    assert_eq!(map["slot_free"], "1", "ignored self-outcome must not consume the slot");
+    assert_close(&map, "v_other", -1.0);
+    assert_eq!(map["actor_log"], "alice");
+    assert_eq!(map["n_off"], "2", "exclude_self=0 restores counting");
+}
