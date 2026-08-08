@@ -15,13 +15,19 @@ CREATE TABLE IF NOT EXISTS rfm_memories (
                                             -- last_access this is everything rfm_activation needs —
                                             -- no scan of rfm_accesses.
   value_score   REAL NOT NULL DEFAULT 0.0,  -- EWMA of outcome feedback in [-1, 1]
-  outcome_count INTEGER NOT NULL DEFAULT 0  -- number of outcomes received; drives confidence shrink
+  outcome_count INTEGER NOT NULL DEFAULT 0, -- number of outcomes received; drives confidence shrink
+  created_by    TEXT                        -- host-set writer/principal id; read by hardened mode
+                                            -- (rfm_config('exclude_self', 1)): a writer's own
+                                            -- accesses/outcomes on their memory are ignored,
+                                            -- closing the self-endorsement channel. NULL = untagged
+                                            -- (always counted).
 );
 
 CREATE TABLE IF NOT EXISTS rfm_accesses (
   memory_id   INTEGER NOT NULL REFERENCES rfm_memories(id),
   accessed_at REAL NOT NULL,
-  outcome     REAL              -- NULL = no feedback; else [-1, 1]
+  outcome     REAL,             -- NULL = no feedback; else [-1, 1]
+  actor       TEXT              -- who accessed (host-supplied); NULL = unknown
 );
 
 -- Not on the scoring hot path (scoring reads one rfm_memories row). Serves the

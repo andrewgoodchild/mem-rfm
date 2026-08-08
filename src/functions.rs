@@ -44,6 +44,30 @@ fn f64_lit(x: f64) -> Result<String> {
     Ok(format!("{x:?}"))
 }
 
+/// Quote a TEXT value as a SQL literal — single quotes doubled, so the
+/// interpolation surface stays closed (ids and f64 literals elsewhere).
+fn text_lit(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "''"))
+}
+
+/// Optional TEXT argument at `idx`: absent or NULL means "actor unknown".
+fn value_actor(values: &[*mut sqlite3_value], idx: usize) -> Result<Option<String>> {
+    if values.len() <= idx || api::value_type(&values[idx]) == api::ValueType::Null {
+        return Ok(None);
+    }
+    Ok(Some(api::value_text(&values[idx])?.to_string()))
+}
+
+/// Hardened-mode self-endorsement test: does `actor` equal the memory's
+/// created_by? Untagged memories (created_by NULL) never match.
+fn is_self(db: *mut sqlite3, id: i64, actor: &str) -> Result<bool> {
+    let sql_text = format!(
+        "SELECT 1 FROM rfm_memories WHERE id = {id} AND created_by = {}",
+        text_lit(actor)
+    );
+    Ok(sql::query_row(db, &sql_text, 1)?.is_some())
+}
+
 /// The extension-maintained columns of one rfm_memories row.
 #[derive(Clone, Copy)]
 struct MemRow {
@@ -122,7 +146,13 @@ pub fn rfm_init(
     _values: &[*mut sqlite3_value],
     _aux: &SharedConfig,
 ) -> Result<()> {
-    sql::exec_multi(db_of(context), SCHEMA)?;
+    let db = db_of(context);
+    sql::exec_multi(db, SCHEMA)?;
+    // Migrate pre-v0.3 databases (CREATE IF NOT EXISTS leaves them without
+    // the actor columns). Errors are ignored: on a current schema the ALTERs
+    // fail with "duplicate column", which is the expected steady state.
+    let _ = sql::exec(db, "ALTER TABLE rfm_memories ADD COLUMN created_by TEXT");
+    let _ = sql::exec(db, "ALTER TABLE rfm_accesses ADD COLUMN actor TEXT");
     api::result_text(context, "ok")?;
     Ok(())
 }
@@ -135,8 +165,27 @@ pub fn rfm_record_access(
     let c = cfg(aux)?;
     let db = db_of(context);
     let id = value_id(values)?;
+    let actor = value_actor(values, 1)?;
     let now = clock::now(&c);
+    // Hardened mode (Amendment 6): a writer touching their own memory
+    // neither logs an access nor freshens the summary — self-access is the
+    // R/F inflation channel. The call still errors on a missing id and
+    // returns the truthful current activation.
+    if c.exclude_self != 0.0 {
+        if let Some(a) = &actor {
+            if is_self(db, id, a)? {
+                let row = load_mem(db, id)?;
+                api::result_double(context, activation_of(&row, now, c.decay));
+                return Ok(());
+            }
+        }
+    }
     let now_lit = f64_lit(now)?;
+    let actor_cols = if actor.is_some() { ", actor" } else { "" };
+    let actor_vals = match &actor {
+        Some(a) => format!(", {}", text_lit(a)),
+        None => String::new(),
+    };
     // Access row first, summary last: the summary is what scoring trusts, so
     // it must never advance ahead of the log (see DESIGN_NOTES on the
     // autocommit crash window). INSERT..SELECT doubles as the existence
@@ -144,8 +193,8 @@ pub fn rfm_record_access(
     sql::exec(
         db,
         &format!(
-            "INSERT INTO rfm_accesses(memory_id, accessed_at) \
-             SELECT id, {now_lit} FROM rfm_memories WHERE id = {id}"
+            "INSERT INTO rfm_accesses(memory_id, accessed_at{actor_cols}) \
+             SELECT id, {now_lit}{actor_vals} FROM rfm_memories WHERE id = {id}"
         ),
     )?;
     // bla_cache ← previous last_access: the one-assignment Petrov k=2 update
@@ -181,6 +230,17 @@ pub fn rfm_record_outcome(
         return Err(Error::new_message("rfm: outcome must be in [-1, 1]"));
     }
     let row = load_mem(db, id)?;
+    // Hardened mode (Amendment 6): self-feedback is the M inflation channel —
+    // ignored entirely (no EWMA update, no access-slot consumption), returning
+    // the unchanged value so callers see a truthful state.
+    if c.exclude_self != 0.0 {
+        if let Some(a) = value_actor(values, 2)? {
+            if is_self(db, id, &a)? {
+                api::result_double(context, row.value);
+                return Ok(());
+            }
+        }
+    }
     if row.n == 0 {
         return Err(Error::new_message(format!(
             "rfm: memory {id} has no recorded access; call rfm_record_access first"
