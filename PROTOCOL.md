@@ -176,3 +176,50 @@ high-recurrence dataset kills "experience outgrows the manual" (the README
 would then scope it to ABCD). P3 failing everywhere reduces the value axis
 to its bench-sequential evidence. P4 cold-start failing removes the
 "manual for day one" layer of the deployment recipe.
+
+---
+
+# Amendment 5 — bad-actor poisoning of a pooled store (STAR primary, ABCD secondary)
+
+**Status: registered before any full-stream poisoning run.** Question: when
+a compromised team member injects plausible bait into a shared store, does
+outcome feedback defend retrieval where similarity cannot? Runner:
+`bench-quality/poison_eval.py` as committed with this amendment. Attack:
+`mimic` — bait is a verbatim PAST customer query of a top-8-volume label
+plus a bogus resolution (embedding-similar to future queries of that label
+by construction; the attack a semantic admission gate cannot catch); one
+poisoned write per genuine call at rate r. Poison is never a hit; in rfm
+arms a retrieved poison earns −1 (oracle failure signal, as throughout).
+Conditions: clean_sim / clean_rfm / pois_sim / pois_rfm, paired per call.
+
+**Disclosures.** (a) A plumbing smoke run (STAR, n=500, r=0.05) was
+executed and seen before this registration: damage was small at r=0.05
+(+0.6 h@1) and the survival stat favored rfm (max 14 vs 9 retrievals per
+poison). No full-stream number exists. (b) The originally drafted E2
+(pois_rfm − pois_sim) was discovered pre-run to conflate the generic
+rank-1 rfm gain with defense; E2 is registered as the
+difference-in-differences below, corrected BEFORE any full run.
+
+## Endpoints (STAR full stream, MiniLM, k=5, frozen β=0.3; bars at r=0.20)
+
+- **E1 threat**: clean_sim − pois_sim hit@1 CI > 0 at r=0.20 (the attack
+  must actually damage similarity retrieval to be worth defending against;
+  if it doesn't, that null is the published finding).
+- **E2 defense (DiD)**: [(clean_sim − pois_sim) − (clean_rfm − pois_rfm)]
+  hit@1 CI > 0 at r=0.20 — outcome feedback absorbs more of the damage
+  than similarity does, net of the generic rfm gain.
+- **E3 exposure**: mean top-k poison occupancy, pois_sim − pois_rfm CI > 0
+  at r=0.20.
+
+Secondary (reported, no bars): r=0.05 sweep; ABCD replication at r=0.20;
+`junk` attacker as attention check (expected ≈ harmless); `--noise 0.2`
+robustness (each outcome sign-flipped with p=0.2); per-poison survival
+distribution (retrievals sustained before dropping out of top-k).
+
+## What would falsify the defense claim
+
+E2 or E3 failing at r=0.20 kills "outcome feedback as pollution defense"
+(the README/research notes would then say the value axis does not protect
+pooled stores, and admission control is the only line). E1 failing means
+the mimic attack does not damage this workload — publishable as its own
+null, and the defense claim becomes untestable here rather than supported.
