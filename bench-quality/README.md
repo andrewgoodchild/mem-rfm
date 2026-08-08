@@ -44,6 +44,14 @@ for i in $(seq 1 20); do mkdir -p data/beam/$i
   curl -sL -o data/beam/$i/probing_questions.json \
     "https://raw.githubusercontent.com/mohammadtavakoli78/BEAM/main/chats/100K/$i/probing_questions/probing_questions.json"
 done
+# STAR (star_eval.py — MIT; authored task flowcharts, real wizard IDs)
+git clone --depth 1 https://github.com/RasaHQ/STAR data/star
+# FloDial (flodial_eval.py — CDLA-Sharing-1.0; authored troubleshooting flowcharts)
+git clone --depth 1 https://github.com/dair-iitd/FloDial data/flodial
+# MultiDoc2Dial (md2d_eval.py — CC-BY-3.0; 488 authored gov documents)
+curl -sL -o data/multidoc2dial.zip \
+  "https://doc2dial.github.io/multidoc2dial/file/multidoc2dial.zip"
+unzip -o -q data/multidoc2dial.zip -d data/ && rm data/multidoc2dial.zip
 ```
 
 ## Setup
