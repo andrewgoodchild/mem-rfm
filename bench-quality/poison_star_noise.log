@@ -1,0 +1,33 @@
+4396 calls, 908 poisoned writes (mimic, rate 0.2)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6387.23it/s]
+500/4396
+1000/4396
+1500/4396
+2000/4396
+2500/4396
+3000/4396
+3500/4396
+4000/4396
+
+=== star poisoning, mimic rate=0.2 noise=0.2, k=5, sentence-transformers/all-MiniLM-L6-v2 ===
+| condition | hit@1 | hit@k | poison occupancy (mean top-k share) |
+|---|---|---|---|
+| clean_sim | 0.931 | 0.968 | — |
+| clean_rfm | 0.942 | 0.972 | — |
+| pois_sim | 0.920 | 0.967 | 0.024 |
+| pois_rfm | 0.937 | 0.972 | 0.014 |
+
+pre-registered endpoints:
+  E1 damage  [h@1] clean_sim - pois_sim:  +0.0111 [+0.0082,+0.0143] n=4395
+  E2 defense [h@1] sim-damage - rfm-damage (DiD): +0.0055 [+0.0011,+0.0100] n=4395
+  E3 occupancy pois_sim - pois_rfm (full stream):  +0.0102 [+0.0086,+0.0119] n=4395
+  (raw pois_rfm - pois_sim h@1, incl. generic rfm gain: +0.0168 [+0.0121,+0.0216] n=4395)
+
+poison occupancy by stream fifth:
+  pois_sim: 0.018 0.024 0.009 0.035 0.034
+  pois_rfm: 0.013 0.013 0.005 0.020 0.017
+
+poisoned-memory survival (retrievals per poisoned memory):
+  pois_sim: 199/908 ever retrieved; mean 2.6, max 29 retrievals
+  pois_rfm: 166/908 ever retrieved; mean 1.8, max 7 retrievals
