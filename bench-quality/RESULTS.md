@@ -255,3 +255,15 @@ bounded-cost guarantee held everywhere, again. **The layered system
 (manual + experience + outcomes) wins on all three**, with the manual's
 cold-start value largest exactly where recurrence is lowest (MD2D +42.6
 points over the first 500 aligned calls).
+
+## Amendment 4 secondary: STAR robustness under Qwen3-Embedding-0.6B
+
+Declared in the registration; run 2026-08-08, log `star_qwen3.log`. All
+four endpoint directions replicate under the stronger embedder: P1 pooling
++0.240 [+0.225,+0.255]; P2 experience−manual +0.060 [+0.049,+0.071]
+(narrower than MiniLM's +0.211 — the authored manual gains more from the
+stronger embedder, h@1 0.846 vs 0.720, but experience still wins); P3
+rank-1 +0.0127 [+0.0080,+0.0175] (essentially identical to MiniLM's
++0.0125, and rank-safety is positive, +0.0077 h@5 — the bounded prior
+stays safe in the exact regime that falsified the unbounded one); P4
+layered +0.076 [+0.066,+0.087], cold-start +0.032 [+0.016,+0.048].
