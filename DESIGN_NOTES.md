@@ -118,6 +118,45 @@ reject NULL and non-finite values instead of letting value_double read them
 as 0.0. tau in `rfm_score_w` remains unused (see above) but is validated like
 every other argument.
 
+## Actor tagging and hardened mode (shared stores)
+
+`rfm_memories.created_by` and `rfm_accesses.actor` are both nullable TEXT,
+set by the host — the extension never invents a principal, it only compares
+the two. With `rfm_config('exclude_self', 1)`, an access or outcome whose
+`actor` equals the memory's `created_by` is ignored **entirely**: no log
+row, no summary change, no outcome slot consumed. That last part matters —
+consuming the slot would let an attacker's ignored self-outcome block a
+legitimate agent's real feedback on the same access.
+
+Why the writer/reader identity comparison rather than rate-limiting or
+anomaly detection: it is the only defense that is O(1), needs no history
+scan, has no tunable threshold to overfit, and cannot be tuned wrong. It
+closes the *entitled* attack — a team member using calls it is allowed to
+make (self-access to pump R and F, self-feedback to pump M) — rather than
+trying to distinguish suspicious usage from enthusiastic usage.
+
+The design deliberately does NOT authenticate the actor string: a host that
+lets a compromised component pass an arbitrary `actor` has already lost
+that battle upstream. This is defense against a *principal* misbehaving
+within its rights, not against principal impersonation, which belongs to
+the host's auth layer.
+
+Default is off (`exclude_self = 0`) for exact back-compat, and because the
+protection is only meaningful when the host actually tags writers; on an
+untagged store it is a no-op. `rfm_init()` runs idempotent `ALTER TABLE ...
+ADD COLUMN` statements so pre-v0.3 databases gain the columns on next load
+(the ALTERs fail harmlessly with "duplicate column" on current schemas).
+
+The utility cost is measured, not asserted (PROTOCOL.md Amendment 6): the
+registered U2 bar rejects the whole mechanism if excluding self-endorsement
+degrades legitimate retrieval by more than 0.01 hit@1 on a clean store —
+the same veto that killed confident-negative pruning in Step P. Note the
+cost is workload-shaped: in a *pooled* store agents mostly retrieve other
+agents' memories, so little is excluded; a single-agent store where every
+memory is self-authored would lose far more of its feedback signal, which
+is why this is documented as a shared-store feature and left off by
+default.
+
 ## Other known limitations
 
 - **Per-connection config, no cross-process coherence.** `rfm_config` lives
