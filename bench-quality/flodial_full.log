@@ -1,0 +1,50 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 7259.14it/s]
+500/1844
+1000/1844
+1500/1844
+
+=== FloDial team memory, k=5, sentence-transformers/all-MiniLM-L6-v2 ===
+1844 calls, 10 labels, 8 agents, manual=12
+| condition | hit@k | hit@1 | hit@k first500 | hit@k last500 | n |
+|---|---|---|---|---|---|
+| solo_sim | 0.957 | 0.929 | 0.852 | 0.998 | 1836 |
+| solo_rfm | 0.957 | 0.928 | 0.852 | 0.998 | 1836 |
+| team_sim | 0.994 | 0.984 | 0.980 | 1.000 | 1843 |
+| team_rfm | 0.995 | 0.985 | 0.982 | 1.000 | 1843 |
+| manual_sim | 1.000 | 0.967 | 1.000 | 1.000 | 1844 |
+| both_sim | 0.999 | 0.988 | 0.998 | 1.000 | 1844 |
+| both_rfm | 0.999 | 0.990 | 0.998 | 1.000 | 1844 |
+
+learning curves hit@k by quintile:
+| condition | Q1 | Q2 | Q3 | Q4 | Q5 |
+|---|---|---|---|---|---|
+| solo_sim | 0.804 | 0.986 | 0.997 | 1.000 | 0.997 |
+| solo_rfm | 0.804 | 0.986 | 0.997 | 1.000 | 0.997 |
+| team_sim | 0.973 | 0.997 | 1.000 | 1.000 | 1.000 |
+| team_rfm | 0.976 | 0.997 | 1.000 | 1.000 | 1.000 |
+| manual_sim | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| both_sim | 0.997 | 0.997 | 1.000 | 1.000 | 1.000 |
+| both_rfm | 0.997 | 0.997 | 1.000 | 1.000 | 1.000 |
+
+learning curves hit@1 by quintile:
+| condition | Q1 | Q2 | Q3 | Q4 | Q5 |
+|---|---|---|---|---|---|
+| solo_sim | 0.769 | 0.962 | 0.965 | 0.965 | 0.984 |
+| solo_rfm | 0.766 | 0.956 | 0.967 | 0.967 | 0.984 |
+| team_sim | 0.957 | 0.978 | 0.992 | 0.992 | 1.000 |
+| team_rfm | 0.962 | 0.978 | 0.992 | 0.995 | 1.000 |
+| manual_sim | 0.959 | 0.959 | 0.949 | 0.992 | 0.976 |
+| both_sim | 0.978 | 0.978 | 0.992 | 0.992 | 1.000 |
+| both_rfm | 0.986 | 0.978 | 0.992 | 0.995 | 1.000 |
+
+paired deltas (pre-registered endpoints first):
+  P1 [h@k] team_sim - solo_sim (pooling):    +0.0403 [+0.0316,+0.0496] n=1836
+  P2 [h@1] team_sim - manual_sim:            +0.0168 [+0.0076,+0.0260] n=1843
+  P3 [h@1] team_rfm - team_sim:              +0.0016 [-0.0005,+0.0043] n=1843
+  P4 [h@1] both_rfm - manual_sim:            +0.0233 [+0.0152,+0.0320] n=1844
+  s1 [h@1] team_rfm - team_sim (last 1000):  +0.0010 [+0.0000,+0.0030] n=1000
+  s2 [h@k] team_rfm - team_sim:              +0.0005 [+0.0000,+0.0016] n=1843
+  s3 [h@1] both_rfm - both_sim:              +0.0022 [+0.0005,+0.0043] n=1844
+  s4 [h@1] both_rfm - team_rfm:              +0.0049 [+0.0022,+0.0081] n=1843
+  s5 [h@k] both_rfm - team_rfm (first 500 aligned): +0.0160 [+0.0060,+0.0280]

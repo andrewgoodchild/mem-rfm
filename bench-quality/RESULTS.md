@@ -217,3 +217,41 @@ policy.
 5. **Memory-audit artifact committed** (experiments/swe-ab/memory-audit.md)
    so the 15-of-16-negative / ~6% transfer / +0.58 numbers are checkable;
    session transcripts and DBs remain untracked.
+
+## Amendment 4 one-shot: team-memory replication (STAR, MultiDoc2Dial, FloDial)
+
+Run 2026-08-08, MiniLM, frozen beta=0.3, k=5, oracle outcomes. Logs:
+`star_full.log`, `md2d_full.log`, `flodial_full.log`; rows:
+`results-{star,md2d,flodial}/per_call.jsonl`. Actual streams vs registered
+caps (disclosed): STAR 4,396 qualifying single-task dialogs of the 6,500
+cap (24 tasks, 115 real wizards — recurrence ≈ 183/task, not the ≈ 270
+estimated at registration); MD2D 4,135 (451 of 488 doc labels appear);
+FloDial 1,844 (10 of 12 flowcharts appear in the train dialogs; the manual
+arm still carries all 12).
+
+| endpoint (registered bar) | STAR | MultiDoc2Dial | FloDial | verdict |
+|---|---|---|---|---|
+| P1 pooling h@5 CI>0, all three | +0.261 [+0.247,+0.275] | +0.375 [+0.359,+0.391] | +0.040 [+0.032,+0.050] | **PASS 3/3** |
+| P2 experience−manual h@1 CI>0 on STAR+FloDial | +0.211 [+0.198,+0.225] | +0.064 [+0.047,+0.082] (prediction was ≤0) | +0.017 [+0.008,+0.026] | **PASS** — see note |
+| P3 rank-1 team_rfm−team_sim h@1 CI>0 on ≥2 of 3 | +0.0125 [+0.0084,+0.0166] | +0.0024 [−0.0039,+0.0090] | +0.0016 [−0.0005,+0.0043] | **FAIL (1 of 3)** |
+| P3 rank-safety h@5 midpoint ≥ −0.010 | +0.005 | −0.004 | +0.000 | held 3/3 |
+| P4 layered both_rfm−manual_sim h@1 CI>0 (STAR, FloDial) | +0.226 [+0.213,+0.239] | +0.127 [+0.112,+0.142] | +0.023 [+0.015,+0.032] | **PASS 3/3** |
+| P4 cold-start both_rfm−team_rfm h@5 first-500 CI>0, all three | +0.032 [+0.018,+0.048] | +0.426 [+0.378,+0.472] | +0.016 [+0.006,+0.028] | **PASS 3/3** |
+
+Verdicts. **Pooling replicates on all three datasets** — the headline
+holds, at +26.1/+37.5/+4.0 points, now including a split by the dataset's
+own 115 human wizards on a naturally time-ordered stream (STAR), answering
+both ABCD caveats. **Experience beats the authored manual on all three**,
+including MultiDoc2Dial where the registered recurrence hypothesis
+predicted it would NOT (≈9 recurrences/label sufficed at h@1) — the
+prediction was falsified in experience's favor; the manual still dominated
+the first 500 calls (h@5 0.808 vs 0.393), so the cold-start half of the
+recurrence story stands. **The rank-1 outcome-ranking edge did not
+replicate beyond STAR** — P3 fails its bar and is published as failed.
+Post-hoc (marked as such, not registered): FloDial's team_sim h@1 is 0.984
+(no headroom) and MD2D's last-1000 trend is positive but n.s.
+(+0.010 [−0.005,+0.025]); neither excuse changes the verdict. The
+bounded-cost guarantee held everywhere, again. **The layered system
+(manual + experience + outcomes) wins on all three**, with the manual's
+cold-start value largest exactly where recurrence is lowest (MD2D +42.6
+points over the first 500 aligned calls).
