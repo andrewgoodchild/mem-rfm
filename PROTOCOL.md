@@ -435,3 +435,64 @@ the README's open-problem statement stands unchanged. U failing rejects
 the trust cap as recommended guidance regardless of T1 (the Step P rule).
 D1 failing means collusion is not detectable from the log by this signal —
 reported as such, with the two other failures.
+
+---
+
+# Amendment 9 — can any vote-aggregation defend a ring? (one_vote×trust, and voter-weighted trust)
+
+**Status: registered before any run of either condition, and before the
+extension change trust_weighted requires.** Amendment 8's trust cap failed
+against collusion (recovered 0.4 of 5.0 points; ring members' writer trust
+was indistinguishable from honest agents'). Diagnosed cause, from the
+committed log: **a ring's cross-endorsements ARE third-party votes**, so
+colluders build each other's reputation exactly as they build each other's
+memory scores. Moving aggregation from memories to authors moved the attack
+up one layer rather than defeating it.
+
+Two candidate answers, both registered here before either is run:
+
+**C1 `rfm_vote_trust` = one_vote + trust (no new code).** one_vote caps each
+crony at ONE endorsement per memory (3 ring votes per poison instead of
+150), while trust aggregates across ALL of an author's memories, so honest
+negatives accumulate against the identity. Each flag failed alone for
+opposite reasons; the question is whether they cancel.
+
+**C2 `rfm_trust2` = voter-weighted trust (new flag
+`rfm_config('trust_weighted', 1)`).** One EigenTrust-style iteration: an
+outcome's contribution to the AUTHOR's reputation is scaled by the VOTER's
+own current trust (value01 of their shrunk EWMA; unknown voters count 0.5).
+As ring members' memories keep failing for outsiders, their own trust
+falls, and their endorsements of each other are discounted toward zero.
+Single-pass and O(1) — it reads the voter's existing rfm_actors row, no
+iteration to fixpoint.
+
+## Endpoints (STAR full stream, collude C=4, r=0.20, pump=50, k=5, β=0.3)
+
+- **V1 (primary)** for EACH of C1, C2: h@1 `defense − rfm` CI > 0.
+- **V2** full restoration: h@1 `defense − sim` ≥ 0 (reported, no bar).
+- **U (veto)** clean-store h@1 `defense − rfm`, |Δ| ≤ 0.010. one_vote alone
+  cost −0.0034, so C1 is expected to carry at least that.
+- **Cross-check**: neither may damage the upvote scenario
+  (h@1 `defense − rfm` ≥ −0.010 there).
+
+## Registered prediction (genuinely uncertain — stated, not hedged)
+
+For C1 the arithmetic cuts both ways and we do not know the sign: the ring
+contributes ~3 votes per poison across ~880 poisons (~2,600 positives),
+while honest agents can each downvote a given poison only once and only if
+it surfaces at all (~1,000 negatives) — favoring the ring — but the EWMA is
+recency-weighted (λ=0.3) and ring votes land early while honest votes
+accrue continuously, which favors the defense late in the stream. **Our
+prediction is that C1 gives partial recovery that still fails V2.**
+
+For C2 we predict recovery > C1's, because discounting is the only
+mechanism here that is not itself majority-controlled. **If C2 also fails,
+we will state in the README that vote-aggregation cannot defend a ring at
+any level, and that detection plus governance — not ranking — is the answer
+(the concentration detector reached 4/4 precision in Amendment 8).**
+
+## What would falsify
+
+V1 failing for both: no vote-aggregation defense works; the open-problem
+statement becomes a stronger negative claim, scoped to these attacks. U
+failing rejects that configuration as guidance regardless of V1.
