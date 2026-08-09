@@ -1,0 +1,48 @@
+4396 calls, 0 poisoned writes, attack=downvote pump=50 attackers=1
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6783.06it/s]
+censorship targets: ['bank_fraud_report', 'party_plan', 'ride_book', 'trip_directions']
+500/4396
+1000/4396
+1500/4396
+2000/4396
+2500/4396
+3000/4396
+3500/4396
+4000/4396
+
+=== star adversary=downvote rate=0.2 pump=50 attackers=1, k=5, sentence-transformers/all-MiniLM-L6-v2 ===
+| condition | legit hit@1 | legit hit@k | poison occupancy | clean-store hit@1 |
+|---|---|---|---|---|
+| sim | 0.931 | 0.968 | 0.000 | — |
+| rfm | 0.944 | 0.975 | 0.000 | 0.944 |
+| rfm_self | 0.943 | 0.973 | 0.000 | 0.944 |
+| rfm_vote | 0.940 | 0.973 | 0.000 | 0.940 |
+| rfm_both | 0.940 | 0.972 | 0.000 | 0.941 |
+
+censored-label breakdown (hit@1 on targeted vs untargeted calls):
+| condition | targeted | untargeted |
+|---|---|---|
+| sim | 0.939 | 0.927 |
+| rfm | 0.960 | 0.937 |
+| rfm_self | 0.958 | 0.935 |
+| rfm_vote | 0.958 | 0.930 |
+| rfm_both | 0.957 | 0.932 |
+
+pre-registered endpoints:
+  A1 attack hurts unhardened:  h@1 sim - rfm:       -0.0136 [-0.0182,-0.0091] n=4396
+  A1t on TARGETED calls:       h@1 sim - rfm:       -0.0214 [-0.0307,-0.0127] n=1498
+  A2t rfm_self  targeted:     h@1 rfm_self - rfm:  -0.0020 [-0.0053,+0.0007] n=1498
+  A2t rfm_vote  targeted:     h@1 rfm_vote - rfm:  -0.0020 [-0.0067,+0.0020] n=1498
+  A2t rfm_both  targeted:     h@1 rfm_both - rfm:  -0.0027 [-0.0073,+0.0020] n=1498
+  A2 rfm_self  recovers:    h@1 rfm_self - rfm:  -0.0016 [-0.0034,+0.0002] n=4396
+     rfm_self  vs sim baseline: h@1 rfm_self - sim:  +0.0121 [+0.0075,+0.0166] n=4396
+  A2 rfm_vote  recovers:    h@1 rfm_vote - rfm:  -0.0048 [-0.0075,-0.0020] n=4396
+     rfm_vote  vs sim baseline: h@1 rfm_vote - sim:  +0.0089 [+0.0045,+0.0132] n=4396
+  A2 rfm_both  recovers:    h@1 rfm_both - rfm:  -0.0041 [-0.0068,-0.0014] n=4396
+     rfm_both  vs sim baseline: h@1 rfm_both - sim:  +0.0096 [+0.0050,+0.0139] n=4396
+
+  utility bars (clean store, no attacker present):
+  U rfm_self  - rfm:  +0.0009 [-0.0009,+0.0030] n=4395
+  U rfm_vote  - rfm:  -0.0034 [-0.0059,-0.0009] n=4395
+  U rfm_both  - rfm:  -0.0027 [-0.0055,+0.0000] n=4395

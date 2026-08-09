@@ -369,3 +369,56 @@ still works solo (occupancy 0.023 vs 0.068 unhardened, ≈ similarity's
 0.024). Guidance: leave `exclude_self` off for single-agent stores (the
 Claude Code integration's default shape), turn it on from ~2 writers up,
 where the cost is statistically indistinguishable from zero.
+
+## Amendment 7 one-shot: downvote censorship, collusion, ballot-stuffing prevention
+
+Runs 2026-08-09, STAR n=4,396, MiniLM, k=5, β=0.3, r=0.20, pump=50,
+colluders=4. Logs: `adv_star_{upvote,downvote,collude}.log`. All three
+registered predictions were confirmed.
+
+| attack | A1: sim − rfm (is the attack real?) | best defense | defense vs sim |
+|---|---|---|---|
+| upvote (self-promotion) | **+0.0150** [+0.0082,+0.0221] real | rfm_self **+0.0359** | **+0.0209** (above baseline) |
+| downvote (targeted censorship) | **−0.0136** [−0.0182,−0.0091] — **no attack effect** | none needed | rfm already +0.0136 above sim |
+| collude (4 cross-endorsers) | **+0.0503** [+0.0419,+0.0589] severe | **none** | **−0.056 to −0.068** (all defenses below sim) |
+
+**1. `one_vote` (ballot-stuffing prevention) does not work — rejected as
+recommended guidance.** Against self-promotion it recovers nothing
+(+0.0014 [−0.0030,+0.0057], n.s.) and leaves the store 1.36 points *below*
+plain similarity, while costing real utility on a clean store (−0.0034
+[−0.0059,−0.0009], CI excludes zero — inside the ±0.010 veto bar but
+buying nothing for it). Mechanism: capping outcomes at one per (actor,
+memory) throttles the *corrective* signal exactly as much as the abusive
+one — an 8-agent team can now land at most 8 negatives on a bad memory
+instead of one per wasted retrieval. It ships as an off-by-default option,
+documented as not recommended. `exclude_self` remains the effective
+single-actor defense (+0.0359 recovery at +0.0009 clean-store cost).
+
+**2. Targeted censorship is structurally impossible under β-bounding
+(prediction 2 confirmed).** An attacker burying every genuine memory of the
+4 highest-volume labels achieved nothing: on the censored labels
+themselves, outcome ranking beat similarity by **+0.0214**, and the
+attacked store's overall hit@1 (0.944) equals its clean-store hit@1
+(0.944) — full absorption. The bounded prior floors demotion at 0.7×,
+which is smaller than the similarity gap between right-label and
+wrong-label memories, so suppression cannot reorder retrieval. The bound
+frozen for rank-safety in the original composition experiment turns out to
+be a security property. Both hardening flags are unnecessary here and
+slightly negative (−0.0016 to −0.0048).
+
+**3. Collusion is a real, unmitigated hole (prediction 3 confirmed).** Four
+attackers cross-endorsing each other's bait cost **5.0 points** of hit@1
+and tripled poison occupancy (0.083 vs similarity's 0.024). No defense
+recovers: `exclude_self` is blind by construction (nobody endorses their
+own), `one_vote` is structurally powerless (colluders *are* distinct
+endorsers), and every configuration lands 5.6–6.8 points *below* the
+no-prior baseline — the defenses marginally worsen it by weakening
+legitimate memories while leaving the attack untouched. **Under collusion,
+do not run a usage prior on a shared store.** A trust/reputation layer
+(per-origin weighting) is the candidate answer and is unbuilt and
+unmeasured.
+
+Bounds: single dataset (STAR), oracle outcomes, actor strings host-asserted
+(impersonation is the host's auth problem, not defended here), and the
+attacker count is fixed at 4 — the collusion damage curve vs colluder count
+is unmeasured.
