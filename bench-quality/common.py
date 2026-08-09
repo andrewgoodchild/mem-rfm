@@ -179,8 +179,10 @@ class MemoryStore:
     def set_one_vote(self, on):
         self.db.execute("SELECT rfm_config('one_vote', ?)", (1 if on else 0,))
 
-    def set_trust(self, on):
+    def set_trust(self, on, weighted=False):
         self.db.execute("SELECT rfm_config('trust', ?)", (1 if on else 0,))
+        if weighted:
+            self.db.execute("SELECT rfm_config('trust_weighted', 1)")
 
     def actor_trust(self):
         """Writer reputation table: {actor: (value, n_outcomes)}."""
