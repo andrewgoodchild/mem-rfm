@@ -189,7 +189,32 @@ fn author_trust_of(db: *mut sqlite3, id: i64, c: &RfmConfig) -> Result<Option<(f
 /// only when the voter is TAGGED and differs from the writer: reputation is
 /// built from identifiable third-party verdicts, never from self-assessment
 /// or from anonymous votes that cannot be checked against authorship.
-fn update_author_trust(db: *mut sqlite3, id: i64, voter: &str, outcome: f64, lambda: f64) -> Result<()> {
+fn update_author_trust(db: *mut sqlite3, id: i64, voter: &str, outcome: f64, c: &RfmConfig) -> Result<()> {
+    let lambda = c.lambda;
+    // Voter weighting (Amendment 9): scale this vote's influence on the
+    // AUTHOR's reputation by the VOTER's own standing, so a ring that loses
+    // standing also loses the power to confer it. An unknown voter counts
+    // 0.5 (neutral) rather than 0, or nobody could ever bootstrap trust.
+    let weight = if c.trust_weighted == 0.0 {
+        1.0
+    } else {
+        match sql::query_row(
+            db,
+            &format!(
+                "SELECT value_score, outcome_count FROM rfm_actors WHERE actor = {}",
+                text_lit(voter)
+            ),
+            2,
+        )? {
+            Some(r) => math::value01(math::shrink(
+                r[0].unwrap_or(0.0),
+                r[1].unwrap_or(0.0) as i64,
+                c.shrink_k,
+            )),
+            None => 0.5,
+        }
+    };
+    let outcome = outcome * weight;
     let author_sql = format!(
         "SELECT 1 FROM rfm_memories WHERE id = {id} AND created_by IS NOT NULL \
          AND created_by <> {}",
@@ -370,7 +395,7 @@ pub fn rfm_record_outcome(
     // Writer reputation is maintained unconditionally (cheap, and it must
     // already exist when trust mode is switched on); only its USE is gated.
     if let Some(a) = value_actor(values, 2)? {
-        update_author_trust(db, id, &a, outcome, c.lambda)?;
+        update_author_trust(db, id, &a, outcome, &c)?;
     }
     api::result_double(context, new_value);
     Ok(())

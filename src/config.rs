@@ -38,6 +38,11 @@ pub struct RfmConfig {
     /// (rfm_actors). Defends endorsement rings, which per-memory rules
     /// cannot see — see PROTOCOL.md Amendment 8.
     pub trust: f64,
+    /// Voter-weighted reputation (0 or 1, default 0): when 1, an outcome's
+    /// contribution to the AUTHOR's reputation is scaled by the VOTER's own
+    /// trust — one EigenTrust-style iteration, so a ring whose members lose
+    /// standing also loses the ability to confer it (Amendment 9).
+    pub trust_weighted: f64,
     /// When set via rfm_config('now', t), all functions read this instead of
     /// the wall clock. Cleared with rfm_config('now', NULL).
     pub frozen_now: Option<f64>,
@@ -56,6 +61,7 @@ impl Default for RfmConfig {
             exclude_self: 0.0,
             one_vote: 0.0,
             trust: 0.0,
+            trust_weighted: 0.0,
             frozen_now: None,
         }
     }
@@ -101,6 +107,7 @@ impl RfmConfig {
             "exclude_self" => Ok(Some(self.exclude_self)),
             "one_vote" => Ok(Some(self.one_vote)),
             "trust" => Ok(Some(self.trust)),
+            "trust_weighted" => Ok(Some(self.trust_weighted)),
             "now" => Ok(self.frozen_now),
             _ => Err(format!("rfm: unknown config key '{key}'")),
         }
@@ -133,6 +140,7 @@ impl RfmConfig {
             "exclude_self" => { check_flag(key, v)?; self.exclude_self = v }
             "one_vote" => { check_flag(key, v)?; self.one_vote = v }
             "trust" => { check_flag(key, v)?; self.trust = v }
+            "trust_weighted" => { check_flag(key, v)?; self.trust_weighted = v }
             "now" => self.frozen_now = Some(v),
             _ => return Err(format!("rfm: unknown config key '{key}'")),
         }

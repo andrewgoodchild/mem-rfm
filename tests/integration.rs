@@ -479,3 +479,42 @@ SELECT 'score_trusted_low', rfm_score(1);
         "trust cap must lower the ring-inflated score: {trusted_low} vs {untrusted}"
     );
 }
+
+#[test]
+fn voter_weighted_trust_discounts_a_discredited_endorser() {
+    // Amendment 9 (C2): with trust_weighted=1 an endorsement's effect on the
+    // AUTHOR's reputation scales by the VOTER's own standing. A voter whose
+    // own memories keep failing loses the power to confer trust; an unknown
+    // voter counts 0.5 (neutral) so reputation can still bootstrap.
+    let script = r#"
+SELECT rfm_init();
+SELECT rfm_config('now', 1000.0);
+INSERT INTO rfm_memories(id, content, created_at, created_by) VALUES (1, 'crony work', 0.0, 'crony');
+INSERT INTO rfm_memories(id, content, created_at, created_by) VALUES (2, 'bait', 0.0, 'mallory');
+INSERT INTO rfm_memories(id, content, created_at, created_by) VALUES (3, 'bait2', 0.0, 'mallory');
+-- discredit the crony: honest agents find the crony's own memory useless
+SELECT rfm_record_access(1, 'alice'); SELECT rfm_record_outcome(1, -1.0, 'alice');
+SELECT rfm_record_access(1, 'bob');   SELECT rfm_record_outcome(1, -1.0, 'bob');
+SELECT rfm_record_access(1, 'carol'); SELECT rfm_record_outcome(1, -1.0, 'carol');
+SELECT 'crony_trust', value_score FROM rfm_actors WHERE actor = 'crony';
+-- unweighted: the discredited crony can still fully endorse mallory
+SELECT rfm_record_access(2, 'crony'); SELECT rfm_record_outcome(2, 1.0, 'crony');
+SELECT 'mallory_unweighted', value_score FROM rfm_actors WHERE actor = 'mallory';
+-- weighted: the same endorsement on a second memory counts far less
+SELECT rfm_config('trust_weighted', 1);
+SELECT rfm_record_access(3, 'crony'); SELECT rfm_record_outcome(3, 1.0, 'crony');
+SELECT 'mallory_weighted', value_score FROM rfm_actors WHERE actor = 'mallory';
+"#;
+    let (stdout, stderr) = run_sql(script);
+    assert!(stderr.is_empty(), "unexpected stderr: {stderr}");
+    let map = parse(&stdout);
+    let crony: f64 = map["crony_trust"].parse().unwrap();
+    assert!(crony < -0.9, "crony must be discredited: {crony}");
+    let unweighted: f64 = map["mallory_unweighted"].parse().unwrap();
+    let weighted: f64 = map["mallory_weighted"].parse().unwrap();
+    assert!(unweighted > 0.9, "unweighted endorsement lands in full: {unweighted}");
+    assert!(
+        weighted < unweighted,
+        "a discredited voter must confer less trust: {weighted} vs {unweighted}"
+    );
+}

@@ -53,6 +53,9 @@ DEFENSES = {
     "rfm_both": (True, True, False),
     "rfm_trust": (False, False, True),      # Amendment 8: writer reputation
     "rfm_self_trust": (True, False, True),  # the recommended pairing
+    # Amendment 9: can any vote-aggregation defend a ring?
+    "rfm_vote_trust": (False, True, True),   # C1: one_vote x trust
+    "rfm_trust2": (False, False, "weighted"),  # C2: voter-weighted trust
 }
 CONDITIONS = ["sim"] + list(DEFENSES)
 
@@ -158,7 +161,7 @@ def main():
         if vote:
             stores[name].set_one_vote(True)
         if trust:
-            stores[name].set_trust(True)
+            stores[name].set_trust(True, weighted=(trust == "weighted"))
 
     # Clean-store arm (no attacker at all) for the utility bars.
     clean_rows = rows[:n_gen]
@@ -170,7 +173,7 @@ def main():
         if vote:
             clean[name].set_one_vote(True)
         if trust:
-            clean[name].set_trust(True)
+            clean[name].set_trust(True, weighted=(trust == "weighted"))
 
     hits1 = defaultdict(list)
     hitsk = defaultdict(list)
