@@ -429,3 +429,53 @@ SELECT 'n_out3', outcome_count FROM rfm_memories WHERE id = 1;
     assert_eq!(map["n_out2"], "2", "a distinct actor still votes");
     assert_eq!(map["n_out3"], "3", "one_vote=0 restores repeat voting");
 }
+
+#[test]
+fn author_trust_caps_ring_endorsement() {
+    // Amendment 8: writer reputation is built from THIRD-PARTY outcomes on an
+    // author's memories and caps each memory's effective value. A ring can
+    // push a memory's own EWMA to +1, but once outsiders' retrievals fail,
+    // the author's trust collapses and the cap drags the score down. The
+    // author's own votes must never build their reputation.
+    let script = r#"
+SELECT rfm_init();
+SELECT rfm_config('now', 1000.0);
+INSERT INTO rfm_memories(id, content, created_at, created_by) VALUES (1, 'bait', 0.0, 'mallory');
+INSERT INTO rfm_memories(id, content, created_at, created_by) VALUES (2, 'other', 0.0, 'mallory');
+-- mallory self-praises: must NOT build reputation
+SELECT rfm_record_access(1, 'mallory');
+SELECT rfm_record_outcome(1, 1.0, 'mallory');
+SELECT 'self_rows', count(*) FROM rfm_actors WHERE actor = 'mallory';
+-- accomplice praises mallory's memory: counts (not self)
+SELECT rfm_record_access(1, 'crony');
+SELECT rfm_record_outcome(1, 1.0, 'crony');
+SELECT 'trust_after_crony', value_score FROM rfm_actors WHERE actor = 'mallory';
+SELECT 'mem_value', value_score FROM rfm_memories WHERE id = 1;
+SELECT rfm_config('trust', 1);
+SELECT 'score_trusted_high', rfm_score(1);
+-- honest agents retrieve it and it fails, repeatedly
+SELECT rfm_record_access(1, 'alice'); SELECT rfm_record_outcome(1, -1.0, 'alice');
+SELECT rfm_record_access(2, 'bob');   SELECT rfm_record_outcome(2, -1.0, 'bob');
+SELECT rfm_record_access(2, 'carol'); SELECT rfm_record_outcome(2, -1.0, 'carol');
+SELECT 'trust_after_honest', value_score FROM rfm_actors WHERE actor = 'mallory';
+SELECT rfm_config('trust', 0);
+SELECT 'score_untrusted', rfm_score(1);
+SELECT rfm_config('trust', 1);
+SELECT 'score_trusted_low', rfm_score(1);
+"#;
+    let (stdout, stderr) = run_sql(script);
+    assert!(stderr.is_empty(), "unexpected stderr: {stderr}");
+    let map = parse(&stdout);
+    assert_eq!(map["self_rows"], "0", "self-praise must not build reputation");
+    let trust_hi: f64 = map["trust_after_crony"].parse().unwrap();
+    assert!(trust_hi > 0.9, "accomplice endorsement builds trust: {trust_hi}");
+    let trust_lo: f64 = map["trust_after_honest"].parse().unwrap();
+    assert!(trust_lo < 0.0, "honest failures collapse trust: {trust_lo}");
+    // With trust on, the cap must bind: score below the untrusted score.
+    let untrusted: f64 = map["score_untrusted"].parse().unwrap();
+    let trusted_low: f64 = map["score_trusted_low"].parse().unwrap();
+    assert!(
+        trusted_low < untrusted,
+        "trust cap must lower the ring-inflated score: {trusted_low} vs {untrusted}"
+    );
+}

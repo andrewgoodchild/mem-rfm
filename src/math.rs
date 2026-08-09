@@ -122,6 +122,22 @@ pub fn value01(v: f64) -> f64 {
     ((v + 1.0) / 2.0).clamp(0.0, 1.0)
 }
 
+/// Author-trust cap (rfm_config('trust', 1)): a memory's demonstrated value
+/// may not exceed its author's demonstrated value. Both inputs are already
+/// confidence-shrunk. `None` (no author, or an author with no third-party
+/// outcomes) applies no cap, so tagging is opt-in and back-compatible.
+///
+/// This is deliberately one-sided: trust can only pull an over-endorsed
+/// memory DOWN toward its author's record, never push a memory above its own
+/// measured value. A ring that inflates each other's memories still has to
+/// survive everyone else's outcomes to keep the cap high.
+pub fn trust_cap(effective_value: f64, author_trust: Option<f64>) -> f64 {
+    match author_trust {
+        Some(t) => effective_value.min(t),
+        None => effective_value,
+    }
+}
+
 /// Headline score: w_a·P(activation) + w_v·value01(effective value).
 /// In [0,1] when w_a + w_v = 1; custom weights scale the range (documented,
 /// not renormalized).

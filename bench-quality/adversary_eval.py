@@ -45,11 +45,14 @@ from team_common import BASE_TS, CALL_SPACING
 
 POISON = "__POISON__"
 
+#             (exclude_self, one_vote, trust)
 DEFENSES = {
-    "rfm": (False, False),
-    "rfm_self": (True, False),
-    "rfm_vote": (False, True),
-    "rfm_both": (True, True),
+    "rfm": (False, False, False),
+    "rfm_self": (True, False, False),
+    "rfm_vote": (False, True, False),
+    "rfm_both": (True, True, False),
+    "rfm_trust": (False, False, True),      # Amendment 8: writer reputation
+    "rfm_self_trust": (True, False, True),  # the recommended pairing
 }
 CONDITIONS = ["sim"] + list(DEFENSES)
 
@@ -148,22 +151,26 @@ def main():
         print(f"censorship targets: {sorted(target_labels)}", flush=True)
 
     stores = {c: common.MemoryStore(rows, all_embs) for c in CONDITIONS}
-    for name, (excl, vote) in DEFENSES.items():
+    for name, (excl, vote, trust) in DEFENSES.items():
         stores[name].set_created_by(created_by)
         if excl:
             stores[name].set_exclude_self(True)
         if vote:
             stores[name].set_one_vote(True)
+        if trust:
+            stores[name].set_trust(True)
 
     # Clean-store arm (no attacker at all) for the utility bars.
     clean_rows = rows[:n_gen]
     clean = {c: common.MemoryStore(clean_rows, mem_embs) for c in DEFENSES}
-    for name, (excl, vote) in DEFENSES.items():
+    for name, (excl, vote, trust) in DEFENSES.items():
         clean[name].set_created_by([(i + 1, agent_of[i + 1]) for i in range(n_gen)])
         if excl:
             clean[name].set_exclude_self(True)
         if vote:
             clean[name].set_one_vote(True)
+        if trust:
+            clean[name].set_trust(True)
 
     hits1 = defaultdict(list)
     hitsk = defaultdict(list)
@@ -242,6 +249,10 @@ def main():
         if (ci + 1) % 500 == 0:
             print(f"{ci + 1}/{len(calls)}", flush=True)
 
+    # Detector state must be read BEFORE the stores close.
+    det = stores["rfm_trust"].collusion_signals()
+    rep = stores["rfm_trust"].actor_trust()
+
     for s in list(stores.values()) + list(clean.values()):
         s.close()
 
@@ -275,17 +286,39 @@ def main():
     if args.attack == "downvote":
         print("  A1t on TARGETED calls:       h@1 sim - rfm:      ",
               paired(hits1_tgt, "sim", hits1_tgt, "rfm"))
-        for name in ("rfm_self", "rfm_vote", "rfm_both"):
-            print(f"  A2t {name:9s} targeted:     h@1 {name} - rfm: ",
+        for name in [d for d in DEFENSES if d != "rfm"]:
+            print(f"  A2t {name:14s} targeted:   h@1 {name} - rfm: ",
                   paired(hits1_tgt, name, hits1_tgt, "rfm"))
-    for name in ("rfm_self", "rfm_vote", "rfm_both"):
-        print(f"  A2 {name:9s} recovers:    h@1 {name} - rfm: ",
+    for name in [d for d in DEFENSES if d != "rfm"]:
+        print(f"  A2 {name:14s} recovers:  h@1 {name} - rfm: ",
               paired(hits1, name, hits1, "rfm"))
-        print(f"     {name:9s} vs sim baseline: h@1 {name} - sim: ",
+        print(f"     {name:14s} vs sim baseline: h@1 {name} - sim: ",
               paired(hits1, name, hits1, "sim"))
+    # Collusion detector (Amendment 8): dissent rate from the access log
+    # alone, plus the writer-reputation table the trust cap already maintains.
+    ranked = sorted(det.items(), key=lambda kv: -kv[1]["reciprocity"])
+    is_attacker = set(attackers)
+    print("\ncollusion detector (log-only forensics):")
+    print("| actor | reciprocity | concentration | dissent | votes | writer trust | attacker? |")
+    print("|---|---|---|---|---|---|---|")
+    for a, sg in ranked[:10]:
+        tv = rep.get(a, (float("nan"), 0))[0]
+        print(f"| {a} | {sg['reciprocity']:.3f} | {sg['concentration']:.3f} "
+              f"| {sg['dissent']:.3f} | {sg['votes']} | {tv:+.3f} "
+              f"| {'YES' if a in is_attacker else 'no'} |")
+    for signal in ("reciprocity", "concentration", "dissent"):
+        order = sorted(det.items(), key=lambda kv: -kv[1][signal])
+        flagged = {a for a, _ in order[:len(is_attacker)]}
+        tp = len(flagged & is_attacker)
+        att = [sg[signal] for a, sg in det.items() if a in is_attacker]
+        hon = [sg[signal] for a, sg in det.items() if a not in is_attacker]
+        sep = (np.mean(att) - np.mean(hon)) if att and hon else float("nan")
+        print(f"  {signal:14s} precision@{len(is_attacker)} = "
+              f"{tp}/{len(flagged)}  separation = {sep:+.3f}")
+
     print("\n  utility bars (clean store, no attacker present):")
-    for name in ("rfm_self", "rfm_vote", "rfm_both"):
-        print(f"  U {name:9s} - rfm: ", paired(clean_h1, name, clean_h1, "rfm"))
+    for name in [d for d in DEFENSES if d != "rfm"]:
+        print(f"  U {name:14s} - rfm: ", paired(clean_h1, name, clean_h1, "rfm"))
 
 
 if __name__ == "__main__":

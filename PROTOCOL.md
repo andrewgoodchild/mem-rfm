@@ -373,3 +373,65 @@ suppression — a security claim would be withdrawn. Prediction 3 failing
 A U-bar failure rejects that defense from recommended guidance even where
 it works; if `one_vote` fails U and defends nothing collusion-wise, it
 ships as an off-by-default option documented as not recommended.
+
+---
+
+# Amendment 8 — writer reputation (trust cap) and collusion detection
+
+**Status: registered before any full-stream run.** Amendment 7 left collusion
+unmitigated: per-memory rules cannot see a ring because colluders are
+genuinely distinct endorsers. This registers a per-WRITER defense and a
+log-only detector.
+
+## Mechanism under test
+
+New extension surface: table `rfm_actors(actor, value_score, outcome_count)`
+maintained by `rfm_record_outcome` — the EWMA of THIRD-PARTY outcomes on
+memories that actor wrote (the author's own votes and untagged votes never
+contribute). `rfm_config('trust', 1)` then caps a memory's effective value
+at its author's shrunk trust: `min(v_eff, trust_eff)`. One-sided by
+construction — trust can only pull an over-endorsed memory DOWN toward its
+author's record, never lift one above its own measured value. Adds no
+tunable (reuses shrink_k, w_v, β) and keeps scoring a one-row read.
+Rationale: a ring inflates each memory's own EWMA, but every failed
+retrieval by an outsider accumulates against the ring member's IDENTITY,
+which no amount of cross-endorsement can launder.
+
+Detector (harness-side, `common.collusion_signals()`, pure log forensics —
+runnable by an auditor on a committed log, no scoring state):
+`dissent`, `concentration`, `reciprocity` as documented in that function.
+
+## Endpoints (STAR full stream, collude C=4, r=0.20, pump=50, k=5, β=0.3)
+
+- **T1 (primary) trust recovers**: h@1 `rfm_trust − rfm` CI > 0.
+- **T2 (secondary, reported, no bar) full restoration**: h@1
+  `rfm_trust − sim` ≥ 0. Smoke suggests partial recovery only; reported
+  either way.
+- **U (veto) utility**: clean-store h@1 `rfm_trust − rfm`, |Δ| ≤ 0.010.
+  A defense that protects by degrading normal operation is rejected.
+- **D1 detector**: `concentration` precision@C = 4/4 with positive
+  attacker/honest separation.
+- **D2 (reported)** the failing detectors, as negative results.
+- **Cross-checks**: trust must not damage the upvote or downvote scenarios
+  (h@1 `rfm_trust − rfm` ≥ −0.010 in each). ABCD collude replication.
+
+## Disclosures
+
+Smoke runs at n=600, pump=20 were executed and seen before registration.
+The detector was REDESIGNED after two failures observed there, both of which
+are registered as reportable negative results rather than discarded: (a)
+`dissent` (disagreement with per-memory consensus) INVERTS — a ring that
+stuffs ballots manufactures the consensus, so honest voters get flagged
+(separation −0.178, precision 0/4); (b) `reciprocity` shows no separation
+because honest teammates also endorse each other's memories in the normal
+course of work (precision 0/4). Only `concentration` (entropy deficit of
+the authors a voter praises) separated (4/4, +0.314). No full-stream number
+exists at registration.
+
+## What would falsify
+
+T1 failing means writer reputation does not defend collusion either, and
+the README's open-problem statement stands unchanged. U failing rejects
+the trust cap as recommended guidance regardless of T1 (the Step P rule).
+D1 failing means collusion is not detectable from the log by this signal —
+reported as such, with the two other failures.
