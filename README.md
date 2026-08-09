@@ -1,28 +1,31 @@
 # mem-rfm — agent memory that ranks itself by outcomes
 
-**A SQLite extension, an MCP server for Claude Code, and ~20 experiments on
+**A SQLite extension, an MCP server for Claude Code, and ~25 experiments on
 when agent memory actually helps — including the failures.**
 
 > **TL;DR.** The deployable recipe is small: compose similarity search with a
 > **bounded usage prior** — `max(sim,0) × ((1−β) + β·rfm_score(id))`, β=0.3,
 > frozen by a pre-registered experiment after the unbounded version was
 > falsified (−0.32 NDCG under a strong embedder) — and close the loop with
-> **outcome feedback** (`rfm_record_outcome`: did the memory help?). What the
-> experiments say: memory pays where **work recurs** — team-pooled support
-> memory gained **+14.5 points** over per-agent stores, outcome-ranking beat
-> similarity at rank-1 (+1.2→+2.0, growing with use), and feedback retired
-> stale procedures markedly faster after a policy change (final-bin hit@1
-> 0.56 vs 0.20) — and does NOT pay where work is episodic: on scattered
-> real-bug fixing our own system honestly measured a **~6% lesson-transfer
-> rate** (15 of 16 outcomes negative) and no resolution benefit. An authored
-> knowledge base is a strong but STATIC baseline: accumulated experience
-> beats the actual agent manual by **+12 points hit@1** (0.71 vs 0.59, the
-> manual's curve flat while experience learns), and the layered system —
-> manual + experience + outcomes — wins outright. Biggest caveats: the
-> support results are exploratory (not yet pre-registered replications),
-> outcome signals there are oracle evidence-hits, and the live coding A/B is
+> **outcome feedback** (`rfm_record_outcome`: did the memory help?). What
+> the experiments say: memory pays where **work recurs** — feedback adds
+> +0.02–0.08 NDCG where queries revisit earlier ground (CIs exclude zero,
+> three embedders), operational knowledge (build quirks, env pins,
+> conventions) earns sustained positive value in live use, and outcome
+> feedback retires stale entries similarity keeps recommending forever —
+> and memory does NOT pay where work is episodic: on scattered real-bug
+> fixing our own system honestly measured a **~6% lesson-transfer rate**
+> (15 of 16 outcomes negative) and no resolution benefit. The outcome
+> axis's proven jobs are safety and maintenance more than raw ranking: its
+> cost is bounded everywhere we measured, it is the stabilizer that keeps
+> any usage prior from collapsing retrieval, and its rank-1 gains are real
+> but narrow (confirmed on two datasets, failed a pre-registered
+> replication bar on two others — published below). A four-dataset
+> team-pooling campaign is included as **measurements, not a product**
+> (§ team-pooled stores). Biggest caveats: outcome signals in the
+> sequential evals are oracle evidence-hits, and the live coding A/B is
 > n=27 with one executor model. One published number was corrected in
-> pre-publication review (see RESULTS.md “Corrections”).
+> pre-publication review (see RESULTS.md "Corrections").
 
 Memories are scored by **R**ecency and **F**requency (unified as ACT-R
 base-level activation, O(1) per score) plus a **M**onetary-analog value axis:
@@ -62,18 +65,18 @@ pre-registered, reproducible, and committed to git in auditable order.
 
 ---
 
-## What we found: where memory helps coding agents, and where it doesn't
+## What we found: where memory helps agents, and where it doesn't
 
 Everything below was measured, not asserted: three public retrieval
 benchmarks (LoCoMo, LongMemEval, BEAM), a coding experience-selection
 benchmark (SWE-Bench-CL), a pre-registered composition experiment across
-three embedding models, and **70 live Claude Code sessions fixing real
-pytest and sphinx bugs in a paired A/B** (control vs memory arm, separate
-clones, gold-test scoring). Per-question results and run logs are committed;
-live-session transcripts and memory databases stay local (they can contain
-machine-specific detail), with a redacted audit of the memory stores
-committed at `experiments/swe-ab/memory-audit.md` so the coding-A/B memory
-numbers below are checkable.
+three embedding models, **70 live Claude Code sessions fixing real pytest
+and sphinx bugs in a paired A/B** (control vs memory arm, separate clones,
+gold-test scoring), and a pre-registered four-dataset dialog campaign.
+Per-question results and run logs are committed; live-session transcripts
+and memory databases stay local (they can contain machine-specific
+detail), with a redacted audit committed at
+`experiments/swe-ab/memory-audit.md`.
 
 ### Memory helps when work RECURS
 
@@ -96,6 +99,14 @@ numbers below are checkable.
   NDCG ≈ 0.01 in ablations). Negative outcome feedback is what breaks that
   loop. If you run any usage-based ranking, you need the value axis or
   something like it.
+- **Staleness is where outcomes earn their keep** (ABCD support corpus,
+  exploratory). After a simulated policy revision, similarity-only kept
+  recommending dead procedures 1,500 calls later (hit@1 0.20 vs 0.76
+  pre-change) — stale entries stay semantically similar forever. With an
+  outcome signal driving demotion, the recovery curve beats similarity's in
+  every bin: final-bin hit@1 **0.56 vs 0.20**. Production design: explicit
+  invalidation for announced changes, outcome-driven forgetting as the
+  safety net for unannounced ones.
 
 ### Memory does NOT help when work is EPISODIC
 
@@ -108,78 +119,64 @@ numbers below are checkable.
   workload just has little to remember.
 - **On hard tasks under a turn budget, memory is directionally a tax.**
   Resolution across 27 paired real-bug tasks: control 25/27, memory arm
-  23/27 — both discordant pairs going to control. Stated precisely: those
-  two are 2 of the 5 tasks rated above one hour (the other three hard tasks
-  were solved by both arms), so this is consistent with noise (McNemar
-  p = 0.5) as much as with a difficulty effect — though the mechanism is
-  plausible: retrieval calls and irrelevant lessons
-  consume budget that hard tasks need. Overhead: ~8–22s/session, dominated
-  by embedding-model startup — trivia in a 30-minute interactive session,
-  material in 90-second headless ones.
+  23/27 — both discordant pairs going to control, consistent with noise
+  (McNemar p = 0.5) as much as with a difficulty effect. Overhead:
+  ~8–22s/session, dominated by embedding-model startup — trivia in a
+  30-minute interactive session, material in 90-second headless ones.
 - **A usage prior does not beat a good retriever at one-shot relevance.**
   Against pure similarity search with a strong embedder, the *unbounded*
-  prior was falsified outright (−0.32 NDCG; pre-registered robustness check),
-  and the frozen bounded form reaches parity, not superiority. If your
-  workload is "answer one question about a haystack," use similarity and
-  skip the prior.
+  prior was falsified outright (−0.32 NDCG; pre-registered robustness
+  check), and the frozen bounded form reaches parity, not superiority. If
+  your workload is "answer one question about a haystack," use similarity
+  and skip the prior.
+- **Rank-1 gains from outcome-ranking are real but narrow — and we
+  published the miss.** The outcome-ranked store beat plain similarity at
+  rank-1 on ABCD (+1.2 → +2.0 as feedback accumulated) and STAR (+1.25;
+  +1.27 under Qwen3, embedder-robust). The pre-registered replication bar
+  required CI > 0 on two of three datasets; it hit only one
+  (MultiDoc2Dial +0.24 [−0.39,+0.90]; FloDial +0.16 [−0.05,+0.43]) — the
+  failure is recorded in RESULTS.md. The bounded-cost guarantee held on
+  every dataset and embedder: outcome-ranking never cost more than −0.4
+  points hit@5 (n.s.). Treat rank-1 lift as a possible bonus, not the
+  reason to deploy the value axis.
 
-**The one-sentence takeaway:** memory for coding agents is not a lesson
-journal — it's an *operational profile* that earns rank through outcomes.
-Capture environment quirks, conventions, decisions, and preferences; let
-per-task trivia fade; and bound how much any of it can override relevance.
+**The one-sentence takeaway:** memory for agents is not a lesson journal —
+it's an *operational profile* that earns rank through outcomes. Capture
+environment quirks, conventions, decisions, and preferences; let per-task
+trivia fade; and bound how much any of it can override relevance.
 
-### The favorable case, quantified: team memory for support work
+### Team-pooled stores: measurements, not a product
 
-If recurrence is what memory needs, maximum-recurrence workloads should show
-maximum value — so we tested customer support on
-[ABCD](https://github.com/asappresearch/abcd) (10k real support
-conversations, 55 annotated procedures, MIT): 3,000-call streams, 8
-simulated agents, no LLM anywhere (the dataset's own procedure annotations
-judge whether memory surfaced the right playbook). Four results, all
-exploratory (not pre-registered), all with per-condition curves committed:
+If recurrence is what memory needs, pooling experience across agents
+multiplies effective recurrence. We measured this on
+[ABCD](https://github.com/asappresearch/abcd) (exploratory), then
+pre-registered a replication (PROTOCOL.md Amendment 4) on three datasets
+with genuinely authored manuals:
 
-1. **Team pooling is the headline: +14.5 points hit@5** [+13.0, +16.1] for
-   one shared store vs per-agent solo stores. The shared store starts its
-   first quintile at the hit-rate solo agents need most of the stream to
-   reach — pooling multiplies effective recurrence by roughly team size.
-2. **Outcome-ranking beat plain similarity in a live-shaped workload for
-   the first time** — at rank-1, the position that matters when handing an
-   agent one suggestion: +1.2 points overall, **+2.0 in the last thousand
-   calls** [+0.7, +3.4], growing as feedback accumulates. At rank-5 the
-   bounded-cost guarantee held yet again (−0.4 points, n.s.). Replicated in
-   the combined-store variant (+1.1, CI > 0).
-3. **Staleness is real, and outcomes are the only layer that fixes it.**
-   After a simulated policy revision, similarity-only kept recommending
-   dead procedures 1,500 calls later (hit@1 0.20 vs 0.76 pre-change) —
-   stale entries stay semantically similar forever. With outcome feedback
-   (the ticket-reopen signal) the recovery curve is above similarity's in
-   every bin and the gap compounds: final-bin hit@1 **0.56 vs 0.20**
-   (point-estimate ratio ~2.8× there, ~1.8–1.9× in earlier bins; per-bin
-   n≈60–80, no CI — treat as a curve, not a rate constant). Production
-   design: explicit invalidation for announced changes, outcome-driven
-   forgetting as the safety net for unannounced ones.
-4. **The authored knowledge base is a strong but static baseline — not a
-   substitute for experience.** RAG over the actual ABCD agent manual (all
-   55 entries) scores 0.59 hit@1 / 0.84 hit@5 — respectable, but *flat*:
-   its curve never moves, while experience climbs to 0.75+ and beats it by
-   **+12.0 points hit@1** [+10.0, +13.9]. The manual's distinctive value is
-   the cold start: manual+experience beats experience-alone by **+7.0
-   points hit@5 over the first 500 calls** [+4.8, +9.4], converging later.
-   Outcome-ranking adds its rank-1 edge on top (+1.3 [+0.6, +2.1]), making
-   manual+experience+outcomes the best condition overall (0.730 hit@1).
-   *Correction disclosure:* the first published version of this experiment
-   claimed a +42-point gap off a title-mapping bug that silently dropped 22
-   of 55 manual entries (52.7% of calls uncovered). Pre-publication review
-   caught it from the committed logs; the experiment was re-run with full
-   coverage and un-aged manual timestamps. Details in RESULTS.md.
+| dataset (domain) | agents | labels | team − solo, hit@5 | pre-reg |
+|---|---|---|---|---|
+| ABCD (customer support) | 8 (imposed) | 55 procedures | **+14.5** [+13.0,+16.1] | exploratory |
+| STAR (task-oriented dialog) | **115 real wizards**, real time-order | 24 flowcharts | **+26.1** [+24.7,+27.5] | **pass** |
+| MultiDoc2Dial (gov-policy QA) | 8 (imposed) | 451 documents | **+37.5** [+35.9,+39.1] | **pass** |
+| FloDial (troubleshooting) | 8 (imposed) | 10 flowcharts | **+4.0** [+3.2,+5.0] | **pass** |
 
-Layered conclusion for any support/ops deployment: **manual for day one,
-shared experience for diagnosis, outcomes for maintenance** — and the
-outcome layer is the part that is not "just RAG," and that no other memory
-system ships. (Privacy note for shared stores: the team store should hold
-delexicalized procedure patterns, never transcripts; customer-specific
-context belongs in per-customer scoped stores where its recurrence lives —
-one DB per scope, and erasure is deleting a file.)
+Accumulated experience also out-ranks each dataset's authored manual at
+hit@1 (**+12.0 / +21.1 / +6.4 / +1.7**, CIs > 0 — MultiDoc2Dial against
+our own registered prediction, disclosed in RESULTS.md), while the manual
+owns the cold start (layering it in is worth **+42.6 points** over
+MultiDoc2Dial's first 500 calls); the layered store — manual + experience
++ outcomes — was the best condition everywhere it ran. A stronger embedder
+narrows the experience-vs-manual gap (STAR: +21.1 → +6.0 under Qwen3) but
+does not close it.
+
+> **These are measurements, not a product.** A production shared memory
+> store owes its users access control, tenancy isolation, a poisoning
+> threat model, and deletion guarantees — none of which this repo provides
+> or currently intends to. The numbers say pooling is worth engineering
+> for; the engineering is future work. If you experiment anyway: pool
+> delexicalized procedure patterns, never transcripts; keep
+> customer-specific context in per-customer scoped stores; one DB per
+> scope, so erasure is deleting a file.
 
 ---
 
@@ -212,10 +209,11 @@ alternatives failed feasibility by ~40×). One-shot test results with frozen
 Also killed by their own pre-registered bars, and documented rather than
 buried: BM25 hybrid fusion (a dev-set win on 2 repos reversed on 6 held-out
 repos — the repo split caught the overfit), confident-negative pruning
-(cannot be simultaneously retrieval-safe and forgetting-potent), and three
-content-based value signals (semantic richness, diversity, demand-recurrence
-— all weak or benchmark-dependent as priors; provenance/is-user was the only
-content prior that beat similarity anywhere).
+(cannot be simultaneously retrieval-safe and forgetting-potent), the
+rank-1 replication bar above (1 of 3), and three content-based value
+signals (semantic richness, diversity, demand-recurrence — all weak or
+benchmark-dependent as priors; provenance/is-user was the only content
+prior that beat similarity anywhere).
 
 ## The theory, in three equations
 
@@ -266,13 +264,75 @@ joining stats with bootstrap CIs).
 | function | returns |
 |---|---|
 | `rfm_init()` | creates tables + index (idempotent) |
-| `rfm_record_access(id)` | logs an access; returns new activation |
-| `rfm_record_outcome(id, o)` | feedback `o ∈ [-1,1]` for the latest access (once per access); returns value EWMA |
+| `rfm_record_access(id[, actor])` | logs an access; returns new activation. optional `actor` (host principal) enables hardened mode |
+| `rfm_record_outcome(id, o[, actor])` | feedback `o ∈ [-1,1]` for the latest access (once per access); returns value EWMA |
 | `rfm_prior(id)` | `(1−β) + β·rfm_score(id)` — the bounded multiplier for composing with similarity |
 | `rfm_score(id)` | `w_a·P(activation) + w_v·value₀₁` |
 | `rfm_activation(id)` / `rfm_recency(id)` / `rfm_frequency(id)` / `rfm_value(id)` | individual components |
 | `rfm_score_w(id, w_a, w_v[, tau, decay])` | parameterised variant |
-| `rfm_config(key[, value])` | per-connection: `tau, decay, lambda, w_a, w_v, shrink_k, beta, now` |
+| `rfm_config(key[, value])` | per-connection: `tau, decay, lambda, w_a, w_v, shrink_k, beta, exclude_self, now` |
+
+**Hardened mode (shared stores).** Tag memories with a writer via the
+`created_by` column and pass the accessing principal as `actor`; then
+`rfm_config('exclude_self', 1)` makes the extension ignore any
+access/outcome whose actor equals the memory's writer — closing the
+self-endorsement channel by which a compromised writer inflates its own
+memories' R, F, or M. Off by default (exact back-compat).
+`rfm_config('one_vote', 1)` additionally caps outcomes at one per (actor,
+memory); it is **not recommended** — see below.
+
+### What a bad team member can and cannot do
+
+Measured, not asserted (PROTOCOL.md Amendments 5–7; STAR + ABCD, attacker
+injecting at 20% of call volume):
+
+| attack | unhardened outcome ranking | defense |
+|---|---|---|
+| **Write convincing junk** (bait copied from real queries) | damaged but self-correcting: absorbs ~⅔–¾ of the hit@1 damage, holds exposure flat where similarity's *grows*, same fake served 6× instead of 29× | inherent — the demotion loop |
+| **Self-promote** (self-access to pump R/F, self-rate to pump M) | **worse than no prior at all** (−1.5 pts vs similarity; −9.8 at heavy pumping) | `exclude_self` — full recovery, +2.1 pts *above* similarity, ≈free on a team |
+| **Censor** (bury a rival procedure with negative votes) | **fails outright** — β-bounding floors demotion at 0.7×, smaller than the similarity gap it would need to close; censored labels scored +2.1 pts *better* than similarity | none needed |
+| **Collude** (4 members cross-endorsing each other's junk) | **−5.0 pts**; six defenses tried, best recovers 16% | **detect, don't rank** — see below |
+
+**Recommended for a shared store: `exclude_self` + `trust`.** Best measured
+configuration against single bad actors — 0.941 hit@1 at 0.006 poison
+occupancy, a quarter of plain similarity's exposure, free on a clean store.
+
+**Rejected on evidence, and shipped off by default so you can check the
+claim.** `one_vote` (ballot-stuffing prevention) throttles the *corrective*
+signal as hard as the abusive one — a team can then land at most one
+negative per member on a bad memory, instead of one per wasted retrieval —
+so it defends nothing measurable and costs −0.34 pts on a clean store.
+Symmetric caps ration the immune response along with the attack; asymmetric
+defenses (which remove an *illegitimate* signal) do not.
+
+**Collusion: you cannot out-rank a ring, but you can spot one.** Six
+mechanisms were measured against four cross-endorsing writers —
+`exclude_self`, `one_vote`, both together, writer trust, voter-weighted
+trust, and endorser liability. Only liability recovers anything with a CI
+above zero (+0.8 of the 5.0 points lost, and it collapses ring reputation
+to −0.734 against honest agents' +0.950), and none restores the baseline.
+They fail for one reason: **the ring controls votes at every level of
+aggregation**, so re-aggregating votes cannot escape it. Detection is the
+part that works — endorsement concentration identified all four colluders
+on both datasets, from the log alone. Run
+[`integrations/audit.sql`](integrations/audit.sql) against your store: it
+reports writer reputation, endorsement concentration, and mutual-endorsement
+pairs, and documents the governance actions (quarantine, freeze, revoke,
+scope erasure) as explicit SQL. Those are deliberately manual — an automated
+response to a detector is itself an attack surface, since a false positive
+silently deletes an honest colleague's work.
+
+Scope: `exclude_self` costs −0.80 pts on a *single-agent* store (where
+every memory is self-authored, so all feedback is discarded) and nothing
+measurable from ~2 writers up; actor strings are host-asserted, so this
+defends against a principal misbehaving within its rights, not against
+impersonation.
+
+To turn any of this on in the Claude Code server, set `RFM_ACTOR` to this
+agent's principal id (which tags writes and votes) and `RFM_HARDEN`, e.g.
+`RFM_HARDEN=exclude_self,trust`. Both default to unset — correct for a
+single-user store, where the flags would be inert at best and costly at
+worst.
 
 `rfm_config('now', t)` freezes the clock (tests/replay). Inputs are strictly
 typed: ids must be INTEGER, NULL/non-finite numerics error rather than
@@ -281,24 +341,33 @@ summary.
 
 ## Methodology, or: why you can trust the negative results
 
-- Composition and feature experiments were **pre-registered** (`PROTOCOL.md`
-  + amendments committed before their runs), with dev/test splits by
-  benchmark, repo, and embedder, one-shot test evaluation, and full sweep
-  curves published.
-- **Per-question outputs are committed** (`bench-quality/results-*/`) so any
+- Composition, feature, and replication experiments were **pre-registered**
+  (`PROTOCOL.md` + Amendments 1–4 committed before their runs), with
+  dev/test splits by benchmark, repo, and embedder, one-shot evaluation,
+  and full sweep curves published. The replication campaign's smoke runs
+  (n ≤ 400) are disclosed inside Amendment 4 itself.
+- **Per-question outputs are committed**
+  (`bench-quality/results-*/`, incl. `results-{star,md2d,flodial}/`) so any
   table cell is auditable; run logs likewise.
 - **Failures are reported at the same volume as successes** — see
   `bench-quality/RESULTS.md` for the complete ledger including everything
-  that died.
+  that died (most recently the rank-1 replication bar, 1 of 3).
 - Benchmarks used: [LoCoMo](https://github.com/snap-research/locomo)
   (CC BY-NC), [LongMemEval](https://github.com/xiaowu0162/LongMemEval),
-  [BEAM](https://github.com/mohammadtavakoli78/BEAM), and
+  [BEAM](https://github.com/mohammadtavakoli78/BEAM),
   [SWE-Bench-CL](https://github.com/thomasjoshi/agents-never-forget)
-  (heuristic gold links — disclosed). All evals run without LLM judges or
-  API keys. Known limits: SWE-Bench-CL's file-overlap labels are noisy; the
-  live A/B is n=27 with one executor model; retrieval metrics are proxies
-  for task success except in the live A/B, where gold tests scored outcomes
-  directly.
+  (heuristic gold links — disclosed),
+  [ABCD](https://github.com/asappresearch/abcd) (MIT),
+  [STAR](https://github.com/RasaHQ/STAR) (MIT),
+  [MultiDoc2Dial](https://doc2dial.github.io/multidoc2dial/) (CC BY 3.0),
+  and [FloDial](https://dair-iitd.github.io/FloDial/) (CDLA-Sharing-1.0).
+  All evals run without LLM judges or API keys — retrieval hits are judged
+  by each dataset's own procedure/document annotations (oracle outcomes,
+  disclosed). Known limits: SWE-Bench-CL's file-overlap labels are noisy;
+  the live A/B is n=27 with one executor model; MultiDoc2Dial and FloDial
+  lack natural agent IDs and ordering (round-robin + seeded shuffle,
+  disclosed); retrieval metrics are proxies for task success except in the
+  live A/B, where gold tests scored outcomes directly.
 
 ## Repository
 
@@ -310,7 +379,8 @@ bench/                   O(1) throughput benchmark
 bench-quality/           all retrieval benchmarks + RESULTS.md ledger
 experiments/swe-ab/      the live paired A/B on real bugs (runner + results)
 integrations/claude-code/ MCP server, hooks, capture snippet, A/B kit
-PROTOCOL.md              pre-registrations and amendments
+integrations/audit.sql   shared-store forensics + governance recipes
+PROTOCOL.md              pre-registrations and amendments (1–4)
 DESIGN_NOTES.md          design decisions, trade-offs, limitations
 ```
 
