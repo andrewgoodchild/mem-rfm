@@ -299,3 +299,47 @@ recurrence is itself a defense), the low-rate r=0.05 DiD is n.s. (exposure
 defense still CI-positive), and outcome signals are oracle throughout;
 first-use damage before feedback lands is inherent to the mechanism and
 visible in the survival floor.
+
+## Amendment 6 one-shot: score-gaming (R/F/M) and the hardened defense
+
+Runs 2026-08-09, MiniLM, k=5, frozen β=0.3, mimic injection r=0.20. Logs:
+`exploit_star_both.log` (primary), `exploit_star_{rf,m}.log`,
+`exploit_abcd_both.log`, `exploit_star_pump{10,200}.log`.
+
+| endpoint (bar) | STAR (pump=50) | ABCD (pump=50) | verdict |
+|---|---|---|---|
+| X1 exploit real: occ rfm − sim CI>0 | **+0.0444** [+0.0409,+0.0479] | **+0.0491** [+0.0447,+0.0539] | **pass** |
+| X2 hardening removes lift: occ rfm − rfm_hard CI>0, and rfm_hard ≤ sim | **+0.0571** [+0.0533,+0.0610]; 0.011 ≤ 0.024 | **+0.0671** [+0.0615,+0.0726]; 0.035 ≤ 0.053 | **pass** |
+| U1 utility under attack: h@1 rfm_hard − rfm CI ≥ 0 | **+0.0562** [+0.0494,+0.0632] | **+0.0650** [+0.0553,+0.0750] | **pass** |
+| U2 utility on clean store: \|Δ\| ≤ 0.010 (veto bar) | **+0.0009** [−0.0009,+0.0030] | **+0.0020** [−0.0020,+0.0060] | **pass** |
+
+**The headline is a warning about our own mechanism: under score-gaming an
+unhardened usage prior is WORSE THAN NO PRIOR.** At pump=50 the attacker
+lifts poison occupancy to 0.068 vs similarity's 0.024 and drives legitimate
+hit@1 *below* the similarity baseline (0.884 vs 0.920); at pump=200,
+0.127 occupancy and 0.822 hit@1 — a 9.8-point utility loss inflicted by an
+attacker doing nothing but calling `rfm_record_access`/`rfm_record_outcome`
+on its own memories. The bounded prior caps the gain (multiplier ceiling
+1.0 vs a demoted 0.7 — a 1.43× reorder advantage, enough precisely because
+mimic bait has near-identical similarity by construction) but does not
+remove it.
+
+**Hardening is complete, not partial.** `rfm_hard` is bit-identical across
+every exploit mode and pump level (h@1 0.941, occupancy 0.011 on STAR) —
+self-endorsement exclusion makes the attack a no-op, so gaming harder buys
+nothing. It also lands *below* the similarity baseline on exposure, i.e.
+the value axis returns to being an asset. (U2 is likewise identical across
+STAR runs: the clean baseline does not depend on exploit parameters — a
+consistency check, not a copy-paste.)
+
+**Which axis is the soft target: M, not R/F.** At equal pump, value-EWMA
+gaming yields +0.0234 occupancy lift vs +0.0075 for recency/frequency
+gaming — activation is logarithmic in access count (diminishing returns),
+while the value EWMA saturates toward +1 within a few self-reports. Pump
+sweep: +0.0048 (10) → +0.0444 (50) → +0.1029 (200); gaming scales with
+attacker effort, hardened mode does not move.
+
+Bounds: oracle outcomes throughout; the attacker is a single principal
+(collusion between principals is not modeled and would defeat
+self-exclusion); actor strings are host-asserted, so this defends against a
+principal misbehaving within its rights, not impersonation.
