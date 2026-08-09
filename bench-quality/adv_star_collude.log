@@ -1,0 +1,34 @@
+4396 calls, 908 poisoned writes, attack=collude pump=50 attackers=4
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 6078.19it/s]
+500/4396
+1000/4396
+1500/4396
+2000/4396
+2500/4396
+3000/4396
+3500/4396
+4000/4396
+
+=== star adversary=collude rate=0.2 pump=50 attackers=4, k=5, sentence-transformers/all-MiniLM-L6-v2 ===
+| condition | legit hit@1 | legit hit@k | poison occupancy | clean-store hit@1 |
+|---|---|---|---|---|
+| sim | 0.920 | 0.966 | 0.024 | — |
+| rfm | 0.869 | 0.966 | 0.083 | 0.944 |
+| rfm_self | 0.864 | 0.966 | 0.086 | 0.944 |
+| rfm_vote | 0.856 | 0.964 | 0.087 | 0.940 |
+| rfm_both | 0.852 | 0.964 | 0.092 | 0.941 |
+
+pre-registered endpoints:
+  A1 attack hurts unhardened:  h@1 sim - rfm:       +0.0503 [+0.0419,+0.0589] n=4396
+  A2 rfm_self  recovers:    h@1 rfm_self - rfm:  -0.0059 [-0.0091,-0.0030] n=4396
+     rfm_self  vs sim baseline: h@1 rfm_self - sim:  -0.0562 [-0.0651,-0.0475] n=4396
+  A2 rfm_vote  recovers:    h@1 rfm_vote - rfm:  -0.0134 [-0.0182,-0.0086] n=4396
+     rfm_vote  vs sim baseline: h@1 rfm_vote - sim:  -0.0637 [-0.0723,-0.0553] n=4396
+  A2 rfm_both  recovers:    h@1 rfm_both - rfm:  -0.0173 [-0.0223,-0.0123] n=4396
+     rfm_both  vs sim baseline: h@1 rfm_both - sim:  -0.0676 [-0.0764,-0.0589] n=4396
+
+  utility bars (clean store, no attacker present):
+  U rfm_self  - rfm:  +0.0009 [-0.0009,+0.0030] n=4395
+  U rfm_vote  - rfm:  -0.0034 [-0.0059,-0.0009] n=4395
+  U rfm_both  - rfm:  -0.0027 [-0.0055,+0.0000] n=4395
