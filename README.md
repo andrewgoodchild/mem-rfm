@@ -309,8 +309,12 @@ defenses (which remove an *illegitimate* signal) do not.
 mechanisms were measured against four cross-endorsing writers —
 `exclude_self`, `one_vote`, both together, writer trust, voter-weighted
 trust, and endorser liability. Only liability recovers anything with a CI
-above zero (+0.8 of the 5.0 points lost, and it collapses ring reputation
-to −0.734 against honest agents' +0.950), and none restores the baseline.
+above zero (+0.8 of the 5.0 points lost on one dataset — and that gain did
+NOT replicate on the second), and none restores the baseline. What does
+replicate is reputational: liability collapses ring standing to −0.734 /
+−0.981 against honest agents' +0.950 / +0.714 on the two datasets, roughly
+doubling the separation plain trust achieves — it makes a ring costly and
+identifiable rather than repairing the ranking.
 They fail for one reason: **the ring controls votes at every level of
 aggregation**, so re-aggregating votes cannot escape it. Detection is the
 part that works — endorsement concentration identified all four colluders

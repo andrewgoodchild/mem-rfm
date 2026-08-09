@@ -553,3 +553,28 @@ Standing conclusion, unchanged: incentive-shaping is the only mechanism of
 six tried that recovers anything against a ring with CI > 0, and it still
 leaves the store well below similarity-only. Detection plus governance
 remains the answer; liability is a useful adjunct, not a fix.
+
+### Amendment 10 cross-checks (completed after an interrupted batch)
+
+Logs: `adv10_star_upvote.log`, `adv10_abcd_collude.log`.
+
+| check | result |
+|---|---|
+| upvote: `exclude_self`+liability | **0.943 h@1 / 0.006 occupancy** — best configuration measured, edging `exclude_self`+trust (0.941/0.006); recovery +0.0380 |
+| **ABCD collude: L1 replication** | **+0.0013 [−0.0060,+0.0087] — FAILS to replicate** (STAR was +0.0080, CI>0) |
+| ABCD collude: L3 replication | **+1.695 separation** (attackers −0.981 vs honest +0.714) vs baseline +0.847 — replicates |
+| ABCD collude: U | −0.0033 [−0.0090,+0.0023] — within bar |
+
+**The retrieval gain does not replicate; the reputation collapse does.**
+Liability's L1 recovery is significant on STAR and null on ABCD, so the
+honest claim is that it does NOT reliably improve retrieval under
+collusion. What replicates on both datasets is L3: ring standing collapses
+to −0.734 / −0.981 while honest agents sit at +0.950 / +0.714, roughly
+doubling the separation plain trust achieves.
+
+That sharpens rather than weakens the standing conclusion. Liability's
+value is that it makes a ring **identifiable and costly**, not that it
+repairs ranking — which is exactly the "detect, don't rank" position the
+concentration detector already supported. Liability also helps the
+single-actor case (+0.0380) and is free on a clean store, so it is a
+reasonable default for a shared store; it is not a collusion fix.
