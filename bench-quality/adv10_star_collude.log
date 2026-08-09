@@ -1,0 +1,77 @@
+4396 calls, 908 poisoned writes, attack=collude pump=50 attackers=4
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 5138.98it/s]
+500/4396
+1000/4396
+1500/4396
+2000/4396
+2500/4396
+3000/4396
+3500/4396
+4000/4396
+
+=== star adversary=collude rate=0.2 pump=50 attackers=4, k=5, sentence-transformers/all-MiniLM-L6-v2 ===
+| condition | legit hit@1 | legit hit@k | poison occupancy | clean-store hit@1 |
+|---|---|---|---|---|
+| sim | 0.920 | 0.966 | 0.024 | — |
+| rfm | 0.869 | 0.966 | 0.083 | 0.944 |
+| rfm_self | 0.864 | 0.966 | 0.086 | 0.944 |
+| rfm_vote | 0.856 | 0.964 | 0.087 | 0.940 |
+| rfm_both | 0.852 | 0.964 | 0.092 | 0.941 |
+| rfm_trust | 0.873 | 0.965 | 0.078 | 0.943 |
+| rfm_self_trust | 0.870 | 0.966 | 0.080 | 0.944 |
+| rfm_vote_trust | 0.864 | 0.966 | 0.081 | 0.940 |
+| rfm_trust2 | 0.873 | 0.967 | 0.076 | 0.943 |
+| rfm_liable | 0.877 | 0.967 | 0.072 | 0.944 |
+| rfm_self_liable | 0.875 | 0.967 | 0.075 | 0.944 |
+
+pre-registered endpoints:
+  A1 attack hurts unhardened:  h@1 sim - rfm:       +0.0503 [+0.0419,+0.0589] n=4396
+  A2 rfm_self       recovers:  h@1 rfm_self - rfm:  -0.0059 [-0.0091,-0.0030] n=4396
+     rfm_self       vs sim baseline: h@1 rfm_self - sim:  -0.0562 [-0.0651,-0.0475] n=4396
+  A2 rfm_vote       recovers:  h@1 rfm_vote - rfm:  -0.0134 [-0.0182,-0.0086] n=4396
+     rfm_vote       vs sim baseline: h@1 rfm_vote - sim:  -0.0637 [-0.0723,-0.0553] n=4396
+  A2 rfm_both       recovers:  h@1 rfm_both - rfm:  -0.0173 [-0.0223,-0.0123] n=4396
+     rfm_both       vs sim baseline: h@1 rfm_both - sim:  -0.0676 [-0.0764,-0.0589] n=4396
+  A2 rfm_trust      recovers:  h@1 rfm_trust - rfm:  +0.0039 [+0.0000,+0.0080] n=4396
+     rfm_trust      vs sim baseline: h@1 rfm_trust - sim:  -0.0464 [-0.0546,-0.0382] n=4396
+  A2 rfm_self_trust recovers:  h@1 rfm_self_trust - rfm:  +0.0002 [-0.0039,+0.0043] n=4396
+     rfm_self_trust vs sim baseline: h@1 rfm_self_trust - sim:  -0.0500 [-0.0585,-0.0416] n=4396
+  A2 rfm_vote_trust recovers:  h@1 rfm_vote_trust - rfm:  -0.0057 [-0.0109,-0.0005] n=4396
+     rfm_vote_trust vs sim baseline: h@1 rfm_vote_trust - sim:  -0.0560 [-0.0644,-0.0478] n=4396
+  A2 rfm_trust2     recovers:  h@1 rfm_trust2 - rfm:  +0.0032 [-0.0009,+0.0075] n=4396
+     rfm_trust2     vs sim baseline: h@1 rfm_trust2 - sim:  -0.0471 [-0.0553,-0.0391] n=4396
+  A2 rfm_liable     recovers:  h@1 rfm_liable - rfm:  +0.0080 [+0.0036,+0.0123] n=4396
+     rfm_liable     vs sim baseline: h@1 rfm_liable - sim:  -0.0423 [-0.0505,-0.0343] n=4396
+  A2 rfm_self_liable recovers:  h@1 rfm_self_liable - rfm:  +0.0059 [+0.0011,+0.0107] n=4396
+     rfm_self_liable vs sim baseline: h@1 rfm_self_liable - sim:  -0.0444 [-0.0525,-0.0364] n=4396
+
+collusion detector (log-only forensics):
+| actor | reciprocity | concentration | dissent | votes | writer trust | attacker? |
+|---|---|---|---|---|---|---|
+| actor:agent1 | 1.000 | 0.417 | 0.138 | 2648 | -0.314 | no |
+| actor:agent0 | 1.000 | 0.418 | 0.126 | 2651 | +0.705 | no |
+| actor:attacker0 | 1.000 | 0.750 | 0.000 | 34050 | -0.020 | YES |
+| actor:attacker3 | 1.000 | 0.750 | 0.000 | 34050 | +0.400 | YES |
+| actor:attacker1 | 1.000 | 0.750 | 0.000 | 34050 | -0.314 | YES |
+| actor:agent5 | 1.000 | 0.418 | 0.145 | 2641 | +0.400 | no |
+| actor:agent7 | 1.000 | 0.418 | 0.140 | 2640 | +0.694 | no |
+| actor:agent3 | 1.000 | 0.418 | 0.133 | 2660 | +1.000 | no |
+| actor:agent4 | 1.000 | 0.418 | 0.133 | 2663 | +0.134 | no |
+| actor:agent2 | 1.000 | 0.417 | 0.147 | 2648 | +0.511 | no |
+  L3 ring collapse (liable store): attacker trust -0.734 vs honest +0.950 (separation +1.684)
+     baseline (trust store, no liability): -0.062 vs +0.477 (separation +0.539)
+  reciprocity    precision@4 = 2/4  separation = +0.000
+  concentration  precision@4 = 4/4  separation = +0.332
+  dissent        precision@4 = 0/4  separation = -0.136
+
+  utility bars (clean store, no attacker present):
+  U rfm_self       - rfm:  +0.0009 [-0.0009,+0.0030] n=4395
+  U rfm_vote       - rfm:  -0.0034 [-0.0059,-0.0009] n=4395
+  U rfm_both       - rfm:  -0.0027 [-0.0055,+0.0000] n=4395
+  U rfm_trust      - rfm:  -0.0005 [-0.0023,+0.0011] n=4395
+  U rfm_self_trust - rfm:  +0.0000 [-0.0018,+0.0018] n=4395
+  U rfm_vote_trust - rfm:  -0.0034 [-0.0061,-0.0009] n=4395
+  U rfm_trust2     - rfm:  -0.0009 [-0.0030,+0.0011] n=4395
+  U rfm_liable     - rfm:  +0.0007 [-0.0011,+0.0025] n=4395
+  U rfm_self_liable - rfm:  +0.0005 [-0.0016,+0.0025] n=4395
