@@ -303,3 +303,73 @@ failing: created_by-exclusion doesn't stop gaming (some other channel
 remains). U2 failing: the defense degrades legitimate memories — it is
 rejected and stays off by default with a documented warning, exactly as
 confident-negative pruning (Step P) was.
+
+---
+
+# Amendment 7 — adversary matrix: downvote censorship, collusion, and ballot-stuffing prevention
+
+**Status: registered before any full-stream run.** Amendment 6 covered one
+attacker promoting its own memories. This registers the two attacks that
+`exclude_self` cannot see by construction, plus a second hardening
+primitive.
+
+New extension surface (committed with this amendment):
+`rfm_config('one_vote', 1)` — an actor-tagged outcome is ignored if that
+actor already recorded an outcome for that memory, so `value_score`
+reflects DISTINCT endorsers rather than repetitions. Default 0; untagged
+callers unaffected; served by a new `rfm_accesses(memory_id, actor)` index.
+Verified by `one_vote_per_actor_blocks_ballot_stuffing`. Note the migration
+ordering fix in `rfm_init` (ALTERs now precede the schema script, because
+the new index references a column older databases lack).
+
+Runner: `bench-quality/adversary_eval.py`. Attacks: **upvote** (Amendment 6
+baseline), **downvote** (inject nothing; bury every genuine memory of the
+4 highest-volume labels — targeted censorship), **collude** (C=4 attackers
+inject bait and endorse EACH OTHER's, so no endorsement is ever
+self-endorsement). Defenses: rfm, rfm_self (exclude_self), rfm_vote
+(one_vote), rfm_both; `sim` is the ungameable control. STAR primary,
+r=0.20, pump=50, k=5, frozen β=0.3, MiniLM.
+
+**Disclosures.** (a) Smoke runs at n≤500 were executed and seen before this
+registration. (b) The downvote attack was REDESIGNED after a smoke run
+showed uniform suppression is a mathematical no-op (a penalty applied to
+every memory leaves relative order unchanged); it now targets specific
+labels and is scored separately on targeted vs untargeted calls. That
+redesign happened before any full-stream number existed.
+
+## Endpoints (per attack, STAR full stream)
+
+- **A1 attack is real**: legit hit@1, `sim − rfm` CI > 0 (the attack must
+  make the unhardened prior worse than no prior). For downvote, also
+  **A1t** on targeted-label calls only.
+- **A2 a defense recovers**: for each of rfm_self / rfm_vote / rfm_both,
+  hit@1 `defense − rfm` CI > 0, and `defense − sim` ≥ 0 (returns the prior
+  to at least the no-prior baseline).
+- **U utility bar (veto)**: clean-store hit@1 (no attacker present),
+  `defense − rfm`. **|Δ| ≤ 0.010 to be recommendable; a drop below −0.010
+  means that defense is rejected as default-recommended guidance**
+  regardless of A2 — the Step P rule. `one_vote` is expected to be the
+  expensive one: it discards repeat-use evidence, which is the value axis's
+  main signal in recurring workloads.
+
+## Registered predictions (falsifiable, from mechanism + smoke)
+
+1. **upvote**: rfm_self recovers fully; rfm_vote recovers partially.
+2. **downvote**: A1 ≤ 0 — no defense needed, because the bounded prior
+   caps demotion at 0.7× while the similarity gap between right-label and
+   wrong-label memories is larger. Censorship should be structurally
+   impossible under β-bounding. If A1 > 0, that prediction is falsified and
+   β-bounding is not the protection we claim.
+3. **collude**: A1 > 0 and **no defense recovers** — one_vote counts
+   distinct endorsers, and colluders ARE distinct endorsers, so it is
+   structurally powerless here. If this holds, collusion is an open,
+   unmitigated hole and the README must say so.
+
+## What would falsify
+
+Prediction 2 failing means bounded composition does not protect against
+suppression — a security claim would be withdrawn. Prediction 3 failing
+(some defense does recover) would be a welcome surprise, reported as such.
+A U-bar failure rejects that defense from recommended guidance even where
+it works; if `one_vote` fails U and defends nothing collusion-wise, it
+ships as an off-by-default option documented as not recommended.

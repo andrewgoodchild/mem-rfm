@@ -391,3 +391,41 @@ SELECT 'n_off', access_count FROM rfm_memories WHERE id = 1;
     assert_eq!(map["actor_log"], "alice");
     assert_eq!(map["n_off"], "2", "exclude_self=0 restores counting");
 }
+
+#[test]
+fn one_vote_per_actor_blocks_ballot_stuffing() {
+    // Amendment 7: with one_vote=1 an actor's SECOND outcome on the same
+    // memory is ignored (even after a fresh access), so value counts distinct
+    // endorsers; a different actor still votes; the ignored vote must not
+    // consume the access's outcome slot.
+    let script = r#"
+SELECT rfm_init();
+SELECT rfm_config('now', 1000.0);
+INSERT INTO rfm_memories(id, content, created_at) VALUES (1, 'x', 0.0);
+SELECT rfm_config('one_vote', 1);
+SELECT rfm_record_access(1, 'alice');
+SELECT 'v1', rfm_record_outcome(1, 1.0, 'alice');
+SELECT rfm_record_access(1, 'alice');
+SELECT 'v2', rfm_record_outcome(1, 1.0, 'alice');
+SELECT 'n_out', outcome_count FROM rfm_memories WHERE id = 1;
+SELECT 'slot_free', count(*) FROM rfm_accesses WHERE memory_id = 1 AND outcome IS NULL;
+SELECT 'v_bob', rfm_record_outcome(1, -1.0, 'bob');
+SELECT 'n_out2', outcome_count FROM rfm_memories WHERE id = 1;
+SELECT rfm_config('one_vote', 0);
+SELECT rfm_record_access(1, 'alice');
+SELECT 'v3', rfm_record_outcome(1, 1.0, 'alice');
+SELECT 'n_out3', outcome_count FROM rfm_memories WHERE id = 1;
+"#;
+    let (stdout, stderr) = run_sql(script);
+    assert!(stderr.is_empty(), "unexpected stderr: {stderr}");
+    let map = parse(&stdout);
+    let lambda = defaults().lambda;
+    assert_close(&map, "v1", 1.0);
+    assert_close(&map, "v2", 1.0);
+    assert_eq!(map["n_out"], "1", "repeat vote must not count");
+    assert_eq!(map["slot_free"], "1", "ignored vote must leave the slot open");
+    // Bob's vote lands on that still-open access slot.
+    assert_close(&map, "v_bob", math::ewma_update(1.0, 1, -1.0, lambda));
+    assert_eq!(map["n_out2"], "2", "a distinct actor still votes");
+    assert_eq!(map["n_out3"], "3", "one_vote=0 restores repeat voting");
+}
