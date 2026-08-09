@@ -150,12 +150,18 @@ ADD COLUMN` statements so pre-v0.3 databases gain the columns on next load
 The utility cost is measured, not asserted (PROTOCOL.md Amendment 6): the
 registered U2 bar rejects the whole mechanism if excluding self-endorsement
 degrades legitimate retrieval by more than 0.01 hit@1 on a clean store —
-the same veto that killed confident-negative pruning in Step P. Note the
-cost is workload-shaped: in a *pooled* store agents mostly retrieve other
-agents' memories, so little is excluded; a single-agent store where every
-memory is self-authored would lose far more of its feedback signal, which
-is why this is documented as a shared-store feature and left off by
-default.
+the same veto that killed confident-negative pruning in Step P. It passed
+at +0.0009 h@1 on an 8-agent store.
+
+The cost is workload-shaped, and measured (RESULTS.md, post-hoc team-size
+sweep): a *solo* store — where every memory is self-authored, so hardening
+discards all legitimate feedback — pays **−0.80 points hit@1**, about the
+size of the value axis's entire rank-1 contribution, as the mechanism
+implies. That cost vanishes by two-to-four writers (−0.16, −0.09, both
+n.s.). Hence the guidance: leave `exclude_self` off for single-agent
+stores (the Claude Code integration's shape), enable it from ~2 writers
+up. The defense itself still works solo (poison occupancy 0.023 vs 0.068
+unhardened) — you just pay for it there and not in a team.
 
 ## Other known limitations
 
