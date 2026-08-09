@@ -511,3 +511,45 @@ precision on both datasets, Amendment 8).
 both new conditions help (+0.0221 / +0.0243) but neither beats
 `exclude_self`+`trust`, which remains the best measured configuration
 (0.941 h@1, 0.006 poison occupancy vs similarity's 0.024).
+
+## Amendment 10 one-shot: endorser liability (the prisoner's-dilemma mechanism)
+
+STAR collude, n=4,396, C=4, r=0.20, pump=50. Log:
+`adv10_star_collude.log`. Cross-checks (upvote, ABCD) were interrupted and
+re-run separately; see below.
+
+| endpoint (bar) | result | verdict |
+|---|---|---|
+| **L1 recovery** (rfm_liable − rfm, CI>0) | **+0.0080** [+0.0036,+0.0123] | **PASS** — first mechanism to clear it |
+| L2 restoration (− sim ≥ 0) | −0.0423 [−0.0505,−0.0343] | fail (as predicted) |
+| **L3 ring collapse** (separation > 0.3) | **+1.684** (attackers −0.734 vs honest +0.950) | **PASS** |
+| U utility veto (clean store) | +0.0007 [−0.0011,+0.0025] | pass (free) |
+
+**The incentive mechanism works exactly as theorised at the reputation
+layer.** Making an endorsement a stake rather than a free favour collapses
+ring standing to −0.734 while honest agents rise to +0.950 — the ring's
+mutual praise becomes mutually destructive, because every failed retrieval
+of a co-conspirator's bait now debits the voucher as well as the author.
+Poison occupancy falls from 0.083 to 0.072 and it is free on a clean store.
+
+**But reputation separation converts into only a modest retrieval gain**:
++0.8 points recovered of the 5.0 the ring costs (~16%), still 4.2 points
+below the no-prior baseline. The registration anticipated this: bait
+retrieved BEFORE the ring's standing collapses is damage no post-hoc
+mechanism can undo. Liability changes the ring's incentives and its
+eventual standing; it does not retroactively un-serve the bait.
+
+**CORRECTION to Amendment 10's registration.** The registration claimed
+"Amendment 8 measured NO separation: +0.400 attacker vs −0.314 honest".
+That was wrong — those were two cherry-picked rows from a detector table,
+not means. The correct baseline, printed alongside the liable store in this
+run, is a MEAN separation of **+0.539** under plain trust. So L3's stated
+premise was false, and its bar (>0.3) was already met without liability.
+The defensible claim is the comparison, not the threshold: liability
+**triples** reputation separation (+0.539 → +1.684). The endpoint is
+recorded as passed on its literal terms with this premise error disclosed.
+
+Standing conclusion, unchanged: incentive-shaping is the only mechanism of
+six tried that recovers anything against a ring with CI > 0, and it still
+leaves the store well below similarity-only. Detection plus governance
+remains the answer; liability is a useful adjunct, not a fix.
