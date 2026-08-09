@@ -100,6 +100,29 @@ pub fn exec_multi(db: *mut sqlite3, sql: &str) -> Result<()> {
     Ok(())
 }
 
+/// Collect a single TEXT column over all rows (NULLs skipped). Used by
+/// endorser liability, which must visit every distinct endorser of a memory.
+pub fn query_column_text(db: *mut sqlite3, sql: &str) -> Result<Vec<String>> {
+    let stmt = prepare(db, sql)?;
+    let mut out = Vec::new();
+    loop {
+        match unsafe { sqlite3ext_step(stmt.0) } {
+            SQLITE_ROW => {
+                let value = unsafe { sqlite3ext_column_value(stmt.0, 0) };
+                if api::value_type(&value) != ValueType::Null {
+                    out.push(api::value_text(&value)?.to_string());
+                }
+            }
+            SQLITE_DONE => return Ok(out),
+            rc => {
+                return Err(Error::new_message(format!(
+                    "rfm: query failed (code {rc}) for: {sql}"
+                )))
+            }
+        }
+    }
+}
+
 /// Run a query expected to yield at most one row of `ncols` numeric columns.
 /// Returns None if no row matched; NULL columns come back as None. INTEGER
 /// and REAL columns are both read through sqlite3_value_double (exact for the
