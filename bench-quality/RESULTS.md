@@ -343,3 +343,29 @@ Bounds: oracle outcomes throughout; the attacker is a single principal
 (collusion between principals is not modeled and would defeat
 self-exclusion); actor strings are host-asserted, so this defends against a
 principal misbehaving within its rights, not impersonation.
+
+### Post-hoc (NOT registered): hardened-mode cost vs team size
+
+Amendment 6's U2 was registered at the 8-agent team size only. Because
+`exclude_self` drops a memory's *own writer's* feedback, its cost should
+scale inversely with team size — at a team of one, every legitimate memory
+is self-authored and ALL legitimate feedback is discarded. Measured
+(STAR, r=0.20, pump=50, `exploit_star_agents{1,2,4}.log`; agents=8 is the
+registered run):
+
+| team size | U2 clean-store h@1 (rfm_hard − rfm) | poison occupancy, rfm_hard |
+|---|---|---|
+| 1 (solo) | **−0.0080** [−0.0118,−0.0041] | 0.023 |
+| 2 | −0.0016 [−0.0043,+0.0011] n.s. | 0.013 |
+| 4 | −0.0009 [−0.0032,+0.0014] n.s. | 0.012 |
+| 8 (registered) | +0.0009 [−0.0009,+0.0030] n.s. | 0.011 |
+
+The footgun is real but small, and smaller than we predicted before
+measuring: a solo store loses 0.80 points of hit@1 (CI excludes zero) —
+which matches the size of the value axis's own rank-1 contribution on STAR
+(+1.25, Amendment 4 P3), i.e. solo hardening costs roughly the whole value
+signal, as the mechanism implies. It is NOT catastrophic, and the defense
+still works solo (occupancy 0.023 vs 0.068 unhardened, ≈ similarity's
+0.024). Guidance: leave `exclude_self` off for single-agent stores (the
+Claude Code integration's default shape), turn it on from ~2 writers up,
+where the cost is statistically indistinguishable from zero.
