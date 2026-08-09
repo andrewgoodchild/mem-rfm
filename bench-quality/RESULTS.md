@@ -422,3 +422,52 @@ Bounds: single dataset (STAR), oracle outcomes, actor strings host-asserted
 (impersonation is the host's auth problem, not defended here), and the
 attacker count is fixed at 4 — the collusion damage curve vs colluder count
 is unmeasured.
+
+## Amendment 8 one-shot: writer-reputation trust cap, and collusion detection
+
+Runs 2026-08-09. Logs: `adv8_star_{collude,upvote,downvote}.log`,
+`adv8_abcd_collude.log`.
+
+| endpoint | STAR collude | ABCD collude | verdict |
+|---|---|---|---|
+| A1 attack real (sim − rfm) | +0.0503 [+0.0419,+0.0589] | +0.0537 [+0.0417,+0.0657] | — |
+| **T1 trust recovers** (rfm_trust − rfm) | +0.0039 [+0.0000,+0.0080] | **−0.0023** [−0.0093,+0.0047] | **FAIL** |
+| T2 restores baseline (rfm_trust − sim) | −0.0464 | −0.0560 | fail (as predicted) |
+| U utility veto (clean store) | −0.0005 [−0.0023,+0.0011] | +0.003 | pass (free) |
+| **D1 detector** `concentration` precision@4 | **4/4**, sep +0.332 | **4/4**, sep +0.332 | **pass** |
+| D2 `dissent` precision@4 | 0/4, sep −0.136 | 0/4, sep −0.356 | fails (inverts) |
+| D2 `reciprocity` precision@4 | 1/4, sep +0.000 | 2/4, sep +0.000 | fails (no signal) |
+
+**1. Writer reputation does NOT defend collusion — T1 fails.** It recovers
+0.4 of the 5.0 points on STAR (CI lower bound at zero) and is flatly
+negative on ABCD. Cause, read off the committed log: **a ring's
+cross-endorsements are themselves third-party votes**, so colluders build
+each other's *reputation* exactly as they build each other's memory scores
+— ring member trust came out at +0.400 while an honest agent sat at −0.314.
+Moving aggregation from memories to authors moves the attack up one layer
+instead of defeating it. Recorded as a failed hypothesis.
+
+**2. The same mechanism IS the best single-actor defense.** Against
+self-promotion, `exclude_self`+trust reaches **0.941 hit@1 at 0.006 poison
+occupancy** — a quarter of plain similarity's exposure and the best of any
+configuration measured (trust alone +0.0259, with exclude_self +0.0366).
+A lone attacker cannot build their own reputation (self-votes are excluded
+by construction), so the cap binds hard. Cost is nil (U bar −0.0005). On
+the downvote scenario trust is mildly unhelpful (−0.0045) — unnecessary
+there, as β-bounding already absorbs censorship.
+
+**3. Collusion is DETECTABLE even though it is not rankable.**
+`concentration` (entropy deficit of the authors a voter praises) achieved
+**4/4 precision on both datasets** from the access log alone — no scoring
+state, so an auditor can run it post-hoc on committed data. Both intuitive
+alternatives failed, and their failures are the more transferable lesson:
+`dissent` (disagreeing with per-memory consensus) **inverts**, because a
+ring that stuffs ballots *manufactures* the consensus and the detector then
+flags the honest majority (separation −0.136/−0.356); `reciprocity` shows
+no separation at all, because honest teammates also endorse each other's
+memories in the normal course of work. Only a signal the ring cannot
+manufacture — how *narrowly* its praise is distributed — separates.
+
+Standing conclusion: **you cannot out-rank a ring, but you can spot one.**
+The defense for colluding writers is detection plus governance, not
+scoring.
