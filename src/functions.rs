@@ -68,6 +68,17 @@ fn is_self(db: *mut sqlite3, id: i64, actor: &str) -> Result<bool> {
     Ok(sql::query_row(db, &sql_text, 1)?.is_some())
 }
 
+/// Ballot-stuffing check: has this actor already recorded an outcome for
+/// this memory? Served by rfm_accesses_mem_actor.
+fn has_voted(db: *mut sqlite3, id: i64, actor: &str) -> Result<bool> {
+    let sql_text = format!(
+        "SELECT 1 FROM rfm_accesses WHERE memory_id = {id} AND actor = {} \
+         AND outcome IS NOT NULL LIMIT 1",
+        text_lit(actor)
+    );
+    Ok(sql::query_row(db, &sql_text, 1)?.is_some())
+}
+
 /// The extension-maintained columns of one rfm_memories row.
 #[derive(Clone, Copy)]
 struct MemRow {
@@ -147,12 +158,15 @@ pub fn rfm_init(
     _aux: &SharedConfig,
 ) -> Result<()> {
     let db = db_of(context);
-    sql::exec_multi(db, SCHEMA)?;
-    // Migrate pre-v0.3 databases (CREATE IF NOT EXISTS leaves them without
-    // the actor columns). Errors are ignored: on a current schema the ALTERs
-    // fail with "duplicate column", which is the expected steady state.
+    // Migrate pre-v0.3 databases BEFORE the schema runs: the schema's
+    // rfm_accesses_mem_actor index references a column those databases lack,
+    // and a failing CREATE INDEX would abort the whole script. On a fresh
+    // database the ALTERs fail (no table yet) and CREATE TABLE below supplies
+    // the columns; on a current one they fail as "duplicate column". Both
+    // failures are the expected steady state, hence ignored.
     let _ = sql::exec(db, "ALTER TABLE rfm_memories ADD COLUMN created_by TEXT");
     let _ = sql::exec(db, "ALTER TABLE rfm_accesses ADD COLUMN actor TEXT");
+    sql::exec_multi(db, SCHEMA)?;
     api::result_text(context, "ok")?;
     Ok(())
 }
@@ -230,15 +244,21 @@ pub fn rfm_record_outcome(
         return Err(Error::new_message("rfm: outcome must be in [-1, 1]"));
     }
     let row = load_mem(db, id)?;
-    // Hardened mode (Amendment 6): self-feedback is the M inflation channel —
-    // ignored entirely (no EWMA update, no access-slot consumption), returning
-    // the unchanged value so callers see a truthful state.
-    if c.exclude_self != 0.0 {
-        if let Some(a) = value_actor(values, 2)? {
-            if is_self(db, id, &a)? {
-                api::result_double(context, row.value);
-                return Ok(());
-            }
+    // Hardened modes: both ignore the call entirely (no EWMA update, no
+    // access-slot consumption) and return the unchanged value, so a rejected
+    // vote can never block a legitimate one on the same access. Untagged
+    // callers are unaffected — neither rule can identify a voter.
+    if let Some(a) = value_actor(values, 2)? {
+        // exclude_self (Amendment 6): self-feedback is the M inflation channel.
+        if c.exclude_self != 0.0 && is_self(db, id, &a)? {
+            api::result_double(context, row.value);
+            return Ok(());
+        }
+        // one_vote (Amendment 7): one outcome per (actor, memory) ever, so
+        // value counts DISTINCT endorsers rather than repetitions.
+        if c.one_vote != 0.0 && has_voted(db, id, &a)? {
+            api::result_double(context, row.value);
+            return Ok(());
         }
     }
     if row.n == 0 {

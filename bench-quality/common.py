@@ -28,12 +28,30 @@ def resolve_dylib():
         try:
             probe.enable_load_extension(True)
             probe.load_extension(p)
+            check_fresh(p)
             return p
         except sqlite3.OperationalError:
             continue
         finally:
             probe.close()
     sys.exit("no loadable librfm.dylib found — run `cargo build --release` (or set RFM_DYLIB)")
+
+
+def check_fresh(dylib):
+    """Refuse to benchmark a dylib older than the Rust sources that built it.
+
+    `cargo test` builds the x86_64 target (the .load-capable Homebrew CLI is
+    Intel) while this arm64 harness loads target/release — so a green test
+    run does NOT imply the benchmarked build is current. Publishing numbers
+    from a stale extension would be unauditable, so this is fatal, not a
+    warning."""
+    src = os.path.join(HERE, "..", "src")
+    newest = max(
+        [os.path.getmtime(os.path.join(src, f)) for f in os.listdir(src)]
+        + [os.path.getmtime(os.path.join(HERE, "..", "Cargo.toml"))]
+    )
+    if newest > os.path.getmtime(dylib):
+        sys.exit(f"stale extension: {dylib} predates src/ — run `cargo build --release`")
 
 
 DYLIB = resolve_dylib()
@@ -157,6 +175,9 @@ class MemoryStore:
 
     def set_exclude_self(self, on):
         self.db.execute("SELECT rfm_config('exclude_self', ?)", (1 if on else 0,))
+
+    def set_one_vote(self, on):
+        self.db.execute("SELECT rfm_config('one_vote', ?)", (1 if on else 0,))
 
     def set_created_by(self, pairs):
         """Tag memories with their writer (host principal); enables hardened

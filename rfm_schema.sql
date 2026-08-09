@@ -34,3 +34,8 @@ CREATE TABLE IF NOT EXISTS rfm_accesses (
 -- exact-recompute audit/baseline and rfm_record_outcome's most-recent-access lookup.
 CREATE INDEX IF NOT EXISTS rfm_accesses_mem_time
   ON rfm_accesses(memory_id, accessed_at DESC);
+
+-- Serves the one-vote-per-actor check (rfm_config('one_vote', 1)); unused
+-- when that mode is off.
+CREATE INDEX IF NOT EXISTS rfm_accesses_mem_actor
+  ON rfm_accesses(memory_id, actor);
