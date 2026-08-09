@@ -163,6 +163,29 @@ stores (the Claude Code integration's shape), enable it from ~2 writers
 up. The defense itself still works solo (poison occupancy 0.023 vs 0.068
 unhardened) — you just pay for it there and not in a team.
 
+## one_vote: implemented, measured, not recommended
+
+`rfm_config('one_vote', 1)` caps outcomes at one per (actor, memory) so
+`value_score` counts distinct endorsers rather than repetitions. It is the
+obvious ballot-stuffing defense and it does not work (Amendment 7): against
+a self-promoting attacker it recovers nothing measurable and still trails
+plain similarity, while costing −0.34 hit@1 on a clean store.
+
+The reason is symmetric and worth stating plainly: **a vote cap throttles
+the corrective signal exactly as much as the abusive one.** Unhardened, a
+bad memory earns a negative every single time it wastes someone's time —
+that is what makes demotion converge. With one vote per actor, an
+eight-agent team can land at most eight negatives on it, ever. The attack
+is capped and so is the immune response, and in a recurring workload the
+immune response was doing more work.
+
+It ships off by default and stays in the surface because the measurement is
+worth more than the feature: "we tried the obvious defense and it backfired
+for this reason" is a result. `exclude_self` is the primitive that actually
+defends (it removes an *illegitimate* signal rather than rationing a
+legitimate one), which is the general lesson — asymmetric defenses beat
+symmetric caps.
+
 ## Other known limitations
 
 - **Per-connection config, no cross-process coherence.** `rfm_config` lives
