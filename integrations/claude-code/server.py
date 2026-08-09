@@ -11,6 +11,18 @@ Env:
   RFM_MEMORY_DB  database path   (default ~/.sqlite-rfm/claude-code.db)
   RFM_DYLIB      librfm path     (default: this repo's target/release build)
   RFM_EMBEDDER   sentence-transformers model id (default all-MiniLM-L6-v2)
+  RFM_ACTOR      this agent's principal id, for SHARED stores (default: none).
+                 When set, memories are tagged created_by and accesses/outcomes
+                 are tagged actor, which is what the extension's hardening
+                 flags need. Unset (the single-user default) leaves the store
+                 untagged and every flag inert — correct for a solo store,
+                 where exclude_self would discard all feedback (DESIGN_NOTES).
+  RFM_HARDEN     comma-separated flags to enable for a shared store, from
+                 exclude_self, trust, endorser_liability. Measured guidance
+                 (PROTOCOL.md Amendments 6-10): "exclude_self,trust" defends
+                 single bad actors best; adding endorser_liability makes
+                 collusion costlier but does not stop it. Ignored without
+                 RFM_ACTOR, since none of them can work untagged.
 """
 import os
 import sqlite3
@@ -22,6 +34,9 @@ from mcp.server.fastmcp import FastMCP
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
+ACTOR = os.environ.get("RFM_ACTOR") or None
+HARDEN = [f.strip() for f in os.environ.get("RFM_HARDEN", "").split(",") if f.strip()]
+ALLOWED_FLAGS = {"exclude_self", "trust", "endorser_liability"}
 EMBEDDER_ID = os.environ.get("RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
 
 mcp = FastMCP("sqlite-rfm-memory")
@@ -55,6 +70,16 @@ def db():
         cols = [r[1] for r in _db.execute("PRAGMA table_info(rfm_memories)")]
         if "embedding" not in cols:
             _db.execute("ALTER TABLE rfm_memories ADD COLUMN embedding BLOB")
+        # Hardening is per-connection config and only meaningful on a tagged
+        # (shared) store; refuse unknown flag names rather than silently
+        # running unprotected.
+        if ACTOR:
+            for flag in HARDEN:
+                if flag not in ALLOWED_FLAGS:
+                    raise RuntimeError(
+                        f"RFM_HARDEN: unknown flag {flag!r}; "
+                        f"choose from {sorted(ALLOWED_FLAGS)}")
+                _db.execute(f"SELECT rfm_config('{flag}', 1)")
     return _db
 
 
@@ -98,8 +123,9 @@ def _save(content: str) -> dict:
     if dup:
         return {"id": dup[0], "status": "already stored"}
     cur = d.execute(
-        "INSERT INTO rfm_memories(content, created_at, embedding) VALUES (?, ?, ?)",
-        (content, time.time(), embed(content)))
+        "INSERT INTO rfm_memories(content, created_at, embedding, created_by) "
+        "VALUES (?, ?, ?, ?)",
+        (content, time.time(), embed(content), ACTOR))
     d.commit()
     return {"id": cur.lastrowid, "status": "saved"}
 
@@ -117,7 +143,10 @@ def _search(query: str, k: int = 5) -> list:
         (embed(query), k)).fetchall()
     # Retrieval IS usage: returned memories earn an access (recency+frequency).
     for mid, _c, _s in rows:
-        d.execute("SELECT rfm_record_access(?)", (mid,))
+        if ACTOR:
+            d.execute("SELECT rfm_record_access(?, ?)", (mid, ACTOR))
+        else:
+            d.execute("SELECT rfm_record_access(?)", (mid,))
     d.commit()
     return [{"id": mid, "content": c, "score": round(s, 4)} for mid, c, s in rows]
 
@@ -125,8 +154,13 @@ def _search(query: str, k: int = 5) -> list:
 def _feedback(memory_id: int, helped: bool) -> dict:
     d = db()
     try:
-        row = d.execute("SELECT rfm_record_outcome(?, ?)",
-                        (memory_id, 1.0 if helped else -1.0)).fetchone()
+        outcome = 1.0 if helped else -1.0
+        if ACTOR:
+            row = d.execute("SELECT rfm_record_outcome(?, ?, ?)",
+                            (memory_id, outcome, ACTOR)).fetchone()
+        else:
+            row = d.execute("SELECT rfm_record_outcome(?, ?)",
+                            (memory_id, outcome)).fetchone()
         d.commit()
         return {"id": memory_id, "value_score": round(row[0], 4)}
     except sqlite3.OperationalError as e:
@@ -139,7 +173,9 @@ def _status() -> dict:
         "SELECT (SELECT count(*) FROM rfm_memories),"
         " (SELECT count(*) FROM rfm_accesses),"
         " (SELECT count(*) FROM rfm_accesses WHERE outcome IS NOT NULL)").fetchone()
-    return {"memories": n, "accesses": accesses, "outcomes": outcomes, "db": DB_PATH}
+    return {"memories": n, "accesses": accesses, "outcomes": outcomes,
+            "db": DB_PATH, "actor": ACTOR,
+            "hardening": HARDEN if ACTOR else []}
 
 
 def _list(limit: int = 20, offset: int = 0) -> list:
