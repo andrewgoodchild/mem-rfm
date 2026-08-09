@@ -1,0 +1,65 @@
+3000 calls, 610 poisoned writes, attack=collude pump=50 attackers=4
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 7010.59it/s]
+500/3000
+1000/3000
+1500/3000
+2000/3000
+2500/3000
+3000/3000
+
+=== abcd adversary=collude rate=0.2 pump=50 attackers=4, k=5, sentence-transformers/all-MiniLM-L6-v2 ===
+| condition | legit hit@1 | legit hit@k | poison occupancy | clean-store hit@1 |
+|---|---|---|---|---|
+| sim | 0.690 | 0.868 | 0.053 | — |
+| rfm | 0.636 | 0.846 | 0.121 | 0.723 |
+| rfm_self | 0.635 | 0.846 | 0.121 | 0.725 |
+| rfm_vote | 0.630 | 0.844 | 0.127 | 0.719 |
+| rfm_both | 0.626 | 0.843 | 0.128 | 0.720 |
+| rfm_trust | 0.634 | 0.846 | 0.123 | 0.726 |
+| rfm_self_trust | 0.631 | 0.844 | 0.123 | 0.722 |
+| rfm_vote_trust | 0.616 | 0.841 | 0.132 | 0.714 |
+| rfm_trust2 | 0.630 | 0.844 | 0.122 | 0.723 |
+
+pre-registered endpoints:
+  A1 attack hurts unhardened:  h@1 sim - rfm:       +0.0537 [+0.0417,+0.0657] n=3000
+  A2 rfm_self       recovers:  h@1 rfm_self - rfm:  -0.0007 [-0.0050,+0.0033] n=3000
+     rfm_self       vs sim baseline: h@1 rfm_self - sim:  -0.0543 [-0.0663,-0.0423] n=3000
+  A2 rfm_vote       recovers:  h@1 rfm_vote - rfm:  -0.0063 [-0.0130,+0.0003] n=3000
+     rfm_vote       vs sim baseline: h@1 rfm_vote - sim:  -0.0600 [-0.0720,-0.0480] n=3000
+  A2 rfm_both       recovers:  h@1 rfm_both - rfm:  -0.0097 [-0.0167,-0.0030] n=3000
+     rfm_both       vs sim baseline: h@1 rfm_both - sim:  -0.0633 [-0.0753,-0.0517] n=3000
+  A2 rfm_trust      recovers:  h@1 rfm_trust - rfm:  -0.0023 [-0.0093,+0.0047] n=3000
+     rfm_trust      vs sim baseline: h@1 rfm_trust - sim:  -0.0560 [-0.0677,-0.0440] n=3000
+  A2 rfm_self_trust recovers:  h@1 rfm_self_trust - rfm:  -0.0050 [-0.0123,+0.0023] n=3000
+     rfm_self_trust vs sim baseline: h@1 rfm_self_trust - sim:  -0.0587 [-0.0703,-0.0470] n=3000
+  A2 rfm_vote_trust recovers:  h@1 rfm_vote_trust - rfm:  -0.0197 [-0.0277,-0.0117] n=3000
+     rfm_vote_trust vs sim baseline: h@1 rfm_vote_trust - sim:  -0.0733 [-0.0853,-0.0613] n=3000
+  A2 rfm_trust2     recovers:  h@1 rfm_trust2 - rfm:  -0.0057 [-0.0120,+0.0010] n=3000
+     rfm_trust2     vs sim baseline: h@1 rfm_trust2 - sim:  -0.0593 [-0.0707,-0.0473] n=3000
+
+collusion detector (log-only forensics):
+| actor | reciprocity | concentration | dissent | votes | writer trust | attacker? |
+|---|---|---|---|---|---|---|
+| actor:agent3 | 1.000 | 0.417 | 0.336 | 1725 | +0.594 | no |
+| actor:agent7 | 1.000 | 0.420 | 0.339 | 1734 | +0.637 | no |
+| actor:agent4 | 1.000 | 0.418 | 0.357 | 1750 | +0.734 | no |
+| actor:agent1 | 1.000 | 0.418 | 0.367 | 1748 | +0.345 | no |
+| actor:attacker0 | 1.000 | 0.750 | 0.000 | 22800 | -0.520 | YES |
+| actor:attacker2 | 1.000 | 0.750 | 0.000 | 22850 | -0.314 | YES |
+| actor:agent0 | 1.000 | 0.417 | 0.384 | 1743 | +0.309 | no |
+| actor:attacker3 | 1.000 | 0.750 | 0.000 | 22850 | -0.520 | YES |
+| actor:agent2 | 1.000 | 0.418 | 0.338 | 1741 | -0.435 | no |
+| actor:agent5 | 1.000 | 0.417 | 0.377 | 1709 | +0.100 | no |
+  reciprocity    precision@4 = 0/4  separation = +0.000
+  concentration  precision@4 = 4/4  separation = +0.332
+  dissent        precision@4 = 0/4  separation = -0.356
+
+  utility bars (clean store, no attacker present):
+  U rfm_self       - rfm:  +0.0020 [-0.0020,+0.0060] n=2999
+  U rfm_vote       - rfm:  -0.0040 [-0.0097,+0.0017] n=2999
+  U rfm_both       - rfm:  -0.0033 [-0.0097,+0.0027] n=2999
+  U rfm_trust      - rfm:  +0.0023 [-0.0030,+0.0077] n=2999
+  U rfm_self_trust - rfm:  -0.0010 [-0.0067,+0.0047] n=2999
+  U rfm_vote_trust - rfm:  -0.0090 [-0.0157,-0.0023] n=2999
+  U rfm_trust2     - rfm:  +0.0000 [-0.0050,+0.0050] n=2999

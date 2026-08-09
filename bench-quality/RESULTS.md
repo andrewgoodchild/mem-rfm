@@ -471,3 +471,43 @@ manufacture — how *narrowly* its praise is distributed — separates.
 Standing conclusion: **you cannot out-rank a ring, but you can spot one.**
 The defense for colluding writers is detection plus governance, not
 scoring.
+
+## Amendment 9 one-shot: can any vote-aggregation defend a ring? No.
+
+Runs 2026-08-09. Logs: `adv9_star_{collude,upvote}.log`,
+`adv9_abcd_collude.log`. **Both registered candidates FAIL V1.**
+
+| condition | STAR collude (V1) | ABCD collude (V1) | vs sim (V2) | clean-store U |
+|---|---|---|---|---|
+| C1 one_vote × trust | **−0.0057** [−0.0109,−0.0005] | **−0.0197** [−0.0277,−0.0117] | −0.056 / −0.073 | −0.0034 / −0.0090 |
+| C2 voter-weighted trust | **+0.0032** [−0.0009,+0.0075] | **−0.0057** [−0.0120,+0.0010] | −0.047 / −0.059 | −0.0009 / +0.0000 |
+
+**C1 was wrong in sign, not just magnitude.** The registered prediction was
+"partial recovery that still fails V2"; it is significantly NEGATIVE on both
+datasets. Combining the two flags compounds their weaknesses — each rations
+honest signal (one_vote caps corrective downvotes; trust caps value by an
+author reputation the ring also controls) while neither touches the ring.
+It additionally carries one_vote's utility cost. Rejected outright.
+
+**C2 beat C1 as predicted, and still failed.** Free on a clean store
+(U ≈ 0) but recovery CIs include zero on STAR and are negative on ABCD.
+Cause: a single EigenTrust iteration cannot break a mutually-reinforcing
+cycle — crony A's standing is built from B's votes weighted by B's
+standing, which is built from A's. Real EigenTrust breaks the cycle with
+**pre-trusted seed peers**, which is a governance input, not something
+derivable from the access log.
+
+**Systematic negative, now with a unifying explanation.** Five
+configurations have been measured against a 4-member ring — exclude_self,
+one_vote, one_vote×trust, writer trust, voter-weighted trust — and none
+recovers. They fail for one reason: **the ring controls votes at every level
+of aggregation** (per memory, per author, per voter-weight), so
+re-aggregating votes cannot escape it. Per Amendment 9's registration, the
+standing conclusion is that **detection plus governance, not ranking, is
+the answer for colluding writers** (the concentration detector reaches 4/4
+precision on both datasets, Amendment 8).
+
+**Single-actor guidance is unchanged and stable**: on the upvote scenario
+both new conditions help (+0.0221 / +0.0243) but neither beats
+`exclude_self`+`trust`, which remains the best measured configuration
+(0.941 h@1, 0.006 poison occupancy vs similarity's 0.024).
