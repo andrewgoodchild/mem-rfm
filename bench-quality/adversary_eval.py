@@ -56,6 +56,9 @@ DEFENSES = {
     # Amendment 9: can any vote-aggregation defend a ring?
     "rfm_vote_trust": (False, True, True),   # C1: one_vote x trust
     "rfm_trust2": (False, False, "weighted"),  # C2: voter-weighted trust
+    # Amendment 10: endorser liability — vouching stakes your own standing
+    "rfm_liable": (False, False, "liable"),
+    "rfm_self_liable": (True, False, "liable"),
 }
 CONDITIONS = ["sim"] + list(DEFENSES)
 
@@ -161,7 +164,7 @@ def main():
         if vote:
             stores[name].set_one_vote(True)
         if trust:
-            stores[name].set_trust(True, weighted=(trust == "weighted"))
+            stores[name].set_trust(True, weighted=(trust == "weighted"), liable=(trust == "liable"))
 
     # Clean-store arm (no attacker at all) for the utility bars.
     clean_rows = rows[:n_gen]
@@ -173,7 +176,7 @@ def main():
         if vote:
             clean[name].set_one_vote(True)
         if trust:
-            clean[name].set_trust(True, weighted=(trust == "weighted"))
+            clean[name].set_trust(True, weighted=(trust == "weighted"), liable=(trust == "liable"))
 
     hits1 = defaultdict(list)
     hitsk = defaultdict(list)
@@ -255,6 +258,9 @@ def main():
     # Detector state must be read BEFORE the stores close.
     det = stores["rfm_trust"].collusion_signals()
     rep = stores["rfm_trust"].actor_trust()
+    # L3 (Amendment 10) must be judged on the LIABLE store — that is the
+    # condition whose reputations liability actually shapes.
+    rep_liable = stores["rfm_liable"].actor_trust()
 
     for s in list(stores.values()) + list(clean.values()):
         s.close()
@@ -309,6 +315,18 @@ def main():
         print(f"| {a} | {sg['reciprocity']:.3f} | {sg['concentration']:.3f} "
               f"| {sg['dissent']:.3f} | {sg['votes']} | {tv:+.3f} "
               f"| {'YES' if a in is_attacker else 'no'} |")
+    att_t = [v for a, (v, _n) in rep_liable.items() if a in is_attacker]
+    hon_t = [v for a, (v, _n) in rep_liable.items() if a not in is_attacker]
+    if att_t and hon_t:
+        print(f"  L3 ring collapse (liable store): attacker trust "
+              f"{np.mean(att_t):+.3f} vs honest {np.mean(hon_t):+.3f} "
+              f"(separation {np.mean(hon_t) - np.mean(att_t):+.3f})")
+        base_a = [v for a, (v, _n) in rep.items() if a in is_attacker]
+        base_h = [v for a, (v, _n) in rep.items() if a not in is_attacker]
+        if base_a and base_h:
+            print(f"     baseline (trust store, no liability): "
+                  f"{np.mean(base_a):+.3f} vs {np.mean(base_h):+.3f} "
+                  f"(separation {np.mean(base_h) - np.mean(base_a):+.3f})")
     for signal in ("reciprocity", "concentration", "dissent"):
         order = sorted(det.items(), key=lambda kv: -kv[1][signal])
         flagged = {a for a, _ in order[:len(is_attacker)]}

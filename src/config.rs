@@ -43,6 +43,12 @@ pub struct RfmConfig {
     /// trust — one EigenTrust-style iteration, so a ring whose members lose
     /// standing also loses the ability to confer it (Amendment 9).
     pub trust_weighted: f64,
+    /// Endorser liability (0 or 1, default 0): when 1, an outcome on a memory
+    /// is also folded into the reputation of every DISTINCT prior positive
+    /// endorser of that memory — vouching stakes the voucher's own standing.
+    /// Aimed at endorsement rings, whose mutual praise then becomes mutually
+    /// destructive (PROTOCOL.md Amendment 10).
+    pub endorser_liability: f64,
     /// When set via rfm_config('now', t), all functions read this instead of
     /// the wall clock. Cleared with rfm_config('now', NULL).
     pub frozen_now: Option<f64>,
@@ -62,6 +68,7 @@ impl Default for RfmConfig {
             one_vote: 0.0,
             trust: 0.0,
             trust_weighted: 0.0,
+            endorser_liability: 0.0,
             frozen_now: None,
         }
     }
@@ -108,6 +115,7 @@ impl RfmConfig {
             "one_vote" => Ok(Some(self.one_vote)),
             "trust" => Ok(Some(self.trust)),
             "trust_weighted" => Ok(Some(self.trust_weighted)),
+            "endorser_liability" => Ok(Some(self.endorser_liability)),
             "now" => Ok(self.frozen_now),
             _ => Err(format!("rfm: unknown config key '{key}'")),
         }
@@ -141,6 +149,7 @@ impl RfmConfig {
             "one_vote" => { check_flag(key, v)?; self.one_vote = v }
             "trust" => { check_flag(key, v)?; self.trust = v }
             "trust_weighted" => { check_flag(key, v)?; self.trust_weighted = v }
+            "endorser_liability" => { check_flag(key, v)?; self.endorser_liability = v }
             "now" => self.frozen_now = Some(v),
             _ => return Err(format!("rfm: unknown config key '{key}'")),
         }

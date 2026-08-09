@@ -185,6 +185,51 @@ fn author_trust_of(db: *mut sqlite3, id: i64, c: &RfmConfig) -> Result<Option<(f
         .map(|r| (r[0].unwrap_or(0.0), r[1].unwrap_or(0.0) as i64)))
 }
 
+/// Fold `outcome` into one actor's reputation EWMA (rfm_actors upsert).
+fn bump_actor_trust(db: *mut sqlite3, actor: &str, outcome: f64, lambda: f64) -> Result<()> {
+    let lit = text_lit(actor);
+    let prev = sql::query_row(
+        db,
+        &format!("SELECT value_score, outcome_count FROM rfm_actors WHERE actor = {lit}"),
+        2,
+    )?;
+    let (prev_v, prev_n) = match prev {
+        Some(r) => (r[0].unwrap_or(0.0), r[1].unwrap_or(0.0) as i64),
+        None => (0.0, 0),
+    };
+    let new_v = f64_lit(math::ewma_update(prev_v, prev_n, outcome, lambda))?;
+    sql::exec(
+        db,
+        &format!(
+            "INSERT INTO rfm_actors(actor, value_score, outcome_count) \
+             VALUES ({lit}, {new_v}, 1) \
+             ON CONFLICT(actor) DO UPDATE SET value_score = {new_v}, \
+             outcome_count = outcome_count + 1"
+        ),
+    )
+}
+
+/// Endorser liability (Amendment 10): charge this outcome to every DISTINCT
+/// prior positive endorser of the memory, excluding the current voter. An
+/// endorsement is then a stake rather than a free favour — a ring's mutual
+/// praise becomes mutually destructive once outsiders' retrievals fail,
+/// while honest endorsers of memories that keep working are repaid.
+/// Bounded by distinct endorsers (team size) and confined to the write path.
+fn charge_endorsers(db: *mut sqlite3, id: i64, voter: &str, outcome: f64, lambda: f64) -> Result<()> {
+    let endorsers = sql::query_column_text(
+        db,
+        &format!(
+            "SELECT DISTINCT actor FROM rfm_accesses WHERE memory_id = {id} \
+             AND outcome > 0 AND actor IS NOT NULL AND actor <> {}",
+            text_lit(voter)
+        ),
+    )?;
+    for e in endorsers {
+        bump_actor_trust(db, &e, outcome, lambda)?;
+    }
+    Ok(())
+}
+
 /// Fold one third-party outcome into the writer's reputation EWMA. Called
 /// only when the voter is TAGGED and differs from the writer: reputation is
 /// built from identifiable third-party verdicts, never from self-assessment
@@ -396,6 +441,9 @@ pub fn rfm_record_outcome(
     // already exist when trust mode is switched on); only its USE is gated.
     if let Some(a) = value_actor(values, 2)? {
         update_author_trust(db, id, &a, outcome, &c)?;
+        if c.endorser_liability != 0.0 {
+            charge_endorsers(db, id, &a, outcome, c.lambda)?;
+        }
     }
     api::result_double(context, new_value);
     Ok(())

@@ -518,3 +518,40 @@ SELECT 'mallory_weighted', value_score FROM rfm_actors WHERE actor = 'mallory';
         "a discredited voter must confer less trust: {weighted} vs {unweighted}"
     );
 }
+
+#[test]
+fn endorser_liability_charges_vouchers() {
+    // Amendment 10: with endorser_liability=1 an outcome is also folded into
+    // every DISTINCT prior positive endorser's reputation, so vouching stakes
+    // the voucher's standing. The current voter is never charged for their
+    // own vote, and a negative outcome must damage the endorser.
+    let script = r#"
+SELECT rfm_init();
+SELECT rfm_config('now', 1000.0);
+INSERT INTO rfm_memories(id, content, created_at, created_by) VALUES (1, 'bait', 0.0, 'mallory');
+SELECT rfm_config('endorser_liability', 1);
+-- crony vouches for mallory's bait
+SELECT rfm_record_access(1, 'crony'); SELECT rfm_record_outcome(1, 1.0, 'crony');
+SELECT 'crony_rows_after_vouch', count(*) FROM rfm_actors WHERE actor = 'crony';
+SELECT 'mallory_before', value_score FROM rfm_actors WHERE actor = 'mallory';
+-- an outsider retrieves it and it fails: the voucher is charged too
+SELECT rfm_record_access(1, 'alice'); SELECT rfm_record_outcome(1, -1.0, 'alice');
+SELECT 'crony_after_failure', value_score FROM rfm_actors WHERE actor = 'crony';
+SELECT 'mallory_after_failure', value_score FROM rfm_actors WHERE actor = 'mallory';
+SELECT 'alice_not_charged', count(*) FROM rfm_actors WHERE actor = 'alice';
+"#;
+    let (stdout, stderr) = run_sql(script);
+    assert!(stderr.is_empty(), "unexpected stderr: {stderr}");
+    let map = parse(&stdout);
+    // crony's own vouch does not build crony's reputation (it builds mallory's)
+    assert_eq!(map["crony_rows_after_vouch"], "0",
+               "vouching alone must not credit the voucher");
+    let after: f64 = map["crony_after_failure"].parse().unwrap();
+    assert!(after < 0.0, "voucher must be charged when the memory fails: {after}");
+    // One -1 after one +1 leaves the EWMA positive (lambda=0.3); what must
+    // hold is that the failure moved it DOWN, for author and voucher alike.
+    let before: f64 = map["mallory_before"].parse().unwrap();
+    let author: f64 = map["mallory_after_failure"].parse().unwrap();
+    assert!(author < before, "author trust must fall: {author} vs {before}");
+    assert_eq!(map["alice_not_charged"], "0", "the current voter is not an endorser");
+}
