@@ -496,3 +496,83 @@ any level, and that detection plus governance — not ranking — is the answer
 V1 failing for both: no vote-aggregation defense works; the open-problem
 statement becomes a stronger negative claim, scoped to these attacks. U
 failing rejects that configuration as guidance regardless of V1.
+
+---
+
+# Amendment 10 — endorser liability: making collusion individually irrational
+
+**Status: registered before implementation and before any run, smoke or
+otherwise.** (Amendments 5–9 disclosed pre-registration smoke runs; this one
+has none — the extension change described below does not yet exist at
+registration time.)
+
+Amendments 8–9 established that no vote-AGGREGATION defends a ring:
+per-memory (one_vote), per-author (trust), and per-voter-weight (trust2)
+all failed, because the ring controls votes at every level. Diagnosis for
+C2 specifically: crony A's standing is built by B's votes weighted by B's
+standing, which is built by A's — a single EigenTrust iteration cannot break
+a mutually-reinforcing cycle, and real EigenTrust breaks it only with
+pre-trusted seed peers, which is a governance input rather than something
+derivable from the log.
+
+This amendment attacks the ring's INCENTIVE instead of its arithmetic.
+
+## Mechanism: `rfm_config('endorser_liability', 1)`
+
+Today an endorsement is free: praising a memory costs the praiser nothing if
+the memory later fails. Under liability, when an outcome lands on memory M
+from voter V, that outcome is ALSO folded into the reputation EWMA of every
+DISTINCT prior positive endorser of M (excluding V). You stake your own
+standing on what you vouch for; vindication (later positives) repays it.
+
+Cost is on the write path only, bounded by distinct endorsers (team size),
+never on the scoring path.
+
+## Why this is a prisoner's dilemma and not an arms race
+
+The ring faces two options and loses under both, which is the property being
+tested:
+- **Cooperate (keep cross-endorsing):** every failed retrieval of a
+  co-conspirator's bait now debits the endorser too. A ring member who
+  endorses ~n/C baits absorbs ~n/C negatives on top of their own authored
+  failures, so ring standing collapses FASTER than a solo attacker's, and
+  the trust cap then buries their content.
+- **Defect (stop endorsing):** the bait keeps only its author's own votes,
+  which `exclude_self` already nullifies — the attack degenerates to
+  Amendment 6's solo case, which is fully defended.
+
+Honest endorsement is safe by asymmetry, not by exemption: agents endorse
+memories that helped them, those memories tend to help others, and the
+endorser is repaid. This rations nothing legitimate — the failure mode that
+sank `one_vote`.
+
+## Endpoints (STAR full stream, collude C=4, r=0.20, pump=50, k=5, β=0.3)
+
+Condition `rfm_liable` = trust + endorser_liability (liability feeds the
+reputation the trust cap reads).
+
+- **L1 (primary)**: h@1 `rfm_liable − rfm` CI > 0 under collusion.
+- **L2**: h@1 `rfm_liable − sim` ≥ 0 — full restoration to the no-prior
+  baseline. Reported; the first defense with a mechanism that could reach it.
+- **L3 ring collapse**: mean writer trust of attackers < mean of honest
+  agents, with separation > 0.3 (Amendment 8 measured NO separation:
+  +0.400 attacker vs −0.314 honest).
+- **U (veto)**: clean-store h@1 `rfm_liable − rfm`, |Δ| ≤ 0.010. The live
+  risk is collateral damage to honest agents who endorsed a memory that
+  later went stale.
+- **Cross-checks**: upvote scenario not damaged (≥ −0.010); ABCD collude
+  replication.
+
+## Registered prediction
+
+L1 passes and L3 shows clear separation. L2 is genuinely uncertain: liability
+should collapse ring standing, but bait already retrieved before the ring's
+trust falls is damage that no post-hoc mechanism recovers, so partial
+restoration is the honest expectation.
+
+## What would falsify
+
+L1 failing means incentive-shaping fails too, and the README's conclusion
+becomes the strong one: **no scoring-layer mechanism defends a ring —
+detection plus governance is the only answer.** U failing means liability
+degrades honest operation and is rejected as guidance regardless of L1.
