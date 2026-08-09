@@ -179,6 +179,76 @@ class MemoryStore:
     def set_one_vote(self, on):
         self.db.execute("SELECT rfm_config('one_vote', ?)", (1 if on else 0,))
 
+    def set_trust(self, on):
+        self.db.execute("SELECT rfm_config('trust', ?)", (1 if on else 0,))
+
+    def actor_trust(self):
+        """Writer reputation table: {actor: (value, n_outcomes)}."""
+        return {a: (v, n) for a, v, n in self.db.execute(
+            "SELECT actor, value_score, outcome_count FROM rfm_actors")}
+
+    def collusion_signals(self):
+        """Per-voter collusion signals, computed from the access log alone
+        (pure forensics — no scoring state, so an auditor can run this on a
+        committed log). Returns {actor: {...}} with:
+
+          dissent        share of votes whose sign opposes the other voters'
+                         consensus on that memory. NAIVE: a ring that stuffs
+                         ballots MANUFACTURES the consensus, so this inverts
+                         and flags honest voters. Reported to show the failure.
+          concentration  1 − normalized entropy of the authors receiving this
+                         voter's positive outcomes. 1.0 = all praise to a
+                         single author; a ring praises only its own members.
+          reciprocity    share of this voter's positive outcomes going to
+                         authors who also positively rated THIS voter's
+                         memories — mutual back-scratching, which honest
+                         praise has no reason to be.
+        """
+        import math as _m
+        rows = list(self.db.execute(
+            "SELECT a.memory_id, a.actor, a.outcome, m.created_by "
+            "FROM rfm_accesses a JOIN rfm_memories m ON m.id = a.memory_id "
+            "WHERE a.outcome IS NOT NULL AND a.actor IS NOT NULL"))
+        by_mem, pos = {}, {}
+        for mem, actor, outcome, author in rows:
+            by_mem.setdefault(mem, []).append((actor, outcome))
+            if outcome > 0 and author is not None and author != actor:
+                pos.setdefault(actor, {})
+                pos[actor][author] = pos[actor].get(author, 0) + 1
+
+        dissent = {}
+        for _mem, votes in by_mem.items():
+            total = sum(o for _a, o in votes)
+            for actor, outcome in votes:
+                others = total - outcome
+                if others == 0.0:
+                    continue
+                d, n = dissent.get(actor, (0, 0))
+                dissent[actor] = (d + (1 if (outcome > 0) != (others > 0) else 0), n + 1)
+
+        out = {}
+        for actor in set(list(dissent) + list(pos)):
+            d, n = dissent.get(actor, (0, 0))
+            targets = pos.get(actor, {})
+            total_pos = sum(targets.values())
+            if total_pos and len(targets) > 1:
+                probs = [v / total_pos for v in targets.values()]
+                ent = -sum(p * _m.log(p) for p in probs) / _m.log(len(targets))
+                # Entropy over few distinct targets is high by construction;
+                # scale by how few targets there are relative to the field.
+                conc = 1.0 - ent * (len(targets) / max(len(pos), 1))
+            elif total_pos:
+                conc = 1.0
+            else:
+                conc = 0.0
+            recip = (sum(c for auth, c in targets.items()
+                         if pos.get(auth, {}).get(actor, 0) > 0) / total_pos
+                     if total_pos else 0.0)
+            out[actor] = {"dissent": d / n if n else 0.0, "votes": n,
+                          "concentration": conc, "reciprocity": recip,
+                          "n_targets": len(targets)}
+        return out
+
     def set_created_by(self, pairs):
         """Tag memories with their writer (host principal); enables hardened
         mode's self-endorsement check. pairs: list of (mem_id, actor)."""

@@ -39,3 +39,15 @@ CREATE INDEX IF NOT EXISTS rfm_accesses_mem_time
 -- when that mode is off.
 CREATE INDEX IF NOT EXISTS rfm_accesses_mem_actor
   ON rfm_accesses(memory_id, actor);
+
+-- Writer reputation, maintained by rfm_record_outcome: the EWMA of
+-- THIRD-PARTY outcomes on memories this actor wrote (the author's own
+-- feedback never contributes). Read by rfm_config('trust', 1), which caps a
+-- memory's effective value at its author's — so endorsement rings cannot
+-- lift content whose retrievals keep failing for everyone else. One row per
+-- writer keeps scoring a single-row read.
+CREATE TABLE IF NOT EXISTS rfm_actors (
+  actor         TEXT PRIMARY KEY,
+  value_score   REAL NOT NULL DEFAULT 0.0,
+  outcome_count INTEGER NOT NULL DEFAULT 0
+);

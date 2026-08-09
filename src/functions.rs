@@ -147,9 +147,79 @@ fn activation_of(row: &MemRow, now: f64, d: f64) -> f64 {
 }
 
 fn score_of(row: &MemRow, now: f64, d: f64, w_a: f64, w_v: f64, shrink_k: f64) -> f64 {
+    score_of_trusted(row, now, d, w_a, w_v, shrink_k, None)
+}
+
+/// `author_trust`: the writer's (value, outcome_count) from rfm_actors, or
+/// None to apply no cap (trust mode off, untagged memory, or a writer with no
+/// third-party outcomes yet).
+fn score_of_trusted(
+    row: &MemRow,
+    now: f64,
+    d: f64,
+    w_a: f64,
+    w_v: f64,
+    shrink_k: f64,
+    author_trust: Option<(f64, i64)>,
+) -> f64 {
     let b = activation_of(row, now, d);
     let v_eff = math::shrink(row.value, row.n_outcomes, shrink_k);
-    math::score(b, v_eff, w_a, w_v)
+    let capped = math::trust_cap(
+        v_eff,
+        author_trust.map(|(tv, tn)| math::shrink(tv, tn, shrink_k)),
+    );
+    math::score(b, capped, w_a, w_v)
+}
+
+/// The author's reputation row for a memory, if trust mode is on and the
+/// memory has a known writer with third-party outcomes.
+fn author_trust_of(db: *mut sqlite3, id: i64, c: &RfmConfig) -> Result<Option<(f64, i64)>> {
+    if c.trust == 0.0 {
+        return Ok(None);
+    }
+    let sql_text = format!(
+        "SELECT a.value_score, a.outcome_count FROM rfm_memories m \
+         JOIN rfm_actors a ON a.actor = m.created_by WHERE m.id = {id}"
+    );
+    Ok(sql::query_row(db, &sql_text, 2)?
+        .map(|r| (r[0].unwrap_or(0.0), r[1].unwrap_or(0.0) as i64)))
+}
+
+/// Fold one third-party outcome into the writer's reputation EWMA. Called
+/// only when the voter is TAGGED and differs from the writer: reputation is
+/// built from identifiable third-party verdicts, never from self-assessment
+/// or from anonymous votes that cannot be checked against authorship.
+fn update_author_trust(db: *mut sqlite3, id: i64, voter: &str, outcome: f64, lambda: f64) -> Result<()> {
+    let author_sql = format!(
+        "SELECT 1 FROM rfm_memories WHERE id = {id} AND created_by IS NOT NULL \
+         AND created_by <> {}",
+        text_lit(voter)
+    );
+    if sql::query_row(db, &author_sql, 1)?.is_none() {
+        return Ok(());
+    }
+    let prev = sql::query_row(
+        db,
+        &format!(
+            "SELECT a.value_score, a.outcome_count FROM rfm_memories m \
+             JOIN rfm_actors a ON a.actor = m.created_by WHERE m.id = {id}"
+        ),
+        2,
+    )?;
+    let (prev_v, prev_n) = match prev {
+        Some(r) => (r[0].unwrap_or(0.0), r[1].unwrap_or(0.0) as i64),
+        None => (0.0, 0),
+    };
+    let new_v = f64_lit(math::ewma_update(prev_v, prev_n, outcome, lambda))?;
+    sql::exec(
+        db,
+        &format!(
+            "INSERT INTO rfm_actors(actor, value_score, outcome_count) \
+             SELECT created_by, {new_v}, 1 FROM rfm_memories WHERE id = {id} \
+             ON CONFLICT(actor) DO UPDATE SET value_score = {new_v}, \
+             outcome_count = outcome_count + 1"
+        ),
+    )
 }
 
 pub fn rfm_init(
@@ -297,6 +367,11 @@ pub fn rfm_record_outcome(
              outcome_count = outcome_count + 1 WHERE id = {id}"
         ),
     )?;
+    // Writer reputation is maintained unconditionally (cheap, and it must
+    // already exist when trust mode is switched on); only its USE is gated.
+    if let Some(a) = value_actor(values, 2)? {
+        update_author_trust(db, id, &a, outcome, c.lambda)?;
+    }
     api::result_double(context, new_value);
     Ok(())
 }
@@ -353,11 +428,14 @@ pub fn rfm_score(
     aux: &SharedConfig,
 ) -> Result<()> {
     let c = cfg(aux)?;
-    let row = load_mem(db_of(context), value_id(values)?)?;
+    let db = db_of(context);
+    let id = value_id(values)?;
+    let row = load_mem(db, id)?;
     let now = clock::now(&c);
+    let trust = author_trust_of(db, id, &c)?;
     api::result_double(
         context,
-        score_of(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k),
+        score_of_trusted(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k, trust),
     );
     Ok(())
 }
@@ -373,9 +451,12 @@ pub fn rfm_prior(
     aux: &SharedConfig,
 ) -> Result<()> {
     let c = cfg(aux)?;
-    let row = load_mem(db_of(context), value_id(values)?)?;
+    let db = db_of(context);
+    let id = value_id(values)?;
+    let row = load_mem(db, id)?;
     let now = clock::now(&c);
-    let s = score_of(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k);
+    let trust = author_trust_of(db, id, &c)?;
+    let s = score_of_trusted(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k, trust);
     api::result_double(context, (1.0 - c.beta) + c.beta * s);
     Ok(())
 }

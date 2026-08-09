@@ -33,6 +33,11 @@ pub struct RfmConfig {
     /// found a memory useful, not how many times it was rated — at the cost
     /// of discarding repeat-use evidence (see PROTOCOL.md Amendment 7).
     pub one_vote: f64,
+    /// Writer-reputation mode (0 or 1, default 0): when 1, a memory's
+    /// effective value is capped at its author's third-party trust EWMA
+    /// (rfm_actors). Defends endorsement rings, which per-memory rules
+    /// cannot see — see PROTOCOL.md Amendment 8.
+    pub trust: f64,
     /// When set via rfm_config('now', t), all functions read this instead of
     /// the wall clock. Cleared with rfm_config('now', NULL).
     pub frozen_now: Option<f64>,
@@ -50,6 +55,7 @@ impl Default for RfmConfig {
             beta: 0.3,
             exclude_self: 0.0,
             one_vote: 0.0,
+            trust: 0.0,
             frozen_now: None,
         }
     }
@@ -94,6 +100,7 @@ impl RfmConfig {
             "beta" => Ok(Some(self.beta)),
             "exclude_self" => Ok(Some(self.exclude_self)),
             "one_vote" => Ok(Some(self.one_vote)),
+            "trust" => Ok(Some(self.trust)),
             "now" => Ok(self.frozen_now),
             _ => Err(format!("rfm: unknown config key '{key}'")),
         }
@@ -125,6 +132,7 @@ impl RfmConfig {
             "beta" => { check_beta(v)?; self.beta = v }
             "exclude_self" => { check_flag(key, v)?; self.exclude_self = v }
             "one_vote" => { check_flag(key, v)?; self.one_vote = v }
+            "trust" => { check_flag(key, v)?; self.trust = v }
             "now" => self.frozen_now = Some(v),
             _ => return Err(format!("rfm: unknown config key '{key}'")),
         }
