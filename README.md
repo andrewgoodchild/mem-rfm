@@ -1,7 +1,8 @@
 # mem-rfm — agent memory that ranks itself by outcomes
 
-**A SQLite extension, an MCP server for Claude Code, and ~25 experiments on
-when agent memory actually helps — including the failures.**
+**A SQLite extension, an MCP server for Claude Code, and ~30 pre-registered
+experiments on when agent memory actually helps — and what happens when
+someone abuses it. Including the failures.**
 
 > **TL;DR.** The deployable recipe is small: compose similarity search with a
 > **bounded usage prior** — `max(sim,0) × ((1−β) + β·rfm_score(id))`, β=0.3,
@@ -22,7 +23,13 @@ when agent memory actually helps — including the failures.**
 > but narrow (confirmed on two datasets, failed a pre-registered
 > replication bar on two others — published below). A four-dataset
 > team-pooling campaign is included as **measurements, not a product**
-> (§ team-pooled stores). Biggest caveats: outcome signals in the
+> (§ team-pooled stores), alongside the only quantified **attack/defense
+> evidence** we know of for memory ranking: a bad team member's junk is
+> self-correcting, self-promotion is fully defended, censorship turns out
+> to be structurally impossible under β-bounding — and a colluding ring
+> beats every one of six ranking defenses, so the shipped answer there is
+> detection plus governance, not scoring (§ what a bad team member can and cannot do). Biggest
+> caveats: outcome signals in the
 > sequential evals are oracle evidence-hits, and the live coding A/B is
 > n=27 with one executor model. One published number was corrected in
 > pre-publication review (see RESULTS.md "Corrections").
