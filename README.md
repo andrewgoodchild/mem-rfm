@@ -1,245 +1,73 @@
-# mem-rfm — agent memory that ranks itself by outcomes
+# mem-rfm
 
-**A SQLite extension, an MCP server for Claude Code, and ~30 pre-registered
-experiments on when agent memory actually helps — and what happens when
-someone abuses it. Including the failures.**
+**Agent memory that learns which memories are actually worth keeping.**
 
-> **TL;DR.** The deployable recipe is small: compose similarity search with a
-> **bounded usage prior** — `max(sim,0) × ((1−β) + β·rfm_score(id))`, β=0.3,
-> frozen by a pre-registered experiment after the unbounded version was
-> falsified (−0.32 NDCG under a strong embedder) — and close the loop with
-> **outcome feedback** (`rfm_record_outcome`: did the memory help?). What
-> the experiments say: memory pays where **work recurs** — feedback adds
-> +0.02–0.08 NDCG where queries revisit earlier ground (CIs exclude zero,
-> three embedders), operational knowledge (build quirks, env pins,
-> conventions) earns sustained positive value in live use, and outcome
-> feedback retires stale entries similarity keeps recommending forever —
-> and memory does NOT pay where work is episodic: on scattered real-bug
-> fixing our own system honestly measured a **~6% lesson-transfer rate**
-> (15 of 16 outcomes negative) and no resolution benefit. The outcome
-> axis's proven jobs are safety and maintenance more than raw ranking: its
-> cost is bounded everywhere we measured, it is the stabilizer that keeps
-> any usage prior from collapsing retrieval, and its rank-1 gains are real
-> but narrow (confirmed on two datasets, failed a pre-registered
-> replication bar on two others — published below). A four-dataset
-> team-pooling campaign is included as **measurements, not a product**
-> (§ team-pooled stores), alongside the only quantified **attack/defense
-> evidence** we know of for memory ranking: a bad team member's junk is
-> self-correcting, self-promotion is fully defended, censorship turns out
-> to be structurally impossible under β-bounding — and a colluding ring
-> beats every one of six ranking defenses, so the shipped answer there is
-> detection plus governance, not scoring (§ what a bad team member can and cannot do). Biggest
-> caveats: outcome signals in the
-> sequential evals are oracle evidence-hits, and the live coding A/B is
-> n=27 with one executor model. One published number was corrected in
-> pre-publication review (see RESULTS.md "Corrections").
+A SQLite extension (plus an MCP server for Claude Code) that ranks stored
+memories by whether they *helped* — not just whether they look relevant.
+Bundled with ~30 pre-registered experiments on when agent memory pays off,
+when it doesn't, and what happens when someone abuses it.
 
-Memories are scored by **R**ecency and **F**requency (unified as ACT-R
-base-level activation, O(1) per score) plus a **M**onetary-analog value axis:
-an EWMA of outcome feedback — *did this memory actually help when it was
-retrieved?* Search records usage; feedback records value; useful memories
-rise and useless ones fade, all inside one SQLite file, no API keys, no LLM
-calls in the scoring path.
+---
+
+## The problem
+
+Agent memory systems retrieve by similarity: you ask a question, they return
+the memories whose embeddings sit closest to it. That works, but nothing in
+the loop ever notices the outcome. A memory that was retrieved ten times and
+wasted the agent's time on all ten still looks exactly as relevant on the
+eleventh.
+
+Two consequences follow. **Bad memories never leave** — a plausible-sounding
+but wrong note keeps surfacing forever. And **stale memories never leave
+either** — when a procedure changes, the old version is still semantically
+perfect for the query that matches it.
+
+## What this does
+
+It closes the loop. After a memory is retrieved, you tell the store whether
+it helped. That verdict becomes part of the ranking, so memories that keep
+paying off rise and memories that keep disappointing fade.
 
 ```sql
+-- Rank by similarity, adjusted by how well each memory has performed.
 SELECT id, content,
        max(1.0 - vec_distance_cosine(embedding, :query), 0) * rfm_prior(id) AS score
 FROM rfm_memories ORDER BY score DESC LIMIT 5;
 
-SELECT rfm_record_access(42);        -- retrieved it
-SELECT rfm_record_outcome(42, 1.0);  -- ...and it helped
+SELECT rfm_record_access(42);        -- we retrieved memory 42
+SELECT rfm_record_outcome(42, 1.0);  -- ...and it helped (-1.0 if it didn't)
 ```
 
-An August 2026 survey of 22 memory systems found the loop from *memory
-access → task outcome → ranking weight* shipping in exactly one other OSS
-system — [Cognee](https://docs.cognee.ai/guides/feedback-system)'s feedback
-weights, off by default and rating answers rather than task outcomes — plus
-two partial takes ([ReMe](https://github.com/agentscope-ai/ReMe) uses outcome
-utility only to prune; a [MemOS plugin](https://github.com/MemTensor/MemOS)
-credits the episode's new traces, not the memories retrieved). As far as we
-can determine, this remains the only system where outcome feedback is a
-**default-on term in the retrieval score**, attributed to **the retrieved
-memory itself**, with **signed negative outcomes** as a ranking force — and
-the only one shipped as an embeddable primitive rather than a service.
-Concurrent 2026 research is converging on the same loop
-([RoMeRL](https://arxiv.org/abs/2608.02508),
-[Chen & Cheng](https://arxiv.org/abs/2606.12945)); a Jul 2026
-mechanism-level review ([arXiv:2607.23942](https://arxiv.org/abs/2607.23942))
-still lists activation-plus-utility as unmigrated from cognitive
-architectures to language agents. And this is, as far as we know, the only
-memory system whose every claim — including the negative ones below — is
-pre-registered, reproducible, and committed to git in auditable order.
+That's the whole interface. Scoring is a single indexed row read, there are
+no API keys, no network calls, and no LLM anywhere in the ranking path — it
+is arithmetic over columns your database already has.
 
----
+The name is the three signals it combines: **R**ecency and **F**requency
+(how recently and how often a memory has been used) and a **M**onetary-analog
+value axis (how well it has performed when used).
 
-## What we found: where memory helps agents, and where it doesn't
+## Should you use this?
 
-Everything below was measured, not asserted: three public retrieval
-benchmarks (LoCoMo, LongMemEval, BEAM), a coding experience-selection
-benchmark (SWE-Bench-CL), a pre-registered composition experiment across
-three embedding models, **70 live Claude Code sessions fixing real pytest
-and sphinx bugs in a paired A/B** (control vs memory arm, separate clones,
-gold-test scoring), and a pre-registered four-dataset dialog campaign.
-Per-question results and run logs are committed; live-session transcripts
-and memory databases stay local (they can contain machine-specific
-detail), with a redacted audit committed at
-`experiments/swe-ab/memory-audit.md`.
+**Probably yes if** your agent does work that *recurs* — the same kinds of
+problems, procedures, or environments coming back. That is where memory pays,
+and where knowing what helped last time is worth something. Operational
+knowledge is the sweet spot: build quirks, dependency pins, project
+conventions, user preferences.
 
-### Memory helps when work RECURS
+**Probably not if** each task is unrelated to the last, or if your workload is
+"answer one question about a big pile of documents." We measured both cases
+and memory did not help; on scattered bug-fixing it was mildly *negative*.
+Details in [What we found](#what-we-found), including the numbers that argue
+against using this.
 
-- **Feedback measurably improves retrieval where queries revisit earlier
-  ground.** On sequential benchmarks, the value axis adds +0.02–0.08 NDCG on
-  questions whose evidence had served earlier questions (CIs exclude zero,
-  three embedders, replicated on chat and code corpora). Where evidence never
-  recurs, memory can't help — and bounded correctly, it doesn't hurt.
-- **Operational and environment knowledge transfers.** In the live A/B, the
-  single memory that earned sustained positive value (+0.58 over 5 uses) was
-  an environment gotcha — which pinned dependencies the sphinx checkout
-  needs — not code knowledge. Facts about *how to work here* (build quirks,
-  env pins, project conventions, user preferences) recur by nature.
-- **Forgetting works.** With the value signal driving it, superseded facts
-  get demoted: update-preference on LongMemEval's knowledge-update tasks
-  rose 0.43 → 0.66 with no loss of fresh-fact recall (oracle-signal setting;
-  the effect trades against rank-safety via the β dial — see below).
-- **The stabilizer role is load-bearing.** Under sequential query load, a
-  recency/frequency prior *alone* collapses retrieval (rich-get-richer,
-  NDCG ≈ 0.01 in ablations). Negative outcome feedback is what breaks that
-  loop. If you run any usage-based ranking, you need the value axis or
-  something like it.
-- **Staleness is where outcomes earn their keep** (ABCD support corpus,
-  exploratory). After a simulated policy revision, similarity-only kept
-  recommending dead procedures 1,500 calls later (hit@1 0.20 vs 0.76
-  pre-change) — stale entries stay semantically similar forever. With an
-  outcome signal driving demotion, the recovery curve beats similarity's in
-  every bin: final-bin hit@1 **0.56 vs 0.20**. Production design: explicit
-  invalidation for announced changes, outcome-driven forgetting as the
-  safety net for unannounced ones.
-
-### Memory does NOT help when work is EPISODIC
-
-- **Per-bug code lessons mostly don't transfer.** In the live A/B the agent
-  saved 17 genuinely good pytest lessons — and then, bug after bug, honestly
-  judged retrieved ones irrelevant: **15 of 16 recorded outcomes were
-  negative**, because SWE-bench-style tasks deliberately scatter across
-  unrelated subsystems. The demotion loop measured its own workload's
-  transfer rate (~6%) with no oracle. That is the system working; the
-  workload just has little to remember.
-- **On hard tasks under a turn budget, memory is directionally a tax.**
-  Resolution across 27 paired real-bug tasks: control 25/27, memory arm
-  23/27 — both discordant pairs going to control, consistent with noise
-  (McNemar p = 0.5) as much as with a difficulty effect. Overhead:
-  ~8–22s/session, dominated by embedding-model startup — trivia in a
-  30-minute interactive session, material in 90-second headless ones.
-- **A usage prior does not beat a good retriever at one-shot relevance.**
-  Against pure similarity search with a strong embedder, the *unbounded*
-  prior was falsified outright (−0.32 NDCG; pre-registered robustness
-  check), and the frozen bounded form reaches parity, not superiority. If
-  your workload is "answer one question about a haystack," use similarity
-  and skip the prior.
-- **Rank-1 gains from outcome-ranking are real but narrow — and we
-  published the miss.** The outcome-ranked store beat plain similarity at
-  rank-1 on ABCD (+1.2 → +2.0 as feedback accumulated) and STAR (+1.25;
-  +1.27 under Qwen3, embedder-robust). The pre-registered replication bar
-  required CI > 0 on two of three datasets; it hit only one
-  (MultiDoc2Dial +0.24 [−0.39,+0.90]; FloDial +0.16 [−0.05,+0.43]) — the
-  failure is recorded in RESULTS.md. The bounded-cost guarantee held on
-  every dataset and embedder: outcome-ranking never cost more than −0.4
-  points hit@5 (n.s.). Treat rank-1 lift as a possible bonus, not the
-  reason to deploy the value axis.
-
-**The one-sentence takeaway:** memory for agents is not a lesson journal —
-it's an *operational profile* that earns rank through outcomes. Capture
-environment quirks, conventions, decisions, and preferences; let per-task
-trivia fade; and bound how much any of it can override relevance.
-
-### Team-pooled stores: measurements, not a product
-
-If recurrence is what memory needs, pooling experience across agents
-multiplies effective recurrence. We measured this on
-[ABCD](https://github.com/asappresearch/abcd) (exploratory), then
-pre-registered a replication (PROTOCOL.md Amendment 4) on three datasets
-with genuinely authored manuals:
-
-| dataset (domain) | agents | labels | team − solo, hit@5 | pre-reg |
-|---|---|---|---|---|
-| ABCD (customer support) | 8 (imposed) | 55 procedures | **+14.5** [+13.0,+16.1] | exploratory |
-| STAR (task-oriented dialog) | **115 real wizards**, real time-order | 24 flowcharts | **+26.1** [+24.7,+27.5] | **pass** |
-| MultiDoc2Dial (gov-policy QA) | 8 (imposed) | 451 documents | **+37.5** [+35.9,+39.1] | **pass** |
-| FloDial (troubleshooting) | 8 (imposed) | 10 flowcharts | **+4.0** [+3.2,+5.0] | **pass** |
-
-Accumulated experience also out-ranks each dataset's authored manual at
-hit@1 (**+12.0 / +21.1 / +6.4 / +1.7**, CIs > 0 — MultiDoc2Dial against
-our own registered prediction, disclosed in RESULTS.md), while the manual
-owns the cold start (layering it in is worth **+42.6 points** over
-MultiDoc2Dial's first 500 calls); the layered store — manual + experience
-+ outcomes — was the best condition everywhere it ran. A stronger embedder
-narrows the experience-vs-manual gap (STAR: +21.1 → +6.0 under Qwen3) but
-does not close it.
-
-> **These are measurements, not a product.** A production shared memory
-> store owes its users access control, tenancy isolation, a poisoning
-> threat model, and deletion guarantees — none of which this repo provides
-> or currently intends to. The numbers say pooling is worth engineering
-> for; the engineering is future work. If you experiment anyway: pool
-> delexicalized procedure patterns, never transcripts; keep
-> customer-specific context in per-customer scoped stores; one DB per
-> scope, so erasure is deleting a file.
-
----
-
-## The composition that survived falsification
-
-The naive composition `similarity × rfm_score` fails: activation's dynamic
-range (~6×) overwhelms well-calibrated similarities, and the damage *grows*
-with retriever quality (−0.05 NDCG under MiniLM → −0.32 under
-Qwen3-Embedding). The shipped form is the **bounded prior**:
-
-```
-rfm_prior(id) = (1 − β) + β · rfm_score(id)        β = 0.3 (rfm_config('beta', …))
-final = max(similarity, 0) × rfm_prior(id)
-```
-
-β was frozen by a pre-registered protocol (`PROTOCOL.md`: candidates,
-dev/test split, selection rule, and falsification criteria committed before
-any experiment ran; dev = BEAM only; rank-fusion and shortlist-rerank
-alternatives failed feasibility by ~40×). One-shot test results with frozen
-β=0.3:
-
-| endpoint | result |
-|---|---|
-| Cost vs similarity ≤ 0.010 NDCG (LoCoMo, MiniLM / Qwen3) | **pass**: −0.001 / +0.004 |
-| Feedback adaptivity CIs > 0 | **pass**: +0.023 / +0.032 (larger on test than dev) |
-| SWE-Bench-CL cost n.s. | **pass**: −0.013 / −0.001 (slightly *ahead*) |
-| Unseen embedder (bge-m3, never used in tuning) | **pass**: cost −0.005; largest adaptivity of any embedder (+0.078) |
-| Knowledge-update forgetting | **weak**: +0.014 (was +0.229 unbounded — β trades forgetting power for rank safety; raise β when forgetting matters more) |
-
-Also killed by their own pre-registered bars, and documented rather than
-buried: BM25 hybrid fusion (a dev-set win on 2 repos reversed on 6 held-out
-repos — the repo split caught the overfit), confident-negative pruning
-(cannot be simultaneously retrieval-safe and forgetting-potent), the
-rank-1 replication bar above (1 of 3), and three content-based value
-signals (semantic richness, diversity, demand-recurrence — all weak or
-benchmark-dependent as priors; provenance/is-user was the only content
-prior that beat similarity anywhere).
-
-## The theory, in three equations
-
-ACT-R base-level activation unifies recency and frequency over the access
-history — `B = ln(Σ tᵢ^−d)` — and the Petrov (2006) hybrid approximation
-makes it O(1): the two most recent access times are kept exactly (they live
-in columns the schema already has; `bla_cache` stores the second-most-recent)
-plus a closed-form tail. Scoring reads **one row**, never the access log
-(measured: ~4.6µs/row flat whether a memory has 20 or 200 accesses; mean
-approximation error 0.049 activation units). Value is an outcome EWMA in
-[−1,1] — `v ← 0.3·outcome + 0.7·v`, first outcome initializes — with a
-confidence shrink `v·n/(n+3)` so one lucky +1 doesn't outshout the prior.
-`rfm_score = 0.7·P(B) + 0.3·v₀₁` with `P` the ACT-R retrieval-probability
-squash. Every equation in the code cites its source.
+**Definitely not if** you want a turnkey team memory service. This is a
+scoring primitive plus evidence, not a product: no access control, no
+tenancy, no admission control on writes.
 
 ## Install
 
-Rust extension (needs a `.load`-capable SQLite ≥ 3.35 — Apple's CLI has
-loading compiled out; use Homebrew's):
+The extension needs a SQLite that can load extensions (≥ 3.35). Apple's
+bundled CLI has loading compiled out — use Homebrew's.
 
 ```sh
 cargo build --release
@@ -248,7 +76,7 @@ sqlite3
 SELECT rfm_init();
 ```
 
-Claude Code memory server (local embeddings, one SQLite file):
+For Claude Code, an MCP server with local embeddings and one SQLite file:
 
 ```sh
 cd integrations/claude-code && uv venv --python 3.12 .venv
@@ -256,143 +84,295 @@ uv pip install --python .venv/bin/python mcp sqlite-vec sentence-transformers nu
 claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py"
 ```
 
-Tools: `memory_save/search/feedback/list/delete/export/status` — search
-records accesses automatically, feedback trains the ranking, list/export
-give full inspectability. `capture.md` has the CLAUDE.md snippet for
-agent-decided capture (per the findings above: bias it toward operational
-facts). An optional SessionStart hook injects the top memories by pure
-`rfm_score` — the prior ranking with no query at all — capped at 1,500
-chars. `integrations/claude-code/ab/` is a ready-made A/B kit for measuring
-the incremental value on your own work (arm-randomized launcher, transcript-
-joining stats with bootstrap CIs).
+It exposes `memory_save`, `memory_search`, `memory_feedback`, plus
+`list`/`export`/`delete`/`status` for inspection. Searching records the
+access automatically; feedback is what trains the ranking. `capture.md` has a
+CLAUDE.md snippet telling the agent what's worth saving, and
+`integrations/claude-code/ab/` is a ready-made A/B kit if you want to measure
+whether any of this helps *your* work before believing ours.
+
+---
+
+## What we found
+
+Everything below is measured. The benchmarks are public, the per-question
+outputs are committed, and the experiments were pre-registered — the protocol,
+the success bars, and what would count as failure were all written down and
+committed to git *before* each run. The failures are reported at the same
+length as the successes, because a memory system that only publishes its wins
+is not telling you when to use it.
+
+A note on the numbers: **hit@1** means "the top-ranked result was correct" and
+**hit@5** means "a correct result appeared in the top five." Square brackets
+are 95% confidence intervals. "Points" are percentage points.
+
+### Memory helps when work recurs
+
+- **Outcome feedback improves retrieval on repeat ground.** Where a question's
+  evidence had served an earlier question, feedback added 0.02–0.08 NDCG
+  across three different embedding models, on both chat and code corpora.
+  Where evidence never recurs it can't help — and, bounded properly, it
+  doesn't hurt either.
+- **Operational knowledge is what actually transfers.** In 70 live Claude Code
+  sessions fixing real bugs, exactly one memory earned sustained positive
+  value: an environment gotcha about which dependencies a checkout needs. Not
+  code knowledge. Facts about *how to work here* recur by their nature.
+- **Stale memories get retired.** On knowledge-update tasks, preference for
+  the updated fact rose from 0.43 to 0.66 without losing recall of fresh
+  facts.
+- **The value axis is load-bearing, not decorative.** Rank memories by usage
+  alone and retrieval collapses — rich-get-richer drives NDCG to about 0.01.
+  Negative feedback is what breaks that loop. If you build any usage-based
+  ranking, you need something like this or it will eat itself.
+
+### Memory does not help when work is episodic
+
+- **Per-bug lessons mostly don't transfer.** The agent saved 17 genuinely good
+  debugging lessons, then judged retrieved ones irrelevant bug after bug:
+  **15 of 16 recorded outcomes were negative**. The system measured its own
+  workload's transfer rate at roughly 6%, with no oracle telling it so. That
+  is the mechanism working correctly on a workload that has little worth
+  remembering.
+- **On hard tasks under a time budget, memory is a mild tax.** Across 27
+  paired real-bug tasks, the control arm solved 25 and the memory arm 23, with
+  both disagreements going to control. That is consistent with noise
+  (McNemar p = 0.5), but it is certainly not a win. Overhead was 8–22s per
+  session, mostly model startup — irrelevant in a 30-minute session, material
+  in a 90-second one.
+- **A usage prior doesn't beat a good retriever at one-shot relevance.** The
+  obvious version of this idea — multiply similarity by the usage score — was
+  falsified outright: −0.32 NDCG against a strong embedder. The bounded form
+  we ship reaches parity, not superiority. If your workload is one-shot
+  lookup, just use similarity search.
+- **The rank-1 gain is real but narrow.** Outcome ranking beat plain
+  similarity for the top result on two datasets, and **failed its
+  pre-registered replication bar on two others**. Cost was bounded everywhere.
+  Treat top-slot improvement as a possible bonus, not the reason to deploy.
+
+**The one-line takeaway:** agent memory is not a lesson journal, it's an
+*operational profile*. Capture environment quirks, conventions, decisions and
+preferences; let per-task trivia fade; and bound how far any of it can
+override relevance.
+
+### Pooling memory across a team
+
+If recurrence is what memory needs, then sharing experience across several
+agents should multiply it — one agent's solved problem becomes everyone's
+candidate memory. It does, consistently:
+
+| dataset | domain | shared vs per-agent stores (hit@5) |
+|---|---|---|
+| STAR | task-oriented dialog, 115 real human agents | **+26.1** [+24.7, +27.5] |
+| MultiDoc2Dial | government-policy Q&A | **+37.5** [+35.9, +39.1] |
+| FloDial | technical troubleshooting | **+4.0** [+3.2, +5.0] |
+| ABCD | customer support | **+14.5** [+13.0, +16.1] |
+
+The first three were pre-registered replications of the fourth. STAR is the
+strongest evidence: the split follows the dataset's own 115 human agents on
+the real collection timeline, so nothing about the grouping is our invention.
+
+Accumulated experience also **out-performs each dataset's authored manual** —
+the "just use RAG over the docs" baseline — by 12.0 / 21.1 / 6.4 / 1.7 points
+at hit@1. But the manual owns the cold start, and by a lot: on
+MultiDoc2Dial's first 500 interactions, having it is worth 42.6 points. The
+best configuration everywhere was all three layers together — manual for day
+one, accumulated experience for depth, outcomes for maintenance.
+
+> **These are measurements, not a product.** A real shared memory service owes
+> its users access control, tenancy isolation, a threat model, and deletion
+> guarantees. This repo has none of those and doesn't currently intend to. If
+> you build on the finding anyway: pool delexicalized patterns rather than
+> transcripts, keep customer-specific context in per-customer stores, and use
+> one database file per scope so that erasure is deleting a file.
+
+### What a bad team member can do
+
+Once memory is shared, ranking becomes something worth attacking. We measured
+four attacks with an attacker injecting at 20% of traffic. This is, as far as
+we know, the only quantified attack/defense evidence for memory ranking
+anywhere — including the failed defenses.
+
+| attack | what happens without defense | defense |
+|---|---|---|
+| **Write convincing junk** | self-correcting: two-thirds to three-quarters of the damage absorbed; the same fake gets served 6 times instead of similarity's 29, and exposure stays flat where similarity's *grows* | inherent — the demotion loop |
+| **Self-promote** (inflate your own memories' usage and ratings) | **worse than having no ranking at all**: −1.5 points, up to −9.8 under heavy gaming | `exclude_self` — full recovery, ending 2.1 points *above* plain similarity, free on a team |
+| **Censor a rival** (bury a procedure with negative votes) | **fails outright** — the censored procedures scored 2.1 points *better* than under plain similarity | none needed (see below) |
+| **Collude** (four members endorsing each other's junk) | **−5.0 points, unfixed** | detection and governance, not ranking |
+
+Two of these are worth understanding rather than just noting.
+
+**Censorship fails for a structural reason.** The ranking multiplier is
+bounded — usage history can move a memory's score by at most 30% — and that
+bound is smaller than the similarity gap an attacker would need to close. The
+constraint we adopted to stop the ranking from being *too helpful* turns out
+to be exactly what stops it from being weaponized.
+
+**Collusion is not solvable at the ranking layer, and we have six failed
+attempts to show it.** We tried excluding self-endorsement, capping votes at
+one per person, writer reputation, voter-weighted reputation, combinations,
+and making endorsement a liability that costs the endorser when it fails.
+None restores the baseline. They fail for a single reason: **every one of them
+aggregates votes, and a ring manufactures votes.** Moving the aggregation from
+memories to authors to voter-weights just moves the attack up with it.
+
+Notably, the obvious defense backfires. Capping each person to one vote per
+memory throttles the *corrective* signal exactly as hard as the abusive one —
+a team can then land at most one negative on a bad memory instead of one per
+wasted retrieval. It ships off by default and is documented as **not
+recommended**, with the measurement behind that judgement.
+
+What does work is **detection**. A colluding ring praises only its own
+members, and that concentration is a signal it cannot manufacture — it
+identified all four colluders on both datasets, using nothing but the access
+log. Run [`integrations/audit.sql`](integrations/audit.sql) against your
+store for writer reputation, endorsement concentration and mutual-endorsement
+pairs, plus the governance actions (quarantine, freeze, revoke, scope
+erasure) written out as SQL. Those are deliberately manual: automatically
+acting on a detector is its own attack surface, since one false positive
+silently deletes a colleague's work.
+
+**Practical guidance.** For a shared store, turn on `exclude_self` and
+`trust`. It's the best measured configuration against single bad actors and
+costs nothing on a healthy store. Leave both **off for a single-agent store**,
+where every memory is self-authored and excluding self-endorsement would throw
+away all your feedback (measured cost: −0.80 points). And note the honest
+boundary: the trust boundary is the deployment boundary. If your writers are
+colleagues or systems you operate, this is genuinely resistant. If they're
+anonymous, don't run a usage prior at all.
+
+---
+
+## How it works
+
+Three ideas, each borrowed from published work and cited in the code.
+
+**Recency and frequency, unified.** Rather than tracking them separately, both
+fall out of ACT-R base-level activation — `B = ln(Σ tᵢ^−d)` over a memory's
+access history. The Petrov (2006) approximation makes this O(1): keep the two
+most recent access times exactly, add a closed-form tail for the rest.
+Scoring reads one row and never touches the access log — measured at ~4.6µs
+regardless of whether a memory has 20 accesses or 200, with mean
+approximation error of 0.049 activation units.
+
+**Value.** An exponentially-weighted moving average of outcomes in [−1, 1]:
+`v ← 0.3·outcome + 0.7·v`, with a confidence shrink of `n/(n+3)` so that one
+lucky success doesn't outshout everything else.
+
+**Composition — the part that needed an experiment.** The naive approach,
+multiplying similarity by the combined score, fails badly and fails *worse*
+as your retriever improves (−0.05 NDCG with a weak embedder, −0.32 with a
+strong one) because the activation term's dynamic range overwhelms
+well-calibrated similarities. What ships is a bounded prior:
+
+```
+rfm_prior(id) = (1 − β) + β · rfm_score(id)          β = 0.3
+final_score   = max(similarity, 0) × rfm_prior(id)
+```
+
+β = 0.3 was frozen by a pre-registered protocol — candidates, dev/test split,
+selection rule and falsification criteria all committed before any run — and
+then tested once. It passed on cost against similarity, on feedback
+adaptivity, on an embedding model never used during tuning, and it was weak
+on one endpoint (forgetting power, which β trades away for rank safety; raise
+β if forgetting matters more to you than stability).
 
 ## API
 
-| function | returns |
+| function | what it does |
 |---|---|
-| `rfm_init()` | creates tables + index (idempotent) |
-| `rfm_record_access(id[, actor])` | logs an access; returns new activation. optional `actor` (host principal) enables hardened mode |
-| `rfm_record_outcome(id, o[, actor])` | feedback `o ∈ [-1,1]` for the latest access (once per access); returns value EWMA |
-| `rfm_prior(id)` | `(1−β) + β·rfm_score(id)` — the bounded multiplier for composing with similarity |
-| `rfm_score(id)` | `w_a·P(activation) + w_v·value₀₁` |
-| `rfm_activation(id)` / `rfm_recency(id)` / `rfm_frequency(id)` / `rfm_value(id)` | individual components |
-| `rfm_score_w(id, w_a, w_v[, tau, decay])` | parameterised variant |
-| `rfm_config(key[, value])` | per-connection: `tau, decay, lambda, w_a, w_v, shrink_k, beta, exclude_self, now` |
+| `rfm_init()` | create tables and indexes (idempotent) |
+| `rfm_record_access(id[, actor])` | log a retrieval; returns new activation |
+| `rfm_record_outcome(id, o[, actor])` | record feedback `o ∈ [−1,1]` for the latest access; returns the value EWMA |
+| `rfm_prior(id)` | the bounded multiplier to compose with similarity |
+| `rfm_score(id)` | the combined score, `w_a·P(activation) + w_v·value` |
+| `rfm_activation/recency/frequency/value(id)` | individual components |
+| `rfm_score_w(id, w_a, w_v[, tau, decay])` | parameterised variant for tuning |
+| `rfm_config(key[, value])` | per-connection settings (below) |
 
-**Hardened mode (shared stores).** Tag memories with a writer via the
-`created_by` column and pass the accessing principal as `actor`; then
-`rfm_config('exclude_self', 1)` makes the extension ignore any
-access/outcome whose actor equals the memory's writer — closing the
-self-endorsement channel by which a compromised writer inflates its own
-memories' R, F, or M. Off by default (exact back-compat).
-`rfm_config('one_vote', 1)` additionally caps outcomes at one per (actor,
-memory); it is **not recommended** — see below.
+Config keys: `tau`, `decay`, `lambda`, `w_a`, `w_v`, `shrink_k`, `beta`,
+`now`, plus the shared-store flags `exclude_self`, `one_vote`, `trust`,
+`trust_weighted`, `endorser_liability` (all default off; see the guidance
+above — `one_vote` is not recommended).
 
-### What a bad team member can and cannot do
+Two invariants worth knowing. `rfm_config('now', t)` freezes the clock for
+tests and replay. And exactly one outcome is accepted per access, enforced —
+which means the access log can always reproduce the summary state, so an
+auditor can verify any score from first principles.
 
-Measured, not asserted (PROTOCOL.md Amendments 5–7; STAR + ABCD, attacker
-injecting at 20% of call volume):
+For shared stores, tag memories with a writer via the `created_by` column and
+pass the acting principal as `actor`. In the Claude Code server, set
+`RFM_ACTOR` to the agent's identity and `RFM_HARDEN=exclude_self,trust`.
 
-| attack | unhardened outcome ranking | defense |
-|---|---|---|
-| **Write convincing junk** (bait copied from real queries) | damaged but self-correcting: absorbs ~⅔–¾ of the hit@1 damage, holds exposure flat where similarity's *grows*, same fake served 6× instead of 29× | inherent — the demotion loop |
-| **Self-promote** (self-access to pump R/F, self-rate to pump M) | **worse than no prior at all** (−1.5 pts vs similarity; −9.8 at heavy pumping) | `exclude_self` — full recovery, +2.1 pts *above* similarity, ≈free on a team |
-| **Censor** (bury a rival procedure with negative votes) | **fails outright** — β-bounding floors demotion at 0.7×, smaller than the similarity gap it would need to close; censored labels scored +2.1 pts *better* than similarity | none needed |
-| **Collude** (4 members cross-endorsing each other's junk) | **−5.0 pts**; six defenses tried, best recovers 16% | **detect, don't rank** — see below |
+## How this compares
 
-**Recommended for a shared store: `exclude_self` + `trust`.** Best measured
-configuration against single bad actors — 0.941 hit@1 at 0.006 poison
-occupancy, a quarter of plain similarity's exposure, free on a clean store.
+An August 2026 survey of 22 memory systems found the access → outcome →
+ranking loop shipping in exactly one other open-source system:
+[Cognee](https://docs.cognee.ai/guides/feedback-system), where it is off by
+default and rates answers rather than task outcomes. Two others implement
+pieces: [ReMe](https://github.com/agentscope-ai/ReMe) uses outcome utility
+only to prune, and a [MemOS plugin](https://github.com/MemTensor/MemOS)
+credits an episode's new traces rather than the memories that were retrieved.
 
-**Rejected on evidence, and shipped off by default so you can check the
-claim.** `one_vote` (ballot-stuffing prevention) throttles the *corrective*
-signal as hard as the abusive one — a team can then land at most one
-negative per member on a bad memory, instead of one per wasted retrieval —
-so it defends nothing measurable and costs −0.34 pts on a clean store.
-Symmetric caps ration the immune response along with the attack; asymmetric
-defenses (which remove an *illegitimate* signal) do not.
+So as far as we can determine, this is the only system where outcome feedback
+is a default-on term in the retrieval score, attributed to the memory that
+was actually retrieved, with negative outcomes carrying weight — and the only
+one shipped as an embeddable primitive rather than a service. Concurrent 2026
+research is converging on the same loop ([RoMeRL](https://arxiv.org/abs/2608.02508),
+[Chen & Cheng](https://arxiv.org/abs/2606.12945)), and a July 2026
+mechanism-level review ([arXiv:2607.23942](https://arxiv.org/abs/2607.23942))
+still lists cognitive activation combined with utility as not yet migrated
+from cognitive architectures into language agents.
 
-**Collusion: you cannot out-rank a ring, but you can spot one.** Six
-mechanisms were measured against four cross-endorsing writers —
-`exclude_self`, `one_vote`, both together, writer trust, voter-weighted
-trust, and endorser liability. Only liability recovers anything with a CI
-above zero (+0.8 of the 5.0 points lost on one dataset — and that gain did
-NOT replicate on the second), and none restores the baseline. What does
-replicate is reputational: liability collapses ring standing to −0.734 /
-−0.981 against honest agents' +0.950 / +0.714 on the two datasets, roughly
-doubling the separation plain trust achieves — it makes a ring costly and
-identifiable rather than repairing the ranking.
-They fail for one reason: **the ring controls votes at every level of
-aggregation**, so re-aggregating votes cannot escape it. Detection is the
-part that works — endorsement concentration identified all four colluders
-on both datasets, from the log alone. Run
-[`integrations/audit.sql`](integrations/audit.sql) against your store: it
-reports writer reputation, endorsement concentration, and mutual-endorsement
-pairs, and documents the governance actions (quarantine, freeze, revoke,
-scope erasure) as explicit SQL. Those are deliberately manual — an automated
-response to a detector is itself an attack surface, since a false positive
-silently deletes an honest colleague's work.
+## Why you can trust the negative results
 
-Scope: `exclude_self` costs −0.80 pts on a *single-agent* store (where
-every memory is self-authored, so all feedback is discarded) and nothing
-measurable from ~2 writers up; actor strings are host-asserted, so this
-defends against a principal misbehaving within its rights, not against
-impersonation.
-
-To turn any of this on in the Claude Code server, set `RFM_ACTOR` to this
-agent's principal id (which tags writes and votes) and `RFM_HARDEN`, e.g.
-`RFM_HARDEN=exclude_self,trust`. Both default to unset — correct for a
-single-user store, where the flags would be inert at best and costly at
-worst.
-
-`rfm_config('now', t)` freezes the clock (tests/replay). Inputs are strictly
-typed: ids must be INTEGER, NULL/non-finite numerics error rather than
-coerce. One outcome per access, enforced — the log always reproduces the
-summary.
-
-## Methodology, or: why you can trust the negative results
-
-- Composition, feature, and replication experiments were **pre-registered**
-  (`PROTOCOL.md` + Amendments 1–4 committed before their runs), with
-  dev/test splits by benchmark, repo, and embedder, one-shot evaluation,
-  and full sweep curves published. The replication campaign's smoke runs
-  (n ≤ 400) are disclosed inside Amendment 4 itself.
-- **Per-question outputs are committed**
-  (`bench-quality/results-*/`, incl. `results-{star,md2d,flodial}/`) so any
-  table cell is auditable; run logs likewise.
-- **Failures are reported at the same volume as successes** — see
-  `bench-quality/RESULTS.md` for the complete ledger including everything
-  that died (most recently the rank-1 replication bar, 1 of 3).
-- Benchmarks used: [LoCoMo](https://github.com/snap-research/locomo)
-  (CC BY-NC), [LongMemEval](https://github.com/xiaowu0162/LongMemEval),
+- Experiments were **pre-registered**: `PROTOCOL.md` plus Amendments 1–10,
+  each committed before the runs it governs, with dev/test splits, one-shot
+  evaluation, and declared falsification criteria. Where a smoke run happened
+  before registration, the registration says so.
+- **Per-question outputs are committed** under `bench-quality/results-*/`, so
+  any table cell above can be recomputed rather than taken on faith.
+- **Failures are published in full** in `bench-quality/RESULTS.md` — the
+  complete ledger, including a hybrid-retrieval approach that overfit, a
+  pruning rule that couldn't be safe and useful at once, a rank-1 claim that
+  failed replication on two of three datasets, and six collusion defenses
+  that didn't work.
+- **One published number was wrong and was corrected.** An early result
+  claimed a 42-point gap that turned out to rest on a mapping bug silently
+  dropping 22 of 55 manual entries. Pre-publication review caught it from the
+  committed logs; the experiment was re-run and the corrected number is what
+  appears above. Details under "Corrections" in RESULTS.md.
+- Benchmarks: [LoCoMo](https://github.com/snap-research/locomo) (CC BY-NC),
+  [LongMemEval](https://github.com/xiaowu0162/LongMemEval),
   [BEAM](https://github.com/mohammadtavakoli78/BEAM),
-  [SWE-Bench-CL](https://github.com/thomasjoshi/agents-never-forget)
-  (heuristic gold links — disclosed),
-  [ABCD](https://github.com/asappresearch/abcd) (MIT),
-  [STAR](https://github.com/RasaHQ/STAR) (MIT),
-  [MultiDoc2Dial](https://doc2dial.github.io/multidoc2dial/) (CC BY 3.0),
-  and [FloDial](https://dair-iitd.github.io/FloDial/) (CDLA-Sharing-1.0).
-  All evals run without LLM judges or API keys — retrieval hits are judged
-  by each dataset's own procedure/document annotations (oracle outcomes,
-  disclosed). Known limits: SWE-Bench-CL's file-overlap labels are noisy;
-  the live A/B is n=27 with one executor model; MultiDoc2Dial and FloDial
-  lack natural agent IDs and ordering (round-robin + seeded shuffle,
-  disclosed); retrieval metrics are proxies for task success except in the
-  live A/B, where gold tests scored outcomes directly.
+  [SWE-Bench-CL](https://github.com/thomasjoshi/agents-never-forget),
+  [ABCD](https://github.com/asappresearch/abcd),
+  [STAR](https://github.com/RasaHQ/STAR),
+  [MultiDoc2Dial](https://doc2dial.github.io/multidoc2dial/),
+  [FloDial](https://dair-iitd.github.io/FloDial/). No LLM judges and no API
+  keys anywhere — retrieval is scored against each dataset's own annotations.
+
+**Known limits**, stated plainly: outcome signals in the benchmark
+experiments come from those annotations rather than real task success, so
+they are cleaner than production feedback would be; the live coding A/B is
+n=27 with a single executor model; two of the four dialog datasets lack
+natural agent identities and ordering, so those were simulated (disclosed in
+the protocol); and the staleness result is from one dataset and was never
+pre-registered. Retrieval metrics are proxies for task success everywhere
+except the live A/B, where gold tests scored outcomes directly.
 
 ## Repository
 
 ```
-src/                     the extension (lib, functions, math, sql shim, config, clock)
-rfm_schema.sql           standalone schema
-tests/                   unit + CLI integration tests (cargo test)
-bench/                   O(1) throughput benchmark
-bench-quality/           all retrieval benchmarks + RESULTS.md ledger
-experiments/swe-ab/      the live paired A/B on real bugs (runner + results)
+src/                      the extension (lib, functions, math, sql shim, config, clock)
+rfm_schema.sql            standalone schema
+tests/                    unit + CLI integration tests (cargo test)
+bench/                    O(1) throughput benchmark
+bench-quality/            retrieval benchmarks + RESULTS.md, the full ledger
+experiments/swe-ab/       the live paired A/B on real bugs
 integrations/claude-code/ MCP server, hooks, capture snippet, A/B kit
-integrations/audit.sql   shared-store forensics + governance recipes
-PROTOCOL.md              pre-registrations and amendments (1–4)
-DESIGN_NOTES.md          design decisions, trade-offs, limitations
+integrations/audit.sql    shared-store forensics + governance recipes
+PROTOCOL.md               pre-registrations and amendments 1–10
+DESIGN_NOTES.md           design decisions, trade-offs, limitations
 ```
 
 ## License
