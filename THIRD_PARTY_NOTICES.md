@@ -1,7 +1,7 @@
 # Third-party notices
 
-This repository is dual-licensed MIT OR Apache-2.0 ([`LICENSE-MIT`](LICENSE-MIT),
-[`LICENSE-APACHE`](LICENSE-APACHE)). It builds on third-party datasets and
+This repository is licensed Apache-2.0 ([`LICENSE`](LICENSE)). It builds on
+third-party datasets and
 libraries with their own terms. **No third-party dataset is redistributed
 here** — `bench-quality/data/` is gitignored and every dataset is fetched by
 the download commands in `bench-quality/README.md` directly from its source.
