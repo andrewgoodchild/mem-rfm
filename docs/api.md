@@ -57,7 +57,6 @@ that connection and never cross connections or processes.
 | `shrink_k` | 3.0 | confidence shrink: effective value = `v·n/(n+k)` |
 | `beta` | 0.3 | how far the prior may move a ranking; **frozen by experiment** |
 | `tau` | 86400 | time constant for `rfm_recency` only |
-| `w_a_proc` / `w_v_proc` | 0.3 / 0.7 | weights for `kind='procedural'` rows; **unmeasured** |
 | `now` | unset | freeze the clock (tests and replay); `NULL` unfreezes |
 
 `beta` deserves a note: it was frozen at 0.3 by a pre-registered experiment
@@ -74,8 +73,7 @@ rfm_memories(
   id, content, created_at,          -- yours
   access_count, last_access,        -- maintained
   bla_cache,                        -- maintained (2nd-most-recent access)
-  value_score, outcome_count,       -- maintained
-  kind                              -- yours: 'procedural' | 'declarative' | NULL
+  value_score, outcome_count        -- maintained
 )
 
 rfm_accesses(memory_id, accessed_at, outcome)
@@ -83,28 +81,6 @@ rfm_accesses(memory_id, accessed_at, outcome)
 
 You own `content` and any columns you add — an `embedding BLOB` for
 sqlite-vec, tags, scopes, whatever. The extension only touches its own.
-
-## Memory kinds
-
-ACT-R keeps two memory systems and scores them differently: declarative
-chunks by base-level activation, procedural rules by learned **utility**.
-mem-rfm implements both halves, so a row tagged `kind='procedural'` scores
-with `w_a_proc`/`w_v_proc` — weighting the outcome axis higher, i.e. more
-sensitive to whether it actually worked.
-
-This is the *only* memory-type distinction we model. Working memory is the
-context window (not a store), and we don't split semantic from episodic —
-[theory](theory.md) explains what we cover, what we leave out, and why.
-
-```sql
-INSERT INTO rfm_memories(content, created_at, kind)
-VALUES ('to run tests here, export PATH=$HOME/.cargo/bin first', unixepoch(), 'procedural');
-```
-
-Untagged rows (`kind` NULL) score exactly as before, so this changes nothing
-until you opt in. **The procedural weights are theoretically motivated and
-unmeasured** — we have evidence that procedural knowledge is what transfers,
-none that this particular weighting is the right way to exploit that.
 
 ## Retention
 

@@ -1143,6 +1143,11 @@ contributes something everywhere, consistent with Amendment 13e.
 typing shows nothing on the procedure-labelled dialog datasets, the honest
 response is to *remove* `kind` rather than extend it." Typing shows nothing.
 The mechanism is implemented, connected and tested, and it fails the third bar
-— it does not earn its place. It should either be removed or documented as an
-opt-in with a measured null attached, and the docs now say so rather than
-continuing to call it merely "unmeasured".
+— it does not earn its place. **It was removed** — the column, the `w_a_proc`/`w_v_proc` config keys, the
+kind-aware scoring branch and its test. Verified behaviour-neutral: BEAM
+re-run and diffed against committed rows, 1,065 rows identical.
+
+The *knowledge* finding it was built on survives and is unaffected:
+procedural knowledge transfers and episodic per-task lessons don't (~6%).
+That belongs in the capture policy — what you choose to store — rather than
+in the ranking function, which is what the null established.
