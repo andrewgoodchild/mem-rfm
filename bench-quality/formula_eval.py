@@ -27,6 +27,11 @@ BETA = 0.3
 TAU = 86_400.0
 ARMS = ["actr", "simple_rfm", "quintile_rfm", "recency_only", "frequency_only"]
 
+# Amendment 13b: the squash is ACT-R's retrieval threshold and noise, which
+# the architecture fits per model. Overridable so a fitted value chosen on one
+# corpus can be evaluated on another.
+THETA, S = 0.0, 1.0
+
 
 def quintiles(x):
     """Marketing RFM scores each axis by rank bucket, not raw value."""
@@ -40,7 +45,7 @@ def score_arm(arm, act, rec, freq, val01):
     """Every arm keeps the same outcome axis and the same bounded prior;
     only the activation term differs."""
     if arm == "actr":
-        prior_core = 0.7 * (1.0 / (1.0 + np.exp(-act))) + 0.3 * val01
+        prior_core = 0.7 * (1.0 / (1.0 + np.exp(-(act - THETA) / max(S, 1e-9)))) + 0.3 * val01
     elif arm == "simple_rfm":
         fmax = max(freq.max(), 1e-9)
         prior_core = 0.35 * rec + 0.35 * (freq / fmax) + 0.3 * val01
@@ -60,19 +65,37 @@ def load(corpus, n):
     if corpus == "star":
         from star_eval import load_calls
         calls = load_calls(n)[:n]
-        return ([(i + 1, calls[i]["memory"], calls[i]["ts"]) for i in range(len(calls))],
-                [c["label"] for c in calls], [c["query"] for c in calls],
-                [c["memory"] for c in calls])
-    raise ValueError(corpus)
+        ts = [c["ts"] for c in calls]
+    elif corpus == "abcd":
+        from abcd_eval import load_calls, BASE_TS, CALL_SPACING
+        calls = load_calls(n)[:n]
+        for c in calls:
+            c["label"] = c["intent"]
+        ts = [BASE_TS + i * CALL_SPACING for i in range(len(calls))]
+    else:
+        raise ValueError(corpus)
+    return ([(i + 1, calls[i]["memory"], ts[i]) for i in range(len(calls))],
+            [c["label"] for c in calls], [c["query"] for c in calls],
+            [c["memory"] for c in calls])
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--corpus", default="star")
+    ap.add_argument("--theta", type=float, default=None)
+    ap.add_argument("--s", type=float, default=None)
+    ap.add_argument("--arms", default="actr,simple_rfm,quintile_rfm,recency_only,frequency_only")
     ap.add_argument("--n", type=int, default=1500)
     ap.add_argument("--k", type=int, default=5)
     args = ap.parse_args()
 
+    global THETA, S, ARMS
+    if args.theta is not None:
+        THETA = args.theta
+    if args.s is not None:
+        S = args.s
+    ARMS = [a for a in args.arms.split(",") if a]
+    print(f"squash: theta={THETA} s={S}")
     rows, labels, queries, memories = load(args.corpus, args.n)
     label_of = {r[0]: labels[i] for i, r in enumerate(rows)}
     times = [r[2] for r in rows]

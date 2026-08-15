@@ -917,3 +917,54 @@ Caveats: one corpus; binary rewards from 49 different models attempting the
 same tasks, so "true rate" is task difficulty averaged over model capability,
 not the difficulty any single agent would experience; and no frequency
 variance, so nothing here speaks to the R/F axis.
+
+## Amendment 13b: fitted ACT-R still loses to the marketing formula
+
+Squash fitted on **ABCD** (held out from the evaluation), then a single run on
+STAR. Grid theta ∈ {0,−2,−4,−6} × s ∈ {0.5,1,2}; best on ABCD was
+theta=−6, s=1.0 (hit@1 0.6681 against the frozen 0.6656).
+
+**First result: fitting barely matters.** The whole grid spans 0.640–0.668 on
+ABCD and the frozen default sits within 0.003 of the best. The confound raised
+in ACT-R's defence in Amendment 13 — that its logistic was unfitted and
+operating in its far-left tail — is real but **not load-bearing**.
+
+**Second result: the fit did not transfer.** Applying ABCD's best (theta=−6)
+to STAR gave hit@1 0.9300, *worse* than the unfitted 0.9373 in Amendment 13.
+So ACT-R's squash wants per-corpus fitting, which is a further cost rather
+than a defence.
+
+Held-out evaluation on STAR:
+
+| arm | hit@1 | Δ vs actr | hit@5 | Δ vs actr |
+|---|---|---|---|---|
+| actr (fitted) | 0.9300 | baseline | 0.9580 | baseline |
+| **quintile_rfm** | 0.9346 | +0.0047 [−0.0020,+0.0113] | 0.9640 | **+0.0060\*** [+0.0013,+0.0107] |
+| simple_rfm | 0.9266 | −0.0033 | 0.9586 | +0.0007 |
+
+**The marketing quintile formula now beats fitted ACT-R at hit@5 with a CI
+excluding zero, and leads at hit@1.** Amendment 13's asymmetric bar — ties go
+to the simpler form — is no longer even needed; this is not a tie.
+
+### What follows, and one honest complication
+
+By the registered rule the conclusion is to **simplify**: per-query quintile
+ranks of R, F and M rank at least as well as `ln(Σ tᵢ^−d)`, which would make
+`bla_cache`, the Petrov k=2 approximation and the conformance suite against
+three reference implementations all unnecessary machinery.
+
+The complication is architectural rather than statistical, and it is not a
+reason to ignore the result. **ACT-R's score is row-local; a quintile score is
+set-relative.** `rfm_prior(id)` is a scalar function returning a value from
+one row, which is what makes `ORDER BY sim * rfm_prior(id) DESC LIMIT 5`
+work. Quintiles need the candidate set — implementable in SQLite with
+`NTILE(5) OVER (...)`, since the set is materialised for similarity anyway,
+but it is a different shape: a query-time window function rather than a
+one-row read. The O(1)-per-row claim would go with it.
+
+So the honest position is: **on ranking quality the cognitive-science
+formulation is not earning its complexity, and we have now tested that twice
+with the obvious defence closed.** Before removing it we would want
+replication on a third corpus and a second embedder, because this is two
+corpora and one model — but the burden of proof has shifted onto ACT-R, and
+"it is principled" is not evidence.
