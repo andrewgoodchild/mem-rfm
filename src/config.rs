@@ -21,6 +21,12 @@ pub struct RfmConfig {
     /// much usage history can perturb a similarity ranking. Default frozen
     /// at 0.3 by the pre-registered composition experiment (PROTOCOL.md).
     pub beta: f64,
+    /// Weights for memories tagged kind='procedural'. ACT-R selects
+    /// production rules by learned UTILITY rather than base-level activation,
+    /// so procedural memories weight the outcome axis higher. Theoretically
+    /// motivated, NOT measured — see docs/theory.md.
+    pub w_a_proc: f64,
+    pub w_v_proc: f64,
     /// When set via rfm_config('now', t), all functions read this instead of
     /// the wall clock. Cleared with rfm_config('now', NULL).
     pub frozen_now: Option<f64>,
@@ -36,6 +42,8 @@ impl Default for RfmConfig {
             w_v: 0.3,
             shrink_k: 3.0,
             beta: 0.3,
+            w_a_proc: 0.3,
+            w_v_proc: 0.7,
             frozen_now: None,
         }
     }
@@ -74,6 +82,8 @@ impl RfmConfig {
             "w_v" => Ok(Some(self.w_v)),
             "shrink_k" => Ok(Some(self.shrink_k)),
             "beta" => Ok(Some(self.beta)),
+            "w_a_proc" => Ok(Some(self.w_a_proc)),
+            "w_v_proc" => Ok(Some(self.w_v_proc)),
             "now" => Ok(self.frozen_now),
             _ => Err(format!("rfm: unknown config key '{key}'")),
         }
@@ -103,6 +113,8 @@ impl RfmConfig {
             "w_v" => { check_nonnegative(key, v)?; self.w_v = v }
             "shrink_k" => { check_nonnegative(key, v)?; self.shrink_k = v }
             "beta" => { check_beta(v)?; self.beta = v }
+            "w_a_proc" => { check_nonnegative(key, v)?; self.w_a_proc = v }
+            "w_v_proc" => { check_nonnegative(key, v)?; self.w_v_proc = v }
             "now" => self.frozen_now = Some(v),
             _ => return Err(format!("rfm: unknown config key '{key}'")),
         }
