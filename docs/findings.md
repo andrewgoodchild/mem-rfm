@@ -15,9 +15,11 @@ Memory pays where **work recurs**, and the effect is largest when a *team*
 shares one store. It does not pay where work is episodic — and on scattered
 bug-fixing our own system measured itself as mildly counterproductive.
 
-The value axis's reliable jobs turned out to be **safety and maintenance**
+The scoring prior's reliable jobs turned out to be **safety and maintenance**
 rather than raw ranking quality: keeping a usage prior from eating itself,
-retiring stale content, and making shared stores resistant to abuse.
+retiring stale content, and making shared stores resistant to abuse. Which of
+its two axes — recency/frequency, or outcome value — is doing the work varies
+by corpus; ablating both is the one part of this nobody else has published.
 
 ## Where memory helps
 
@@ -132,8 +134,11 @@ Treat rank-1 improvement as a possible bonus, not the reason to deploy.
 A mechanism can be **implemented** (the code runs), **connected** (something
 reads its output), and **earn its place** (removing it makes results worse).
 Most memory systems claim the first. We had never measured the third about
-our own components, so we ablated each one through the shipped extension
-(Amendment 12, BEAM dev, 355 questions per arm):
+our own components, so we ablated each one through the shipped extension.
+
+### On BEAM: only the outcome axis
+
+Amendment 12, 355 questions per arm:
 
 | removing | Δ NDCG@10 | verdict |
 |---|---|---|
@@ -142,40 +147,8 @@ our own components, so we ablated each one through the shipped extension
 | the confidence shrink | +0.0031 [−0.0040, +0.0096] | within noise |
 | decay rate (→0, or →0.9) | +0.0001 / +0.0021 | within noise |
 
-**On BEAM, only the outcome axis earns its place** — an uncomfortable result
-about a project with R and F in its name.
-
-**But that turned out to be benchmark-specific.** Repeating the ablation
-across four corpora at fixed stream length (Amendment 12b) found that on
-STAR, removing activation costs *exactly as much* as removing outcome
-feedback (both −0.0067 hit@1, both CIs excluding zero), with removing the
-prior entirely costing more than either (−0.0140) — the two axes contributing
-roughly additively. The ACT-R half earns its place there on equal terms.
-
-It is also, on reflection, the same result we have been getting all along
-from three other directions: ranking by activation *alone* collapses
-retrieval to NDCG ≈ 0.01; *increasing* the activation axis's influence costs
-up to −0.063 (Amendment 11); and the bounded prior reaches parity with
-similarity-only rather than beating it. Every measurement has said the usage
-prior is a small, carefully-bounded adjustment — the ablation just says which
-half of it is doing the work.
-
-The likely reason, in Belady's terms ([theory](theory.md)): activation
-predicts *whether an item will be used again*, and outcome value predicts
-*whether using it will be worth anything*. BEAM asks probing questions about
-a conversation, where re-use is weak (only 108 of 355 questions revisit
-earlier evidence) but usefulness is informative. The recency/frequency axes
-may simply be answering a question this benchmark does not ask.
-
-The relationship across corpora is a **sweet spot, not a gradient**: FloDial
-has the highest recurrence but its baseline is already 0.984 hit@1, leaving
-no headroom for any prior to show anything, while MultiDoc2Dial has 3.5 calls
-per label and no history to work with (there the prior is a small net cost).
-The prior needs both enough history to differentiate *and* enough error left
-by the retriever to matter.
-
-**Stratifying BEAM by recurrence sharpens the within-benchmark picture.** BEAM labels whether
-a question's evidence already served an earlier one. Split on that:
+Splitting by whether a question's evidence had already served an earlier one
+sharpens it, because pooling dilutes the very effect the ablation looks for:
 
 | arm | recurring (n=108) | fresh (n=247) |
 |---|---|---|
@@ -183,31 +156,71 @@ a question's evidence already served an earlier one. Split on that:
 | removing outcome feedback | **−0.0095** [−0.0171,−0.0026] | −0.0037 (n.s.) |
 | removing activation | +0.0020 (n.s.) | +0.0021 (n.s.) |
 
-The prior **earns its place exactly where the theory predicts and is mildly
-harmful where it predicts it shouldn't help** — a benefit on re-used evidence,
-a smaller penalty on evidence seen once, both significant. That is the
-recurrence finding appearing *within* a single benchmark, and it refines the
-published "cost ≈ 0 vs similarity" result: that zero is a net of two real and
-opposite effects.
+The prior earns its place exactly where the theory predicts and is mildly
+harmful where it predicts it shouldn't help — a benefit on re-used evidence,
+a smaller penalty on evidence seen once, both significant. That refines the
+published "cost ≈ 0 versus similarity" result: the zero is a **net of two
+real and opposite effects**, not an absence of them.
 
-And the benefit is **entirely the outcome axis**. Removing value costs nearly
-double on the recurring slice; removing activation stays within noise in
-*both* strata. So the null is not an artifact of averaging over a hostile
-subset — even where re-use demonstrably happens, recency and frequency add
-nothing detectable.
+But on BEAM the benefit is entirely the outcome axis. Activation stays within
+noise in *both* strata, so the null is not an artifact of averaging over a
+hostile subset.
 
-Taken together with the gradient result, the honest status is: **the
-activation axis is load-bearing on some corpora and not others**, and BEAM is
-one where it isn't. Not useless, not always useful — which is a duller claim
-than either "ACT-R is the foundation" or "only outcomes matter", and is what
-the evidence supports.
+### Across corpora: it depends on the corpus
 
-Two mechanisms mem-rfm does *not* have were also tested, by adding them:
-**Hebbian co-retrieval association hurt by 3.2 points** (it reinforces
+That looked like it might generalise, so Amendment 12b repeated the ablation
+on four corpora with stream length fixed at 1,500 calls, leaving recurrence
+per label as the only varying quantity. The registered prediction was that
+activation's contribution would rise with recurrence, or be flat. **Neither
+happened, and the correction favours the activation axis:**
+
+| corpus | recurrence/label | no_value | no_activation | no_prior |
+|---|---|---|---|---|
+| FloDial | 150 | −0.0007 | −0.0007 | −0.0020 |
+| **STAR** | 71 | **−0.0067\*** | **−0.0067\*** | **−0.0140\*** |
+| ABCD | 27 | −0.0080 | −0.0040 | −0.0020 |
+| MultiDoc2Dial | 3.5 | +0.0013 | +0.0020 | +0.0073 |
+
+*(Δ hit@1; \* = CI excludes zero.)*
+
+On STAR, **removing activation costs exactly as much as removing outcome
+feedback**, and removing the prior entirely costs more than either — the two
+axes contributing roughly additively. The ACT-R half is load-bearing there on
+equal terms.
+
+The shape is a **sweet spot, not a gradient**, and the two nulls at the ends
+have different causes. FloDial has the most recurrence but a 0.984 hit@1
+baseline, so there is no headroom for any prior to demonstrate anything — a
+null there measures the benchmark, not the mechanism. MultiDoc2Dial has 3.5
+calls per label and no history to build on, and there the prior is a small net
+cost, matching BEAM's fresh-evidence stratum exactly. The prior needs **both**
+enough recurrence to differentiate candidates **and** enough error left by the
+retriever to have room to help.
+
+### What we actually believe now
+
+**Each axis earns its place on some corpora and not others.** That is duller
+than either "ACT-R is the foundation" or "only outcomes matter", and it is
+what the evidence supports.
+
+Worth recording that we published the second of those before the gradient run
+existed — the BEAM result alone permitted reading recency and frequency as
+simply the wrong prior for agent memory, and that reading is now withdrawn.
+
+Everything still points the same way about *magnitude*, though: ranking by
+activation alone collapses retrieval to NDCG ≈ 0.01, raising the activation
+axis's influence costs up to −0.063, and the bounded prior reaches parity
+rather than superiority. Whichever half is doing the work on a given corpus,
+the prior remains a small, deliberately bounded adjustment to similarity
+search.
+
+### Two mechanisms we don't have, tested by adding them
+
+**Hebbian co-retrieval association hurt by 3.2 NDCG points.** It reinforces
 whatever was already retrieved — the rich-get-richer dynamic the outcome axis
-exists to break, and ACT-R's `ln(fan)` discount did not save it), and
-**interleaved consolidation had no effect**. Neither earns a place in the
-extension on this evidence.
+exists to break — and ACT-R's `ln(fan)` discount did not save it.
+**Interleaved consolidation had no detectable effect.** Neither earns
+extension surface on this evidence.
 
 ## The takeaway
 
@@ -218,6 +231,11 @@ Capture environment quirks, conventions, decisions and preferences. Let
 per-task trivia fade. Bound how far any of it can override relevance. And if
 the work genuinely recurs across several agents, share the store — that is
 where the effect stops being marginal.
+
+One caution against over-reading any of the above: the prior only has room to
+help where a workload both **repeats** and leaves the retriever making
+mistakes. On a corpus with 150 repetitions per label but a 0.98 baseline,
+nothing we could add or remove moved the number at all.
 
 ## What died along the way
 
