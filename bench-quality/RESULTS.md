@@ -848,3 +848,72 @@ Caveats: one corpus, one embedder, one seed. The CI on quintile_rfm is
 [−0.0093, +0.0040], which does not exclude a real ACT-R advantage of up to
 ~0.9 points — "within noise" is not "equal", and the registered bar treats it
 as a tie by choice, not by demonstration of equivalence.
+
+## Amendment 14: the value axis against REAL outcomes
+
+terminalbench trajectory corpus, 89 tasks × ~586 test-verified binary trials,
+streamed in real timestamp order through the shipped extension. Ground truth
+is each task's empirical success rate. Runner: `calibration_eval.py`.
+**Every other outcome number in this repo is oracle-derived; this is the
+first test against real ones.**
+
+### C2 — it works. Spearman 0.72–0.83.
+
+| shrink_k | n=5 | n=10 | n=25 | n=50 |
+|---|---|---|---|---|
+| any | +0.723 | +0.809 | **+0.828** | +0.795 |
+
+The value axis **recovers true utility ordering from real, test-verified
+outcomes**, reaching ρ=0.83 after 25 observations. That is the single most
+important validation in this project: the mechanism was designed and tuned
+entirely against oracle labels, and it transfers.
+
+Note the ranking is **identical across every `shrink_k`**. That is not a bug:
+shrink multiplies by `n/(n+k)`, so among memories with equal outcome counts it
+is a monotone transform and cannot reorder them. Shrink only affects
+comparisons between memories with *different* n. Worth knowing — it means the
+parameter does nothing at all in the common case of comparing equally-observed
+memories.
+
+### C1 — the frozen λ is right for cold start and wrong at scale
+
+Mean |effective value − true rate|:
+
+| config | n=5 | n=10 | n=25 | n=50 |
+|---|---|---|---|---|
+| **λ=0.3, k=3 (frozen)** | **0.1484** (best) | 0.1496 | 0.1560 | 0.1870 |
+| λ=0.1, k=10 | 0.1767 | 0.1493 | **0.1237** | **0.0977** |
+
+The frozen configuration is the **best in the grid at n=5 and the worst
+trajectory thereafter** — its error *grows* with more evidence (0.148 → 0.187)
+while λ=0.1 halves (0.177 → 0.098).
+
+**Mechanism, and it is a real design property rather than a tuning miss.** An
+EWMA with fixed λ has a fixed effective window of roughly 1/λ samples. At
+λ=0.3 the estimate is permanently a ~3-sample average: it never converges, it
+tracks recent noise forever. That is exactly what you want for *adaptivity* —
+it is why the staleness result works (update-preference 0.43 → 0.66 requires
+forgetting the old value fast) — and exactly what you don't want for
+*calibration*.
+
+So the value axis has an unavoidable tension we had not named: **adaptivity
+and calibration pull λ in opposite directions.** A memory store that must
+notice a changed procedure wants high λ; one that must estimate stable utility
+wants low λ. Ours is tuned for the former.
+
+### C3 and the falsified prediction
+
+The registered prediction — "the best shrink_k should fall with n" — is
+**wrong**. Best k *rises* (3, 3, 10, 10), because with a fixed-λ EWMA the
+estimate stays noisy no matter how much data arrives, so variance reduction
+keeps paying. The prediction assumed the estimator converges. It doesn't.
+
+λ=0.3 is not within noise of the grid's best beyond n≈10, so **C3 fails**. The
+honest options are to expose λ with the tradeoff documented (done — it is a
+config key), or to make λ decay with n so the estimator behaves like a running
+mean early and an EWMA later. The latter is unbuilt and untested.
+
+Caveats: one corpus; binary rewards from 49 different models attempting the
+same tasks, so "true rate" is task difficulty averaged over model capability,
+not the difficulty any single agent would experience; and no frequency
+variance, so nothing here speaks to the R/F axis.

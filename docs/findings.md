@@ -214,6 +214,33 @@ rather than superiority. Whichever half is doing the work on a given corpus,
 the prior remains a small, deliberately bounded adjustment to similarity
 search.
 
+### Does the value axis work on real outcomes, not just oracle labels?
+
+Every result above uses oracle outcomes — a memory "helped" if its label
+matched — which our [methodology](methodology.md) flags as the largest
+standing caveat. Amendment 14 tested the machinery against 89 tasks × ~586
+**test-verified** binary trials, where each task's empirical success rate is
+ground truth.
+
+**It transfers.** Effective value recovers true utility ordering at Spearman
+**0.83** after 25 observations. The mechanism was designed and tuned entirely
+against oracle labels and still ranks real utility correctly.
+
+Two things we learned that we had not named before:
+
+- **λ trades adaptivity against calibration.** A fixed-λ EWMA has a fixed
+  effective window (~1/λ samples), so it never converges — it tracks recent
+  noise forever. At our λ=0.3 the estimate is permanently a ~3-sample
+  average. That is *why* staleness detection works (you must forget the old
+  value fast) and why calibration error *grows* with more evidence
+  (0.148 → 0.187 by n=50, while λ=0.1 halves to 0.098). Our default is tuned
+  for adaptivity, and that is a choice rather than an oversight — but it was
+  an unexamined one.
+- **The confidence shrink cannot reorder equally-observed memories.** It
+  multiplies by `n/(n+k)`, a monotone transform at fixed n, so ranking is
+  identical for every `shrink_k`. It only matters when comparing memories
+  with different outcome counts.
+
 ### Two mechanisms we don't have, tested by adding them
 
 **Hebbian co-retrieval association hurt by 3.2 NDCG points.** It reinforces

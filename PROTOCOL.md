@@ -806,3 +806,66 @@ project's most distinctive machinery is decoration, and the honest response
 is to simplify rather than to keep it for its provenance.
 
 Runner: `bench-quality/formula_eval.py`.
+
+---
+
+# Amendment 14 — does the value axis recover true utility from real outcomes?
+
+**Status: registered before any run.** Every outcome number in this project
+is **oracle-derived** — a memory "helped" if its label matched. Our own
+methodology doc concedes this is "cleaner than production feedback would be",
+and it is the largest standing caveat on the value axis. The terminalbench
+trajectory corpus (Apache-2.0, 52,104 trials, 89 tasks, binary test-verified
+reward) offers the first chance to feed the machinery *real* outcomes.
+
+**What this corpus can and cannot support.** Attempts per task are near
+uniform (575–599), so there is no frequency variance and the R/F axis cannot
+be tested here at all. More importantly, the ~586 attempts at a task come
+from 49 *different models*, not one agent improving over time — so there is
+no learning signal across attempts, and a retrieval experiment over them
+would measure model capability rather than memory. A naive retrieval design
+would also leak: with gold defined as "same task and succeeded" and outcomes
+recorded as the trial's reward, the value axis would be handed half the
+label.
+
+What the corpus *does* provide, uniquely, is **ground-truth utility**: each
+task's empirical success rate over ~586 independent binary trials. That makes
+a different and better-posed question answerable.
+
+## Question
+
+`v ← λ·outcome + (1−λ)·v` with confidence shrink `v·n/(n+k)` was frozen at
+λ=0.3, k=3 by convention, never validated against known utility, because we
+never had any. Does it recover true utility from noisy binary outcomes, and
+are those constants right?
+
+## Method
+
+Stream each task's trials in real timestamp order, feed the binary reward to
+`rfm_record_outcome` through the shipped extension, and compare the resulting
+`rfm_value` / shrunk effective value against that task's empirical success
+rate over all its trials. Sweep λ ∈ {0.1, 0.2, 0.3, 0.5} and
+shrink_k ∈ {0, 1, 3, 10}.
+
+## Endpoints
+
+- **C1 calibration**: mean absolute error between effective value (mapped to
+  [0,1]) and true success rate, after n = 5, 10, 25, 50 outcomes.
+- **C2 ranking**: Spearman correlation between effective value and true
+  success rate across the 89 tasks — does the axis order tasks by real
+  utility?
+- **C3 frozen defaults**: are λ=0.3, k=3 within noise of the grid's best?
+
+## What would falsify
+
+If the frozen constants are materially worse than an alternative, they should
+change and the README should stop implying they were chosen. If effective
+value fails to correlate with true success rate at all (C2 near zero), the
+value axis does not estimate utility from real outcomes and every
+oracle-based result in this repo needs a much stronger caveat.
+
+Registered prediction: shrink will help at small n and hurt at large n
+(Amendment 12 found removing it *gained* 0.0134 on the recurring stratum,
+where outcomes had accumulated), so the best k should fall with n.
+
+Runner: `bench-quality/calibration_eval.py`.
