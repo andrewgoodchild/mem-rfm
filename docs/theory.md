@@ -346,6 +346,42 @@ problem from the context side. A co-occurrence association strength rather
 than an embedding distance, which no agent-memory system appears to have
 tried. Unbuilt.
 
+## Where each claim was measured
+
+Nothing above is asserted from the literature alone. `bench-quality/` holds
+every runner, the committed per-question outputs, and `RESULTS.md` — the full
+ledger including what died. The mapping:
+
+| claim in this document | runner | committed rows |
+|---|---|---|
+| the naive composition fails; β=0.3 frozen | `compose_eval.py` | `results-compose/` |
+| frozen β passes its one-shot test | `frozen_eval.py` | `results-frozen/` |
+| power law beats exponential and beats Codex's count-only model | `model_eval.py` | Amendment 11, RESULTS.md |
+| activation-only collapses to NDCG ≈ 0.01 | `signal_screen.py`, `phase2_eval.py` | RESULTS.md |
+| feedback adds 0.02–0.08 NDCG on recurring evidence | `locomo_eval.py`, `beam_eval.py` | `results-locomo/`, `results-beam/` |
+| stale facts get retired (0.43 → 0.66) | `ku_eval.py` | `results-ku/` |
+| ~6% lesson transfer; memory as a mild tax on hard tasks | `experiments/swe-ab/` | `results.jsonl`, `memory-audit.md` |
+| pooling beats per-agent stores | `star_eval.py`, `md2d_eval.py`, `flodial_eval.py`, `abcd_eval.py` | `results-star/`, `results-md2d/`, `results-flodial/` |
+| experience out-ranks the authored manual | `abcd_manual.py` | RESULTS.md |
+| staleness recovery under a procedure change | `abcd_staleness.py` | RESULTS.md |
+| scoring is O(1): ~4.6µs flat, error 0.049 | `throughput.sh` | RESULTS.md |
+| hybrid BM25, pruning, content-value signals — all failed | `hybrid_eval.py`, `prune_eval.py`, `signal_screen.py` | RESULTS.md |
+
+Adversarial results (attacks, defences, the six that failed) live in
+[team-memory](team-memory.md); their runners are preserved at the
+`team-experiments` tag rather than on `main`.
+
+Two habits worth stating because they are cheap and they catch real
+problems. Every extension change is checked for **retrieval regression** by
+re-running a committed benchmark and diffing per-question rows, not just by
+running unit tests — adding the `kind` column and `rfm_prunable` was verified
+bit-identical across all 1,065 BEAM rows. And `model_eval.py` carries a
+`--selfcheck` that reconciles its in-process activation against the shipped
+extension, after an early version of that runner scored every decay kernel
+identically because never-accessed memories took a sentinel value instead of
+the creation-age fallback. A silent dead channel invalidates every number
+downstream of it, so the harness is built to fail loudly instead.
+
 ## Sources
 
 Every equation is cited in the code implementing it (`src/math.rs`).

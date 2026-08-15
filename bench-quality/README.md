@@ -70,3 +70,19 @@ run. Per-question outputs land in `results/per_question.jsonl`; the summary
 table prints at the end. The protocol, conditions, and the reason the value
 axis can't earn quality gains on this dataset (one labeled question per
 instance) are documented in `replay.py`'s docstring and the main README.
+
+
+## Throughput benchmark
+
+`throughput.sh` (with `throughput_gen.py`) measures the scoring hot path:
+`rfm_score(id)` reading one summary row via the Petrov k=2 approximation
+versus an exact ACT-R recompute that scans `rfm_accesses`. It also reports
+maximum activation approximation error. Needs a `.load`-capable sqlite3
+(`SQLITE3_BIN`).
+
+```sh
+cd bench-quality && ./throughput.sh
+```
+
+This was previously a separate `bench/` directory; it now lives here so all
+benchmarks — retrieval quality and throughput — are in one place.

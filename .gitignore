@@ -1,7 +1,7 @@
 /target
-bench/*.db
-bench/*.db-wal
-bench/*.db-shm
+bench-quality/*.db
+bench-quality/*.db-wal
+bench-quality/*.db-shm
 bench-quality/.venv/
 bench-quality/data/
 bench-quality/cache*/
