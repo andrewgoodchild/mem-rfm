@@ -23,11 +23,15 @@ import numpy as np
 import common
 from team_common import BASE_TS, CALL_SPACING
 
+# Amendment 11 V2 registered the procedural-weighting question but ran it on
+# BEAM, whose labels are evidence turns rather than procedures. These four
+# corpora ARE procedure-retrieval tasks, so tagging everything procedural and
+# scoring it with utility-weighted parameters is the test that was owed.
 ARMS = {
-    "full":          {},
-    "no_value":      {"w_v": 0.0},
-    "no_activation": {"w_a": 0.0},
-    "no_prior":      {"beta": 0.0},
+    "declarative (0.7/0.3)": {},                        # frozen default
+    "balanced   (0.5/0.5)":  {"w_a": 0.5, "w_v": 0.5},
+    "procedural (0.3/0.7)":  {"w_a": 0.3, "w_v": 0.7},  # what kind='procedural' does
+    "utility only (0/1)":    {"w_a": 0.0, "w_v": 1.0},
 }
 
 
@@ -125,7 +129,7 @@ def main():
         print(f"  {name}: {nl} labels, recurrence {rec:.1f}/label\n")
 
     def delta(table, arm):
-        a, b = table[arm], table["full"]
+        a, b = table[arm], table["declarative (0.7/0.3)"]
         n = min(len(a), len(b))
         d = np.array(a[:n], float) - np.array(b[:n], float)
         lo, hi = common.bootstrap_ci(list(d))
@@ -134,13 +138,13 @@ def main():
     for metric, label in ((4, "hit@k"), (3, "hit@1")):
         print(f"\n=== Δ {label} vs full, by recurrence ===")
         print("| corpus | recurrence/label | " +
-              " | ".join(a for a in ARMS if a != "full") + " |")
+              " | ".join(a for a in ARMS if a != "declarative (0.7/0.3)") + " |")
         print("|---" * (len(ARMS) + 1) + "|")
         for name, rec, _nl, hit1, hitk in sorted(results, key=lambda r: -r[1]):
             table = hitk if metric == 4 else hit1
             cells = []
             for arm in ARMS:
-                if arm == "full":
+                if arm == "declarative (0.7/0.3)":
                     continue
                 m, lo, hi = delta(table, arm)
                 star = "*" if (hi < 0 or lo > 0) else " "

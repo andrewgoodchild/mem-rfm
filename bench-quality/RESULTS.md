@@ -1113,3 +1113,36 @@ is the corpus where the activation axis most clearly earns its place. So
 ACT-R's advantage over rank bucketing is largest where activation matters
 *least* (ABCD, MultiDoc2Dial). We have no mechanism for that and are not
 proposing one.
+
+## Amendment 11 V2, properly run: procedural weighting shows nothing
+
+Amendment 11 registered the procedural-weighting question but ran it on BEAM,
+whose labels are evidence turns rather than procedures — the wrong venue. All
+four dialog corpora ARE procedure-retrieval tasks, so this is the test that
+was owed. n=1500, MiniLM, Δ vs the frozen 0.7/0.3 weights:
+
+| corpus | balanced 0.5/0.5 | procedural 0.3/0.7 | utility only 0/1 |
+|---|---|---|---|
+| FloDial | +0.0007 | +0.0000 | −0.0020 |
+| STAR | +0.0027 | +0.0013 | −0.0013 |
+| ABCD | −0.0053 | −0.0027 | −0.0067 |
+| MultiDoc2Dial | +0.0040 | +0.0033 | −0.0080 |
+
+*(Δ hit@1; no cell reaches significance.)*
+
+**Nothing is significant anywhere.** Shifting weight toward the utility axis —
+which is exactly what `kind='procedural'` does — has no measurable effect on
+corpora whose labels are procedures. The frozen 0.7/0.3 is fine.
+
+One directional signal worth noting: **utility-only (w_a=0) is negative in all
+eight cells** across both metrics. Individually none is significant, but eight
+of eight in the same direction is weak corroboration that the activation axis
+contributes something everywhere, consistent with Amendment 13e.
+
+**Consequence for the `kind` column.** `docs/theory.md` stated in advance: "if
+typing shows nothing on the procedure-labelled dialog datasets, the honest
+response is to *remove* `kind` rather than extend it." Typing shows nothing.
+The mechanism is implemented, connected and tested, and it fails the third bar
+— it does not earn its place. It should either be removed or documented as an
+opt-in with a measured null attached, and the docs now say so rather than
+continuing to call it merely "unmeasured".

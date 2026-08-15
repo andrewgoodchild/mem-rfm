@@ -241,6 +241,27 @@ Two things we learned that we had not named before:
   identical for every `shrink_k`. It only matters when comparing memories
   with different outcome counts.
 
+### Simpler formulas, tested and rejected
+
+The scoring prior could be much simpler than ACT-R's base-level activation, so
+we tried: a weighted sum of separate recency and frequency terms; the classical
+marketing RFM formula as rank buckets (quintiles, deciles, continuous
+percentiles, and a row-local maintained-cutpoint form); each axis alone; and
+re-weighting the two axes by memory type.
+
+**None beat ACT-R.** Across four corpora and two embedders it is never beaten
+and wins significantly on two. The separate-axis weighted sum loses by 0.0107
+hit@1, which is the cleanest single piece of evidence that *unifying* recency
+and frequency into one quantity — rather than scoring them independently — is
+where the value is.
+
+Two process notes, because they matter more than the result. We first ran this
+comparison on **one corpus** and published the opposite conclusion; replication
+reversed it, and it was the same single-corpus failure this repository had
+already caught once for BM25 hybrid fusion. And rank-bucket granularity turned
+out to have an interior optimum around five buckets — finer is not better, so
+marketing's decile convention would have been worse here than quintiles.
+
 ### Two mechanisms we don't have, tested by adding them
 
 **Hebbian co-retrieval association hurt by 3.2 NDCG points.** It reinforces
