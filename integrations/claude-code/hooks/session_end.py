@@ -164,8 +164,8 @@ def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "a") as f:
         f.write(f"\n## Candidates from session {payload.get('session_id', '?')[:8]}\n")
-        f.write("<!-- Proposed, not saved. Review, then keep the useful ones with\n"
-                "     memory_save (tag them kind='procedural'). -->\n\n")
+        f.write("<!-- Proposed, not saved. Review, then keep the useful ones\n"
+                "     with memory_save. -->\n\n")
         for c in found[:MAX_CANDIDATES]:
             f.write(f"- In this project, `{c['failed']}` fails ({c['error']}); "
                     f"use `{c['fixed']}` instead.\n")

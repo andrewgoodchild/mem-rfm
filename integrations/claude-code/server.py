@@ -25,6 +25,8 @@ import time
 
 import sqlite_vec
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
+from pydantic import BaseModel, Field
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
@@ -34,6 +36,74 @@ MAX_TOKENS = int(os.environ.get("RFM_MAX_TOKENS", "256"))
 mcp = FastMCP("sqlite-rfm-memory")
 _db = None
 _embedder = None
+
+
+# Declared return types, so every tool ships an outputSchema and structured
+# content rather than a bag of text blocks. A bare `-> dict` or `-> list`
+# annotation silently disables FastMCP's structured-output path: before this,
+# a 3-result search arrived as 3 separate TextContent blocks with no schema
+# at all, leaving the client to re-parse what the server already had typed.
+class SaveResult(BaseModel):
+    id: int
+    status: str = Field(description="'saved' or 'already stored'")
+
+
+class SearchHit(BaseModel):
+    id: int
+    content: str
+    score: float = Field(description="similarity x rfm_prior, the ranking score")
+
+
+class MemoryRow(BaseModel):
+    id: int
+    content: str
+    created: str
+    accesses: int
+    value: float = Field(description="outcome EWMA in [-1, 1]")
+    outcomes: int
+    score: float
+
+
+class ListResult(BaseModel):
+    items: list[MemoryRow]
+    total: int
+    has_more: bool
+
+
+class FeedbackResult(BaseModel):
+    id: int
+    value_score: float
+    outcomes: int
+
+
+class UpdateResult(BaseModel):
+    id: int
+    status: str
+    accesses: int = Field(description="access history, preserved across the edit")
+    value_score: float
+    outcomes: int
+
+
+class DeleteResult(BaseModel):
+    id: int
+    deleted: bool
+
+
+class StatusResult(BaseModel):
+    memories: int
+    accesses: int
+    outcomes: int
+    db: str
+
+
+# The spec's defaults are the worst case -- an unannotated tool declares
+# itself destructive and open-world -- and its own schema names a memory
+# tool as the canonical closed-world example. Nothing here reaches past the
+# local database, so openWorldHint is false throughout.
+def _ann(title, read_only=False, destructive=False, idempotent=False):
+    return ToolAnnotations(title=title, readOnlyHint=read_only,
+                           destructiveHint=destructive,
+                           idempotentHint=idempotent, openWorldHint=False)
 
 
 def resolve_dylib():
@@ -155,28 +225,87 @@ def _sanitize(content: str) -> str:
     return " ".join(content.split())
 
 
-def _save(content: str) -> dict:
+def _check(content: str) -> str:
+    """Validation failures are raised, not returned. A tool that returns
+    {"error": ...} inside a success envelope reads as success to the model,
+    which then does not retry; MCP requires isError so it can self-correct."""
     content = _sanitize(content.strip())
     if not content:
-        return {"error": "empty content"}
+        raise ValueError("empty content")
     if len(content) > MAX_CONTENT:
-        return {"error": f"content too long ({len(content)} > {MAX_CONTENT} chars); "
-                         "save one self-contained fact per call"}
+        raise ValueError(f"content too long ({len(content)} > {MAX_CONTENT} chars); "
+                         "save one self-contained fact per call")
+    return content
+
+
+def _save(content: str) -> SaveResult:
+    content = _check(content)
     d = db()
     dup = d.execute("SELECT id FROM rfm_memories WHERE content = ?", (content,)).fetchone()
     if dup:
         log("save", id=dup[0], status="duplicate", chars=len(content))
-        return {"id": dup[0], "status": "already stored"}
+        return SaveResult(id=dup[0], status="already stored")
     cur = d.execute(
         "INSERT INTO rfm_memories(content, created_at, embedding) VALUES (?, ?, ?)",
         (content, time.time(), embed(content)))
     d.commit()
     log("save", id=cur.lastrowid, status="saved", chars=len(content),
         content=_redact(content))
-    return {"id": cur.lastrowid, "status": "saved"}
+    return SaveResult(id=cur.lastrowid, status="saved")
 
 
-def _search(query: str, k: int = 5) -> list:
+def _update(memory_id: int, content: str) -> UpdateResult:
+    """Rewrite a memory's content while keeping everything it has earned.
+
+    Without this the only edit path is delete-then-save, which resets
+    access_count, last_access, bla_cache, value_score and outcome_count --
+    exactly the state the system exists to accumulate, discarded on the most
+    common maintenance operation there is. The schema makes the fix trivial:
+    content and embedding are host-owned, every scoring column is
+    extension-maintained, so a plain UPDATE preserves all of them.
+
+    Outcome history carries over deliberately. It is evidence about the slot
+    ("agents keep needing this fact and it keeps working"), not about the
+    exact wording. The trade-off is documented in docs/api.md: it means a
+    memory can bank a reputation and then be rewritten, so updates are worth
+    the same scrutiny as saves."""
+    content = _check(content)
+    d = db()
+    row = d.execute(
+        "SELECT access_count, value_score, outcome_count FROM rfm_memories "
+        "WHERE id = ?", (memory_id,)).fetchone()
+    if row is None:
+        raise ValueError(f"no memory with id {memory_id}")
+    clash = d.execute(
+        "SELECT id FROM rfm_memories WHERE content = ? AND id != ?",
+        (content, memory_id)).fetchone()
+    if clash:
+        raise ValueError(f"memory {clash[0]} already has that exact content; "
+                         f"delete one of the two rather than duplicating")
+    d.execute("UPDATE rfm_memories SET content = ?, embedding = ? WHERE id = ?",
+              (content, embed(content), memory_id))
+    d.commit()
+    log("update", id=memory_id, chars=len(content), content=_redact(content),
+        accesses=row[0], value=row[1], outcomes=row[2])
+    return UpdateResult(id=memory_id, status="updated", accesses=row[0],
+                        value_score=round(row[1], 4), outcomes=row[2])
+
+
+def _get(memory_id: int) -> MemoryRow:
+    d = db()
+    r = d.execute(
+        """SELECT id, content, created_at, access_count, value_score,
+                  outcome_count, rfm_score(id) FROM rfm_memories WHERE id = ?""",
+        (memory_id,)).fetchone()
+    if r is None:
+        raise ValueError(f"no memory with id {memory_id}")
+    return MemoryRow(id=r[0], content=r[1],
+                     created=time.strftime("%Y-%m-%d", time.localtime(r[2])),
+                     accesses=r[3], value=round(r[4], 3), outcomes=r[5],
+                     score=round(r[6], 4))
+
+
+def _search(query: str, k: int = 5) -> list[SearchHit]:
     d = db()
     qvec = embed(query)
     # The FROZEN composition (PROTOCOL.md): clamped similarity x bounded prior
@@ -215,54 +344,62 @@ def _search(query: str, k: int = 5) -> list:
             set_changed=set(got) != set(sim_only),
             order_changed=got != sim_only,
             sim_only=sim_only)
-    return [{"id": r[0], "content": r[1], "score": round(r[4], 4)} for r in rows]
+    return [SearchHit(id=r[0], content=r[1], score=round(r[4], 4)) for r in rows]
 
 
-def _feedback(memory_id: int, helped: bool) -> dict:
+def _feedback(memory_id: int, helped: bool) -> FeedbackResult:
     d = db()
     try:
         row = d.execute("SELECT rfm_record_outcome(?, ?)",
                         (memory_id, 1.0 if helped else -1.0)).fetchone()
         d.commit()
-        n = d.execute("SELECT outcome_count FROM rfm_memories WHERE id = ?",
-                      (memory_id,)).fetchone()
-        log("feedback", id=memory_id, helped=helped,
-            value=round(row[0], 4), outcomes=n[0] if n else None)
-        return {"id": memory_id, "value_score": round(row[0], 4)}
     except sqlite3.OperationalError as e:
         log("feedback", id=memory_id, helped=helped, error=str(e))
-        return {"error": str(e)}
+        raise ValueError(str(e)) from e
+    n = d.execute("SELECT outcome_count FROM rfm_memories WHERE id = ?",
+                  (memory_id,)).fetchone()
+    log("feedback", id=memory_id, helped=helped,
+        value=round(row[0], 4), outcomes=n[0] if n else None)
+    return FeedbackResult(id=memory_id, value_score=round(row[0], 4),
+                          outcomes=n[0] if n else 0)
 
 
-def _status() -> dict:
+def _status() -> StatusResult:
     d = db()
     n, accesses, outcomes = d.execute(
         "SELECT (SELECT count(*) FROM rfm_memories),"
         " (SELECT count(*) FROM rfm_accesses),"
         " (SELECT count(*) FROM rfm_accesses WHERE outcome IS NOT NULL)").fetchone()
-    return {"memories": n, "accesses": accesses, "outcomes": outcomes, "db": DB_PATH}
+    return StatusResult(memories=n, accesses=accesses, outcomes=outcomes,
+                        db=DB_PATH)
 
 
-def _list(limit: int = 20, offset: int = 0) -> list:
+def _list(limit: int = 20, offset: int = 0) -> ListResult:
     d = db()
+    limit = max(1, min(int(limit), 200))
+    offset = max(0, int(offset))
     rows = d.execute(
         """SELECT id, content, created_at, access_count, value_score, outcome_count,
                   rfm_score(id) AS score
            FROM rfm_memories ORDER BY score DESC LIMIT ? OFFSET ?""",
-        (max(1, min(int(limit), 200)), max(0, int(offset)))).fetchall()
-    return [{"id": r[0], "content": r[1],
-             "created": time.strftime("%Y-%m-%d", time.localtime(r[2])),
-             "accesses": r[3], "value": round(r[4], 3), "outcomes": r[5],
-             "score": round(r[6], 4)} for r in rows]
+        (limit, offset)).fetchall()
+    total = d.execute("SELECT count(*) FROM rfm_memories").fetchone()[0]
+    # A bare list gives a paging agent no stopping condition.
+    return ListResult(
+        items=[MemoryRow(id=r[0], content=r[1],
+                         created=time.strftime("%Y-%m-%d", time.localtime(r[2])),
+                         accesses=r[3], value=round(r[4], 3), outcomes=r[5],
+                         score=round(r[6], 4)) for r in rows],
+        total=total, has_more=offset + len(rows) < total)
 
 
-def _delete(memory_id: int) -> dict:
+def _delete(memory_id: int) -> DeleteResult:
     d = db()
     gone = d.execute("DELETE FROM rfm_memories WHERE id = ?", (memory_id,)).rowcount
     d.execute("DELETE FROM rfm_accesses WHERE memory_id = ?", (memory_id,))
     d.commit()
     log("delete", id=memory_id, deleted=bool(gone))
-    return {"id": memory_id, "deleted": bool(gone)}
+    return DeleteResult(id=memory_id, deleted=bool(gone))
 
 
 EXPORT_CAP = 200_000  # chars; keeps a hostile/huge store from flooding context
@@ -290,53 +427,78 @@ def _export() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
-def memory_save(content: str) -> dict:
+@mcp.tool(annotations=_ann("Save a memory", idempotent=True))
+def memory_save(content: str) -> SaveResult:
     """Store a durable memory: user preferences, project facts, decisions,
     hard-won debugging lessons. One self-contained fact per call. Don't store
-    ephemera (current task state) or anything derivable from the repo."""
+    ephemera (current task state) or anything derivable from the repo.
+    Saving identical content twice returns the existing memory."""
     return _save(content)
 
 
-@mcp.tool()
-def memory_search(query: str, k: int = 5) -> list:
+@mcp.tool(annotations=_ann("Search memories"))
+def memory_search(query: str, k: int = 5) -> list[SearchHit]:
     """Search stored memories. Ranking = semantic similarity x usefulness
     (memories that were recently/frequently used and got positive feedback
     rank higher). Returns ids — after acting on a memory, report whether it
-    helped via memory_feedback."""
+    helped via memory_feedback.
+
+    Not read-only: retrieval counts as usage, so every returned memory
+    records an access, which feeds the recency and frequency terms."""
     return _search(query, k)
 
 
-@mcp.tool()
-def memory_feedback(memory_id: int, helped: bool) -> dict:
+@mcp.tool(annotations=_ann("Record whether a memory helped"))
+def memory_feedback(memory_id: int, helped: bool) -> FeedbackResult:
     """Record whether a retrieved memory actually helped (true) or was
     irrelevant/misleading (false). This trains the ranking: helpful memories
     rise, unhelpful ones fade. Call once per memory per retrieval."""
     return _feedback(memory_id, helped)
 
 
-@mcp.tool()
-def memory_status() -> dict:
+@mcp.tool(annotations=_ann("Update a memory's content",
+                           destructive=True, idempotent=True))
+def memory_update(memory_id: int, content: str) -> UpdateResult:
+    """Replace a memory's content, keeping its accumulated usage and value.
+    Use this — not delete-then-save — when a stored fact is outdated or
+    wrong but still the right thing to remember: a changed build command, a
+    moved path, a superseded convention. Delete-then-save resets the usage
+    history and outcome record; this preserves both."""
+    return _update(memory_id, content)
+
+
+@mcp.tool(annotations=_ann("Read one memory", read_only=True))
+def memory_get(memory_id: int) -> MemoryRow:
+    """Fetch a single memory by id with its usage and value stats — to read
+    back what search returned, or to check a memory before updating it."""
+    return _get(memory_id)
+
+
+@mcp.tool(annotations=_ann("Memory store statistics", read_only=True))
+def memory_status() -> StatusResult:
     """Memory store statistics: counts of memories, accesses, and outcomes."""
     return _status()
 
 
-@mcp.tool()
-def memory_list(limit: int = 20, offset: int = 0) -> list:
+@mcp.tool(annotations=_ann("List memories", read_only=True))
+def memory_list(limit: int = 20, offset: int = 0) -> ListResult:
     """List stored memories ranked by current usefulness score, with usage and
-    value stats — for inspecting or auditing what is remembered."""
+    value stats — for inspecting or auditing what is remembered. Returns
+    total and has_more for paging."""
     return _list(limit, offset)
 
 
-@mcp.tool(annotations={"destructiveHint": True})
-def memory_delete(memory_id: int) -> dict:
+@mcp.tool(annotations=_ann("Delete a memory", destructive=True, idempotent=True))
+def memory_delete(memory_id: int) -> DeleteResult:
     """PERMANENTLY delete a memory (and its access history) by id — not
     undoable. Use when a memory is wrong, stale, or the user asks to forget
-    something. Clients should keep this behind a permission prompt."""
+    something. To correct a memory while keeping what it has earned, use
+    memory_update instead. Clients should keep this behind a permission
+    prompt."""
     return _delete(memory_id)
 
 
-@mcp.tool()
+@mcp.tool(annotations=_ann("Export all memories", read_only=True))
 def memory_export() -> str:
     """Export every memory as human-readable markdown (id, date, usage, value,
     content) — for review, backup, or migration."""

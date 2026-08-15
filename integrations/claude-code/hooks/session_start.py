@@ -108,7 +108,9 @@ def main():
         "Memory usage: memory_search before exploring from scratch; "
         "memory_feedback(id, helped) after a memory proves useful or wrong; "
         "memory_save for durable facts only (preferences, decisions, "
-        "lessons); memory_delete honors 'forget that'.")
+        "lessons); memory_update when a stored fact is outdated but still "
+        "worth keeping — it preserves what the memory has earned, "
+        "delete-then-save does not; memory_delete honors 'forget that'.")
     print(json.dumps({
         "hookSpecificOutput": {
             "hookEventName": "SessionStart",
