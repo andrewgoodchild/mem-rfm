@@ -81,6 +81,11 @@ only on count and age. We use k = 2, which the schema already stores, so
 **scoring reads one row and never touches the access log** — ~4.6µs whether a
 memory has 20 accesses or 200.
 
+**Caveat, and it is a large one:** ablation could not show that this axis
+earns its place. Removing activation entirely left retrieval unchanged within
+noise on our dev benchmark. See "which half is load-bearing" below before
+treating the ACT-R half as the thing that makes this work.
+
 ### Procedural memory → M
 
 Production rules are selected not by activation but by a learned **utility**:
@@ -255,6 +260,52 @@ Caveats: dev set only, one embedder, and no outcome feedback accumulates on
 BEAM, so the value axis is constant there. A dev observation under the
 Amendment 11 protocol, not a frozen-then-tested result.
 
+### Which half is load-bearing
+
+An ablation of every component (Amendment 12) produced an uncomfortable
+result about this design:
+
+| removing | Δ NDCG@10 | verdict |
+|---|---|---|
+| **the outcome axis** | **−0.0055** [−0.0094, −0.0018] | **earns its place** |
+| ACT-R activation | +0.0020 [−0.0022, +0.0061] | within noise |
+| the confidence shrink | +0.0031 [−0.0040, +0.0096] | within noise |
+| decay rate (→0, or →0.9) | +0.0001 / +0.0021 | within noise |
+
+**Only the outcome axis measurably earns its place** — in a project with R
+and F in its name, and with the ACT-R half carrying all the pedigree and all
+the O(1) engineering.
+
+It is, however, the same answer three earlier measurements gave from other
+directions: activation *alone* collapses retrieval to NDCG ≈ 0.01; *raising*
+activation's influence costs up to −0.063; and the bounded prior reaches
+parity with similarity-only rather than beating it. Everything has said the
+usage prior is a small, carefully-bounded adjustment. The ablation says which
+half of it does the work.
+
+The Belady framing explains why plausibly. Activation predicts **whether an
+item will be used again**; the outcome axis predicts **whether using it will
+be worth anything**. Our dev benchmark asks probing questions about a
+conversation, and only 108 of its 355 questions revisit evidence that served
+an earlier one — so re-use is nearly uninformative there while usefulness is
+not. The recency and frequency axes may simply be answering a question that
+benchmark does not ask.
+
+Honest status: **unproven here, not disproven.** One dev benchmark, one
+embedder, and short feedback streams are the least favourable setting for an
+activation signal, and recurrence-heavy workloads are the obvious place to
+look next. But the stronger reading deserves stating, because the evidence
+currently permits it: it may be that for agent memory in general, recency and
+frequency are the wrong prior and outcome is the right one — that the ACT-R
+machinery here is elegant rather than load-bearing.
+
+Two mechanisms this system does *not* have were tested by adding them.
+**Hebbian co-retrieval association hurt by 3.2 NDCG points** — it reinforces
+whatever was already retrieved, which is the rich-get-richer dynamic the
+outcome axis exists to break, and ACT-R's `ln(fan)` discount did not save it.
+**Interleaved consolidation had no detectable effect.** Neither earns
+extension surface on this evidence.
+
 ---
 
 ## The lifecycle of a memory
@@ -366,6 +417,7 @@ ledger including what died. The mapping:
 | staleness recovery under a procedure change | `abcd_staleness.py` | RESULTS.md |
 | scoring is O(1): ~4.6µs flat, error 0.049 | `throughput.sh` | RESULTS.md |
 | hybrid BM25, pruning, content-value signals — all failed | `hybrid_eval.py`, `prune_eval.py`, `signal_screen.py` | RESULTS.md |
+| only the outcome axis earns its place; Hebbian hurts | `ablation_eval.py` | `results-ablation/` |
 
 Adversarial results (attacks, defences, the six that failed) live in
 [team-memory](team-memory.md); their runners are preserved at the

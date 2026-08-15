@@ -36,20 +36,12 @@ SELECT rfm_record_outcome(42, 1.0);  -- ...and it helped (-1.0 if it didn't)
 That's the whole interface. Scoring is one indexed row read — no API keys, no
 network, no LLM anywhere in the ranking path.
 
-**The name** comes from **RFM**, the customer-scoring model from direct
-marketing: **R**ecency, **F**requency, **M**onetary value. Marketers learned
-that recency and frequency are free from transaction logs but only measure
-*engagement* — without the monetary axis you can't tell a valuable customer
-from a busy one. Retrieval logs have the same shape and the same blind spot,
-so mem-rfm keeps the structure and swaps the third axis for its analog: did
-this memory actually help?
-
-Recency and frequency aren't tracked separately. They come from **ACT-R
-base-level activation** — a cognitive-science model of human memory, fitted
-to human recall data, in which each past use contributes a term that decays
-with age. Many old uses can equal a few recent ones. A 2006 approximation
-makes it O(1), so scoring never walks the access log.
-[How the model works →](docs/theory.md)
+Underneath, the problem is cache replacement: too many memories to put in
+front of the model, so you must predict which are worth having. Recency and
+frequency come from ACT-R, a cognitive model of human memory. The outcome
+axis is the part a cache policy doesn't have — because a cache hit is always
+valuable and a retrieved memory isn't.
+**[How the model works →](docs/theory.md)**
 
 ## Should you use this?
 
@@ -84,71 +76,61 @@ uv pip install --python .venv/bin/python mcp sqlite-vec sentence-transformers nu
 claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py"
 ```
 
-[Full API and configuration →](docs/api.md)
+**[Full API and configuration →](docs/api.md)**
 
 ## What we found
 
-The short version. Everything is measured, pre-registered, and the failures
-are reported at the same length as the successes.
+Memory pays where work **recurs** and doesn't where it's episodic — on
+scattered real-bug fixing, the system measured its own lesson-transfer rate
+at ~6% and was a mild net tax. Outcome feedback is the component carrying its
+weight: an ablation of every part of the scoring function found it the only
+one whose removal measurably hurts.
 
-**Memory pays where work recurs.** Outcome feedback adds 0.02–0.08 NDCG on
-questions revisiting earlier ground, across three embedding models. In 70
-live coding sessions, exactly one memory earned sustained value: an
-environment gotcha about dependency pins. Not a code lesson — a build quirk.
+The honest headline is a modest one, because a large gain was never the
+claim. This is a small, deliberately bounded adjustment to similarity search,
+and most of what it buys is safety and maintenance — keeping a usage prior
+from eating itself, and retiring content that similarity would recommend
+forever.
 
-**It doesn't pay where work is episodic.** On scattered real-bug fixing the
-system measured its own lesson-transfer rate at **~6%** (15 of 16 outcomes
-negative), and across 27 paired tasks the memory arm solved 23 against the
-control's 25. Consistent with noise, but not a win.
+**[All findings, including the ones that argue against using this →](docs/findings.md)**
 
-**The value axis's reliable jobs are safety and maintenance**, not ranking
-quality. Rank by usage alone and retrieval collapses to NDCG ≈ 0.01
-(rich-get-richer); negative feedback is what breaks that loop. It also
-retires stale content that similarity keeps recommending forever.
-
-[All findings, including what argues against using this →](docs/findings.md)
-
-## We also explored team memory
-
-We measured whether pooling memory across several agents helps (it does —
-large, replicated effects), then measured what a bad team member can do to a
-shared store, and then stopped. The mechanism works; the market has run this
-experiment repeatedly and it hasn't landed. The full write-up — the pooling
-results, four attacks with ten defence configurations, the six that failed,
-and what the market evidence says — is in
-**[docs/team-memory.md](docs/team-memory.md)**. None of it ships here.
+We also explored pooling memory across a team, measured what a bad team
+member can do to a shared store, and then stopped: the mechanism works, but
+the market has run that experiment repeatedly and it hasn't landed. None of
+it ships here. **[The full write-up →](docs/team-memory.md)**
 
 ## How this compares
 
 An August 2026 survey of 22 memory systems found the access → outcome →
-ranking loop shipping in exactly one other open-source system —
-[Cognee](https://docs.cognee.ai/guides/feedback-system), where it is off by
-default and rates answers rather than task outcomes. Two others implement
-pieces: [ReMe](https://github.com/agentscope-ai/ReMe) uses outcome utility
-only to prune, and a [MemOS plugin](https://github.com/MemTensor/MemOS)
-credits an episode's new traces rather than the memories retrieved.
+ranking loop shipping in only two others.
+[Cognee](https://docs.cognee.ai/guides/feedback-system) has one, off by
+default, rating answers rather than task outcomes.
+[Codex](https://github.com/openai/codex) has a real one — citing a memory
+bumps a usage counter that drives both consolidation ordering and retention —
+but at whole-session granularity, with no decay and no negative signal.
+[ReMe](https://github.com/agentscope-ai/ReMe) uses outcome utility only to
+prune, and a [MemOS plugin](https://github.com/MemTensor/MemOS) credits an
+episode's new traces rather than the memories that were retrieved.
 
 So this appears to be the only system where outcome feedback is a default-on
-term in the retrieval score, attributed to the memory actually retrieved,
-with negative outcomes carrying weight — and the only one shipped as an
-embeddable primitive rather than a service. Concurrent 2026 research is
-converging on the same loop ([RoMeRL](https://arxiv.org/abs/2608.02508),
-[Chen & Cheng](https://arxiv.org/abs/2606.12945)); a July 2026 review
-([arXiv:2607.23942](https://arxiv.org/abs/2607.23942)) still lists cognitive
-activation combined with utility as not yet migrated from cognitive
-architectures into language agents.
+term in the retrieval score, attributed to the individual memory retrieved,
+with negative outcomes carrying weight, composed with similarity under a
+bound frozen by experiment — and the only one shipped as an embeddable
+primitive rather than a service. Concurrent 2026 research is converging on
+the same loop ([RoMeRL](https://arxiv.org/abs/2608.02508),
+[Chen & Cheng](https://arxiv.org/abs/2606.12945)).
 
 ## Documentation
 
 | | |
 |---|---|
 | [findings.md](docs/findings.md) | when memory helps and when it doesn't, in full |
-| [team-memory.md](docs/team-memory.md) | the team-memory exploration: pooling results, adversarial testing, and why we stopped |
-| [theory.md](docs/theory.md) | RFM, ACT-R, and the composition experiment |
+| [theory.md](docs/theory.md) | the model: Belady, ACT-R, memory types, the lifecycle |
 | [api.md](docs/api.md) | functions, config, schema, MCP server |
-| [methodology.md](docs/methodology.md) | pre-registration, the correction, known limits |
+| [methodology.md](docs/methodology.md) | pre-registration, corrections, known limits |
+| [team-memory.md](docs/team-memory.md) | the team exploration, and why we stopped |
 
-Also: `PROTOCOL.md` (pre-registrations and amendments 1–10),
+Also: `PROTOCOL.md` (pre-registrations, amendments 1–12),
 `bench-quality/RESULTS.md` (the complete ledger, including everything that
 died), `DESIGN_NOTES.md` (design decisions and trade-offs).
 
