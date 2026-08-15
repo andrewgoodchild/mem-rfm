@@ -25,7 +25,8 @@ from team_common import BASE_TS, CALL_SPACING
 
 BETA = 0.3
 TAU = 86_400.0
-ARMS = ["actr", "simple_rfm", "quintile_rfm", "recency_only", "frequency_only"]
+ARMS = ["actr", "simple_rfm", "quintile_rfm", "decile_rfm", "percentile_rfm",
+        "binary_rfm", "tercile_rfm", "recency_only", "frequency_only"]
 
 # Amendment 13b: the squash is ACT-R's retrieval threshold and noise, which
 # the architecture fits per model. Overridable so a fitted value chosen on one
@@ -33,12 +34,18 @@ ARMS = ["actr", "simple_rfm", "quintile_rfm", "recency_only", "frequency_only"]
 THETA, S = 0.0, 1.0
 
 
-def quintiles(x):
-    """Marketing RFM scores each axis by rank bucket, not raw value."""
-    if len(x) < 5:
-        return np.zeros(len(x))
+def buckets(x, b):
+    """Marketing RFM scores each axis by rank bucket, not raw value.
+    b=5 quintiles, b=10 deciles, b=0 continuous percentile (the limit case)."""
+    n = len(x)
+    if n < 2:
+        return np.zeros(n)
     order = np.argsort(np.argsort(x))
-    return np.floor(order * 5.0 / len(x)) / 4.0     # -> {0, .25, .5, .75, 1}
+    if b == 0:
+        return order / (n - 1.0)
+    if n < b:
+        return order / (n - 1.0)
+    return np.floor(order * float(b) / n) / (b - 1.0)
 
 
 def score_arm(arm, act, rec, freq, val01):
@@ -49,8 +56,11 @@ def score_arm(arm, act, rec, freq, val01):
     elif arm == "simple_rfm":
         fmax = max(freq.max(), 1e-9)
         prior_core = 0.35 * rec + 0.35 * (freq / fmax) + 0.3 * val01
-    elif arm == "quintile_rfm":
-        prior_core = (quintiles(rec) + quintiles(freq) + quintiles(val01)) / 3.0
+    elif arm in ("quintile_rfm", "decile_rfm", "percentile_rfm",
+                 "binary_rfm", "tercile_rfm"):
+        b = {"binary_rfm": 2, "tercile_rfm": 3, "quintile_rfm": 5,
+             "decile_rfm": 10, "percentile_rfm": 0}[arm]
+        prior_core = (buckets(rec, b) + buckets(freq, b) + buckets(val01, b)) / 3.0
     elif arm == "recency_only":
         prior_core = 0.7 * rec + 0.3 * val01
     elif arm == "frequency_only":
@@ -84,7 +94,7 @@ def main():
     ap.add_argument("--corpus", default="star")
     ap.add_argument("--theta", type=float, default=None)
     ap.add_argument("--s", type=float, default=None)
-    ap.add_argument("--arms", default="actr,simple_rfm,quintile_rfm,recency_only,frequency_only")
+    ap.add_argument("--arms", default="actr,binary_rfm,tercile_rfm,quintile_rfm,decile_rfm,percentile_rfm")
     ap.add_argument("--n", type=int, default=1500)
     ap.add_argument("--k", type=int, default=5)
     args = ap.parse_args()
@@ -115,6 +125,7 @@ def main():
 
     stores = {a: common.MemoryStore(rows, mem_embs) for a in ARMS}
     hit1, hitk = defaultdict(list), defaultdict(list)
+    spread = defaultdict(list)      # dynamic range of the prior, per arm
 
     for ci in range(len(rows)):
         gold = labels[ci]
@@ -138,6 +149,8 @@ def main():
             val01 = np.clip((np.array([got[m][3] for m in cands]) + 1) / 2, 0, 1)
 
             prior = score_arm(arm, act, rec, freq, val01)
+            if len(cands) > 20:
+                spread[arm].append(float(prior.max() - prior.min()))
             sims = np.maximum(st.sims(q_embs[ci], cands), 0.0)
             order = np.argsort(-(sims * prior), kind="stable")[:args.k]
             top = [cands[i] for i in order]
@@ -169,6 +182,12 @@ def main():
               f"| {cells[1][0]:.4f} | {cells[1][1]} |")
     print("\n(* = CI excludes zero. Ties favour the simpler form — see "
           "Amendment 13's asymmetric bar.)")
+    print("\nprior dynamic range (max-min across candidates, mean per query):")
+    print("  near-zero spread = that arm's prior is effectively constant, so")
+    print("  its ranking is similarity-only regardless of what it computes.")
+    for arm in ARMS:
+        if spread[arm]:
+            print(f"  {arm:16s} {np.mean(spread[arm]):.4f}")
 
 
 if __name__ == "__main__":

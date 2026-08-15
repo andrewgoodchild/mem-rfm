@@ -968,3 +968,56 @@ with the obvious defence closed.** Before removing it we would want
 replication on a third corpus and a second embedder, because this is two
 corpora and one model — but the burden of proof has shifted onto ACT-R, and
 "it is principled" is not evidence.
+
+## Amendment 13c: why the orderings came out that way (bucket sweep + diagnostics)
+
+STAR, n=1500. Bucket count for the rank-normalised form, plus the dynamic
+range each arm's prior actually uses.
+
+| arm | hit@1 | prior spread |
+|---|---|---|
+| actr | **0.9373** | 0.1878 |
+| binary_rfm (2 buckets) | 0.9246 | 0.2999 |
+| tercile_rfm (3) | 0.9273 | 0.2805 |
+| **quintile_rfm (5)** | **0.9346** | 0.2688 |
+| decile_rfm (10) | 0.9306 | 0.2480 |
+| percentile_rfm (continuous) | 0.9300 | 0.2304 |
+| simple_rfm | 0.9266 | 0.2623 |
+
+**Bucket count has an interior optimum at 5** — an inverted U, not monotone
+in either direction. Too few buckets discard real signal; too many fit noise.
+Standard bias–variance, and it means the marketing convention of *deciles*
+is worse here (−0.0040 against quintiles) even though it is finer.
+
+**Two mechanistic explanations were tested and falsified**, both recorded
+because the failures are the informative part:
+
+1. *"simple_rfm's axes saturate to near-constants."* Wrong — its prior spread
+   (0.2623) is **larger** than ACT-R's (0.1878). It varies plenty; it varies
+   about the wrong thing.
+2. *"Coarser bucketing wins by suppressing noise."* Wrong — binary bucketing
+   has the largest spread and the worst score, and quintiles beat deciles
+   despite a larger spread. Prior dynamic range does not predict performance
+   in either direction.
+
+**What the diagnostics do support: both parametric transforms are
+mis-calibrated for this corpus, in opposite directions.** Candidate ages at
+mid-stream are p10 0.0 / median 0.2 / p90 1.3 days. Against that:
+
+- `exp(−Δ/τ)` with τ = 1 day compresses at the **top** — median 0.80, p90
+  0.97, nothing below 0.01. Nearly all candidates are "recent", so the axis
+  spends its resolution on distinctions that barely exist.
+- ACT-R's activation runs −5.8 to −3.9, which lands in the logistic's
+  **far-left tail** where the slope is ~0.007, compressing a 1.9-unit spread
+  into ~0.013 of output.
+
+Both fixed-constant forms are wrong for this data, in opposite directions.
+Rank buckets have no constants to get wrong — they are calibrated to the
+empirical distribution by construction, which is why they need no per-corpus
+tuning and why fitting θ/s (Amendment 13b) barely helped.
+
+**What we cannot cleanly explain**: why ACT-R still beats `simple_rfm`
+despite both being mis-calibrated and despite ACT-R's output being the more
+compressed of the two. Spread does not account for it, and neither surviving
+story predicts it. Recorded as unexplained rather than given a third
+post-hoc rationalisation.
