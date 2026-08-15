@@ -789,3 +789,58 @@ measures nothing.
 Caveat: one seed, one embedder, n=1500 per corpus, and no correction for
 testing four corpora — STAR's result should be replicated before it is
 leaned on.
+
+## Amendment 13: does ACT-R earn its complexity? Not against rank-based RFM.
+
+STAR, n=1500, k=5, MiniLM. Every arm shares the outcome axis, β and the
+composition; only the activation term differs. Runner: `formula_eval.py`.
+
+| arm | hit@1 | Δ vs actr | hit@5 | Δ vs actr |
+|---|---|---|---|---|
+| **actr** (frozen) | 0.9373 | baseline | 0.9640 | baseline |
+| simple_rfm (weighted sum) | 0.9266 | **−0.0107\*** | 0.9586 | **−0.0053\*** |
+| **quintile_rfm** (marketing) | 0.9346 | **−0.0027** [−0.0093,+0.0040] | 0.9640 | **+0.0000** |
+| recency_only | 0.9306 | −0.0067\* | 0.9606 | −0.0033 |
+| frequency_only | 0.9159 | −0.0213\* | 0.9600 | −0.0040 |
+
+*(\* = CI excludes zero.)*
+
+**Two findings, pointing in opposite directions.**
+
+ACT-R **beats** the naive separate-axis form — a weighted sum of
+`exp(−Δ/τ)` and `ln(1+n)` costs 1.07 points hit@1, CI excluding zero. So
+unifying recency and frequency into one log-sum quantity is genuinely better
+than adding two independently-scored axes. That much of the cognitive-science
+formulation is doing real work.
+
+But ACT-R **does not beat the classical marketing formula.** Per-query
+quintile ranks of R, F and M, summed, land within noise at hit@1 and
+*exactly equal* at hit@5. **Amendment 13 registered an asymmetric bar before
+this ran — a tie goes to the simpler form, because it removes the
+`bla_cache` column, the Petrov approximation and a conformance obligation. On
+this evidence ACT-R has not earned its complexity.**
+
+Two observations that shape what to do about it rather than explain it away:
+
+1. **Recency carries the simple form; frequency alone is much worse**
+   (−0.0067 vs −0.0213). Whatever the activation axis contributes here is
+   mostly recency.
+2. **The comparison is confounded in ACT-R's disfavour, and we knew about
+   the confound beforehand.** `quintile_rfm` gets per-query rank
+   normalisation for free, while `actr` passes activation through a logistic
+   whose centre and width are *unfitted* — Amendment 11 measured P(B) sitting
+   at 0.006–0.016, i.e. the squash operating in its far-left tail across the
+   whole store. A fitted ACT-R and a rank-normalised RFM have not been
+   compared; an unfitted ACT-R and a rank-normalised RFM have.
+
+**Recommendation, and it is not "keep it because it's principled":** fit
+`theta`/`s` (Amendment 11 V1 left this explicitly open, and the config keys
+now exist) and re-run this comparison. If fitted ACT-R still ties with
+quintile ranks, the honest response is to simplify — drop the Petrov
+machinery and score the axes separately by rank. The provenance of an
+equation is not a reason to keep it.
+
+Caveats: one corpus, one embedder, one seed. The CI on quintile_rfm is
+[−0.0093, +0.0040], which does not exclude a real ACT-R advantage of up to
+~0.9 points — "within noise" is not "equal", and the registered bar treats it
+as a tie by choice, not by demonstration of equivalence.
