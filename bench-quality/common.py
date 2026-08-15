@@ -122,6 +122,20 @@ class MemoryStore:
             f"SELECT id, {fn} FROM rfm_memories WHERE id IN ({placeholders})", ids))
         return np.array([got[m] for m in ids])
 
+    def priors(self, ids):
+        """rfm_prior(id) computed BY THE EXTENSION, so every config key it
+        reads (beta, w_a, w_v, decay, shrink_k, theta, s) actually applies.
+
+        `rank(..., "rfm_betaX")` recomputes the blend in Python with a literal
+        beta, which is right for the frozen-composition evals but silently
+        ignores rfm_config('beta', ...) — an ablation arm that sets beta must
+        use this path or it measures nothing."""
+        placeholders = ",".join("?" * len(ids))
+        got = dict(self.db.execute(
+            f"SELECT id, rfm_prior(id) FROM rfm_memories WHERE id IN ({placeholders})",
+            ids))
+        return np.array([got[m] for m in ids])
+
     def activations(self, ids):
         placeholders = ",".join("?" * len(ids))
         got = dict(self.db.execute(
