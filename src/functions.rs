@@ -372,6 +372,41 @@ pub fn rfm_prunable(
     Ok(())
 }
 
+fn opt_f64(values: &[*mut sqlite3_value], idx: usize) -> Option<f64> {
+    if api::value_type(&values[idx]) == api::ValueType::Null {
+        None
+    } else {
+        Some(api::value_double(&values[idx]))
+    }
+}
+
+/// rfm_prior_of(access_count, created_at, last_access, bla_cache, value_score,
+/// outcome_count) → the same number as rfm_prior(id), without the lookup.
+///
+/// rfm_prior(id) reads its row itself, which costs a prepare per row because
+/// the id is interpolated into the statement. That is the right shape for
+/// scoring a handful of candidates and the wrong one for ranking a whole
+/// table: at 50k rows it is the dominant cost, and slower than doing the same
+/// arithmetic in plain SQL. Passing the columns lets SQLite hand them over
+/// directly — the scan reads each row once, as it was going to anyway.
+///
+/// It decodes through the same `decode_mem` as the lookup path, so NULL and
+/// out-of-range handling cannot drift between the two forms.
+pub fn rfm_prior_of(
+    context: *mut sqlite3_context,
+    values: &[*mut sqlite3_value],
+    aux: &SharedConfig,
+) -> Result<()> {
+    let c = cfg(aux)?;
+    let row = decode_mem(&[
+        opt_f64(values, 0), opt_f64(values, 1), opt_f64(values, 2),
+        opt_f64(values, 3), opt_f64(values, 4), opt_f64(values, 5),
+    ]);
+    let s = score_of_cfg(&row, clock::now(&c), &c);
+    api::result_double(context, (1.0 - c.beta) + c.beta * s);
+    Ok(())
+}
+
 /// rfm_version() → the extension's version string.
 ///
 /// rfm_init() migrates the schema, so a host that loads a dylib it did not
