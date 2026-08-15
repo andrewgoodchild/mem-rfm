@@ -422,7 +422,7 @@ ledger including what died. The mapping:
 | activation-only collapses to NDCG ≈ 0.01 | `signal_screen.py`, `phase2_eval.py` | RESULTS.md |
 | feedback adds 0.02–0.08 NDCG on recurring evidence | `locomo_eval.py`, `beam_eval.py` | `results-locomo/`, `results-beam/` |
 | stale facts get retired (0.43 → 0.66) | `ku_eval.py` | `results-ku/` |
-| ~6% lesson transfer; memory as a mild tax on hard tasks | `experiments/swe-ab/` | `results.jsonl`, `memory-audit.md` |
+| ~6% lesson transfer; memory as a mild tax on hard tasks | `bench-quality/live-ab/` | `results.jsonl`, `memory-audit.md` |
 | pooling beats per-agent stores | `star_eval.py`, `md2d_eval.py`, `flodial_eval.py`, `abcd_eval.py` | `results-star/`, `results-md2d/`, `results-flodial/` |
 | experience out-ranks the authored manual | `abcd_manual.py` | RESULTS.md |
 | staleness recovery under a procedure change | `abcd_staleness.py` | RESULTS.md |

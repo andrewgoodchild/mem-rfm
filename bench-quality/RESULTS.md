@@ -1,5 +1,9 @@
 # Composition experiment log (per PROTOCOL.md)
 
+> Outcomes for the pre-registrations that govern them, which live in
+> [`../PROTOCOL.md`](../PROTOCOL.md). Each entry names the amendment it
+> answers, and failures are reported at the same length as successes.
+
 ## Dev phase (BEAM, both embedders) — complete
 
 Full tables in `compose_minilm.log` / `compose_qwen3.log`; per-question rows
@@ -111,7 +115,7 @@ FAILS on held-out repos, the negative conclusion stands a fortiori. Disclosed
 for reproducibility; the scripts are archival and will not be re-run.
 
 ## Exploratory pilot (NOT pre-registered): live agent A/B on real pytest bugs
-experiments/swe-ab/: 8 chronological SWE-Bench-CL pytest tasks, paired
+bench-quality/live-ab/: 8 chronological SWE-Bench-CL pytest tasks, paired
 headless Claude Code sessions (control vs rfm arm, separate clones, gold-test
 scoring). Results: 8/8 resolved in BOTH arms (ceiling — tasks too easy to
 differentiate); rfm overhead +21.8s/session [+0.8,+44.0] (mostly MCP server
@@ -208,13 +212,13 @@ policy.
 3. **"Both discordant pairs = the two hardest tasks" restated.** They are 2
    of the 5 tasks rated above one hour; the other three hard tasks were
    solved by both arms — consistent with noise (McNemar p=0.5).
-4. **Validation provenance documented.** experiments/swe-ab validation ran
+4. **Validation provenance documented.** bench-quality/live-ab validation ran
    three times while era pins evolved (validation.v1/.v2/.jsonl are all
    committed); 8 sphinx tasks including sphinx-7590 (one of the two
    discordant tasks) validated only under the final pins. 7590's harness
    environment being marginal is an additional reason to treat the
    hard-task direction as suggestive, not established.
-5. **Memory-audit artifact committed** (experiments/swe-ab/memory-audit.md)
+5. **Memory-audit artifact committed** (bench-quality/live-ab/memory-audit.md)
    so the 15-of-16-negative / ~6% transfer / +0.58 numbers are checkable;
    session transcripts and DBs remain untracked.
 

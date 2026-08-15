@@ -19,3 +19,4 @@ integrations/claude-code/ab/ab_sessions.jsonl
 *.db-wal
 *.db-shm
 /*.log
+bench-quality/data/terminalbench/

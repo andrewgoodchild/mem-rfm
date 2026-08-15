@@ -19,7 +19,7 @@ the download commands in `bench-quality/README.md` directly from its source.
 | MultiDoc2Dial | [IBM, doc2dial.github.io](https://doc2dial.github.io/multidoc2dial/) | CC BY 3.0 | Feng et al., EMNLP 2021 |
 | FloDial | [dair-iitd/FloDial](https://dair-iitd.github.io/FloDial/) | CDLA-Sharing-1.0 | Raghu et al., EMNLP 2021 |
 
-Live-A/B experiments (`experiments/swe-ab/`) clone pytest-dev/pytest (MIT)
+Live-A/B experiments (`bench-quality/live-ab/`) clone pytest-dev/pytest (MIT)
 and sphinx-doc/sphinx (BSD-2-Clause) at historical commits; clones are
 gitignored and never redistributed.
 

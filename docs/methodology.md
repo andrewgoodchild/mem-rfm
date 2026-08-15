@@ -42,7 +42,7 @@ from committed data rather than taken on faith.
 The exception, stated plainly: live-session transcripts and memory databases
 from the coding A/B stay local, because they can contain machine-specific
 detail. A redacted audit of what those memory stores actually contained is
-committed at `experiments/swe-ab/memory-audit.md`, so the numbers derived from
+committed at `bench-quality/live-ab/memory-audit.md`, so the numbers derived from
 them remain checkable.
 
 ## The correction

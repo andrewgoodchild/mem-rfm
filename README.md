@@ -130,7 +130,7 @@ the same loop ([RoMeRL](https://arxiv.org/abs/2608.02508),
 | [methodology.md](docs/methodology.md) | pre-registration, corrections, known limits |
 | [team-memory.md](docs/team-memory.md) | the team exploration, and why we stopped |
 
-Also: `PROTOCOL.md` (pre-registrations, amendments 1–12),
+Also: `PROTOCOL.md` (pre-registrations, amendments 1–13),
 `bench-quality/RESULTS.md` (the complete ledger, including everything that
 died), `DESIGN_NOTES.md` (design decisions and trade-offs).
 
@@ -140,8 +140,7 @@ died), `DESIGN_NOTES.md` (design decisions and trade-offs).
 src/                      the extension (lib, functions, math, sql shim, config, clock)
 rfm_schema.sql            standalone schema
 tests/                    unit + CLI integration tests (cargo test)
-bench-quality/            all benchmarks: retrieval evals, throughput, RESULTS.md
-experiments/swe-ab/       the live paired A/B on real bugs
+bench-quality/            all evidence: retrieval evals, live A/B, throughput, RESULTS.md
 integrations/claude-code/ MCP server, hooks, capture snippet, A/B kit
 docs/                     the writeups linked above
 ```
