@@ -46,7 +46,7 @@ echo "|---|---|---|---|---|---|"
 for spec in "10000 20" "100000 20" "1000000 20" "100000 200"; do
   set -- $spec; N=$1; A=$2
   DB="bench_${N}_${A}.db"
-  [ -f "$DB" ] || python3 gen.py "$DB" "$N" "$A" > /dev/null
+  [ -f "$DB" ] || python3 throughput_gen.py "$DB" "$N" "$A" > /dev/null
 
   T_SCORE=$(run_timed "$DB" "SELECT sum(rfm_score(id)) FROM rfm_memories;")
   T_EXACT=$(run_timed "$DB" "SELECT sum(b) FROM (

@@ -158,8 +158,7 @@ died), `DESIGN_NOTES.md` (design decisions and trade-offs).
 src/                      the extension (lib, functions, math, sql shim, config, clock)
 rfm_schema.sql            standalone schema
 tests/                    unit + CLI integration tests (cargo test)
-bench/                    O(1) throughput benchmark
-bench-quality/            retrieval benchmarks + RESULTS.md
+bench-quality/            all benchmarks: retrieval evals, throughput, RESULTS.md
 experiments/swe-ab/       the live paired A/B on real bugs
 integrations/claude-code/ MCP server, hooks, capture snippet, A/B kit
 docs/                     the writeups linked above
