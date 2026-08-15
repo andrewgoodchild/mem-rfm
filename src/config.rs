@@ -21,34 +21,6 @@ pub struct RfmConfig {
     /// much usage history can perturb a similarity ranking. Default frozen
     /// at 0.3 by the pre-registered composition experiment (PROTOCOL.md).
     pub beta: f64,
-    /// Hardened mode (0 or 1, default 0): when 1, an actor-tagged
-    /// rfm_record_access / rfm_record_outcome whose actor equals the memory's
-    /// created_by is ignored entirely — closing the self-endorsement channel
-    /// (R/F inflation via self-access, M inflation via self-feedback).
-    /// Untagged calls and untagged memories are always counted (back-compat).
-    pub exclude_self: f64,
-    /// Ballot-stuffing prevention (0 or 1, default 0): when 1, an
-    /// actor-tagged outcome is ignored if that actor has already recorded an
-    /// outcome for this memory. Value then reflects how many DISTINCT actors
-    /// found a memory useful, not how many times it was rated — at the cost
-    /// of discarding repeat-use evidence (see PROTOCOL.md Amendment 7).
-    pub one_vote: f64,
-    /// Writer-reputation mode (0 or 1, default 0): when 1, a memory's
-    /// effective value is capped at its author's third-party trust EWMA
-    /// (rfm_actors). Defends endorsement rings, which per-memory rules
-    /// cannot see — see PROTOCOL.md Amendment 8.
-    pub trust: f64,
-    /// Voter-weighted reputation (0 or 1, default 0): when 1, an outcome's
-    /// contribution to the AUTHOR's reputation is scaled by the VOTER's own
-    /// trust — one EigenTrust-style iteration, so a ring whose members lose
-    /// standing also loses the ability to confer it (Amendment 9).
-    pub trust_weighted: f64,
-    /// Endorser liability (0 or 1, default 0): when 1, an outcome on a memory
-    /// is also folded into the reputation of every DISTINCT prior positive
-    /// endorser of that memory — vouching stakes the voucher's own standing.
-    /// Aimed at endorsement rings, whose mutual praise then becomes mutually
-    /// destructive (PROTOCOL.md Amendment 10).
-    pub endorser_liability: f64,
     /// When set via rfm_config('now', t), all functions read this instead of
     /// the wall clock. Cleared with rfm_config('now', NULL).
     pub frozen_now: Option<f64>,
@@ -64,18 +36,9 @@ impl Default for RfmConfig {
             w_v: 0.3,
             shrink_k: 3.0,
             beta: 0.3,
-            exclude_self: 0.0,
-            one_vote: 0.0,
-            trust: 0.0,
-            trust_weighted: 0.0,
-            endorser_liability: 0.0,
             frozen_now: None,
         }
     }
-}
-
-pub fn check_flag(key: &str, v: f64) -> Result<(), String> {
-    if v == 0.0 || v == 1.0 { Ok(()) } else { Err(format!("rfm: {key} must be 0 or 1")) }
 }
 
 /// Per-parameter range rules. Single owner of what a valid value is (and of
@@ -111,11 +74,6 @@ impl RfmConfig {
             "w_v" => Ok(Some(self.w_v)),
             "shrink_k" => Ok(Some(self.shrink_k)),
             "beta" => Ok(Some(self.beta)),
-            "exclude_self" => Ok(Some(self.exclude_self)),
-            "one_vote" => Ok(Some(self.one_vote)),
-            "trust" => Ok(Some(self.trust)),
-            "trust_weighted" => Ok(Some(self.trust_weighted)),
-            "endorser_liability" => Ok(Some(self.endorser_liability)),
             "now" => Ok(self.frozen_now),
             _ => Err(format!("rfm: unknown config key '{key}'")),
         }
@@ -145,11 +103,6 @@ impl RfmConfig {
             "w_v" => { check_nonnegative(key, v)?; self.w_v = v }
             "shrink_k" => { check_nonnegative(key, v)?; self.shrink_k = v }
             "beta" => { check_beta(v)?; self.beta = v }
-            "exclude_self" => { check_flag(key, v)?; self.exclude_self = v }
-            "one_vote" => { check_flag(key, v)?; self.one_vote = v }
-            "trust" => { check_flag(key, v)?; self.trust = v }
-            "trust_weighted" => { check_flag(key, v)?; self.trust_weighted = v }
-            "endorser_liability" => { check_flag(key, v)?; self.endorser_liability = v }
             "now" => self.frozen_now = Some(v),
             _ => return Err(format!("rfm: unknown config key '{key}'")),
         }

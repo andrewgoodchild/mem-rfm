@@ -15,39 +15,16 @@ CREATE TABLE IF NOT EXISTS rfm_memories (
                                             -- last_access this is everything rfm_activation needs —
                                             -- no scan of rfm_accesses.
   value_score   REAL NOT NULL DEFAULT 0.0,  -- EWMA of outcome feedback in [-1, 1]
-  outcome_count INTEGER NOT NULL DEFAULT 0, -- number of outcomes received; drives confidence shrink
-  created_by    TEXT                        -- host-set writer/principal id; read by hardened mode
-                                            -- (rfm_config('exclude_self', 1)): a writer's own
-                                            -- accesses/outcomes on their memory are ignored,
-                                            -- closing the self-endorsement channel. NULL = untagged
-                                            -- (always counted).
+  outcome_count INTEGER NOT NULL DEFAULT 0  -- number of outcomes received; drives confidence shrink
 );
 
 CREATE TABLE IF NOT EXISTS rfm_accesses (
   memory_id   INTEGER NOT NULL REFERENCES rfm_memories(id),
   accessed_at REAL NOT NULL,
-  outcome     REAL,             -- NULL = no feedback; else [-1, 1]
-  actor       TEXT              -- who accessed (host-supplied); NULL = unknown
+  outcome     REAL              -- NULL = no feedback; else [-1, 1]
 );
 
 -- Not on the scoring hot path (scoring reads one rfm_memories row). Serves the
 -- exact-recompute audit/baseline and rfm_record_outcome's most-recent-access lookup.
 CREATE INDEX IF NOT EXISTS rfm_accesses_mem_time
   ON rfm_accesses(memory_id, accessed_at DESC);
-
--- Serves the one-vote-per-actor check (rfm_config('one_vote', 1)); unused
--- when that mode is off.
-CREATE INDEX IF NOT EXISTS rfm_accesses_mem_actor
-  ON rfm_accesses(memory_id, actor);
-
--- Writer reputation, maintained by rfm_record_outcome: the EWMA of
--- THIRD-PARTY outcomes on memories this actor wrote (the author's own
--- feedback never contributes). Read by rfm_config('trust', 1), which caps a
--- memory's effective value at its author's — so endorsement rings cannot
--- lift content whose retrievals keep failing for everyone else. One row per
--- writer keeps scoring a single-row read.
-CREATE TABLE IF NOT EXISTS rfm_actors (
-  actor         TEXT PRIMARY KEY,
-  value_score   REAL NOT NULL DEFAULT 0.0,
-  outcome_count INTEGER NOT NULL DEFAULT 0
-);

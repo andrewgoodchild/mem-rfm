@@ -90,6 +90,16 @@ irrelevant lessons consume budget that hard tasks need. Overhead was 8–22
 seconds per session, dominated by embedding-model startup — irrelevant in a
 30-minute interactive session, material in a 90-second headless one.
 
+**Independently replicated.** An ETH Zurich study
+([arXiv:2602.11988](https://arxiv.org/abs/2602.11988)) tested context files
+across SWE-Bench Lite and 138 tasks in 12 repositories with four models:
+LLM-generated context files **reduced** success by ~3% while raising cost
+over 20%; developer-written ones helped only ~4%, still costing up to 19%
+more. Value appeared only when repository documentation was stripped — the
+benefit was redundant pre-caching. Different group, different tasks, same
+conclusion as the A/B below. Our negative result was not a quirk of our
+setup.
+
 **What this comparison was and wasn't.** The control arm had *no memory*, not
 Claude Code's built-in memory. We have never run mem-rfm head-to-head against
 a built-in memory feature, so nothing here supports a claim about relative
@@ -139,7 +149,7 @@ Reported at the same length as the successes, in
 - **Three content-based value signals** (semantic richness, diversity,
   demand-recurrence) — all weak or benchmark-dependent as priors.
 - **The rank-1 replication bar** — passed on one of three datasets.
-- **Six collusion defences** — see [adversarial](adversarial.md).
+- **Six collusion defences** — see [team-memory](team-memory.md).
 - **One published number that was wrong**, caught in pre-publication review
   and corrected in place, with the error disclosed. See "Corrections" in
   RESULTS.md.

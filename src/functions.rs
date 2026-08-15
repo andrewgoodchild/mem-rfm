@@ -44,41 +44,6 @@ fn f64_lit(x: f64) -> Result<String> {
     Ok(format!("{x:?}"))
 }
 
-/// Quote a TEXT value as a SQL literal — single quotes doubled, so the
-/// interpolation surface stays closed (ids and f64 literals elsewhere).
-fn text_lit(s: &str) -> String {
-    format!("'{}'", s.replace('\'', "''"))
-}
-
-/// Optional TEXT argument at `idx`: absent or NULL means "actor unknown".
-fn value_actor(values: &[*mut sqlite3_value], idx: usize) -> Result<Option<String>> {
-    if values.len() <= idx || api::value_type(&values[idx]) == api::ValueType::Null {
-        return Ok(None);
-    }
-    Ok(Some(api::value_text(&values[idx])?.to_string()))
-}
-
-/// Hardened-mode self-endorsement test: does `actor` equal the memory's
-/// created_by? Untagged memories (created_by NULL) never match.
-fn is_self(db: *mut sqlite3, id: i64, actor: &str) -> Result<bool> {
-    let sql_text = format!(
-        "SELECT 1 FROM rfm_memories WHERE id = {id} AND created_by = {}",
-        text_lit(actor)
-    );
-    Ok(sql::query_row(db, &sql_text, 1)?.is_some())
-}
-
-/// Ballot-stuffing check: has this actor already recorded an outcome for
-/// this memory? Served by rfm_accesses_mem_actor.
-fn has_voted(db: *mut sqlite3, id: i64, actor: &str) -> Result<bool> {
-    let sql_text = format!(
-        "SELECT 1 FROM rfm_accesses WHERE memory_id = {id} AND actor = {} \
-         AND outcome IS NOT NULL LIMIT 1",
-        text_lit(actor)
-    );
-    Ok(sql::query_row(db, &sql_text, 1)?.is_some())
-}
-
 /// The extension-maintained columns of one rfm_memories row.
 #[derive(Clone, Copy)]
 struct MemRow {
@@ -147,149 +112,9 @@ fn activation_of(row: &MemRow, now: f64, d: f64) -> f64 {
 }
 
 fn score_of(row: &MemRow, now: f64, d: f64, w_a: f64, w_v: f64, shrink_k: f64) -> f64 {
-    score_of_trusted(row, now, d, w_a, w_v, shrink_k, None)
-}
-
-/// `author_trust`: the writer's (value, outcome_count) from rfm_actors, or
-/// None to apply no cap (trust mode off, untagged memory, or a writer with no
-/// third-party outcomes yet).
-fn score_of_trusted(
-    row: &MemRow,
-    now: f64,
-    d: f64,
-    w_a: f64,
-    w_v: f64,
-    shrink_k: f64,
-    author_trust: Option<(f64, i64)>,
-) -> f64 {
     let b = activation_of(row, now, d);
     let v_eff = math::shrink(row.value, row.n_outcomes, shrink_k);
-    let capped = math::trust_cap(
-        v_eff,
-        author_trust.map(|(tv, tn)| math::shrink(tv, tn, shrink_k)),
-    );
-    math::score(b, capped, w_a, w_v)
-}
-
-/// The author's reputation row for a memory, if trust mode is on and the
-/// memory has a known writer with third-party outcomes.
-fn author_trust_of(db: *mut sqlite3, id: i64, c: &RfmConfig) -> Result<Option<(f64, i64)>> {
-    if c.trust == 0.0 {
-        return Ok(None);
-    }
-    let sql_text = format!(
-        "SELECT a.value_score, a.outcome_count FROM rfm_memories m \
-         JOIN rfm_actors a ON a.actor = m.created_by WHERE m.id = {id}"
-    );
-    Ok(sql::query_row(db, &sql_text, 2)?
-        .map(|r| (r[0].unwrap_or(0.0), r[1].unwrap_or(0.0) as i64)))
-}
-
-/// Fold `outcome` into one actor's reputation EWMA (rfm_actors upsert).
-fn bump_actor_trust(db: *mut sqlite3, actor: &str, outcome: f64, lambda: f64) -> Result<()> {
-    let lit = text_lit(actor);
-    let prev = sql::query_row(
-        db,
-        &format!("SELECT value_score, outcome_count FROM rfm_actors WHERE actor = {lit}"),
-        2,
-    )?;
-    let (prev_v, prev_n) = match prev {
-        Some(r) => (r[0].unwrap_or(0.0), r[1].unwrap_or(0.0) as i64),
-        None => (0.0, 0),
-    };
-    let new_v = f64_lit(math::ewma_update(prev_v, prev_n, outcome, lambda))?;
-    sql::exec(
-        db,
-        &format!(
-            "INSERT INTO rfm_actors(actor, value_score, outcome_count) \
-             VALUES ({lit}, {new_v}, 1) \
-             ON CONFLICT(actor) DO UPDATE SET value_score = {new_v}, \
-             outcome_count = outcome_count + 1"
-        ),
-    )
-}
-
-/// Endorser liability (Amendment 10): charge this outcome to every DISTINCT
-/// prior positive endorser of the memory, excluding the current voter. An
-/// endorsement is then a stake rather than a free favour — a ring's mutual
-/// praise becomes mutually destructive once outsiders' retrievals fail,
-/// while honest endorsers of memories that keep working are repaid.
-/// Bounded by distinct endorsers (team size) and confined to the write path.
-fn charge_endorsers(db: *mut sqlite3, id: i64, voter: &str, outcome: f64, lambda: f64) -> Result<()> {
-    let endorsers = sql::query_column_text(
-        db,
-        &format!(
-            "SELECT DISTINCT actor FROM rfm_accesses WHERE memory_id = {id} \
-             AND outcome > 0 AND actor IS NOT NULL AND actor <> {}",
-            text_lit(voter)
-        ),
-    )?;
-    for e in endorsers {
-        bump_actor_trust(db, &e, outcome, lambda)?;
-    }
-    Ok(())
-}
-
-/// Fold one third-party outcome into the writer's reputation EWMA. Called
-/// only when the voter is TAGGED and differs from the writer: reputation is
-/// built from identifiable third-party verdicts, never from self-assessment
-/// or from anonymous votes that cannot be checked against authorship.
-fn update_author_trust(db: *mut sqlite3, id: i64, voter: &str, outcome: f64, c: &RfmConfig) -> Result<()> {
-    let lambda = c.lambda;
-    // Voter weighting (Amendment 9): scale this vote's influence on the
-    // AUTHOR's reputation by the VOTER's own standing, so a ring that loses
-    // standing also loses the power to confer it. An unknown voter counts
-    // 0.5 (neutral) rather than 0, or nobody could ever bootstrap trust.
-    let weight = if c.trust_weighted == 0.0 {
-        1.0
-    } else {
-        match sql::query_row(
-            db,
-            &format!(
-                "SELECT value_score, outcome_count FROM rfm_actors WHERE actor = {}",
-                text_lit(voter)
-            ),
-            2,
-        )? {
-            Some(r) => math::value01(math::shrink(
-                r[0].unwrap_or(0.0),
-                r[1].unwrap_or(0.0) as i64,
-                c.shrink_k,
-            )),
-            None => 0.5,
-        }
-    };
-    let outcome = outcome * weight;
-    let author_sql = format!(
-        "SELECT 1 FROM rfm_memories WHERE id = {id} AND created_by IS NOT NULL \
-         AND created_by <> {}",
-        text_lit(voter)
-    );
-    if sql::query_row(db, &author_sql, 1)?.is_none() {
-        return Ok(());
-    }
-    let prev = sql::query_row(
-        db,
-        &format!(
-            "SELECT a.value_score, a.outcome_count FROM rfm_memories m \
-             JOIN rfm_actors a ON a.actor = m.created_by WHERE m.id = {id}"
-        ),
-        2,
-    )?;
-    let (prev_v, prev_n) = match prev {
-        Some(r) => (r[0].unwrap_or(0.0), r[1].unwrap_or(0.0) as i64),
-        None => (0.0, 0),
-    };
-    let new_v = f64_lit(math::ewma_update(prev_v, prev_n, outcome, lambda))?;
-    sql::exec(
-        db,
-        &format!(
-            "INSERT INTO rfm_actors(actor, value_score, outcome_count) \
-             SELECT created_by, {new_v}, 1 FROM rfm_memories WHERE id = {id} \
-             ON CONFLICT(actor) DO UPDATE SET value_score = {new_v}, \
-             outcome_count = outcome_count + 1"
-        ),
-    )
+    math::score(b, v_eff, w_a, w_v)
 }
 
 pub fn rfm_init(
@@ -297,16 +122,7 @@ pub fn rfm_init(
     _values: &[*mut sqlite3_value],
     _aux: &SharedConfig,
 ) -> Result<()> {
-    let db = db_of(context);
-    // Migrate pre-v0.3 databases BEFORE the schema runs: the schema's
-    // rfm_accesses_mem_actor index references a column those databases lack,
-    // and a failing CREATE INDEX would abort the whole script. On a fresh
-    // database the ALTERs fail (no table yet) and CREATE TABLE below supplies
-    // the columns; on a current one they fail as "duplicate column". Both
-    // failures are the expected steady state, hence ignored.
-    let _ = sql::exec(db, "ALTER TABLE rfm_memories ADD COLUMN created_by TEXT");
-    let _ = sql::exec(db, "ALTER TABLE rfm_accesses ADD COLUMN actor TEXT");
-    sql::exec_multi(db, SCHEMA)?;
+    sql::exec_multi(db_of(context), SCHEMA)?;
     api::result_text(context, "ok")?;
     Ok(())
 }
@@ -319,27 +135,8 @@ pub fn rfm_record_access(
     let c = cfg(aux)?;
     let db = db_of(context);
     let id = value_id(values)?;
-    let actor = value_actor(values, 1)?;
     let now = clock::now(&c);
-    // Hardened mode (Amendment 6): a writer touching their own memory
-    // neither logs an access nor freshens the summary — self-access is the
-    // R/F inflation channel. The call still errors on a missing id and
-    // returns the truthful current activation.
-    if c.exclude_self != 0.0 {
-        if let Some(a) = &actor {
-            if is_self(db, id, a)? {
-                let row = load_mem(db, id)?;
-                api::result_double(context, activation_of(&row, now, c.decay));
-                return Ok(());
-            }
-        }
-    }
     let now_lit = f64_lit(now)?;
-    let actor_cols = if actor.is_some() { ", actor" } else { "" };
-    let actor_vals = match &actor {
-        Some(a) => format!(", {}", text_lit(a)),
-        None => String::new(),
-    };
     // Access row first, summary last: the summary is what scoring trusts, so
     // it must never advance ahead of the log (see DESIGN_NOTES on the
     // autocommit crash window). INSERT..SELECT doubles as the existence
@@ -347,8 +144,8 @@ pub fn rfm_record_access(
     sql::exec(
         db,
         &format!(
-            "INSERT INTO rfm_accesses(memory_id, accessed_at{actor_cols}) \
-             SELECT id, {now_lit}{actor_vals} FROM rfm_memories WHERE id = {id}"
+            "INSERT INTO rfm_accesses(memory_id, accessed_at) \
+             SELECT id, {now_lit} FROM rfm_memories WHERE id = {id}"
         ),
     )?;
     // bla_cache ← previous last_access: the one-assignment Petrov k=2 update
@@ -384,23 +181,6 @@ pub fn rfm_record_outcome(
         return Err(Error::new_message("rfm: outcome must be in [-1, 1]"));
     }
     let row = load_mem(db, id)?;
-    // Hardened modes: both ignore the call entirely (no EWMA update, no
-    // access-slot consumption) and return the unchanged value, so a rejected
-    // vote can never block a legitimate one on the same access. Untagged
-    // callers are unaffected — neither rule can identify a voter.
-    if let Some(a) = value_actor(values, 2)? {
-        // exclude_self (Amendment 6): self-feedback is the M inflation channel.
-        if c.exclude_self != 0.0 && is_self(db, id, &a)? {
-            api::result_double(context, row.value);
-            return Ok(());
-        }
-        // one_vote (Amendment 7): one outcome per (actor, memory) ever, so
-        // value counts DISTINCT endorsers rather than repetitions.
-        if c.one_vote != 0.0 && has_voted(db, id, &a)? {
-            api::result_double(context, row.value);
-            return Ok(());
-        }
-    }
     if row.n == 0 {
         return Err(Error::new_message(format!(
             "rfm: memory {id} has no recorded access; call rfm_record_access first"
@@ -437,14 +217,6 @@ pub fn rfm_record_outcome(
              outcome_count = outcome_count + 1 WHERE id = {id}"
         ),
     )?;
-    // Writer reputation is maintained unconditionally (cheap, and it must
-    // already exist when trust mode is switched on); only its USE is gated.
-    if let Some(a) = value_actor(values, 2)? {
-        update_author_trust(db, id, &a, outcome, &c)?;
-        if c.endorser_liability != 0.0 {
-            charge_endorsers(db, id, &a, outcome, c.lambda)?;
-        }
-    }
     api::result_double(context, new_value);
     Ok(())
 }
@@ -501,14 +273,11 @@ pub fn rfm_score(
     aux: &SharedConfig,
 ) -> Result<()> {
     let c = cfg(aux)?;
-    let db = db_of(context);
-    let id = value_id(values)?;
-    let row = load_mem(db, id)?;
+    let row = load_mem(db_of(context), value_id(values)?)?;
     let now = clock::now(&c);
-    let trust = author_trust_of(db, id, &c)?;
     api::result_double(
         context,
-        score_of_trusted(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k, trust),
+        score_of(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k),
     );
     Ok(())
 }
@@ -524,12 +293,9 @@ pub fn rfm_prior(
     aux: &SharedConfig,
 ) -> Result<()> {
     let c = cfg(aux)?;
-    let db = db_of(context);
-    let id = value_id(values)?;
-    let row = load_mem(db, id)?;
+    let row = load_mem(db_of(context), value_id(values)?)?;
     let now = clock::now(&c);
-    let trust = author_trust_of(db, id, &c)?;
-    let s = score_of_trusted(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k, trust);
+    let s = score_of(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k);
     api::result_double(context, (1.0 - c.beta) + c.beta * s);
     Ok(())
 }
