@@ -692,3 +692,50 @@ are the least favourable setting for both the activation axis and
 consolidation. This says these components are unproven *here*, not that they
 are useless — but "unproven" is the honest status until something proves
 them, and no comparable system has run this study at all.
+
+### Amendment 12, stratified by recurrence
+
+Pooling across recurring and non-recurring questions diluted the effect the
+ablation exists to detect. BEAM labels each question `overlap` — whether its
+evidence already served an earlier question, i.e. whether the memory is being
+*re-used*. Splitting on it:
+
+| arm | recurring (n=108) | fresh (n=247) |
+|---|---|---|
+| **no_prior** | **−0.0072** [−0.0141,−0.0013] | **+0.0028** [+0.0002,+0.0064] |
+| **no_value** | **−0.0095** [−0.0171,−0.0026] | −0.0037 [−0.0083,+0.0005] |
+| no_activation | +0.0020 [−0.0044,+0.0087] | +0.0021 [−0.0032,+0.0072] |
+| no_shrink | +0.0134 [+0.0000,+0.0267] | −0.0014 [−0.0097,+0.0060] |
+| no_decay | −0.0025 [−0.0096,+0.0043] | +0.0012 [−0.0040,+0.0065] |
+| plus_hebbian | −0.0414 [−0.0646,−0.0189] | −0.0281 [−0.0429,−0.0141] |
+
+**The usage prior earns its place exactly where the theory says it should,
+and is mildly harmful where it says it shouldn't.** Removing the prior
+entirely costs 0.72 points on recurring evidence and *gains* 0.28 points on
+fresh evidence, both CIs excluding zero. This is the recurrence finding
+appearing inside a single benchmark rather than across corpora, and it is a
+sharper statement of the published cost result: the bounded prior's "cost
+≈ 0 vs similarity" is a **net** of a real benefit on re-used evidence and a
+real, smaller penalty on evidence seen once.
+
+**The benefit is entirely the outcome axis.** Removing value costs 0.95
+points on recurring evidence — nearly double the pooled figure — while
+removing activation remains within noise **in both strata**. So the earlier
+result was not an artifact of averaging over a hostile subset: even on the
+slice where re-use actually happens, and where the prior as a whole is
+demonstrably load-bearing, the recency/frequency axis contributes nothing
+detectable.
+
+Secondary, and unexpected: **the confidence shrink may be counterproductive
+on recurring evidence** (+0.0134, CI lower bound at zero). Where outcomes
+have accumulated, pulling value toward neutral appears to cost more than the
+noise it suppresses. That is a testable hypothesis about `shrink_k`, not a
+finding — n=108 and the interval touches zero.
+
+`plus_consolidation` returns exactly +0.0000 on the fresh slice. Given that
+replay refreshes *activation*, and activation is inert here, a null is the
+expected outcome rather than a dead channel — the arm does move on the
+recurring slice (+0.0023), so the mechanism is live. Noted because an exact
+zero otherwise warrants suspicion.
+
+Caveat: the recurring slice is 108 questions and the intervals are wide.
