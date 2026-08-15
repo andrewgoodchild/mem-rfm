@@ -708,3 +708,36 @@ rich-get-richer failure the value axis exists to break, so we expect it to be
 neutral-to-harmful rather than helpful.
 
 Runner: `bench-quality/ablation_eval.py`.
+
+## Amendment 12b — the recurrence gradient (registered before the run)
+
+Amendment 12 found the activation axis within noise on BEAM, in both the
+recurring and non-recurring strata. One explanation survives: BEAM's
+"recurring" slice is weak recurrence — evidence re-used across a handful of
+probing questions is not the same as a procedure recurring 180 times.
+
+This tests that directly on four corpora spanning ~45× in recurrence per
+label. **Stream length is held constant at n=1500 calls for every dataset**,
+so the varying quantity is recurrence per label and not the amount of history
+available — those are confounded if each corpus runs to its natural size.
+
+| corpus | labels | recurrence per label at n=1500 |
+|---|---|---|
+| FloDial | 10 | ~150 |
+| STAR | 24 | ~62 |
+| ABCD | 55 | ~27 |
+| MultiDoc2Dial | 451 | ~3 |
+
+Arms: full, no_value, no_activation, no_prior — through the shipped
+extension via `rfm_config`, as in Amendment 12. Endpoint: paired Δ hit@1 and
+Δ hit@5 against full, per corpus.
+
+**Registered prediction.** If the ACT-R half is load-bearing and BEAM simply
+lacked recurrence, `no_activation` should cost progressively more as
+recurrence rises — clearly negative on FloDial and STAR, tapering to zero on
+MultiDoc2Dial. **A flat line across 45× of recurrence falsifies the
+recurrence defence of the activation axis**, and we would report that the
+axis is unproven on every corpus we have, not merely on an unfavourable one.
+
+This is an ablation of our own components, not a new performance claim, so it
+does not re-use the Amendment 4 endpoints or affect those results.

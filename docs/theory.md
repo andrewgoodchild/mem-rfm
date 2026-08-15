@@ -272,9 +272,16 @@ result about this design:
 | the confidence shrink | +0.0031 [−0.0040, +0.0096] | within noise |
 | decay rate (→0, or →0.9) | +0.0001 / +0.0021 | within noise |
 
-**Only the outcome axis measurably earns its place** — in a project with R
-and F in its name, and with the ACT-R half carrying all the pedigree and all
-the O(1) engineering.
+**On this benchmark, only the outcome axis measurably earns its place** — in
+a project with R and F in its name.
+
+That conclusion did **not** survive contact with other corpora. Repeating the
+ablation at fixed stream length across four datasets (Amendment 12b) found
+that on STAR, removing activation costs exactly as much as removing outcome
+feedback (both −0.0067 hit@1, CIs excluding zero), and removing the prior
+entirely costs more than either. The ACT-R half is load-bearing there. The
+result below is therefore specific to BEAM, and the general claim is the
+duller one: **each axis earns its place on some corpora and not others.**
 
 It is, however, the same answer three earlier measurements gave from other
 directions: activation *alone* collapses retrieval to NDCG ≈ 0.01; *raising*
@@ -291,13 +298,17 @@ an earlier one — so re-use is nearly uninformative there while usefulness is
 not. The recency and frequency axes may simply be answering a question that
 benchmark does not ask.
 
-Honest status: **unproven here, not disproven.** One dev benchmark, one
-embedder, and short feedback streams are the least favourable setting for an
-activation signal, and recurrence-heavy workloads are the obvious place to
-look next. But the stronger reading deserves stating, because the evidence
-currently permits it: it may be that for agent memory in general, recency and
-frequency are the wrong prior and outcome is the right one — that the ACT-R
-machinery here is elegant rather than load-bearing.
+Honest status, after the gradient run: **it depends on the corpus.** The
+prior appears to need a *sweet spot* — enough recurrence to build history,
+and enough error left by the retriever to have room to help. FloDial has
+150 repetitions per label but a 0.984 baseline, so nothing can be shown;
+MultiDoc2Dial has 3.5 and no history; STAR has both and the axis earns its
+place. BEAM sits at the unfavourable end.
+
+The stronger reading — that recency and frequency are simply the wrong prior
+for agent memory — was available on the BEAM result alone and is **no longer
+supported**. It is recorded here because it was published before the gradient
+run corrected it.
 
 Two mechanisms this system does *not* have were tested by adding them.
 **Hebbian co-retrieval association hurt by 3.2 NDCG points** — it reinforces

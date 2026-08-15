@@ -739,3 +739,53 @@ recurring slice (+0.0023), so the mechanism is live. Noted because an exact
 zero otherwise warrants suspicion.
 
 Caveat: the recurring slice is 108 questions and the intervals are wide.
+
+## Amendment 12b: the recurrence gradient — the flat-line prediction FAILED
+
+Four corpora, stream length fixed at n=1500 so recurrence per label is the
+only varying quantity. Runner: `gradient_eval.py`.
+
+Δ hit@1 vs full (* = CI excludes zero):
+
+| corpus | recurrence/label | no_value | no_activation | no_prior |
+|---|---|---|---|---|
+| FloDial | 150.0 | −0.0007 | −0.0007 | −0.0020 |
+| **STAR** | 71.4 | **−0.0067\*** | **−0.0067\*** | **−0.0140\*** |
+| ABCD | 27.3 | −0.0080 | −0.0040 | −0.0020 |
+| MultiDoc2Dial | 3.5 | +0.0013 | +0.0020 | +0.0073 |
+
+**The registered prediction was wrong, and the correction favours the
+activation axis.** Amendment 12b predicted either a monotonic rise in
+`no_activation`'s cost with recurrence, or a flat line falsifying the
+recurrence defence. Neither happened. On STAR, **removing activation costs
+exactly as much as removing outcome feedback** (both −0.0067, both CIs
+excluding zero), and removing the prior entirely costs more than either
+(−0.0140) — the two axes are contributing roughly additively.
+
+So the Amendment 12 conclusion — "only the outcome axis earns its place" —
+**was benchmark-specific and is hereby narrowed to BEAM.** On STAR the ACT-R
+half earns its place on equal terms. The claim in `docs/findings.md` and
+`docs/theory.md` has been corrected accordingly.
+
+The relationship is not monotonic in recurrence, and the two nulls at the
+ends have different causes:
+
+- **FloDial (highest recurrence) is at ceiling.** With 10 labels its
+  team-pooled baseline is hit@1 0.984 / hit@5 0.994 (Amendment 4). There is
+  no headroom for any prior to demonstrate anything, so a null there measures
+  the benchmark, not the mechanism.
+- **MultiDoc2Dial (lowest recurrence) has no history to work with** — 3.5
+  calls per label over 433 labels — and every arm is *positive*, i.e.
+  removing the prior helps slightly. That matches the fresh-evidence stratum
+  in Amendment 12 (+0.0028): with nothing recurring, the prior is a small net
+  cost.
+- ABCD sits between and is directionally consistent but not significant.
+
+The honest shape is therefore a **recurrence sweet spot rather than a
+gradient**: the prior needs enough history to differentiate candidates *and*
+enough headroom left by the retriever to matter. Too little of either and it
+measures nothing.
+
+Caveat: one seed, one embedder, n=1500 per corpus, and no correction for
+testing four corpora — STAR's result should be replicated before it is
+leaned on.

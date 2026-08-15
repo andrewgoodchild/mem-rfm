@@ -142,8 +142,15 @@ our own components, so we ablated each one through the shipped extension
 | the confidence shrink | +0.0031 [−0.0040, +0.0096] | within noise |
 | decay rate (→0, or →0.9) | +0.0001 / +0.0021 | within noise |
 
-**Only the outcome axis earns its place**, and that is an uncomfortable
-result about a project with R and F in its name.
+**On BEAM, only the outcome axis earns its place** — an uncomfortable result
+about a project with R and F in its name.
+
+**But that turned out to be benchmark-specific.** Repeating the ablation
+across four corpora at fixed stream length (Amendment 12b) found that on
+STAR, removing activation costs *exactly as much* as removing outcome
+feedback (both −0.0067 hit@1, both CIs excluding zero), with removing the
+prior entirely costing more than either (−0.0140) — the two axes contributing
+roughly additively. The ACT-R half earns its place there on equal terms.
 
 It is also, on reflection, the same result we have been getting all along
 from three other directions: ranking by activation *alone* collapses
@@ -160,7 +167,14 @@ a conversation, where re-use is weak (only 108 of 355 questions revisit
 earlier evidence) but usefulness is informative. The recency/frequency axes
 may simply be answering a question this benchmark does not ask.
 
-**Stratifying by recurrence sharpens this considerably.** BEAM labels whether
+The relationship across corpora is a **sweet spot, not a gradient**: FloDial
+has the highest recurrence but its baseline is already 0.984 hit@1, leaving
+no headroom for any prior to show anything, while MultiDoc2Dial has 3.5 calls
+per label and no history to work with (there the prior is a small net cost).
+The prior needs both enough history to differentiate *and* enough error left
+by the retriever to matter.
+
+**Stratifying BEAM by recurrence sharpens the within-benchmark picture.** BEAM labels whether
 a question's evidence already served an earlier one. Split on that:
 
 | arm | recurring (n=108) | fresh (n=247) |
@@ -182,9 +196,11 @@ double on the recurring slice; removing activation stays within noise in
 subset — even where re-use demonstrably happens, recency and frequency add
 nothing detectable.
 
-The honest status is **unproven, not disproven** — one benchmark, one
-embedder, 108 recurring questions. But it now survives the most obvious
-defence of it, which is worth more than the pooled number was.
+Taken together with the gradient result, the honest status is: **the
+activation axis is load-bearing on some corpora and not others**, and BEAM is
+one where it isn't. Not useless, not always useful — which is a duller claim
+than either "ACT-R is the foundation" or "only outcomes matter", and is what
+the evidence supports.
 
 Two mechanisms mem-rfm does *not* have were also tested, by adding them:
 **Hebbian co-retrieval association hurt by 3.2 points** (it reinforces
