@@ -869,3 +869,26 @@ Registered prediction: shrink will help at small n and hurt at large n
 where outcomes had accumulated), so the best k should fall with n.
 
 Runner: `bench-quality/calibration_eval.py`.
+
+## Amendment 13b — ACT-R with a FITTED squash vs the marketing formula
+
+Amendment 13 found ACT-R tying with per-query quintile RFM and, by its
+registered asymmetric bar, not earning its complexity. It also named the
+confound: quintiles get rank normalisation free, while ACT-R's logistic was
+**unfitted**, sitting in its far-left tail (P(B) ≈ 0.006–0.016). This closes
+that.
+
+**Fit on ABCD, evaluate on STAR.** Fitting and testing on the same corpus
+would be the obvious trap; ABCD is a different domain with a different label
+space, so the chosen (theta, s) is held out from the evaluation.
+
+Grid: theta ∈ {0, −2, −4, −6, median B}, s ∈ {0.2, 0.5, 1.0, 2.0}.
+Selection: best hit@1 on ABCD. Then a single evaluation on STAR against
+`quintile_rfm`, with everything else frozen.
+
+**The bar is unchanged and still asymmetric**: if fitted ACT-R remains within
+noise of the quintile form, the complexity is not earned and we simplify —
+`bla_cache`, the Petrov approximation and the conformance obligation all go,
+and the honest headline is that a marketer's formula does the job. If fitted
+ACT-R wins, that is the first evidence anyone has that the
+cognitive-science formulation earns its keep in retrieval ranking.

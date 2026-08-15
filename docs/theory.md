@@ -260,6 +260,33 @@ Caveats: dev set only, one embedder, and no outcome feedback accumulates on
 BEAM, so the value axis is constant there. A dev observation under the
 Amendment 11 protocol, not a frozen-then-tested result.
 
+### Is ACT-R earning its complexity? Currently, no.
+
+The activation half exists to compute `ln(Σ tᵢ^−d)`, which needs the Petrov
+approximation, a `bla_cache` column and a conformance suite. Classical RFM
+scores the axes separately — in marketing, as quintile ranks.
+
+Tested twice. ACT-R **beats** a naive weighted sum of `exp(−Δ/τ)` and
+`ln(1+n)` (−0.0107 hit@1 for the simple form, CI excluding zero), so unifying
+recency and frequency into one quantity is real. But it **loses to per-query
+quintile ranks**: level at hit@1 and −0.0060 at hit@5 with the CI excluding
+zero, on a held-out corpus, with the squash fitted on a different one.
+
+Fitting turned out not to rescue it — the whole (theta, s) grid spans 0.028
+hit@1 on the fitting corpus, and the chosen value *hurt* on the evaluation
+corpus, so the parameters want per-corpus tuning as well.
+
+One architectural note, since it changes what "simplify" would cost rather
+than excusing the result: ACT-R's score is **row-local**, which is what makes
+`rfm_prior(id)` a scalar function and `ORDER BY … LIMIT` a one-row read.
+Quintiles are **set-relative** — implementable via `NTILE` over the candidate
+set, but a different shape, and the O(1)-per-row property goes with it.
+
+The position on the evidence: the burden has shifted onto ACT-R, and being
+principled is not evidence. Two corpora and one embedder is not enough to rip
+out working machinery, but it is enough to stop presenting the cognitive
+model as the justification.
+
 ### Which half is load-bearing
 
 An ablation of every component (Amendment 12) produced an uncomfortable
