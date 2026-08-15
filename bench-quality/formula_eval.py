@@ -136,10 +136,19 @@ def load(corpus, n):
         calls = load_calls(n)[:n]
         ts = [c["ts"] for c in calls]
     elif corpus == "abcd":
-        from abcd_eval import load_calls, BASE_TS, CALL_SPACING
+        from abcd_eval import load_calls
+        from team_common import BASE_TS, CALL_SPACING
         calls = load_calls(n)[:n]
         for c in calls:
             c["label"] = c["intent"]
+        ts = [BASE_TS + i * CALL_SPACING for i in range(len(calls))]
+    elif corpus in ("flodial", "md2d"):
+        from team_common import BASE_TS, CALL_SPACING
+        if corpus == "flodial":
+            from flodial_eval import load_calls
+        else:
+            from md2d_eval import load_calls
+        calls = load_calls(n, 8)[:n]
         ts = [BASE_TS + i * CALL_SPACING for i in range(len(calls))]
     else:
         raise ValueError(corpus)
