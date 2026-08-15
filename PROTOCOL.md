@@ -1,5 +1,13 @@
 # Pre-registered protocol: bounded composition for rfm_score
 
+> **Commitments live here; outcomes live in
+> [`bench-quality/RESULTS.md`](bench-quality/RESULTS.md).** Results for every
+> amendment below — including the ones that failed their own bars — are
+> recorded there, next to the runners and per-question rows that produced
+> them. This file is deliberately at the repository root: it is what the
+> project committed to before measuring anything, not an artifact of any
+> one benchmark.
+
 **Status: registered BEFORE any composition experiment has run.** The commit
 introducing this file predates every result it governs; per-question outputs
 for all runs are committed for audit. Prior findings that motivated this
