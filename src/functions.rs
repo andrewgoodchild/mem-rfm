@@ -305,9 +305,13 @@ pub fn rfm_prior(
     Ok(())
 }
 
-/// rfm_score_w(id, w_a, w_v[, tau, decay]) — parameterised scoring for tuning.
-/// tau is accepted for API compatibility but unused: activation subsumes the
-/// exponential-recency term (see DESIGN_NOTES).
+/// rfm_score_w(id, w_a, w_v[, decay]) — parameterised scoring for tuning.
+///
+/// The 5-arity form used to take a `tau` that was validated and then thrown
+/// away, activation having subsumed the exponential-recency term (see
+/// DESIGN_NOTES). A required argument that does nothing is worse than no
+/// argument at all in a function whose entire purpose is tuning, so it is
+/// gone rather than documented.
 pub fn rfm_score_w(
     context: *mut sqlite3_context,
     values: &[*mut sqlite3_value],
@@ -320,12 +324,8 @@ pub fn rfm_score_w(
     if w_a < 0.0 || w_v < 0.0 {
         return Err(Error::new_message("rfm: weights must be finite and >= 0"));
     }
-    let decay = if values.len() >= 5 {
-        // tau is unused (see doc comment) but still validated: a garbage or
-        // NaN argument on a tuning function must error, not silently pass.
-        let tau = require_f64(values, 3, "tau")?;
-        config::check_tau(tau).map_err(Error::new_message)?;
-        let d = require_f64(values, 4, "decay")?;
+    let decay = if values.len() >= 4 {
+        let d = require_f64(values, 3, "decay")?;
         config::check_decay(d).map_err(Error::new_message)?;
         d
     } else {
@@ -369,6 +369,19 @@ pub fn rfm_prunable(
     let idle_days = (clock::now(&c) - anchor).max(0.0) / 86_400.0;
     let proved_useful = row.n_outcomes > 0 && row.value > 0.0;
     api::result_int(context, i32::from(idle_days > max_days && !proved_useful));
+    Ok(())
+}
+
+/// rfm_version() → the extension's version string.
+///
+/// rfm_init() migrates the schema, so a host that loads a dylib it did not
+/// build has no other way to check what it got before trusting its tables.
+pub fn rfm_version(
+    context: *mut sqlite3_context,
+    _values: &[*mut sqlite3_value],
+    _aux: &SharedConfig,
+) -> Result<()> {
+    api::result_text(context, env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }
 

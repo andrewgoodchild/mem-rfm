@@ -130,7 +130,8 @@ SELECT 'act2', rfm_activation(2);
 SELECT 'value1', rfm_value(1);
 SELECT 'score1', rfm_score(1);
 SELECT 'score_w3', rfm_score_w(1, 1.0, 0.0);
-SELECT 'score_w5', rfm_score_w(1, 0.5, 0.5, 3600.0, 0.3);
+SELECT 'score_w4', rfm_score_w(1, 0.5, 0.5, 0.3);
+SELECT 'version', rfm_version();
 SELECT 'prior', rfm_prior(1);
 SELECT 'set_beta', rfm_config('beta', 0.5);
 SELECT 'prior_b5', rfm_prior(1);
@@ -178,7 +179,11 @@ SELECT 'row1', access_count || ',' || last_access || ',' || bla_cache || ',' || 
     assert_close(&map, "score1", math::score(act1, v_eff, defaults().w_a, defaults().w_v));
     assert_close(&map, "score_w3", math::score(act1, v_eff, 1.0, 0.0));
     let act1_d03 = math::bla_hybrid_k2(2, Some(5_000.0), Some(10_000.0), 110_000.0, 0.3);
-    assert_close(&map, "score_w5", math::score(act1_d03, v_eff, 0.5, 0.5));
+    assert_close(&map, "score_w4", math::score(act1_d03, v_eff, 0.5, 0.5));
+
+    // rfm_version: hosts loading a dylib they did not build need to know what
+    // they got, since rfm_init() migrates their schema.
+    assert_eq!(map["version"], env!("CARGO_PKG_VERSION"));
 
     // rfm_prior: bounded multiplier (1-beta) + beta*rfm_score, beta configurable.
     let score1 = math::score(act1, v_eff, defaults().w_a, defaults().w_v);
@@ -260,20 +265,22 @@ SELECT rfm_record_outcome(1, NULL);
 SELECT rfm_record_access(1.9);
 SELECT rfm_record_access('abc');
 SELECT rfm_score_w(1, NULL, 0.3);
-SELECT rfm_score_w(1, 0.7, 0.3, 'garbage', 0.5);
-SELECT rfm_score_w(1, 0.7, 0.3, -1.0, 0.5);
+SELECT rfm_score_w(1, 0.7, 0.3, 'garbage');
+SELECT rfm_score_w(1, 0.7, 0.3, -1.0);
 SELECT 'count0', access_count FROM rfm_memories WHERE id = 0;
 SELECT 'count1', access_count FROM rfm_memories WHERE id = 1;
 SELECT 'value1', value_score FROM rfm_memories WHERE id = 1;
 "#;
     let (stdout, stderr) = run_sql(script);
     // Note: 'garbage' coerces to 0.0 under SQLite text affinity (Text, not
-    // NULL, so require_f64 passes) and is then caught by the tau > 0 check.
+    // NULL, so require_f64 passes) and is then caught by the decay range
+    // check — which is the point: a tuning argument that cannot be honoured
+    // must error rather than silently scoring against something else.
     for needle in [
         "outcome must not be NULL",
         "id must be an INTEGER",
         "w_a must not be NULL",
-        "tau must be > 0",
+        "decay must be in (0, 1)",
     ] {
         assert!(stderr.contains(needle), "stderr missing '{needle}': {stderr}");
     }
