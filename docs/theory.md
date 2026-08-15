@@ -292,6 +292,37 @@ perfectly workable **row-local** implementation of bucketing, which means the
 architectural objection to rank scoring was never the real obstacle — the
 ranking quality was.
 
+### Why we use ACT-R for R and F
+
+Short version: **we tried to replace it and failed.**
+
+The activation half is not there because cognitive science is appealing. It is
+there because every simpler alternative was tested and lost:
+
+- **Two separate axes, weighted and summed** (`exp(−Δ/τ)` + `ln(1+n)`) — loses
+  by 0.0107 hit@1, CI excluding zero. Unifying recency and frequency into one
+  log-sum quantity is doing real work, and this is the cleanest evidence for
+  it: same inputs, same combination step, different functional form.
+- **Rank buckets, the marketing RFM formula** — never beats ACT-R across four
+  corpora and two embedders, and loses significantly on two of them. This was
+  tested four different ways (per-query quintiles, deciles, continuous
+  percentiles, and maintained row-local cutpoints) after an early single-corpus
+  result suggested the opposite.
+- **Recency alone / frequency alone** — −0.0067 and −0.0213 hit@1.
+- **Re-weighting the two ACT-R axes by memory type** — no significant effect in
+  any of eight cells.
+
+What ACT-R buys, concretely: one quantity instead of two hand-weighted ones,
+a log-scale transform that handles ages spanning seconds to months, O(1)
+scoring via Petrov's approximation from a single row, and equations that
+match three reference implementations to 1e-9 so the maths can be checked
+rather than trusted.
+
+What it costs, stated plainly: a `bla_cache` column, an approximation whose
+error we measure rather than inherit from the paper, and a conformance
+obligation. On four corpora that cost is earned. On STAR alone it isn't — and
+we published the wrong conclusion from exactly that before replicating.
+
 ### Which half is load-bearing
 
 An ablation of every component (Amendment 12) produced an uncomfortable
