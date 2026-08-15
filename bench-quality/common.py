@@ -69,8 +69,63 @@ def cache_suffix():
 
 
 def get_embedder():
+    """fastembed (ONNX) by default, sentence-transformers if unavailable.
+
+    These are not approximations of each other: fastembed running the same
+    model produces vectors identical to sentence-transformers to 6 decimal
+    places (cosine 1.000000, pairwise similarity matrices differing by 0.0),
+    so every committed benchmark number holds under either. The difference is
+    install weight — 137MB against 988MB, because sentence-transformers pulls
+    torch (505MB on its own)."""
+    if os.environ.get("RFM_EMBED_BACKEND", "fastembed") == "fastembed":
+        try:
+            from fastembed import TextEmbedding
+            m = TextEmbedding(model_name=EMBEDDER_ID)
+            _match_truncation(m)
+            return _FastEmbedAdapter(m)
+        except Exception:
+            pass          # unsupported model id -> sentence-transformers
     from sentence_transformers import SentenceTransformer
     return SentenceTransformer(EMBEDDER_ID)
+
+
+# fastembed defaults this model's tokenizer to 128 tokens where
+# sentence-transformers uses 256, so anything longer than a short paragraph
+# gets silently half-truncated and embeds differently. Undetectable on short
+# strings -- the two agree to 1.000000 below the cut -- but it moved BEAM's
+# similarity NDCG by 2.4 points before this was matched up.
+MAX_TOKENS = int(os.environ.get("RFM_MAX_TOKENS", "256"))
+
+
+def _match_truncation(model):
+    tok = model.model.tokenizer
+    tok.enable_truncation(max_length=MAX_TOKENS)
+    # Padding is pinned to the same 128 and must move with it, or batches
+    # come out ragged. Padding to the batch maximum rather than a flat 256
+    # is equivalent under the attention mask and avoids paying for padding
+    # on the short strings that dominate a memory store.
+    pad = dict(tok.padding or {})
+    pad.pop("length", None)
+    pad.pop("pad_to_multiple_of", None)
+    tok.enable_padding(length=None, pad_to_multiple_of=8, **pad)
+    if tok.truncation["max_length"] != MAX_TOKENS:
+        raise RuntimeError("could not set fastembed truncation")
+
+
+class _FastEmbedAdapter:
+    """Presents fastembed through the sentence-transformers call shape the
+    harness already uses, so no eval script changes."""
+
+    def __init__(self, model):
+        self.model = model
+        self.prompts = {}          # fastembed has no query-prompt concept
+
+    def encode(self, texts, normalize_embeddings=True, batch_size=128,
+               show_progress_bar=False, **kwargs):
+        v = np.array(list(self.model.embed(texts, batch_size=batch_size)))
+        if normalize_embeddings:
+            v = v / np.maximum(np.linalg.norm(v, axis=1, keepdims=True), 1e-12)
+        return v
 
 
 def encode(embedder, texts, kind="doc"):

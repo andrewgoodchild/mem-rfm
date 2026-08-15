@@ -122,6 +122,23 @@ Three habits came out of it, and they are cheap:
    questions, a delta of precisely 0.0000 is almost never a real null — it
    means the two arms ran identical code.
 
+A fourth, from swapping the embedding backend rather than changing the
+model. `fastembed` was adopted to cut the install from 769 MB to 163 MB on
+the strength of a smoke test showing cosine 1.000000 against
+sentence-transformers on four sample strings. Re-running BEAM and diffing
+per-question rows showed 482 differing cells and similarity NDCG down 2.4
+points. Cause: fastembed ships this model's tokenizer truncating at **128
+tokens** where sentence-transformers uses **256**, so every memory longer
+than a short paragraph was embedded from half its text. The smoke test could
+not have caught it — all four strings were under the cut, where the two
+backends agree exactly. With truncation and padding matched, all 1,065 rows
+are bit-identical.
+
+The lesson is about what counts as evidence for a drop-in replacement: two
+implementations agreeing on the inputs you happened to try is not the same
+as agreeing on the inputs you have. The committed per-question rows are what
+made the difference visible, which is the argument for committing them.
+
 Related: `model_eval.py --selfcheck` reconciles its in-process activation
 against the extension (exact for n ≤ 2; the n = 3 divergence is Petrov's
 approximation working as designed), and every extension change is checked for

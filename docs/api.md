@@ -126,8 +126,42 @@ Environment:
 |---|---|
 | `RFM_MEMORY_DB` | database path (default `~/.sqlite-rfm/claude-code.db`) |
 | `RFM_DYLIB` | path to `librfm` (default: this repo's release build) |
-| `RFM_EMBEDDER` | sentence-transformers model id |
+| `RFM_EMBEDDER` | embedding model id (default `all-MiniLM-L6-v2`) |
+| `RFM_EMBED_BACKEND` | `fastembed` (default) or `sentence-transformers` |
+| `RFM_MAX_TOKENS` | truncation length, default 256 — see below |
+| `RFM_LOG` | log path, or `0` to disable |
+| `RFM_LOG_CONTENT` | `0` logs lengths and ids but not query/memory text |
 
+### Embedding backend
+
+`fastembed` runs the same model under ONNX for a 163 MB install against
+769 MB for `sentence-transformers`, which pulls torch. The two produce
+identical vectors — verified not by inspection but by re-running a committed
+benchmark end-to-end and diffing: all 1,065 BEAM rows bit-identical.
+
+That equality is conditional on `RFM_MAX_TOKENS` matching the model's
+`max_seq_length`. fastembed ships this model's tokenizer truncating at 128
+tokens where sentence-transformers uses 256, so anything longer than a short
+paragraph silently embeds from half its text. Short strings agree to
+1.000000 either way, which is what makes it dangerous. If you change
+`RFM_EMBEDDER`, set `RFM_MAX_TOKENS` to that model's real limit.
+
+### Logging
+
+The server appends one JSON line per operation to `RFM_LOG` (default
+`rfm-log.jsonl` beside the database). Searches record each result's
+similarity and prior separately, plus what plain cosine ranking would have
+returned — so a dogfooding run can answer whether the prior changed anything
+rather than assuming it did.
+
+```sh
+integrations/claude-code/log_stats.py [--days 7]
+```
+
+reports loop closure (what fraction of retrieved memories ever got an
+outcome), prior liveness, and how often RFM changed the returned set or its
+order. It flags an open loop and a dead prior explicitly, because both look
+like normal operation from the outside.
 
 `capture.md` has a CLAUDE.md snippet telling the agent what is worth saving
 (bias it toward operational facts — see [findings](findings.md)), and an

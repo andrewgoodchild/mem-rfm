@@ -58,7 +58,9 @@ unzip -o -q data/multidoc2dial.zip -d data/ && rm data/multidoc2dial.zip
 
 ```sh
 uv venv --python 3.12 .venv        # needs enable_load_extension (not macOS system Python)
-uv pip install --python .venv/bin/python sentence-transformers sqlite-vec numpy
+uv pip install --python .venv/bin/python fastembed sqlite-vec numpy
+# sentence-transformers also works (RFM_EMBED_BACKEND=sentence-transformers);
+# it produces identical vectors for 4x the install. Qwen3/bge-m3 runs need it.
 curl -sL -o data/longmemeval_s_cleaned.json \
   "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main/longmemeval_s_cleaned.json"
 cargo build --release              # native dylib for this Python
