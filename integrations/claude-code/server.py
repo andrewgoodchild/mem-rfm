@@ -10,8 +10,14 @@ records outcomes; ranking improves as memories prove themselves.
 Env:
   RFM_MEMORY_DB  database path   (default ~/.sqlite-rfm/claude-code.db)
   RFM_DYLIB      librfm path     (default: this repo's target/release build)
-  RFM_EMBEDDER   sentence-transformers model id (default all-MiniLM-L6-v2)
+  RFM_EMBEDDER   embedding model id (default all-MiniLM-L6-v2)
+  RFM_EMBED_BACKEND  'fastembed' (default, ONNX, ~137MB) or
+                 'sentence-transformers' (pulls torch, ~988MB). Both produce
+                 identical vectors for the same model; only install weight
+                 differs.
 """
+import json
+import math
 import os
 import sqlite3
 import struct
@@ -23,6 +29,7 @@ from mcp.server.fastmcp import FastMCP
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 EMBEDDER_ID = os.environ.get("RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
+MAX_TOKENS = int(os.environ.get("RFM_MAX_TOKENS", "256"))
 
 mcp = FastMCP("sqlite-rfm-memory")
 _db = None
@@ -61,13 +68,75 @@ def db():
 def embed(text: str) -> bytes:
     global _embedder
     if _embedder is None:
-        from sentence_transformers import SentenceTransformer
-        _embedder = SentenceTransformer(EMBEDDER_ID)
+        _embedder = _load_embedder()
+    vec = _embedder(text[:2000])
+    return struct.pack(f"{len(vec)}f", *vec)
+
+
+def _load_embedder():
+    """fastembed by default: it runs the same model under ONNX and returns
+    vectors identical to sentence-transformers, for 137MB of install instead
+    of 988MB (torch alone is 505MB of that).
+
+    The truncation length has to be matched explicitly. fastembed ships this
+    model's tokenizer at 128 tokens while sentence-transformers uses 256, and
+    the mismatch is invisible on short text -- the backends agree to
+    1.000000 below the cut -- but silently halves anything longer."""
+    if os.environ.get("RFM_EMBED_BACKEND", "fastembed") == "fastembed":
+        try:
+            from fastembed import TextEmbedding
+            model = TextEmbedding(model_name=EMBEDDER_ID)
+            tok = model.model.tokenizer
+            tok.enable_truncation(max_length=MAX_TOKENS)
+            pad = {k: v for k, v in (tok.padding or {}).items()
+                   if k not in ("length", "pad_to_multiple_of")}
+            tok.enable_padding(length=None, pad_to_multiple_of=8, **pad)
+
+            def encode(text):
+                v = next(iter(model.embed([text])))
+                n = math.sqrt(sum(x * x for x in v)) or 1.0
+                return [x / n for x in v]
+            return encode
+        except Exception:
+            pass
+    from sentence_transformers import SentenceTransformer
+    st = SentenceTransformer(EMBEDDER_ID)
     # show_progress_bar must stay off: the MCP transport is stdio and any
     # stray stdout output corrupts the protocol.
-    vec = _embedder.encode([text[:2000]], normalize_embeddings=True,
-                           show_progress_bar=False)[0]
-    return struct.pack(f"{len(vec)}f", *vec.tolist())
+    return lambda text: st.encode([text], normalize_embeddings=True,
+                                  show_progress_bar=False)[0].tolist()
+
+
+# ---------------------------------------------------------------- logging
+# Dogfooding needs to answer three questions the store itself cannot: is the
+# loop closed (does feedback ever arrive), is the prior alive (does it vary
+# across rows), and does it change what you actually see. An append-only
+# JSONL beside the database records enough to answer all three; log_stats.py
+# reads it. Never writes to stdout — the MCP transport is stdio and a stray
+# byte corrupts the protocol.
+LOG_PATH = os.path.expanduser(os.environ.get(
+    "RFM_LOG", os.path.join(os.path.dirname(DB_PATH), "rfm-log.jsonl")))
+LOG_ENABLED = os.environ.get("RFM_LOG", "1") not in ("0", "off", "")
+# Queries and memory content are the sensitive part. They sit in the same
+# directory as the database, which already holds the memories themselves, so
+# the default logs them; RFM_LOG_CONTENT=0 keeps lengths and ids only.
+LOG_CONTENT = os.environ.get("RFM_LOG_CONTENT", "1") not in ("0", "off")
+
+
+def log(op: str, **fields):
+    if not LOG_ENABLED:
+        return
+    try:
+        rec = {"t": round(time.time(), 3), "op": op, **fields}
+        os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+        with open(LOG_PATH, "a") as fh:
+            fh.write(json.dumps(rec) + "\n")
+    except Exception:
+        pass          # logging must never break a tool call
+
+
+def _redact(text: str) -> str:
+    return text if LOG_CONTENT else f"<{len(text)} chars>"
 
 
 MAX_CONTENT = 4000
@@ -96,30 +165,57 @@ def _save(content: str) -> dict:
     d = db()
     dup = d.execute("SELECT id FROM rfm_memories WHERE content = ?", (content,)).fetchone()
     if dup:
+        log("save", id=dup[0], status="duplicate", chars=len(content))
         return {"id": dup[0], "status": "already stored"}
     cur = d.execute(
         "INSERT INTO rfm_memories(content, created_at, embedding) VALUES (?, ?, ?)",
         (content, time.time(), embed(content)))
     d.commit()
+    log("save", id=cur.lastrowid, status="saved", chars=len(content),
+        content=_redact(content))
     return {"id": cur.lastrowid, "status": "saved"}
 
 
 def _search(query: str, k: int = 5) -> list:
     d = db()
+    qvec = embed(query)
     # The FROZEN composition (PROTOCOL.md): clamped similarity x bounded prior
     # rfm_prior(id) = (1-beta) + beta*rfm_score(id), beta = 0.3. The unbounded
     # sim x rfm_score variant was falsified by the pre-registered experiment.
+    # Split into a subquery only so the two factors can be logged separately —
+    # the arithmetic and the ordering are unchanged.
     rows = d.execute(
-        """SELECT id, content,
-                  max(1.0 - vec_distance_cosine(embedding, ?), 0) * rfm_prior(id) AS score
-           FROM rfm_memories WHERE embedding IS NOT NULL
-           ORDER BY score DESC LIMIT ?""",
-        (embed(query), k)).fetchall()
+        """SELECT id, content, sim, prior, sim * prior AS score FROM (
+               SELECT id, content,
+                      max(1.0 - vec_distance_cosine(embedding, ?), 0) AS sim,
+                      rfm_prior(id) AS prior
+               FROM rfm_memories WHERE embedding IS NOT NULL)
+           ORDER BY score DESC LIMIT ?""", (qvec, k)).fetchall()
     # Retrieval IS usage: returned memories earn an access (recency+frequency).
-    for mid, _c, _s in rows:
-        d.execute("SELECT rfm_record_access(?)", (mid,))
+    for r in rows:
+        d.execute("SELECT rfm_record_access(?)", (r[0],))
     d.commit()
-    return [{"id": mid, "content": c, "score": round(s, 4)} for mid, c, s in rows]
+
+    if LOG_ENABLED and rows:
+        # The question that decides whether any of this is load-bearing: would
+        # plain similarity have returned the same thing? Logged per search so
+        # a long dogfooding run can answer it empirically rather than by
+        # assertion.
+        sim_only = [r[0] for r in d.execute(
+            """SELECT id FROM rfm_memories WHERE embedding IS NOT NULL
+               ORDER BY max(1.0 - vec_distance_cosine(embedding, ?), 0) DESC
+               LIMIT ?""", (qvec, k))]
+        got = [r[0] for r in rows]
+        priors = [r[3] for r in rows]
+        log("search", query=_redact(query), k=k,
+            results=[{"id": r[0], "sim": round(r[2], 4),
+                      "prior": round(r[3], 4), "score": round(r[4], 4)}
+                     for r in rows],
+            prior_spread=round(max(priors) - min(priors), 4),
+            set_changed=set(got) != set(sim_only),
+            order_changed=got != sim_only,
+            sim_only=sim_only)
+    return [{"id": r[0], "content": r[1], "score": round(r[4], 4)} for r in rows]
 
 
 def _feedback(memory_id: int, helped: bool) -> dict:
@@ -128,8 +224,13 @@ def _feedback(memory_id: int, helped: bool) -> dict:
         row = d.execute("SELECT rfm_record_outcome(?, ?)",
                         (memory_id, 1.0 if helped else -1.0)).fetchone()
         d.commit()
+        n = d.execute("SELECT outcome_count FROM rfm_memories WHERE id = ?",
+                      (memory_id,)).fetchone()
+        log("feedback", id=memory_id, helped=helped,
+            value=round(row[0], 4), outcomes=n[0] if n else None)
         return {"id": memory_id, "value_score": round(row[0], 4)}
     except sqlite3.OperationalError as e:
+        log("feedback", id=memory_id, helped=helped, error=str(e))
         return {"error": str(e)}
 
 
@@ -160,6 +261,7 @@ def _delete(memory_id: int) -> dict:
     gone = d.execute("DELETE FROM rfm_memories WHERE id = ?", (memory_id,)).rowcount
     d.execute("DELETE FROM rfm_accesses WHERE memory_id = ?", (memory_id,))
     d.commit()
+    log("delete", id=memory_id, deleted=bool(gone))
     return {"id": memory_id, "deleted": bool(gone)}
 
 

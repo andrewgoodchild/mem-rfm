@@ -72,9 +72,14 @@ For Claude Code, an MCP server with local embeddings and one SQLite file:
 
 ```sh
 cd integrations/claude-code && uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python mcp sqlite-vec sentence-transformers numpy
+uv pip install --python .venv/bin/python mcp sqlite-vec fastembed numpy
 claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py"
 ```
+
+It logs every save, search and outcome to `rfm-log.jsonl` beside the
+database. `log_stats.py` turns that into the numbers that decide whether it
+is working for you: whether feedback is actually coming back, and how often
+the ranking differed from plain similarity.
 
 **[Full API and configuration →](docs/api.md)**
 
