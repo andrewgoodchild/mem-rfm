@@ -132,6 +132,8 @@ def db():
         cols = [r[1] for r in _db.execute("PRAGMA table_info(rfm_memories)")]
         if "embedding" not in cols:
             _db.execute("ALTER TABLE rfm_memories ADD COLUMN embedding BLOB")
+        if "scope" not in cols:
+            _db.execute("ALTER TABLE rfm_memories ADD COLUMN scope TEXT")
     return _db
 
 
@@ -209,6 +211,23 @@ def _redact(text: str) -> str:
     return text if LOG_CONTENT else f"<{len(text)} chars>"
 
 
+# Seconds within which a repeat retrieval of the same memory does NOT record
+# a second access. 0 disables the suppression.
+ACCESS_WINDOW = float(os.environ.get("RFM_ACCESS_WINDOW", "60"))
+
+
+def _scope_sql(scope):
+    """A scoped search sees its own scope plus unscoped memories. Project
+    facts stay in their project; preferences saved without a scope stay
+    visible everywhere, which is the split that makes one database usable
+    across repositories."""
+    return "" if scope is None else "AND (scope = ? OR scope IS NULL)"
+
+
+def _scope_args(scope):
+    return () if scope is None else (scope,)
+
+
 MAX_CONTENT = 4000
 
 
@@ -238,7 +257,7 @@ def _check(content: str) -> str:
     return content
 
 
-def _save(content: str) -> SaveResult:
+def _save(content: str, scope: str | None = None) -> SaveResult:
     content = _check(content)
     d = db()
     dup = d.execute("SELECT id FROM rfm_memories WHERE content = ?", (content,)).fetchone()
@@ -246,11 +265,12 @@ def _save(content: str) -> SaveResult:
         log("save", id=dup[0], status="duplicate", chars=len(content))
         return SaveResult(id=dup[0], status="already stored")
     cur = d.execute(
-        "INSERT INTO rfm_memories(content, created_at, embedding) VALUES (?, ?, ?)",
-        (content, time.time(), embed(content)))
+        "INSERT INTO rfm_memories(content, created_at, embedding, scope) "
+        "VALUES (?, ?, ?, ?)",
+        (content, time.time(), embed(content), scope))
     d.commit()
     log("save", id=cur.lastrowid, status="saved", chars=len(content),
-        content=_redact(content))
+        scope=scope, content=_redact(content))
     return SaveResult(id=cur.lastrowid, status="saved")
 
 
@@ -305,7 +325,8 @@ def _get(memory_id: int) -> MemoryRow:
                      score=round(r[6], 4))
 
 
-def _search(query: str, k: int = 5) -> list[SearchHit]:
+def _search(query: str, limit: int = 5, scope: str | None = None,
+            min_score: float = 0.0) -> list[SearchHit]:
     d = db()
     qvec = embed(query)
     # The FROZEN composition (PROTOCOL.md): clamped similarity x bounded prior
@@ -314,14 +335,26 @@ def _search(query: str, k: int = 5) -> list[SearchHit]:
     # Split into a subquery only so the two factors can be logged separately —
     # the arithmetic and the ordering are unchanged.
     rows = d.execute(
-        """SELECT id, content, sim, prior, sim * prior AS score FROM (
-               SELECT id, content,
+        f"""SELECT id, content, sim, prior, sim * prior AS score, last_access FROM (
+               SELECT id, content, last_access,
                       max(1.0 - vec_distance_cosine(embedding, ?), 0) AS sim,
                       rfm_prior(id) AS prior
-               FROM rfm_memories WHERE embedding IS NOT NULL)
-           ORDER BY score DESC LIMIT ?""", (qvec, k)).fetchall()
+               FROM rfm_memories WHERE embedding IS NOT NULL {_scope_sql(scope)})
+           WHERE score >= ? ORDER BY score DESC LIMIT ?""",
+        (qvec, *_scope_args(scope), min_score, limit)).fetchall()
+
     # Retrieval IS usage: returned memories earn an access (recency+frequency).
-    for r in rows:
+    # But only genuine re-encounters count. A client that retries, or fires
+    # speculative searches, would otherwise manufacture frequency out of
+    # nothing -- and because activation clamps the age of an access at
+    # EPS=1e-3 days, a burst of near-instant re-accesses is not a small
+    # error but the largest possible one. ACT-R's spacing effect is about
+    # genuine rehearsal; suppressing a re-access inside the window keeps the
+    # measured quantity the one the model is about.
+    now = time.time()
+    fresh = [r for r in rows
+             if r[5] is None or now - r[5] >= ACCESS_WINDOW]
+    for r in fresh:
         d.execute("SELECT rfm_record_access(?)", (r[0],))
     d.commit()
 
@@ -331,34 +364,46 @@ def _search(query: str, k: int = 5) -> list[SearchHit]:
         # a long dogfooding run can answer it empirically rather than by
         # assertion.
         sim_only = [r[0] for r in d.execute(
-            """SELECT id FROM rfm_memories WHERE embedding IS NOT NULL
-               ORDER BY max(1.0 - vec_distance_cosine(embedding, ?), 0) DESC
-               LIMIT ?""", (qvec, k))]
+            f"""SELECT id FROM rfm_memories WHERE embedding IS NOT NULL
+                {_scope_sql(scope)}
+                ORDER BY max(1.0 - vec_distance_cosine(embedding, ?), 0) DESC
+                LIMIT ?""", (*_scope_args(scope), qvec, limit))]
         got = [r[0] for r in rows]
         priors = [r[3] for r in rows]
-        log("search", query=_redact(query), k=k,
+        log("search", query=_redact(query), limit=limit, scope=scope,
             results=[{"id": r[0], "sim": round(r[2], 4),
                       "prior": round(r[3], 4), "score": round(r[4], 4)}
                      for r in rows],
             prior_spread=round(max(priors) - min(priors), 4),
             set_changed=set(got) != set(sim_only),
             order_changed=got != sim_only,
+            accesses_recorded=len(fresh), accesses_suppressed=len(rows) - len(fresh),
             sim_only=sim_only)
     return [SearchHit(id=r[0], content=r[1], score=round(r[4], 4)) for r in rows]
 
 
-def _feedback(memory_id: int, helped: bool) -> FeedbackResult:
+def _feedback(memory_id: int, helped: bool, score: float | None = None,
+              note: str = "") -> FeedbackResult:
+    """`helped` gives the ±1 the extension has always taken; `score` passes
+    the rest of the [-1, 1] range it accepts, for a memory that was partly
+    right or merely adjacent. `note` is not stored — outcomes are a scalar
+    by design — but it is logged, which is what makes a surprising value
+    score explicable weeks later."""
+    outcome = float(score) if score is not None else (1.0 if helped else -1.0)
+    if not -1.0 <= outcome <= 1.0:
+        raise ValueError(f"score must be in [-1, 1], got {outcome}")
     d = db()
     try:
         row = d.execute("SELECT rfm_record_outcome(?, ?)",
-                        (memory_id, 1.0 if helped else -1.0)).fetchone()
+                        (memory_id, outcome)).fetchone()
         d.commit()
     except sqlite3.OperationalError as e:
-        log("feedback", id=memory_id, helped=helped, error=str(e))
+        log("feedback", id=memory_id, outcome=outcome, error=str(e))
         raise ValueError(str(e)) from e
     n = d.execute("SELECT outcome_count FROM rfm_memories WHERE id = ?",
                   (memory_id,)).fetchone()
-    log("feedback", id=memory_id, helped=helped,
+    log("feedback", id=memory_id, helped=helped, outcome=outcome,
+        note=_redact(note) if note else None,
         value=round(row[0], 4), outcomes=n[0] if n else None)
     return FeedbackResult(id=memory_id, value_score=round(row[0], 4),
                           outcomes=n[0] if n else 0)
@@ -402,7 +447,11 @@ def _delete(memory_id: int) -> DeleteResult:
     return DeleteResult(id=memory_id, deleted=bool(gone))
 
 
-EXPORT_CAP = 200_000  # chars; keeps a hostile/huge store from flooding context
+# Chars. Keeps a hostile or merely large store from flooding context — and
+# stays under Claude Code's ~25k-token default tool result budget, above
+# which the whole export is spilled to a file reference and the agent has to
+# go and read it back.
+EXPORT_CAP = 80_000
 
 
 def _export() -> str:
@@ -428,32 +477,48 @@ def _export() -> str:
 
 
 @mcp.tool(annotations=_ann("Save a memory", idempotent=True))
-def memory_save(content: str) -> SaveResult:
+def memory_save(content: str, scope: str | None = None) -> SaveResult:
     """Store a durable memory: user preferences, project facts, decisions,
     hard-won debugging lessons. One self-contained fact per call. Don't store
     ephemera (current task state) or anything derivable from the repo.
-    Saving identical content twice returns the existing memory."""
-    return _save(content)
+    Saving identical content twice returns the existing memory.
+
+    `scope` confines a memory to one project or context (a repo name, say).
+    Leave it unset for facts that should apply everywhere, like preferences:
+    a scoped search sees its own scope plus everything unscoped."""
+    return _save(content, scope)
 
 
 @mcp.tool(annotations=_ann("Search memories"))
-def memory_search(query: str, k: int = 5) -> list[SearchHit]:
+def memory_search(query: str, limit: int = 5, scope: str | None = None,
+                  min_score: float = 0.0, k: int | None = None
+                  ) -> list[SearchHit]:
     """Search stored memories. Ranking = semantic similarity x usefulness
     (memories that were recently/frequently used and got positive feedback
     rank higher). Returns ids — after acting on a memory, report whether it
     helped via memory_feedback.
 
-    Not read-only: retrieval counts as usage, so every returned memory
-    records an access, which feeds the recency and frequency terms."""
-    return _search(query, k)
+    `scope` restricts to that scope plus unscoped memories; `min_score`
+    drops weak matches, which also stops them counting as usage.
+
+    Not read-only: retrieval counts as usage, so returned memories record an
+    access, which feeds the recency and frequency terms. Repeat retrievals
+    of the same memory within a short window record only once, so retries
+    don't inflate it."""
+    return _search(query, k if k is not None else limit, scope, min_score)
 
 
 @mcp.tool(annotations=_ann("Record whether a memory helped"))
-def memory_feedback(memory_id: int, helped: bool) -> FeedbackResult:
+def memory_feedback(memory_id: int, helped: bool, note: str = "",
+                    score: float | None = None) -> FeedbackResult:
     """Record whether a retrieved memory actually helped (true) or was
     irrelevant/misleading (false). This trains the ranking: helpful memories
-    rise, unhelpful ones fade. Call once per memory per retrieval."""
-    return _feedback(memory_id, helped)
+    rise, unhelpful ones fade. Call once per memory per retrieval.
+
+    `score` overrides the implied ±1 with any value in [-1, 1], for a memory
+    that was partly useful. `note` records why, for later diagnosis; it is
+    written to the log, not stored on the memory."""
+    return _feedback(memory_id, helped, score, note)
 
 
 @mcp.tool(annotations=_ann("Update a memory's content",

@@ -21,9 +21,15 @@ migrates older databases by adding columns introduced later.
 | `rfm_score(id)` | `w_a·P(activation) + w_v·value₀₁` |
 | `rfm_activation(id)` | ACT-R base-level activation |
 | `rfm_recency(id)` / `rfm_frequency(id)` / `rfm_value(id)` | individual components |
-| `rfm_score_w(id, w_a, w_v[, tau, decay])` | parameterised variant, for tuning |
+| `rfm_score_w(id, w_a, w_v[, decay])` | parameterised variant, for tuning |
 | `rfm_prunable(id, max_unused_days)` | 1 when a memory is idle past the window AND never proved useful |
 | `rfm_config(key[, value])` | read or set a per-connection setting |
+| `rfm_version()` | extension version — `rfm_init()` migrates schemas, so hosts can check what they loaded |
+
+`rfm_prunable`'s window is in **days**, while every timestamp and `tau` is in
+seconds. That is deliberate — a retention policy is a human-scale decision —
+but it is the one unit discontinuity in the surface, so it is called out
+here rather than discovered.
 
 ### Typical use
 
@@ -57,12 +63,20 @@ that connection and never cross connections or processes.
 | `shrink_k` | 3.0 | confidence shrink: effective value = `v·n/(n+k)` |
 | `beta` | 0.3 | how far the prior may move a ranking; **frozen by experiment** |
 | `tau` | 86400 | time constant for `rfm_recency` only |
+| `theta` | 0.0 | ACT-R retrieval threshold: where the activation→[0,1] squash is centred |
+| `s` | 1.0 | ACT-R activation noise: how steep that squash is |
 | `now` | unset | freeze the clock (tests and replay); `NULL` unfreezes |
 
 `beta` deserves a note: it was frozen at 0.3 by a pre-registered experiment
 and is the main safety property of the whole design
 ([theory](theory.md)). Raising it increases forgetting power and decreases
 rank safety.
+
+`theta` and `s` are exposed for fitting rather than for use. ACT-R fits both
+per model — θ spans −60..+0.5 across ACT-R's own tutorial, and s is usually
+recommended in [0.2, 0.8] — and ours sit at 0.0/1.0, which on second-scale
+lags puts a whole store in the squash's left tail. They are configurable so
+that can be measured; the defaults do not move until an experiment says so.
 
 ## Schema
 
@@ -121,9 +135,9 @@ MCP client.
 
 | tool | notes |
 |---|---|
-| `memory_save` | one self-contained fact; identical content de-duplicates |
-| `memory_search` | **not read-only** — retrieval counts as usage and records an access |
-| `memory_feedback` | signed outcome for one memory |
+| `memory_save` | one self-contained fact; identical content de-duplicates; optional `scope` |
+| `memory_search` | `limit`, `scope`, `min_score`. **Not read-only** — retrieval counts as usage |
+| `memory_feedback` | signed outcome; optional `score` in [-1,1] and a `note` for the log |
 | `memory_update` | rewrite content, keep accumulated usage and value |
 | `memory_get` | read one memory back by id |
 | `memory_list` | ranked, with `total` and `has_more` |
@@ -138,6 +152,29 @@ annotation silently disables structured output, so a three-result search
 arrived as three unschema'd text blocks. Validation failures raise, so the
 client sees `isError` and can correct itself, rather than an error string
 wrapped in a success envelope.
+
+### Scope
+
+One database across many projects otherwise means one pool: a build quirk
+from one repository competing for rank in every other. `scope` is a free
+string (a repo name works) set on save; a search passing that scope sees its
+own scope **plus everything unscoped**. So project facts stay put while
+preferences saved without a scope remain visible everywhere.
+
+### Retrieval and usage accounting
+
+Retrieval records an access, which is what feeds recency and frequency, so
+two things guard the signal:
+
+- **`RFM_ACCESS_WINDOW`** (default 60s) suppresses a second access for the
+  same memory inside the window. Without it a client that retries, or fires
+  speculative searches, manufactures frequency out of nothing — and because
+  activation clamps an access's age at `EPS = 1e-3` days, a burst of
+  near-instant re-accesses is not a small error but the largest available
+  one. ACT-R's spacing effect is about genuine rehearsal.
+- **`min_score`** drops weak matches before they are returned, which also
+  stops them counting as usage. A result that was never worth showing
+  should not earn a frequency credit.
 
 ### Updating a memory
 
@@ -167,6 +204,7 @@ Environment:
 | `RFM_MAX_TOKENS` | truncation length, default 256 — see below |
 | `RFM_LOG` | log path, or `0` to disable |
 | `RFM_LOG_CONTENT` | `0` logs lengths and ids but not query/memory text |
+| `RFM_ACCESS_WINDOW` | seconds before a repeat retrieval re-counts as usage (default 60; `0` disables) |
 
 ### Embedding backend
 

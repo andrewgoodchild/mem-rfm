@@ -96,6 +96,19 @@ def main():
             print("  NOTE: every outcome is positive. A signal with no negative")
             print("  cases cannot demote anything, which is most of the point.")
 
+    # ---- 1b. usage accounting -------------------------------------------
+    rec = sum(s.get("accesses_recorded", 0) for s in searches)
+    sup = sum(s.get("accesses_suppressed", 0) for s in searches)
+    if rec or sup:
+        print("\n--- usage accounting ---")
+        print(f"  accesses recorded            : {rec}")
+        print(f"  suppressed as repeat-in-window: {sup}"
+              f"  ({sup / max(rec + sup, 1):.1%})")
+        if sup > rec:
+            print("  Most retrievals are repeats inside the window. That is")
+            print("  either a retry-heavy client or genuinely repetitive work;")
+            print("  worth knowing which before reading the frequency axis.")
+
     # ---- 2. prior liveness ----------------------------------------------
     print("\n--- prior liveness ---")
     if searches:

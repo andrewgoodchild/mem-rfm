@@ -127,16 +127,10 @@ primitive rather than a service. Concurrent 2026 research is converging on
 the same loop ([RoMeRL](https://arxiv.org/abs/2608.02508),
 [Chen & Cheng](https://arxiv.org/abs/2606.12945)).
 
-A count is a claim, so it gets re-checked rather than restated. As of
-2026-08-15 the four systems above were re-verified against their current
-sources: Cognee's feedback still defaults to `feedback_influence = 0.0` and
-rates answers; MemOS's is content correction as described. Memori was
-checked as a candidate fifth and does not belong on the list — its
-`memori_feedback` tool is a free-text channel to "send integration feedback
-to the Memori team", with no memory id. Some neighbours moved sharply in
-other respects over the same window (Mem0 v2 was a breaking change and its
-MCP servers are archived; Zep v3 removed the `memory.*` namespace and fact
-ratings), which is why this section is dated.
+Checked against current sources on 2026-08-15, and dated because this
+landscape moves quickly — Mem0 v2 was a breaking change whose MCP servers
+are now archived, and Zep v3 removed its `memory.*` namespace and fact
+ratings within the same window.
 
 ## Documentation
 
