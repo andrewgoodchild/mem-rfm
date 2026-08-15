@@ -127,6 +127,51 @@ everywhere it ran.
 
 Treat rank-1 improvement as a possible bonus, not the reason to deploy.
 
+## Which parts of the system actually earn their place
+
+A mechanism can be **implemented** (the code runs), **connected** (something
+reads its output), and **earn its place** (removing it makes results worse).
+Most memory systems claim the first. We had never measured the third about
+our own components, so we ablated each one through the shipped extension
+(Amendment 12, BEAM dev, 355 questions per arm):
+
+| removing | Δ NDCG@10 | verdict |
+|---|---|---|
+| **outcome feedback** | **−0.0055** [−0.0094, −0.0018] | **earns its place** |
+| ACT-R activation | +0.0020 [−0.0022, +0.0061] | within noise |
+| the confidence shrink | +0.0031 [−0.0040, +0.0096] | within noise |
+| decay rate (→0, or →0.9) | +0.0001 / +0.0021 | within noise |
+
+**Only the outcome axis earns its place**, and that is an uncomfortable
+result about a project with R and F in its name.
+
+It is also, on reflection, the same result we have been getting all along
+from three other directions: ranking by activation *alone* collapses
+retrieval to NDCG ≈ 0.01; *increasing* the activation axis's influence costs
+up to −0.063 (Amendment 11); and the bounded prior reaches parity with
+similarity-only rather than beating it. Every measurement has said the usage
+prior is a small, carefully-bounded adjustment — the ablation just says which
+half of it is doing the work.
+
+The likely reason, in Belady's terms ([theory](theory.md)): activation
+predicts *whether an item will be used again*, and outcome value predicts
+*whether using it will be worth anything*. BEAM asks probing questions about
+a conversation, where re-use is weak (only 108 of 355 questions revisit
+earlier evidence) but usefulness is informative. The recency/frequency axes
+may simply be answering a question this benchmark does not ask.
+
+The honest status is **unproven here, not useless** — one dev benchmark, one
+embedder, and short feedback streams are the least favourable setting for an
+activation signal. But unproven is what it is until something proves it, and
+the datasets where recurrence is high are the obvious place to look next.
+
+Two mechanisms mem-rfm does *not* have were also tested, by adding them:
+**Hebbian co-retrieval association hurt by 3.2 points** (it reinforces
+whatever was already retrieved — the rich-get-richer dynamic the outcome axis
+exists to break, and ACT-R's `ln(fan)` discount did not save it), and
+**interleaved consolidation had no effect**. Neither earns a place in the
+extension on this evidence.
+
 ## The takeaway
 
 Agent memory is not a lesson journal. It is an **operational profile** that
