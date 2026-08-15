@@ -114,7 +114,14 @@ pub fn frequency(access_count: i64) -> f64 {
 
 /// Activation → [0,1] via ACT-R retrieval probability (see THETA/S).
 pub fn logistic(b: f64) -> f64 {
-    1.0 / (1.0 + (-(b - THETA) / S).exp())
+    logistic_p(b, THETA, S)
+}
+
+/// Parameterised squash: ACT-R's retrieval threshold τ and noise s. Kept
+/// separate so `logistic` stays the frozen default while experiments sweep
+/// (theta, s) — see PROTOCOL.md Amendment 11.
+pub fn logistic_p(b: f64, theta: f64, s: f64) -> f64 {
+    1.0 / (1.0 + (-(b - theta) / s.max(1e-9)).exp())
 }
 
 /// Value in [-1,1] → [0,1]; clamped to defend against out-of-range stored data.
@@ -126,7 +133,13 @@ pub fn value01(v: f64) -> f64 {
 /// In [0,1] when w_a + w_v = 1; custom weights scale the range (documented,
 /// not renormalized).
 pub fn score(activation_b: f64, effective_value: f64, w_a: f64, w_v: f64) -> f64 {
-    w_a * logistic(activation_b) + w_v * value01(effective_value)
+    score_p(activation_b, effective_value, w_a, w_v, THETA, S)
+}
+
+/// `score` with the squash parameters exposed.
+pub fn score_p(activation_b: f64, effective_value: f64, w_a: f64, w_v: f64,
+               theta: f64, s: f64) -> f64 {
+    w_a * logistic_p(activation_b, theta, s) + w_v * value01(effective_value)
 }
 
 #[cfg(test)]

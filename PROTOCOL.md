@@ -576,3 +576,66 @@ L1 failing means incentive-shaping fails too, and the README's conclusion
 becomes the strong one: **no scoring-layer mechanism defends a ring —
 detection plus governance is the only answer.** U failing means liability
 degrades honest operation and is rejected as guidance regardless of L1.
+
+---
+
+# Amendment 11 — model-variant bake-off (ACT-R parameters and kernels)
+
+**Status: registered before any variant run.** An ACT-R ecosystem review
+verified our equations against three reference implementations and Petrov's
+own MATLAB (all conformant), and identified parameters we had hardcoded that
+ACT-R fits per model. This amendment tests whether fitting them helps, on the
+same dev/test discipline as the original composition experiment.
+
+Motivating measurement (not evidence for any variant, just the reason to
+look): with `theta=0, s=1` and lags in seconds, `P(B)` sits at 0.006–0.016 on
+a realistic store, so the activation axis uses roughly a sixth of its [0,1]
+range and the bounded prior's realised span is ~[0.700, 0.820] rather than the
+nominal [0.700, 1.000]. The docs overstated this and have been corrected.
+
+## Variants (declared now; no others reported as primary)
+
+- **V1 squash fitting.** `theta ∈ {0, −2, −4, median(B)}` × `s ∈ {0.2, 0.5,
+  1.0}`. Newly exposed as config keys; defaults unchanged pending this result.
+- **V2 procedural weighting.** `kind='procedural'` with `w_a_proc/w_v_proc ∈
+  {(0.3,0.7), (0.5,0.5), (0.7,0.3)}` against untagged baseline. Our dialog
+  datasets are procedure-retrieval tasks, so tagging their memories procedural
+  is the natural test of whether ACT-R's split earns its place.
+- **V3 decay kernel.** Power-law `t^−d` (ACT-R) vs exponential `2^{−λt}`
+  (LRFU). Never tested in agent memory; the recommender literature rejects the
+  exponential at p<.001 on human-generated access streams (Kowald et al.,
+  WWW'17), which makes this a directional prediction to falsify.
+- **V4 Petrov k.** k=2 (current) vs k=4 vs k=6. Requires fetching extra lags
+  from `rfm_accesses`; the index already supports it and no schema change is
+  needed. Motivated by a synthetic finding that k=2 systematically
+  *under*-estimates activation for an old memory with a recent burst of use —
+  precisely the memory the value axis exists to promote.
+
+## Development set and selection
+
+Dev = **BEAM only**, both embedders, as in the original protocol. LoCoMo,
+LongMemEval and SWE-Bench-CL remain test sets and are not touched until one
+configuration per variant is frozen.
+
+Selection rule, in order: (1) **feasibility** — mean paired NDCG@10 cost vs
+the current frozen configuration ≤ 0.010 under each embedder; (2) among
+feasible, maximise NDCG@10; (3) tie-break toward **fewer changes from the
+frozen default**, because the default is the one with a published test result
+behind it.
+
+## Endpoints (one-shot, after freezing)
+
+Primary: NDCG@10 on LoCoMo vs the current frozen configuration, per embedder.
+Secondary, reported regardless: adaptivity (ON−OFF on overlap=True),
+SWE-Bench-CL cost, and — for V2 only — hit@1 on the dialog datasets, whose
+labels are procedures.
+
+## What would falsify
+
+If no variant beats the frozen configuration on dev, the finding is that the
+hardcoded ACT-R defaults were already adequate and the parameters stay fixed —
+published as a negative result. **V3 failing would be the more interesting
+outcome**, since it would mean the recommender-systems result about kernels
+does not transfer to agent memory, and we would say so.
+
+Runner: `bench-quality/model_eval.py`.
