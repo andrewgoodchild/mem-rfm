@@ -186,7 +186,7 @@ Stated plainly, because they bound every number above:
 
 ```sh
 cargo build --release
-cargo test --release          # 21 tests: unit + CLI integration
+cargo test --release          # 17 tests: unit + CLI integration
 cd bench-quality
 # dataset download commands are in bench-quality/README.md
 python locomo_eval.py         # and the other *_eval.py runners
