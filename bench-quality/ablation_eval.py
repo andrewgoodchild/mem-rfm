@@ -66,6 +66,13 @@ def main():
     sink = open(os.path.join(args.out, "per_question.jsonl"), "w")
 
     ndcg = defaultdict(list)
+    # Stratified by recurrence: a question is `overlap` when its evidence
+    # already served an EARLIER question, i.e. the memory is being re-used.
+    # That is exactly the condition the activation axis is supposed to
+    # exploit, so averaging across both strata dilutes the very effect the
+    # ablation is trying to detect.
+    ndcg_overlap = defaultdict(list)
+    ndcg_fresh = defaultdict(list)
     live = defaultdict(lambda: {"scored": 0, "nonzero": 0})
 
     for ci in range(1, args.conversations + 1):
@@ -86,6 +93,7 @@ def main():
             np.savez_compressed(cache, turns=turn_embs, questions=q_embs)
 
         all_ids = [m for m, _t, _ts in rows]
+        seen_evidence = set()
         # Hebbian state, per arm: co-retrieval counts and per-memory fan.
         co = {a: defaultdict(lambda: defaultdict(int)) for a in ARMS}
         fan = {a: defaultdict(int) for a in ARMS}
@@ -102,6 +110,7 @@ def main():
             if not evidence:
                 continue
             now = last_ts + 3600.0 + qi * QUESTION_SPACING
+            is_overlap = bool(evidence & seen_evidence)
             for arm, store in stores.items():
                 store.freeze(now)
                 # Liveness check: an ablation is only meaningful if the signal
@@ -135,10 +144,13 @@ def main():
                 order = np.argsort(-scores, kind="stable")[:args.k]
                 retrieved = [all_ids[i] for i in order]
                 m = common.recall_ndcg(retrieved, evidence, args.k)
-                ndcg[arm].append(m["ndcg"] or 0.0)
+                val = m["ndcg"] or 0.0
+                ndcg[arm].append(val)
+                (ndcg_overlap if is_overlap else ndcg_fresh)[arm].append(val)
                 sink.write(json.dumps({"conversation": ci, "q_idx": qi,
                                        "arm": arm, "ndcg": m["ndcg"],
-                                       "hit": m["hit"]}) + "\n")
+                                       "hit": m["hit"],
+                                       "overlap": is_overlap}) + "\n")
                 store.record_accesses(retrieved)
                 store.record_outcomes(
                     [(mid, 1.0 if mid in evidence else -1.0) for mid in retrieved])
@@ -163,6 +175,7 @@ def main():
                     useful.sort()
                     for _a, mid in useful[:REPLAY_N]:
                         store.record_accesses([mid])
+            seen_evidence |= evidence
         for st in stores.values():
             st.close()
         print(f"conv {ci} done", flush=True)
@@ -202,6 +215,22 @@ def main():
                 verdict = "within noise — unproven"
         print(f"| {arm} | {np.mean(vals):.4f} | {d.mean():+.4f} "
               f"[{lo:+.4f},{hi:+.4f}] | {verdict} |")
+
+    for label, table in (("RECURRING evidence (overlap=True)", ndcg_overlap),
+                         ("FRESH evidence (overlap=False)", ndcg_fresh)):
+        b = table["full"]
+        print(f"\n=== {label} — n={len(b)} ===")
+        print("| arm | NDCG@k | Δ vs full |")
+        print("|---|---|---|")
+        for arm in ARMS:
+            vals = table[arm]
+            n = min(len(vals), len(b))
+            if not n:
+                continue
+            d = np.array(vals[:n]) - np.array(b[:n])
+            lo, hi = common.bootstrap_ci(list(d))
+            print(f"| {arm} | {np.mean(vals):.4f} | {d.mean():+.4f} "
+                  f"[{lo:+.4f},{hi:+.4f}] |")
 
     print("\nsignal liveness (fraction of scored rows whose prior varied):")
     for arm in ARMS:

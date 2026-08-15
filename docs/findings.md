@@ -160,10 +160,31 @@ a conversation, where re-use is weak (only 108 of 355 questions revisit
 earlier evidence) but usefulness is informative. The recency/frequency axes
 may simply be answering a question this benchmark does not ask.
 
-The honest status is **unproven here, not useless** — one dev benchmark, one
-embedder, and short feedback streams are the least favourable setting for an
-activation signal. But unproven is what it is until something proves it, and
-the datasets where recurrence is high are the obvious place to look next.
+**Stratifying by recurrence sharpens this considerably.** BEAM labels whether
+a question's evidence already served an earlier one. Split on that:
+
+| arm | recurring (n=108) | fresh (n=247) |
+|---|---|---|
+| removing the whole prior | **−0.0072** [−0.0141,−0.0013] | **+0.0028** [+0.0002,+0.0064] |
+| removing outcome feedback | **−0.0095** [−0.0171,−0.0026] | −0.0037 (n.s.) |
+| removing activation | +0.0020 (n.s.) | +0.0021 (n.s.) |
+
+The prior **earns its place exactly where the theory predicts and is mildly
+harmful where it predicts it shouldn't help** — a benefit on re-used evidence,
+a smaller penalty on evidence seen once, both significant. That is the
+recurrence finding appearing *within* a single benchmark, and it refines the
+published "cost ≈ 0 vs similarity" result: that zero is a net of two real and
+opposite effects.
+
+And the benefit is **entirely the outcome axis**. Removing value costs nearly
+double on the recurring slice; removing activation stays within noise in
+*both* strata. So the null is not an artifact of averaging over a hostile
+subset — even where re-use demonstrably happens, recency and frequency add
+nothing detectable.
+
+The honest status is **unproven, not disproven** — one benchmark, one
+embedder, 108 recurring questions. But it now survives the most obvious
+defence of it, which is worth more than the pooled number was.
 
 Two mechanisms mem-rfm does *not* have were also tested, by adding them:
 **Hebbian co-retrieval association hurt by 3.2 points** (it reinforces
