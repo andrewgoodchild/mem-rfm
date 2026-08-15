@@ -16,24 +16,36 @@ Env:
                  identical vectors for the same model; only install weight
                  differs.
 """
+import functools
 import json
 import math
 import os
 import sqlite3
 import struct
+import threading
 import time
 
 import sqlite_vec
-from mcp.server.fastmcp import FastMCP
-from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
+
+try:                                    # mcp >= 2.0
+    from mcp.server.mcpserver import MCPServer as _Server
+except ImportError:                     # mcp 1.x
+    from mcp.server.fastmcp import FastMCP as _Server
+try:
+    from mcp.types import ToolAnnotations
+except ImportError:
+    from mcp_types import ToolAnnotations
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 EMBEDDER_ID = os.environ.get("RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
 MAX_TOKENS = int(os.environ.get("RFM_MAX_TOKENS", "256"))
 
-mcp = FastMCP("sqlite-rfm-memory")
+# mcp 2.0 renamed FastMCP to MCPServer and dropped the old module outright,
+# so a fresh `pip install mcp` and a pinned 1.x install need different
+# imports. The decorator, annotations and run() surfaces are the same.
+mcp = _Server("sqlite-rfm-memory")
 _db = None
 _embedder = None
 
@@ -118,11 +130,34 @@ def resolve_dylib():
     raise RuntimeError("librfm.dylib not found — run `cargo build --release` or set RFM_DYLIB")
 
 
+# MCP SDK 2.0 dispatches sync tool handlers on a worker thread, so the
+# connection is no longer confined to one thread the way it was under 1.x.
+# Two things are needed, and only having one of them is a trap:
+#
+#   check_same_thread=False lets the connection cross threads at all, which
+#   is safe because CPython's sqlite3 is built serialized (threadsafety 3);
+#
+#   the lock keeps whole operations atomic. _search does SELECT, then
+#   several rfm_record_access, then commit -- interleave two of those on one
+#   connection and a commit lands on another call's half-finished work.
+#
+# Tool calls are sub-millisecond, so serialising them costs nothing.
+_lock = threading.RLock()
+
+
+def serialized(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        with _lock:
+            return fn(*args, **kwargs)
+    return wrapper
+
+
 def db():
     global _db
     if _db is None:
         os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-        _db = sqlite3.connect(DB_PATH)
+        _db = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=10.0)
         _db.enable_load_extension(True)
         sqlite_vec.load(_db)
         _db.load_extension(resolve_dylib())
@@ -257,6 +292,7 @@ def _check(content: str) -> str:
     return content
 
 
+@serialized
 def _save(content: str, scope: str | None = None) -> SaveResult:
     content = _check(content)
     d = db()
@@ -274,6 +310,7 @@ def _save(content: str, scope: str | None = None) -> SaveResult:
     return SaveResult(id=cur.lastrowid, status="saved")
 
 
+@serialized
 def _update(memory_id: int, content: str) -> UpdateResult:
     """Rewrite a memory's content while keeping everything it has earned.
 
@@ -311,6 +348,7 @@ def _update(memory_id: int, content: str) -> UpdateResult:
                         value_score=round(row[1], 4), outcomes=row[2])
 
 
+@serialized
 def _get(memory_id: int) -> MemoryRow:
     d = db()
     r = d.execute(
@@ -325,6 +363,7 @@ def _get(memory_id: int) -> MemoryRow:
                      score=round(r[6], 4))
 
 
+@serialized
 def _search(query: str, limit: int = 5, scope: str | None = None,
             min_score: float = 0.0) -> list[SearchHit]:
     d = db()
@@ -382,6 +421,7 @@ def _search(query: str, limit: int = 5, scope: str | None = None,
     return [SearchHit(id=r[0], content=r[1], score=round(r[4], 4)) for r in rows]
 
 
+@serialized
 def _feedback(memory_id: int, helped: bool, score: float | None = None,
               note: str = "") -> FeedbackResult:
     """`helped` gives the ±1 the extension has always taken; `score` passes
@@ -409,6 +449,7 @@ def _feedback(memory_id: int, helped: bool, score: float | None = None,
                           outcomes=n[0] if n else 0)
 
 
+@serialized
 def _status() -> StatusResult:
     d = db()
     n, accesses, outcomes = d.execute(
@@ -419,6 +460,7 @@ def _status() -> StatusResult:
                         db=DB_PATH)
 
 
+@serialized
 def _list(limit: int = 20, offset: int = 0) -> ListResult:
     d = db()
     limit = max(1, min(int(limit), 200))
@@ -438,6 +480,7 @@ def _list(limit: int = 20, offset: int = 0) -> ListResult:
         total=total, has_more=offset + len(rows) < total)
 
 
+@serialized
 def _delete(memory_id: int) -> DeleteResult:
     d = db()
     gone = d.execute("DELETE FROM rfm_memories WHERE id = ?", (memory_id,)).rowcount
@@ -454,6 +497,7 @@ def _delete(memory_id: int) -> DeleteResult:
 EXPORT_CAP = 80_000
 
 
+@serialized
 def _export() -> str:
     d = db()
     rows = d.execute(

@@ -236,6 +236,23 @@ Environment:
 | `RFM_LOG_CONTENT` | `0` logs lengths and ids but not query/memory text |
 | `RFM_ACCESS_WINDOW` | seconds before a repeat retrieval re-counts as usage (default 60; `0` disables) |
 
+### Checking it works
+
+`integrations/claude-code/smoke_test.py` spawns the server and speaks MCP
+over stdio against a temporary database — 35 checks covering every tool,
+the output schemas, the annotations, `isError` on each failure path, and the
+behaviours that are easy to break silently: that update preserves usage,
+that a repeat retrieval inside the window does not re-count, that a weak
+match under `min_score` earns nothing, that a scoped search excludes other
+scopes, and that a second outcome without a new access is refused.
+
+It is not an in-process test, and that is the point. The tool bodies were
+correct at a moment when `pip install mcp` resolved to 2.0 and the server
+would not import at all; the same upgrade moved tool handlers onto a worker
+thread, which broke a module-level SQLite connection intermittently rather
+than outright. Both are invisible without a real launch. The server now runs
+green on mcp 1.x and 2.x.
+
 ### Embedding backend
 
 `fastembed` runs the same model under ONNX for a 163 MB install against
