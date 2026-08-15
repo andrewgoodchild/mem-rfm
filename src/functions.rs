@@ -55,12 +55,10 @@ struct MemRow {
     t2_wall: Option<f64>,
     value: f64,
     n_outcomes: i64,
-    /// True when the host tagged this memory kind='procedural'.
-    procedural: bool,
 }
 
 /// The six extension-maintained columns, in canonical SELECT/RETURNING order.
-const MEM_COLS: &str = "access_count, created_at, last_access, bla_cache, value_score, outcome_count, kind = 'procedural'";
+const MEM_COLS: &str = "access_count, created_at, last_access, bla_cache, value_score, outcome_count";
 
 fn decode_mem(row: &[Option<f64>]) -> MemRow {
     MemRow {
@@ -70,13 +68,12 @@ fn decode_mem(row: &[Option<f64>]) -> MemRow {
         t2_wall: row[3],
         value: row[4].unwrap_or(0.0),
         n_outcomes: row[5].unwrap_or(0.0) as i64,
-        procedural: row[6].unwrap_or(0.0) != 0.0,
     }
 }
 
 fn load_mem(db: *mut sqlite3, id: i64) -> Result<MemRow> {
     let sql_text = format!("SELECT {MEM_COLS} FROM rfm_memories WHERE id = {id}");
-    let row = sql::query_row(db, &sql_text, 7)?.ok_or_else(|| no_such_id(id))?;
+    let row = sql::query_row(db, &sql_text, 6)?.ok_or_else(|| no_such_id(id))?;
     Ok(decode_mem(&row))
 }
 
@@ -121,17 +118,10 @@ fn score_of(row: &MemRow, now: f64, d: f64, w_a: f64, w_v: f64, shrink_k: f64) -
 }
 
 fn score_of_cfg(row: &MemRow, now: f64, c: &RfmConfig) -> f64 {
-    let (w_a, w_v) = weights_for(row, c);
+    let (w_a, w_v) = (c.w_a, c.w_v);
     let b = activation_of(row, now, c.decay);
     let v_eff = math::shrink(row.value, row.n_outcomes, c.shrink_k);
     math::score_p(b, v_eff, w_a, w_v, c.theta, c.s)
-}
-
-/// Weights for this row: ACT-R scores procedural knowledge by learned utility
-/// and declarative knowledge by base-level activation, so a memory the host
-/// tagged 'procedural' uses the utility-weighted pair.
-fn weights_for(row: &MemRow, c: &RfmConfig) -> (f64, f64) {
-    if row.procedural { (c.w_a_proc, c.w_v_proc) } else { (c.w_a, c.w_v) }
 }
 
 pub fn rfm_init(
@@ -140,11 +130,6 @@ pub fn rfm_init(
     _aux: &SharedConfig,
 ) -> Result<()> {
     let db = db_of(context);
-    // Pre-v0.3 databases predate `kind`; add it before the schema script so
-    // CREATE TABLE IF NOT EXISTS is a no-op on them. Both failure modes here
-    // ("no such table" on a fresh DB, "duplicate column" on a current one)
-    // are the expected steady state, hence ignored.
-    let _ = sql::exec(db, "ALTER TABLE rfm_memories ADD COLUMN kind TEXT");
     sql::exec_multi(db, SCHEMA)?;
     api::result_text(context, "ok")?;
     Ok(())
@@ -184,7 +169,7 @@ pub fn rfm_record_access(
              bla_cache = last_access, last_access = {now_lit} \
              WHERE id = {id} RETURNING {MEM_COLS}"
         ),
-        7,
+        6,
     )?
     .ok_or_else(|| no_such_id(id))?;
     api::result_double(context, activation_of(&decode_mem(&row), now, c.decay));

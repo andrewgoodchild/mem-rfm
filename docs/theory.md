@@ -130,14 +130,22 @@ and **long-term** memory split into **semantic** (facts), **episodic** (events
 tied to a time), and **procedural** (skills). That is Tulving's and Squire's
 psychology, and it is a reasonable map of the territory.
 
-mem-rfm models **one distinction** from it: procedural versus everything else.
-The `kind` column tags a row `'procedural'`, which scores it with
-`w_a_proc`/`w_v_proc` (default 0.3/0.7), weighting outcomes higher. Untagged
-rows are unaffected, so this changes nothing until you opt in. The effect is
-**sensitivity, not inflation** — the gap between a procedural memory that keeps
-working and one that keeps failing is wider. (With few outcomes the shrink
-pulls value toward neutral, so weighting it more can *lower* a score; an early
-test of ours asserted otherwise and was wrong.)
+mem-rfm models **neither distinction in its scoring**, and that is a measured
+decision rather than an omission.
+
+We did implement it: a `kind` column routing `'procedural'` rows to
+utility-weighted parameters, on the reasoning that ACT-R scores its two memory
+systems differently and our clearest empirical result is exactly
+procedural-versus-episodic. Then we tested it on all four corpora whose labels
+*are* procedures. **No significant effect in any cell** (Δ hit@1 between
+−0.0053 and +0.0040). The column and its weights were removed.
+
+What survives is the *knowledge* finding, which is well supported and is what
+matters in practice: **procedural knowledge is what transfers** — build
+quirks, dependency pins, conventions — while per-task episodic lessons do not
+(~6% transfer rate). That should shape **what you capture**, not how the
+scorer weights it. Type belongs in the capture policy, not the ranking
+function.
 
 ### Why that one and not the others
 
@@ -191,10 +199,10 @@ zero — no evidence yet that typing helps at all, though BEAM is the wrong
 venue to judge it (its labels are evidence turns, and no outcome feedback
 accumulates there, so the value axis is inert).
 
-So the position is: one distinction implemented because ACT-R draws it and our
-data supports it, three more left out until something measures them. If typing
-shows nothing on the procedure-labelled dialog datasets, the honest response is
-to *remove* `kind` rather than extend it.
+So the position is: the one distinction we implemented was measured, showed
+nothing, and was removed — which is what this document said in advance would
+be the honest response. The other three were never implemented, and nothing
+here suggests they would fare differently. Memory type is a capture concern.
 
 ---
 

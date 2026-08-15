@@ -352,52 +352,6 @@ SELECT 'alive', 1;
 }
 
 #[test]
-fn procedural_memories_score_by_utility() {
-    // ACT-R keeps declarative and procedural knowledge in separate modules and
-    // scores them differently: chunks by base-level activation, production
-    // rules by learned utility. Tagging a memory kind='procedural' therefore
-    // makes its score MORE SENSITIVE to outcomes — not simply higher. (An
-    // earlier version of this test asserted "higher", which is wrong: with few
-    // outcomes the confidence shrink pulls value toward neutral, so weighting
-    // it more can lower the score.) Untagged rows must be unaffected.
-    let script = r#"
-SELECT rfm_init();
-SELECT rfm_config('now', 1000.0);
-INSERT INTO rfm_memories(id, content, created_at, kind) VALUES (1, 'p+', 0.0, 'procedural');
-INSERT INTO rfm_memories(id, content, created_at, kind) VALUES (2, 'p-', 0.0, 'procedural');
-INSERT INTO rfm_memories(id, content, created_at) VALUES (3, 'd+', 0.0);
-INSERT INTO rfm_memories(id, content, created_at) VALUES (4, 'd-', 0.0);
--- identical access history; only the outcome sign differs
-SELECT rfm_record_access(1); SELECT rfm_record_outcome(1, 1.0);
-SELECT rfm_record_access(1); SELECT rfm_record_outcome(1, 1.0);
-SELECT rfm_record_access(2); SELECT rfm_record_outcome(2, -1.0);
-SELECT rfm_record_access(2); SELECT rfm_record_outcome(2, -1.0);
-SELECT rfm_record_access(3); SELECT rfm_record_outcome(3, 1.0);
-SELECT rfm_record_access(3); SELECT rfm_record_outcome(3, 1.0);
-SELECT rfm_record_access(4); SELECT rfm_record_outcome(4, -1.0);
-SELECT rfm_record_access(4); SELECT rfm_record_outcome(4, -1.0);
-SELECT 'p_good', rfm_score(1);
-SELECT 'p_bad', rfm_score(2);
-SELECT 'd_good', rfm_score(3);
-SELECT 'd_bad', rfm_score(4);
-SELECT rfm_config('w_a_proc', 0.7); SELECT rfm_config('w_v_proc', 0.3);
-SELECT 'p_good_equalised', rfm_score(1);
-"#;
-    let (stdout, stderr) = run_sql(script);
-    assert!(stderr.is_empty(), "unexpected stderr: {stderr}");
-    let map = parse(&stdout);
-    let get = |k: &str| -> f64 { map[k].parse().unwrap() };
-    let proc_gap = get("p_good") - get("p_bad");
-    let decl_gap = get("d_good") - get("d_bad");
-    assert!(
-        proc_gap > decl_gap,
-        "procedural scoring must be more outcome-sensitive: {proc_gap} vs {decl_gap}"
-    );
-    // Setting the procedural weights to the declarative ones must converge.
-    assert!((get("p_good_equalised") - get("d_good")).abs() < TOL);
-}
-
-#[test]
 fn prunable_respects_idle_window_and_proven_value() {
     // Codex-style retention: usage keeps a memory alive. Idle past the window
     // is prunable — UNLESS it ever proved useful, which is precisely the

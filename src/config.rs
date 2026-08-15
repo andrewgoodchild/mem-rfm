@@ -30,12 +30,6 @@ pub struct RfmConfig {
     /// defaults unchanged so nothing moves until an experiment says so.
     pub theta: f64,
     pub s: f64,
-    /// Weights for memories tagged kind='procedural'. ACT-R selects
-    /// production rules by learned UTILITY rather than base-level activation,
-    /// so procedural memories weight the outcome axis higher. Theoretically
-    /// motivated, NOT measured — see docs/theory.md.
-    pub w_a_proc: f64,
-    pub w_v_proc: f64,
     /// When set via rfm_config('now', t), all functions read this instead of
     /// the wall clock. Cleared with rfm_config('now', NULL).
     pub frozen_now: Option<f64>,
@@ -53,8 +47,6 @@ impl Default for RfmConfig {
             beta: 0.3,
             theta: 0.0,
             s: 1.0,
-            w_a_proc: 0.3,
-            w_v_proc: 0.7,
             frozen_now: None,
         }
     }
@@ -99,8 +91,6 @@ impl RfmConfig {
             "beta" => Ok(Some(self.beta)),
             "theta" => Ok(Some(self.theta)),
             "s" => Ok(Some(self.s)),
-            "w_a_proc" => Ok(Some(self.w_a_proc)),
-            "w_v_proc" => Ok(Some(self.w_v_proc)),
             "now" => Ok(self.frozen_now),
             _ => Err(format!("rfm: unknown config key '{key}'")),
         }
@@ -132,8 +122,6 @@ impl RfmConfig {
             "beta" => { check_beta(v)?; self.beta = v }
             "theta" => { self.theta = v }
             "s" => { check_positive(key, v)?; self.s = v }
-            "w_a_proc" => { check_nonnegative(key, v)?; self.w_a_proc = v }
-            "w_v_proc" => { check_nonnegative(key, v)?; self.w_v_proc = v }
             "now" => self.frozen_now = Some(v),
             _ => return Err(format!("rfm: unknown config key '{key}'")),
         }
