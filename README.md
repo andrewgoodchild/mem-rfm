@@ -114,8 +114,10 @@ default, rating answers rather than task outcomes.
 bumps a usage counter that drives both consolidation ordering and retention —
 but at whole-session granularity, with no decay and no negative signal.
 [ReMe](https://github.com/agentscope-ai/ReMe) uses outcome utility only to
-prune, and a [MemOS plugin](https://github.com/MemTensor/MemOS) credits an
-episode's new traces rather than the memories that were retrieved.
+prune. [MemOS](https://github.com/MemTensor/MemOS)'s `add_feedback` does
+target the exact memories a retrieval returned, via `retrieved_memory_ids`
+— but to *correct* their content, which is what `memory_update` does here,
+not to score them.
 
 So this appears to be the only system where outcome feedback is a default-on
 term in the retrieval score, attributed to the individual memory retrieved,
@@ -124,6 +126,17 @@ bound frozen by experiment — and the only one shipped as an embeddable
 primitive rather than a service. Concurrent 2026 research is converging on
 the same loop ([RoMeRL](https://arxiv.org/abs/2608.02508),
 [Chen & Cheng](https://arxiv.org/abs/2606.12945)).
+
+A count is a claim, so it gets re-checked rather than restated. As of
+2026-08-15 the four systems above were re-verified against their current
+sources: Cognee's feedback still defaults to `feedback_influence = 0.0` and
+rates answers; MemOS's is content correction as described. Memori was
+checked as a candidate fifth and does not belong on the list — its
+`memori_feedback` tool is a free-text channel to "send integration feedback
+to the Memori team", with no memory id. Some neighbours moved sharply in
+other respects over the same window (Mem0 v2 was a breaking change and its
+MCP servers are archived; Zep v3 removed the `memory.*` namespace and fact
+ratings), which is why this section is dated.
 
 ## Documentation
 
