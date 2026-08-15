@@ -1021,3 +1021,50 @@ despite both being mis-calibrated and despite ACT-R's output being the more
 compressed of the two. Spread does not account for it, and neither surviving
 story predicts it. Recorded as unexplained rather than given a third
 post-hoc rationalisation.
+
+## Amendment 13d: which rank-bucket implementations actually work
+
+The quintile result is only useful if it survives an implementation that fits
+the architecture. Three candidates tested on STAR, n=1500, against `actr`:
+
+| arm | hit@1 | Δ vs actr | hit@5 | Δ vs actr |
+|---|---|---|---|---|
+| actr | 0.9373 | baseline | 0.9640 | baseline |
+| quintile_rfm (per-query, full set) | 0.9346 | −0.0027 | 0.9640 | +0.0000 |
+| **A — buckets over a similarity shortlist** | 0.9313 | **−0.0060\*** | 0.9640 | +0.0000 |
+| **B — maintained cutpoints, refresh/100** | 0.9320 | −0.0053 | 0.9653 | +0.0013 |
+| **B — refresh/500** | 0.9346 | −0.0027 | 0.9673 | +0.0033 |
+| **B — computed once, never refreshed** | 0.9333 | −0.0040 | **0.9706** | **+0.0067\*** |
+| **C — logistic on maintained median/IQR** | 0.9280 | **−0.0093\*** | 0.9600 | **−0.0040\*** |
+
+**B works, and staleness is not the problem I expected.** All three refresh
+schedules land within noise of `actr` at hit@1 and at or above it at hit@5 —
+and the *least* frequently refreshed arm is the best at hit@5 (+0.0067, CI
+excluding zero). Cutpoints computed once from an early store and never
+updated beat cutpoints refreshed every 100 calls. So maintained global
+cutpoints reproduce the per-query quintile result while staying a row-local
+lookup, which is the architectural question this set out to answer.
+
+That the ordering runs *against* refresh frequency is unexplained and we are
+not going to invent a mechanism for it — plausibly noise (the three B arms sit
+within 0.005 of each other at hit@1), plausibly that stale coarse cutpoints
+throttle the prior further. Worth a seed sweep before anyone leans on it.
+
+**A is measurably worse.** Bucketing over a similarity shortlist is a
+different quantity from bucketing over the store: shortlist membership is
+query-dependent, so a memory's bucket shifts with the query. −0.0060 hit@1
+with the CI excluding zero. The zero-code SQL recipe does *not* inherit the
+measured result.
+
+**C fails, as predicted before the run.** A logistic on maintained median/IQR
+is significantly worse on both metrics, and its prior spread (0.1813) is the
+narrowest of any arm bar `actr` (0.1878) — it reintroduces exactly the
+fixed-parametric-form problem that Amendment 13c identified as the reason
+`exp(−Δ/τ)` and the ACT-R squash are both mis-calibrated. Rank buckets win
+by having no functional form to get wrong, and C puts one back.
+
+**Practical upshot**: if the rank-bucket direction is pursued, the design is
+a small `rfm_axis_cuts` table plus an `rfm_refresh_cuts()` maintenance call
+and a `rfm_prior_ranked()` scalar function — O(1) scoring preserved,
+`ORDER BY … LIMIT` unchanged, refresh interval evidently forgiving. Not built;
+this measured whether it is worth building.

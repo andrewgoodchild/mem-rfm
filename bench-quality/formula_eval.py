@@ -26,7 +26,39 @@ from team_common import BASE_TS, CALL_SPACING
 BETA = 0.3
 TAU = 86_400.0
 ARMS = ["actr", "simple_rfm", "quintile_rfm", "decile_rfm", "percentile_rfm",
-        "binary_rfm", "tercile_rfm", "recency_only", "frequency_only"]
+        "binary_rfm", "tercile_rfm", "recency_only", "frequency_only",
+        # Implementable forms of the rank-bucket idea (Amendment 13d):
+        "A_shortlist",     # buckets over a similarity shortlist, not the store
+        "B_cuts_100",      # maintained global cutpoints, refreshed every 100
+        "B_cuts_500",      # ... every 500
+        "B_cuts_once",     # ... computed once, never refreshed (worst case)
+        "C_parametric"]    # logistic on maintained median/IQR
+
+# Per-arm state for the maintained-statistic arms. Row-local scoring needs
+# these to exist, but they are refreshed on a schedule rather than per query —
+# which is the whole point, and the staleness cost is what we are measuring.
+STATE = {}
+
+
+def refresh_cuts(arm, rec, freq, val01, nbuckets=5):
+    STATE.setdefault(arm, {})["cuts"] = {
+        "rec": np.quantile(rec, np.linspace(0, 1, nbuckets + 1)[1:-1]),
+        "freq": np.quantile(freq, np.linspace(0, 1, nbuckets + 1)[1:-1]),
+        "val": np.quantile(val01, np.linspace(0, 1, nbuckets + 1)[1:-1]),
+    }
+
+
+def refresh_moments(arm, rec, freq, val01):
+    st = STATE.setdefault(arm, {})
+    st["mom"] = {}
+    for name, x in (("rec", rec), ("freq", freq), ("val", val01)):
+        q1, med, q3 = np.percentile(x, [25, 50, 75])
+        st["mom"][name] = (med, max((q3 - q1) / 2.0, 1e-6))
+
+
+def bucket_by_cuts(x, cuts, nbuckets=5):
+    """Row-local: 'how many maintained cutpoints does this value exceed'."""
+    return np.searchsorted(cuts, x, side="right") / float(nbuckets - 1)
 
 # Amendment 13b: the squash is ACT-R's retrieval threshold and noise, which
 # the architecture fits per model. Overridable so a fitted value chosen on one
@@ -48,7 +80,7 @@ def buckets(x, b):
     return np.floor(order * float(b) / n) / (b - 1.0)
 
 
-def score_arm(arm, act, rec, freq, val01):
+def score_arm(arm, act, rec, freq, val01, shortlist_sims=None):
     """Every arm keeps the same outcome axis and the same bounded prior;
     only the activation term differs."""
     if arm == "actr":
@@ -61,6 +93,33 @@ def score_arm(arm, act, rec, freq, val01):
         b = {"binary_rfm": 2, "tercile_rfm": 3, "quintile_rfm": 5,
              "decile_rfm": 10, "percentile_rfm": 0}[arm]
         prior_core = (buckets(rec, b) + buckets(freq, b) + buckets(val01, b)) / 3.0
+    elif arm == "A_shortlist":
+        # Buckets computed over a similarity shortlist rather than the store.
+        # Different quantity from what we measured — shortlist membership is
+        # query-dependent, so a memory's bucket changes with the query.
+        k = min(100, len(rec))
+        top = np.argsort(-shortlist_sims)[:k]
+        prior_core = np.full(len(rec), 0.5)
+        sub = (buckets(rec[top], 5) + buckets(freq[top], 5)
+               + buckets(val01[top], 5)) / 3.0
+        prior_core[top] = sub
+    elif arm.startswith("B_cuts"):
+        st = STATE.get(arm, {}).get("cuts")
+        if st is None:
+            prior_core = np.full(len(rec), 0.5)
+        else:
+            prior_core = (bucket_by_cuts(rec, st["rec"])
+                          + bucket_by_cuts(freq, st["freq"])
+                          + bucket_by_cuts(val01, st["val"])) / 3.0
+    elif arm == "C_parametric":
+        m = STATE.get(arm, {}).get("mom")
+        if m is None:
+            prior_core = np.full(len(rec), 0.5)
+        else:
+            def lg(x, k):
+                med, iqr = m[k]
+                return 1.0 / (1.0 + np.exp(-(x - med) / iqr))
+            prior_core = (lg(rec, "rec") + lg(freq, "freq") + lg(val01, "val")) / 3.0
     elif arm == "recency_only":
         prior_core = 0.7 * rec + 0.3 * val01
     elif arm == "frequency_only":
@@ -143,12 +202,23 @@ def main():
                 f"SELECT id, rfm_activation(id), rfm_recency(id), "
                 f"rfm_frequency(id), rfm_value(id) FROM rfm_memories "
                 f"WHERE id IN ({ph})", cands)}
+            sims_pre = np.maximum(st.sims(q_embs[ci], cands), 0.0)
             act = np.array([got[m][0] for m in cands])
             rec = np.array([got[m][1] for m in cands])
             freq = np.array([got[m][2] for m in cands])
             val01 = np.clip((np.array([got[m][3] for m in cands]) + 1) / 2, 0, 1)
 
-            prior = score_arm(arm, act, rec, freq, val01)
+            # Refresh maintained statistics on the arm's own schedule.
+            if arm.startswith("B_cuts") and len(cands) >= 20:
+                every = {"B_cuts_100": 100, "B_cuts_500": 500,
+                         "B_cuts_once": 10**9}[arm]
+                if arm not in STATE or (ci % every == 0):
+                    if arm not in STATE or ci % every == 0:
+                        refresh_cuts(arm, rec, freq, val01)
+            if arm == "C_parametric" and len(cands) >= 20:
+                if arm not in STATE or ci % 100 == 0:
+                    refresh_moments(arm, rec, freq, val01)
+            prior = score_arm(arm, act, rec, freq, val01, sims_pre)
             if len(cands) > 20:
                 spread[arm].append(float(prior.max() - prior.min()))
             sims = np.maximum(st.sims(q_embs[ci], cands), 0.0)
