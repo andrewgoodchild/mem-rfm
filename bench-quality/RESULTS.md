@@ -627,3 +627,68 @@ value axis is constant. Testing this properly needs the procedure-labelled
 dialog datasets.
 
 Caveats on all of the above: dev set, one embedder, value axis inert.
+
+
+## Amendment 12: component ablation — does each part earn its place?
+
+BEAM dev, 355 questions per arm, MiniLM, k=10, sequential protocol with
+feedback so both scoring axes are live. Every arm scores through the shipped
+extension's `rfm_prior()`. Runner: `ablation_eval.py`; rows in
+`results-ablation/`.
+
+| arm | NDCG@10 | Δ vs full | verdict |
+|---|---|---|---|
+| full | 0.4270 | — | baseline |
+| **no_value** | 0.4215 | **−0.0055** [−0.0094,−0.0018] | **earns its place** |
+| no_activation | 0.4290 | +0.0020 [−0.0022,+0.0061] | within noise |
+| no_prior | 0.4268 | −0.0002 [−0.0031,+0.0029] | within noise |
+| no_shrink | 0.4301 | +0.0031 [−0.0040,+0.0096] | within noise |
+| no_decay | 0.4271 | +0.0001 [−0.0041,+0.0044] | within noise |
+| fast_decay | 0.4291 | +0.0021 [−0.0019,+0.0062] | within noise |
+| **plus_hebbian** | 0.3949 | **−0.0321** [−0.0445,−0.0197] | **adding it HURTS** |
+| plus_consolidation | 0.4277 | +0.0007 [−0.0004,+0.0022] | no effect |
+| plus_both | 0.3957 | −0.0312 [−0.0437,−0.0188] | adding it hurts |
+
+**Only the value axis earns its place on this benchmark.** Removing outcome
+feedback costs 0.55 NDCG points with a CI excluding zero; removing the
+activation axis, the confidence shrink, or varying the decay rate all sit
+within noise. That is an uncomfortable result about our own system and it is
+consistent with everything else we have measured: activation-only retrieval
+collapses (NDCG ≈ 0.01), raising the activation axis's influence hurts
+(Amendment 11, up to −0.063), and the bounded prior reaches parity rather
+than superiority. On BEAM, given similarity plus outcome feedback, ACT-R
+activation adds nothing detectable.
+
+`no_prior` doubles as the harness's **positive control**: β=0 makes the prior
+a constant, the liveness check correctly reports the signal as dead, and the
+NDCG delta is ~0 — exactly the published parity finding, reproduced by a
+different code path.
+
+**Hebbian co-retrieval association is actively harmful — 3.2 NDCG points.**
+This was predicted before the run: association reinforces whatever was
+already retrieved, which is precisely the rich-get-richer dynamic the value
+axis exists to break. The `ln(fan)` discount from ACT-R's fan effect was not
+enough to save it. Interleaved replay of valuable-but-cold memories had no
+detectable effect over this horizon (BEAM's streams are likely too short for
+a forgetting-recovery mechanism to matter).
+
+Two harness bugs were found and fixed *during* this study, both of the class
+that silently invalidates results:
+
+1. `no_prior` initially returned **exactly** +0.0000 across all 355
+   questions. `common.rank`'s `rfm_beta*` path recomputes the blend in Python
+   with a literal β and never reads `rfm_config('beta', …)`, so the arm was
+   measuring nothing. Fixed by adding `MemoryStore.priors()`, which calls the
+   extension's own `rfm_prior()` so every config key actually applies. An
+   exact zero across hundreds of paired questions is the signature to watch
+   for.
+2. The verdict labels were **sign-inverted for the additive arms** — a
+   negative delta means "adding this hurts", not "this earns its place". The
+   first render called Hebbian a success. Ablation and addition arms now use
+   separate interpretation logic.
+
+Caveats: one dev benchmark, one embedder, and BEAM's short feedback streams
+are the least favourable setting for both the activation axis and
+consolidation. This says these components are unproven *here*, not that they
+are useless — but "unproven" is the honest status until something proves
+them, and no comparable system has run this study at all.

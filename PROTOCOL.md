@@ -639,3 +639,72 @@ outcome**, since it would mean the recommender-systems result about kernels
 does not transfer to agent memory, and we would say so.
 
 Runner: `bench-quality/model_eval.py`.
+
+---
+
+# Amendment 12 — component ablation: does each part earn its place?
+
+**Status: registered before any ablation run.** A survey of comparable
+systems found that none publishes an on/off ablation of the cognitive
+mechanisms it advertises — the nearest comparable project's own internal
+audit distinguishes "exercised on every run" from "measured to help", and
+concedes only the former. This amendment measures the latter for mem-rfm.
+
+Three bars, deliberately separated: a mechanism can be **implemented** (the
+code runs), **connected** (something reads its output), and **earn its
+place** (removing it makes results worse). Only the third is a claim worth
+making, and it is the one we have not made about our own components.
+
+## Arms
+
+Run through the shipped extension via `rfm_config`, not a re-implementation,
+so what is ablated is the code that ships.
+
+- **full** — frozen configuration (baseline)
+- **no_value** — `w_v=0`: activation only, no outcome feedback
+- **no_activation** — `w_a=0`: outcome value only
+- **no_prior** — `beta=0`: similarity only, the prior removed entirely
+- **no_shrink** — `shrink_k=0`: confidence shrink removed
+- **no_decay** — `decay→0.01`: activation degenerates toward pure frequency
+  (the LFU corner)
+- **fast_decay** — `decay=0.9`: activation degenerates toward pure recency
+
+## Dev set and endpoint
+
+BEAM only, both embedders, sequential protocol with feedback (so both axes
+are live — an ablation on a dataset where the value axis is inert measures
+nothing). Endpoint: paired NDCG@10 against **full**, with bootstrap CIs.
+
+## What would falsify
+
+**A component whose removal does not significantly hurt has not earned its
+place**, and we will say so rather than keep it for symmetry with the
+literature. Specifically: if `no_shrink` or `no_activation` come back within
+noise, those parts are decoration on this workload and the README must stop
+implying otherwise. We expect `no_prior` to be roughly neutral — that is the
+already-published finding that the bounded prior reaches parity, not
+superiority, and it doubles as a positive control that the harness can
+detect a real difference.
+
+## Additive arms (registered with the same amendment)
+
+Hebbian co-retrieval and consolidation/replay are NOT in mem-rfm, so they
+cannot be ablated — only added and measured. Both are implemented
+harness-side so they must earn extension surface before getting any:
+
+- **plus_hebbian** — memories retrieved together form an association; a
+  candidate associated with the previous turn's retrieved set gets a bounded
+  boost, discounted by `ln(fan)` per ACT-R's fan effect so a memory that
+  associates with everything confers little.
+- **plus_consolidation** — every 10 questions, interleaved replay refreshes
+  the 5 lowest-activation memories that have a *positive* outcome record
+  (replaying everything is just a slower clock).
+- **plus_both**.
+
+For these the endpoint sign inverts: a positive delta means adding the
+mechanism helps. Prediction, stated because it is falsifiable: Hebbian
+association reinforces whatever was already retrieved, which is the
+rich-get-richer failure the value axis exists to break, so we expect it to be
+neutral-to-harmful rather than helpful.
+
+Runner: `bench-quality/ablation_eval.py`.
