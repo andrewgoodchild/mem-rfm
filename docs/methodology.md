@@ -78,6 +78,56 @@ The complete ledger is `bench-quality/RESULTS.md`. In summary:
   low-recurrence dataset** — it won instead. Falsified in our favour, which
   still counts as falsified and is disclosed as such.
 - **Six collusion defences**, including two that made things actively worse.
+- **Most of our own components**, in the sense that matters: ablation found
+  only the outcome axis measurably earns its place on BEAM. Activation, the
+  confidence shrink and the decay rate all sit within noise.
+- **Hebbian co-retrieval association**, tested by adding it: −3.2 NDCG points.
+- **Interleaved consolidation**, tested by adding it: no detectable effect.
+
+## Guarding against silently dead experiments
+
+The failure mode that quietly destroys an evaluation record is not a wrong
+result, it is a **measurement of nothing**: a channel that has gone dead, so
+every arm returns the same number and the difference you report is noise
+dressed as a finding. A comparable project lost months of A/B results to
+exactly this — a migration left one scoring channel at zero, and its
+best-ever benchmark score turned out to have been achieved with that channel
+entirely disabled.
+
+We have hit this class of bug three times, all caught, all disclosed where
+the affected result is reported:
+
+- **Amendment 11**: three different decay half-lives and a count-only model
+  returned *byte-identical* NDCG. Cause: never-accessed memories were given a
+  sentinel activation instead of the creation-age fallback, so on a corpus
+  where most memories are never retrieved, every kernel was measuring the
+  same constant.
+- **Amendment 12**: the `no_prior` arm returned **exactly** +0.0000 across
+  355 paired questions. Cause: the harness's `rfm_beta*` path recomputes the
+  blend in Python with a literal β and never reads `rfm_config('beta', …)`,
+  so setting β=0 changed nothing.
+- **Amendment 12**: verdict labels were sign-inverted for the additive arms —
+  a negative delta there means "adding this hurts", not "this earns its
+  place". The first render reported a harmful mechanism as a success.
+
+Three habits came out of it, and they are cheap:
+
+1. **Liveness assertions.** Every ablation arm reports what fraction of
+   scored rows had a varying prior. An arm at 0.0000 is flagged
+   `DEAD SIGNAL` in the output rather than silently averaged.
+2. **Score through the shipped code path.** Ablation arms call the
+   extension's own `rfm_prior()`, so every config key they set actually
+   applies. A harness-side re-implementation is where the β bug hid.
+3. **Treat an exact zero as a bug report.** Across hundreds of paired
+   questions, a delta of precisely 0.0000 is almost never a real null — it
+   means the two arms ran identical code.
+
+Related: `model_eval.py --selfcheck` reconciles its in-process activation
+against the extension (exact for n ≤ 2; the n = 3 divergence is Petrov's
+approximation working as designed), and every extension change is checked for
+**retrieval regression** by re-running a committed benchmark and diffing
+per-question rows — adding the `kind` column, `rfm_prunable` and the squash
+parameters was verified bit-identical across all 1,065 BEAM rows.
 
 ## Benchmarks and scoring
 
