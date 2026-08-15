@@ -117,8 +117,44 @@ triggers or generated columns.
 ## MCP server
 
 `integrations/claude-code/server.py` wraps the above for Claude Code or any
-MCP client. Tools: `memory_save`, `memory_search`, `memory_feedback`,
-`memory_list`, `memory_delete`, `memory_export`, `memory_status`.
+MCP client.
+
+| tool | notes |
+|---|---|
+| `memory_save` | one self-contained fact; identical content de-duplicates |
+| `memory_search` | **not read-only** — retrieval counts as usage and records an access |
+| `memory_feedback` | signed outcome for one memory |
+| `memory_update` | rewrite content, keep accumulated usage and value |
+| `memory_get` | read one memory back by id |
+| `memory_list` | ranked, with `total` and `has_more` |
+| `memory_delete` | permanent, including access history |
+| `memory_export` | markdown dump |
+
+All nine declare an `outputSchema` and return structured content, and all
+carry explicit annotations. This matters more than it sounds: the MCP
+defaults are the worst case — an unannotated tool advertises itself as
+destructive *and* open-world — and a bare `-> dict` or `-> list` return
+annotation silently disables structured output, so a three-result search
+arrived as three unschema'd text blocks. Validation failures raise, so the
+client sees `isError` and can correct itself, rather than an error string
+wrapped in a success envelope.
+
+### Updating a memory
+
+`memory_update` exists because the alternative destroys the thing this
+project is about. Correcting a memory by deleting and re-saving it resets
+`access_count`, `last_access`, `bla_cache`, `value_score` and
+`outcome_count` — the entire accumulated record — on what is the single most
+common maintenance operation. Because `content` and `embedding` are
+host-owned and every scoring column is extension-maintained, a plain
+`UPDATE` preserves all of it; only the embedding is recomputed.
+
+Outcome history carries over deliberately: it is evidence about the slot
+("agents keep needing this and it keeps working"), not about the exact
+wording. The trade-off is that a memory can bank a reputation and then be
+rewritten, so an update deserves the same scrutiny as a save. We have not
+measured whether value evidence *should* decay on edit — no mechanism is
+shipped for it, in keeping with not shipping unmeasured mechanisms.
 
 Environment:
 
