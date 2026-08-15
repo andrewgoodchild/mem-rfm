@@ -1068,3 +1068,48 @@ a small `rfm_axis_cuts` table plus an `rfm_refresh_cuts()` maintenance call
 and a `rfm_prior_ranked()` scalar function — O(1) scoring preserved,
 `ORDER BY … LIMIT` unchanged, refresh interval evidently forgiving. Not built;
 this measured whether it is worth building.
+
+## Amendment 13e: the bake-off REVERSES Amendments 13–13d. ACT-R stays.
+
+Four corpora × two embedders, n=1500, arms `actr` / `B_cuts_500` /
+`quintile_rfm`. Δ hit@1 vs `actr` (\* = CI excludes zero):
+
+| corpus | MiniLM: B | MiniLM: quintile | Qwen3: B | Qwen3: quintile |
+|---|---|---|---|---|
+| STAR | −0.0027 | −0.0027 | −0.0013 | −0.0033 |
+| **ABCD** | **−0.0267\*** | **−0.0200\*** | **−0.0307\*** | **−0.0420\*** |
+| FloDial (ceiling) | +0.0020 | −0.0013 | — | — |
+| **MultiDoc2Dial** | **−0.0207\*** | **−0.0327\*** | — | — |
+
+**ACT-R is never beaten and wins significantly on two of four corpora, under
+both embedders.** The registered bar required the challenger to be at or above
+`actr` in a clear majority of cells. It is not. **ACT-R keeps its place, and
+the Petrov machinery, `bla_cache` and the conformance suite stay.**
+
+### What went wrong in Amendments 13–13d
+
+Every one of those amendments ran on **STAR alone**, and STAR turns out to be
+the single corpus where ACT-R and rank bucketing tie. Generalising from it
+produced a published conclusion — "on this evidence ACT-R has not earned its
+complexity", and a claim in `docs/theory.md` that the burden of proof had
+shifted onto ACT-R — that replication falsifies.
+
+This is precisely the failure mode **Amendment 2 already caught in this same
+repository**: BM25 hybrid fusion won on two development repos and reversed on
+six held-out ones, and the repo split is what saved it. That lesson was
+written down, in this file, and the ACT-R comparison was run single-corpus
+anyway. A methodology is only worth what it is applied to.
+
+The intermediate findings survive on their own terms and are not retracted:
+ACT-R genuinely does beat the naive weighted-sum form (13); fitting θ/s
+barely matters and does not transfer across corpora (13b); bucket count has an
+interior optimum at 5 and both parametric transforms are mis-calibrated for
+their corpora (13c); maintained cutpoints are a workable row-local
+implementation of bucketing (13d). What does **not** survive is the conclusion
+drawn from them.
+
+Worth noting what the STAR tie is *not* evidence of: Amendment 12b found STAR
+is the corpus where the activation axis most clearly earns its place. So
+ACT-R's advantage over rank bucketing is largest where activation matters
+*least* (ABCD, MultiDoc2Dial). We have no mechanism for that and are not
+proposing one.
