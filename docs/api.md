@@ -23,8 +23,38 @@ migrates older databases by adding columns introduced later.
 | `rfm_recency(id)` / `rfm_frequency(id)` / `rfm_value(id)` | individual components |
 | `rfm_score_w(id, w_a, w_v[, decay])` | parameterised variant, for tuning |
 | `rfm_prunable(id, max_unused_days)` | 1 when a memory is idle past the window AND never proved useful |
+| `rfm_prior_of(access_count, created_at, last_access, bla_cache, value_score, outcome_count)` | same number as `rfm_prior(id)`, without the row lookup |
 | `rfm_config(key[, value])` | read or set a per-connection setting |
 | `rfm_version()` | extension version — `rfm_init()` migrates schemas, so hosts can check what they loaded |
+
+### Three ways to compute the same number
+
+`rfm_prior(id)` reads its own row, which costs a `prepare` per row because
+the id is interpolated into the statement. That is right for scoring a
+handful of candidates and wrong for ranking a whole table. `rfm_prior_of`
+takes the columns instead, so the scan reads each row once, as it was going
+to anyway. And the arithmetic is plain enough to write in SQL, which matters
+because it means the extension is an optimization rather than a dependency.
+
+Measured on 50,000 rows, `ORDER BY … DESC LIMIT 10`:
+
+| form | time | when |
+|---|---|---|
+| `rfm_prior_of(cols)` | **19.5 ms** | ranking a table |
+| pure SQL (no extension) | 155 ms | hosts that can't load extensions |
+| `rfm_prior(id)` | 438 ms | scoring a few known ids; most readable |
+
+All three agree exactly. `bench-quality/pure_sql_check.py` generates the SQL
+and checks it against the extension over 2,000 rows covering every branch of
+the hybrid activation and its boundaries: max difference 1.1e-16, identical
+ranking. `rfm_prior_of` is checked against `rfm_prior` on every row of a
+50,000-row table, and pinned by a test.
+
+The pure-SQL path is what makes this portable to places an extension cannot
+go. macOS system Python has no `enable_load_extension` at all, and it ranks
+a store built by the extension identically — same top-10, no extension
+loaded. It needs `SQLITE_ENABLE_MATH_FUNCTIONS` (`ln`, `exp`, `pow`), which
+is present in macOS's system SQLite 3.51, `node:sqlite` and better-sqlite3.
 
 `rfm_prunable`'s window is in **days**, while every timestamp and `tau` is in
 seconds. That is deliberate — a retention policy is a human-scale decision —

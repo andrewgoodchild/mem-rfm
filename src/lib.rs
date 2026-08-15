@@ -41,6 +41,7 @@ pub fn sqlite3_rfm_init(db: *mut sqlite3) -> Result<()> {
     define_scalar_function_with_aux(db, "rfm_score_w", 3, functions::rfm_score_w, plain, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_score_w", 4, functions::rfm_score_w, plain, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_prunable", 2, functions::rfm_prunable, plain, Arc::clone(&cfg))?;
+    define_scalar_function_with_aux(db, "rfm_prior_of", 6, functions::rfm_prior_of, plain, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_version", 0, functions::rfm_version, plain, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_config", 1, functions::rfm_config, plain, Arc::clone(&cfg))?;
     define_scalar_function_with_aux(db, "rfm_config", 2, functions::rfm_config, direct, Arc::clone(&cfg))?;

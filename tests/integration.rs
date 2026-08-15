@@ -133,6 +133,7 @@ SELECT 'score_w3', rfm_score_w(1, 1.0, 0.0);
 SELECT 'score_w4', rfm_score_w(1, 0.5, 0.5, 0.3);
 SELECT 'version', rfm_version();
 SELECT 'prior', rfm_prior(1);
+SELECT 'prior_of', rfm_prior_of(access_count, created_at, last_access, bla_cache, value_score, outcome_count) FROM rfm_memories WHERE id = 1;
 SELECT 'set_beta', rfm_config('beta', 0.5);
 SELECT 'prior_b5', rfm_prior(1);
 SELECT 'reset_beta', rfm_config('beta', 0.3);
@@ -189,6 +190,9 @@ SELECT 'row1', access_count || ',' || last_access || ',' || bla_cache || ',' || 
     let score1 = math::score(act1, v_eff, defaults().w_a, defaults().w_v);
     assert_close(&map, "prior", (1.0 - defaults().beta) + defaults().beta * score1);
     assert_close(&map, "prior_b5", 0.5 + 0.5 * score1);
+    // The column form must not drift from the lookup form: it exists only to
+    // skip the per-row read, not to score differently.
+    assert_eq!(map["prior_of"], map["prior"]);
 
     // Config round-trip; recency now uses tau = 3600.
     assert_close(&map, "set_tau", 3_600.0);
