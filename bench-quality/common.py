@@ -41,10 +41,9 @@ def check_fresh(dylib):
     """Refuse to benchmark a dylib older than the Rust sources that built it.
 
     `cargo test` builds the x86_64 target (the .load-capable Homebrew CLI is
-    Intel) while this arm64 harness loads target/release — so a green test
-    run does NOT imply the benchmarked build is current. Publishing numbers
-    from a stale extension would be unauditable, so this is fatal, not a
-    warning."""
+    Intel) while this arm64 harness loads target/release — so a green test run
+    does NOT imply the benchmarked build is current. Publishing numbers from a
+    stale extension would be unauditable, so this is fatal, not a warning."""
     src = os.path.join(HERE, "..", "src")
     newest = max(
         [os.path.getmtime(os.path.join(src, f)) for f in os.listdir(src)]
@@ -94,45 +93,17 @@ class MemoryStore:
     rows: list of (mem_id, text, created_at); embs: matrix aligned with rows.
     """
 
-    def __init__(self, rows, embs, fts=False, creators=None):
+    def __init__(self, rows, embs):
         self.db = sqlite3.connect(":memory:")
         self.db.enable_load_extension(True)
         self.db.load_extension(DYLIB)
         self.db.enable_load_extension(False)
         self.db.execute("SELECT rfm_init()")
-        # creators: optional {mem_id: writer} for actor-tagged stores
-        # (hardened-mode evals; None keeps the untagged schema behavior).
         self.db.executemany(
-            "INSERT INTO rfm_memories(id, content, created_at, created_by) "
-            "VALUES (?,?,?,?)",
-            [(m, t[:200], ts, (creators or {}).get(m)) for m, t, ts in rows])
+            "INSERT INTO rfm_memories(id, content, created_at) VALUES (?,?,?)",
+            [(m, t[:200], ts) for m, t, ts in rows])
         self.embs = embs
         self.row_of = {m: i for i, (m, _t, _ts) in enumerate(rows)}
-        if fts:
-            # Full-text index over the FULL turn text (rfm_memories.content is
-            # truncated); rowid = mem_id so scores join trivially.
-            self.db.execute("CREATE VIRTUAL TABLE fts USING fts5(content)")
-            self.db.executemany(
-                "INSERT INTO fts(rowid, content) VALUES (?,?)",
-                [(m, t) for m, t, _ts in rows])
-
-    def bm25_scores(self, query_text, ids):
-        """Positive BM25 per candidate (0 = no match). SQLite's bm25() is
-        negated (smaller = better), so flip sign. Query text is sanitized to
-        an OR of bare tokens — FTS5 syntax characters would otherwise error."""
-        import re
-        tokens = re.findall(r"[A-Za-z0-9_]+", query_text)[:32]
-        if not tokens:
-            return np.zeros(len(ids))
-        match = " OR ".join(f'"{t}"' for t in tokens)
-        got = {}
-        try:
-            for rowid, s in self.db.execute(
-                    "SELECT rowid, bm25(fts) FROM fts WHERE fts MATCH ?", (match,)):
-                got[rowid] = -s
-        except sqlite3.OperationalError:
-            return np.zeros(len(ids))
-        return np.array([got.get(m, 0.0) for m in ids])
 
     def close(self):
         self.db.close()
@@ -173,105 +144,13 @@ class MemoryStore:
             ids)}
         return [got[m] for m in ids]
 
-    def set_exclude_self(self, on):
-        self.db.execute("SELECT rfm_config('exclude_self', ?)", (1 if on else 0,))
-
-    def set_one_vote(self, on):
-        self.db.execute("SELECT rfm_config('one_vote', ?)", (1 if on else 0,))
-
-    def set_trust(self, on, weighted=False, liable=False):
-        self.db.execute("SELECT rfm_config('trust', ?)", (1 if on else 0,))
-        if weighted:
-            self.db.execute("SELECT rfm_config('trust_weighted', 1)")
-        if liable:
-            self.db.execute("SELECT rfm_config('endorser_liability', 1)")
-
-    def actor_trust(self):
-        """Writer reputation table: {actor: (value, n_outcomes)}."""
-        return {a: (v, n) for a, v, n in self.db.execute(
-            "SELECT actor, value_score, outcome_count FROM rfm_actors")}
-
-    def collusion_signals(self):
-        """Per-voter collusion signals, computed from the access log alone
-        (pure forensics — no scoring state, so an auditor can run this on a
-        committed log). Returns {actor: {...}} with:
-
-          dissent        share of votes whose sign opposes the other voters'
-                         consensus on that memory. NAIVE: a ring that stuffs
-                         ballots MANUFACTURES the consensus, so this inverts
-                         and flags honest voters. Reported to show the failure.
-          concentration  1 − normalized entropy of the authors receiving this
-                         voter's positive outcomes. 1.0 = all praise to a
-                         single author; a ring praises only its own members.
-          reciprocity    share of this voter's positive outcomes going to
-                         authors who also positively rated THIS voter's
-                         memories — mutual back-scratching, which honest
-                         praise has no reason to be.
-        """
-        import math as _m
-        rows = list(self.db.execute(
-            "SELECT a.memory_id, a.actor, a.outcome, m.created_by "
-            "FROM rfm_accesses a JOIN rfm_memories m ON m.id = a.memory_id "
-            "WHERE a.outcome IS NOT NULL AND a.actor IS NOT NULL"))
-        by_mem, pos = {}, {}
-        for mem, actor, outcome, author in rows:
-            by_mem.setdefault(mem, []).append((actor, outcome))
-            if outcome > 0 and author is not None and author != actor:
-                pos.setdefault(actor, {})
-                pos[actor][author] = pos[actor].get(author, 0) + 1
-
-        dissent = {}
-        for _mem, votes in by_mem.items():
-            total = sum(o for _a, o in votes)
-            for actor, outcome in votes:
-                others = total - outcome
-                if others == 0.0:
-                    continue
-                d, n = dissent.get(actor, (0, 0))
-                dissent[actor] = (d + (1 if (outcome > 0) != (others > 0) else 0), n + 1)
-
-        out = {}
-        for actor in set(list(dissent) + list(pos)):
-            d, n = dissent.get(actor, (0, 0))
-            targets = pos.get(actor, {})
-            total_pos = sum(targets.values())
-            if total_pos and len(targets) > 1:
-                probs = [v / total_pos for v in targets.values()]
-                ent = -sum(p * _m.log(p) for p in probs) / _m.log(len(targets))
-                # Entropy over few distinct targets is high by construction;
-                # scale by how few targets there are relative to the field.
-                conc = 1.0 - ent * (len(targets) / max(len(pos), 1))
-            elif total_pos:
-                conc = 1.0
-            else:
-                conc = 0.0
-            recip = (sum(c for auth, c in targets.items()
-                         if pos.get(auth, {}).get(actor, 0) > 0) / total_pos
-                     if total_pos else 0.0)
-            out[actor] = {"dissent": d / n if n else 0.0, "votes": n,
-                          "concentration": conc, "reciprocity": recip,
-                          "n_targets": len(targets)}
-        return out
-
-    def set_created_by(self, pairs):
-        """Tag memories with their writer (host principal); enables hardened
-        mode's self-endorsement check. pairs: list of (mem_id, actor)."""
-        for m, a in pairs:
-            self.db.execute("UPDATE rfm_memories SET created_by = ? WHERE id = ?", (a, m))
-
-    def record_accesses(self, ids, actor=None):
+    def record_accesses(self, ids):
         for m in ids:
-            if actor is None:
-                self.db.execute("SELECT rfm_record_access(?)", (m,))
-            else:
-                self.db.execute("SELECT rfm_record_access(?, ?)", (m, actor))
+            self.db.execute("SELECT rfm_record_access(?)", (m,))
 
-    def record_outcomes(self, pairs, actor=None):
+    def record_outcomes(self, pairs):
         for m, o in pairs:
-            if actor is None:
-                self.db.execute("SELECT rfm_record_outcome(?, ?)", (m, o))
-            else:
-                self.db.execute("SELECT rfm_record_outcome(?, ?, ?)", (m, o, actor))
+            self.db.execute("SELECT rfm_record_outcome(?, ?)", (m, o))
 
 
 def rank(store: MemoryStore, condition: str, query_emb, candidate_ids, now: float, k: int):

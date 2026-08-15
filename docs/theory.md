@@ -150,7 +150,7 @@ Two consequences of the bound worth knowing, one intended and one not:
 - **Unintended:** it makes the ranking almost impossible to weaponise. An
   attacker trying to bury a rival memory can move it by at most 30%, which is
   less than the similarity gap they would need to close. Censorship attacks
-  failed outright for exactly this reason — see [adversarial](adversarial.md).
+  failed outright for exactly this reason — see [team-memory](team-memory.md).
 
 The same bound is also why the forgetting effect is modest: β trades
 forgetting power for rank safety. Raise it if retiring stale content matters

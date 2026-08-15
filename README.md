@@ -56,16 +56,13 @@ makes it O(1), so scoring never walks the access log.
 **Probably yes if** your agent's work *recurs* — the same problems,
 procedures or environments coming back. Operational knowledge is the sweet
 spot: build quirks, dependency pins, project conventions, user preferences.
-And especially if **several agents share one store**, which is where the
-largest measured effects are.
 
 **Probably not if** each task is unrelated to the last, or your workload is
 "answer one question about a big pile of documents." We measured both and
 memory didn't help; on scattered bug-fixing it was mildly *negative*.
 
-**Definitely not if** you want turnkey team memory. This is a scoring
-primitive plus evidence: no access control, no tenancy, no cross-machine
-sync. [What team mode actually requires →](docs/team-memory.md)
+**Definitely not if** you want a memory service. This is a scoring primitive
+plus evidence — one file, one process, no server.
 
 ## Install
 
@@ -109,41 +106,17 @@ quality. Rank by usage alone and retrieval collapses to NDCG ≈ 0.01
 (rich-get-richer); negative feedback is what breaks that loop. It also
 retires stale content that similarity keeps recommending forever.
 
-**Sharing a store across a team is the largest effect** — +26.1, +37.5, +4.0
-and +14.5 points hit@5 over per-agent stores on four datasets, three of them
-pre-registered replications. Accumulated experience even out-ranks each
-dataset's human-written manual, though the manual wins the cold start
-decisively.
+[All findings, including what argues against using this →](docs/findings.md)
 
-[All findings, including what argues against using this →](docs/findings.md) ·
-[Team memory →](docs/team-memory.md)
+## We also explored team memory
 
-## What a bad team member can do
-
-A shared store's ranking is worth attacking. Four attacks, ten defence
-configurations, six pre-registered amendments — as far as we know the only
-quantified attack/defence evidence for memory ranking anywhere.
-
-| attack | result |
-|---|---|
-| Write convincing junk | self-correcting — served 6 times instead of similarity's 29 |
-| Self-promote your own memories | **worse than no ranking at all** — until `exclude_self`, which fully fixes it |
-| Censor a rival | **fails outright** — the bound that limits the ranking's influence also makes it unusable as a weapon |
-| Collude with others | **−5.0 points, unfixed.** Six defences failed |
-
-Collusion doesn't yield to ranking, and the six failures share one
-explanation: every defence aggregates votes, and a ring manufactures votes.
-The most interesting attempt made endorsement a **liability** — vouch for a
-memory and its later failures debit you — which puts a ring in a genuine
-prisoner's dilemma: cooperate and your standing collapses, defect and the
-attack degenerates into the solo case that's already defended. It collapses
-ring reputation reliably on both datasets. It still doesn't repair retrieval.
-
-What does work is **detection**: a ring praises only its own members, and
-that concentration identified all four colluders on both datasets from the
-access log alone. Run [`integrations/audit.sql`](integrations/audit.sql).
-
-[The full attack/defence writeup →](docs/adversarial.md)
+We measured whether pooling memory across several agents helps (it does —
+large, replicated effects), then measured what a bad team member can do to a
+shared store, and then stopped. The mechanism works; the market has run this
+experiment repeatedly and it hasn't landed. The full write-up — the pooling
+results, four attacks with ten defence configurations, the six that failed,
+and what the market evidence says — is in
+**[docs/team-memory.md](docs/team-memory.md)**. None of it ships here.
 
 ## How this compares
 
@@ -170,8 +143,7 @@ architectures into language agents.
 | | |
 |---|---|
 | [findings.md](docs/findings.md) | when memory helps and when it doesn't, in full |
-| [team-memory.md](docs/team-memory.md) | pooling results, and what team mode actually requires |
-| [adversarial.md](docs/adversarial.md) | attacks, defences, and the six that failed |
+| [team-memory.md](docs/team-memory.md) | the team-memory exploration: pooling results, adversarial testing, and why we stopped |
 | [theory.md](docs/theory.md) | RFM, ACT-R, and the composition experiment |
 | [api.md](docs/api.md) | functions, config, schema, MCP server |
 | [methodology.md](docs/methodology.md) | pre-registration, the correction, known limits |
@@ -190,7 +162,6 @@ bench/                    O(1) throughput benchmark
 bench-quality/            retrieval benchmarks + RESULTS.md
 experiments/swe-ab/       the live paired A/B on real bugs
 integrations/claude-code/ MCP server, hooks, capture snippet, A/B kit
-integrations/audit.sql    shared-store forensics + governance recipes
 docs/                     the writeups linked above
 ```
 

@@ -15,8 +15,8 @@ migrates older databases by adding columns introduced later.
 | function | returns |
 |---|---|
 | `rfm_init()` | creates/migrates schema; `'ok'` |
-| `rfm_record_access(id[, actor])` | logs a retrieval; returns the new activation |
-| `rfm_record_outcome(id, o[, actor])` | records feedback `o ∈ [−1,1]` against the latest access; returns the new value EWMA |
+| `rfm_record_access(id)` | logs a retrieval; returns the new activation |
+| `rfm_record_outcome(id, o)` | records feedback `o ∈ [−1,1]` against the latest access; returns the new value EWMA |
 | `rfm_prior(id)` | `(1−β) + β·rfm_score(id)` — the bounded multiplier to compose with similarity |
 | `rfm_score(id)` | `w_a·P(activation) + w_v·value₀₁` |
 | `rfm_activation(id)` | ACT-R base-level activation |
@@ -57,11 +57,6 @@ that connection and never cross connections or processes.
 | `beta` | 0.3 | how far the prior may move a ranking; **frozen by experiment** |
 | `tau` | 86400 | time constant for `rfm_recency` only |
 | `now` | unset | freeze the clock (tests and replay); `NULL` unfreezes |
-| `exclude_self` | 0 | shared stores — ignore self-endorsement |
-| `one_vote` | 0 | shared stores — one outcome per (actor, memory). **Not recommended** |
-| `trust` | 0 | shared stores — cap a memory's value at its author's reputation |
-| `trust_weighted` | 0 | weight a vote's reputational effect by the voter's own standing |
-| `endorser_liability` | 0 | charge prior endorsers when a memory fails |
 
 `beta` deserves a note: it was frozen at 0.3 by a pre-registered experiment
 and is the main safety property of the whole design
@@ -78,12 +73,9 @@ rfm_memories(
   access_count, last_access,        -- maintained
   bla_cache,                        -- maintained (2nd-most-recent access)
   value_score, outcome_count,       -- maintained
-  created_by                        -- yours: the writer, for shared stores
 )
 
-rfm_accesses(memory_id, accessed_at, outcome, actor)
-
-rfm_actors(actor, value_score, outcome_count)   -- writer reputation
+rfm_accesses(memory_id, accessed_at, outcome)
 ```
 
 You own `content` and any columns you add — an `embedding BLOB` for
@@ -105,28 +97,6 @@ arguments reject NULL and non-finite values rather than reading them as 0.0.
 Mutating functions are `DIRECTONLY`: they cannot be invoked from views,
 triggers or generated columns.
 
-## Shared stores
-
-To use any of the hardening, the host must supply identity:
-
-```sql
-INSERT INTO rfm_memories(content, created_at, created_by)
-VALUES ('...', unixepoch(), 'agent:alice');
-
-SELECT rfm_record_access(42, 'agent:bob');
-SELECT rfm_record_outcome(42, 1.0, 'agent:bob');
-
-SELECT rfm_config('exclude_self', 1);
-SELECT rfm_config('trust', 1);
-```
-
-Untagged calls are unaffected by every flag, so enabling them on an untagged
-store is a no-op rather than an error.
-
-**Recommended:** `exclude_self` + `trust` for a shared store; nothing for a
-single-agent store, where `exclude_self` would discard all of your feedback.
-The reasoning and the measurements are in [adversarial](adversarial.md).
-
 ## MCP server
 
 `integrations/claude-code/server.py` wraps the above for Claude Code or any
@@ -140,11 +110,7 @@ Environment:
 | `RFM_MEMORY_DB` | database path (default `~/.sqlite-rfm/claude-code.db`) |
 | `RFM_DYLIB` | path to `librfm` (default: this repo's release build) |
 | `RFM_EMBEDDER` | sentence-transformers model id |
-| `RFM_ACTOR` | this agent's principal id — required for any hardening |
-| `RFM_HARDEN` | comma-separated: `exclude_self`, `trust`, `endorser_liability` |
 
-Both actor-related variables default to unset, which is correct for a
-single-user store. `memory_status` reports which are active.
 
 `capture.md` has a CLAUDE.md snippet telling the agent what is worth saving
 (bias it toward operational facts — see [findings](findings.md)), and an
