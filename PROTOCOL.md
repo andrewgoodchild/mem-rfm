@@ -741,3 +741,60 @@ axis is unproven on every corpus we have, not merely on an unfavourable one.
 
 This is an ablation of our own components, not a new performance claim, so it
 does not re-use the Amendment 4 endpoints or affect those results.
+
+---
+
+# Amendment 13 — is ACT-R earning its complexity, or would marketers' RFM do?
+
+**Status: registered before any run.** ACT-R base-level activation unifies
+recency and frequency into `ln(Σ tᵢ^−d)` and needs the Petrov k=2
+approximation, a `bla_cache` column and a conformance suite to compute
+cheaply. Classical RFM keeps the axes separate and scores them independently
+— in marketing, usually as quintile ranks summed.
+
+The efficiency argument for Petrov does **not** distinguish them: our k=2
+form reads `last_access`, `bla_cache`, `access_count`, `created_at`, and a
+separate-axis form reads `last_access` and `access_count`. Both are O(1) from
+one row. So ACT-R is buying a functional form, and the question is whether
+that form ranks better than the simple one.
+
+## Arms
+
+- **actr** — frozen configuration (baseline)
+- **simple_rfm** — `w_r·exp(−Δ/τ) + w_f·norm(ln(1+n)) + w_v·value₀₁`, the
+  separate-axis form, built from the extension's existing `rfm_recency` and
+  `rfm_frequency`
+- **quintile_rfm** — the literal marketing formula: per-query quintile ranks
+  of R, F and M, summed and normalised
+- **recency_only** / **frequency_only** — which half of the simple form
+  carries it, if either does
+
+Composition, β, and the outcome axis are unchanged across arms; only the
+activation term differs.
+
+## Corpora
+
+**STAR primarily**, because Amendment 12b showed it is the corpus where the
+activation axis demonstrably earns its place (removing it costs −0.0067
+hit@1, CI excluding zero). A simpler form has to prove itself where the
+complex one actually works — testing only on BEAM, where nothing moves,
+would be uninformative. BEAM reported as a secondary.
+
+## Endpoint and selection
+
+Paired Δ hit@1 and hit@5 against **actr**, per corpus. Because this is a
+question about whether complexity is earned, the bar is asymmetric and
+deliberately unfavourable to the incumbent: **if `simple_rfm` or
+`quintile_rfm` is within noise of `actr`, ACT-R has not earned its
+complexity** and we should say so — the simpler form wins ties, since it
+removes a column, an approximation, and a conformance obligation.
+
+## What would falsify
+
+`actr` significantly ahead of both simple forms on STAR would be the first
+direct evidence that the cognitive-science formulation earns its keep in
+retrieval, which nobody has shown. `actr` within noise would mean the
+project's most distinctive machinery is decoration, and the honest response
+is to simplify rather than to keep it for its provenance.
+
+Runner: `bench-quality/formula_eval.py`.
