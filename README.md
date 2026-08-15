@@ -73,6 +73,7 @@ For Claude Code, an MCP server with local embeddings and one SQLite file:
 ```sh
 cd integrations/claude-code && uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python mcp sqlite-vec fastembed numpy
+.venv/bin/python smoke_test.py     # 35 checks over a real stdio launch
 claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py"
 ```
 

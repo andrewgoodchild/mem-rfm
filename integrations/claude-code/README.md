@@ -10,16 +10,28 @@ local — no API keys, one SQLite file.
 ```sh
 cd integrations/claude-code
 uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python mcp sqlite-vec sentence-transformers numpy
+uv pip install --python .venv/bin/python mcp sqlite-vec fastembed numpy
 cargo build --release          # from the repo root, if not already built
+
+# check it actually works before wiring it in
+.venv/bin/python smoke_test.py
 
 # register with Claude Code (user scope; use -s project for one project):
 claude mcp add -s user rfm-memory -- \
   "$(pwd)/.venv/bin/python" "$(pwd)/server.py"
 ```
 
+`smoke_test.py` launches the server as a subprocess and speaks MCP over
+stdio, the way Claude Code does, then exercises every tool against a
+temporary database. That is deliberately not an in-process test: the tool
+bodies can be perfectly correct while the server fails to start or ships no
+output schemas. It runs green on both mcp 1.x and 2.x — worth knowing,
+because 2.0 removed the module the server used to import and moved tool
+handlers onto a worker thread, and only a real launch showed either.
+
 Tools exposed: `memory_save`, `memory_search`, `memory_feedback`,
-`memory_status`, `memory_list`, `memory_delete`, `memory_export`. The tool
+`memory_update`, `memory_get`, `memory_status`, `memory_list`,
+`memory_delete`, `memory_export`. The tool
 descriptions steer the model; for reliable agent-decided capture, paste the
 snippet from `capture.md` into your CLAUDE.md. `memory_list`/`memory_export`
 give full inspectability of what is remembered; `memory_delete` honors
