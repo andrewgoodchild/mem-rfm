@@ -91,7 +91,33 @@ The result: **scoring reads one row and never touches the access log.**
 Measured at ~4.6µs per row whether a memory has 20 accesses or 200, with mean
 approximation error of 0.049 activation units against the exact computation.
 
-## The value axis
+## The value axis — which is also ACT-R
+
+ACT-R has **two** memory systems, and we ended up implementing both without
+initially noticing. Declarative memory holds chunks retrieved by the
+base-level activation above. **Procedural** memory holds production rules,
+selected by a learned **utility** updated from reward:
+
+```
+U ← U + α·(R − U)
+```
+
+Expand that and it is `U ← α·R + (1−α)·U` — algebraically identical to our
+outcome EWMA `v ← 0.3·outcome + 0.7·v`, with α = λ. We reinvented ACT-R's
+utility learning rule.
+
+That reframes the whole design. mem-rfm is not "ACT-R plus a marketing model
+bolted on"; it is ACT-R's declarative retrieval *and* ACT-R's procedural
+utility learning, in one score. It also explains our central empirical
+finding — that memory pays for **procedural** knowledge (build quirks,
+conventions, environment facts) and not for episodic per-task lessons —
+because that is what the architecture predicts: utility learning is the
+procedural module's mechanism. And it explains why the July 2026
+mechanism-level review names "activation with **action utility**" as the
+bundle not yet migrated to language agents: utility *is* the procedural half.
+
+The `kind` column ([api](api.md)) makes the split explicit, scoring
+procedural rows with utility-weighted parameters.
 
 Outcome feedback is an exponentially-weighted moving average in [−1, 1]:
 

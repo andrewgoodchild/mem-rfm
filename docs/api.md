@@ -22,6 +22,7 @@ migrates older databases by adding columns introduced later.
 | `rfm_activation(id)` | ACT-R base-level activation |
 | `rfm_recency(id)` / `rfm_frequency(id)` / `rfm_value(id)` | individual components |
 | `rfm_score_w(id, w_a, w_v[, tau, decay])` | parameterised variant, for tuning |
+| `rfm_prunable(id, max_unused_days)` | 1 when a memory is idle past the window AND never proved useful |
 | `rfm_config(key[, value])` | read or set a per-connection setting |
 
 ### Typical use
@@ -56,6 +57,7 @@ that connection and never cross connections or processes.
 | `shrink_k` | 3.0 | confidence shrink: effective value = `v·n/(n+k)` |
 | `beta` | 0.3 | how far the prior may move a ranking; **frozen by experiment** |
 | `tau` | 86400 | time constant for `rfm_recency` only |
+| `w_a_proc` / `w_v_proc` | 0.3 / 0.7 | weights for `kind='procedural'` rows; **unmeasured** |
 | `now` | unset | freeze the clock (tests and replay); `NULL` unfreezes |
 
 `beta` deserves a note: it was frozen at 0.3 by a pre-registered experiment
@@ -73,6 +75,7 @@ rfm_memories(
   access_count, last_access,        -- maintained
   bla_cache,                        -- maintained (2nd-most-recent access)
   value_score, outcome_count,       -- maintained
+  kind                              -- yours: 'procedural' | 'declarative' | NULL
 )
 
 rfm_accesses(memory_id, accessed_at, outcome)
@@ -80,6 +83,40 @@ rfm_accesses(memory_id, accessed_at, outcome)
 
 You own `content` and any columns you add — an `embedding BLOB` for
 sqlite-vec, tags, scopes, whatever. The extension only touches its own.
+
+## Memory kinds
+
+ACT-R keeps two memory systems, and scores them differently: declarative
+chunks by base-level activation, procedural rules by learned **utility**.
+mem-rfm implements both halves (see [theory](theory.md)), so a row tagged
+`kind='procedural'` scores with `w_a_proc`/`w_v_proc` — weighting the outcome
+axis higher, i.e. more sensitive to whether it actually worked.
+
+```sql
+INSERT INTO rfm_memories(content, created_at, kind)
+VALUES ('to run tests here, export PATH=$HOME/.cargo/bin first', unixepoch(), 'procedural');
+```
+
+Untagged rows (`kind` NULL) score exactly as before, so this changes nothing
+until you opt in. **The procedural weights are theoretically motivated and
+unmeasured** — we have evidence that procedural knowledge is what transfers,
+none that this particular weighting is the right way to exploit that.
+
+## Retention
+
+`rfm_prunable(id, days)` encodes a retention policy borrowed from Codex,
+where citing a memory refreshes it and uncited rows age out — usage driving
+*retention*, not just ranking. mem-rfm previously had no GC at all.
+
+```sql
+SELECT id FROM rfm_memories WHERE rfm_prunable(id, 30);
+```
+
+It is a read-only predicate, not a delete: the tables are host-owned, and
+dropping someone's memories is your decision. Note the guard — anything with
+a positive outcome record is never prunable however long it has been idle,
+because a memory retrieved rarely but successfully is exactly what this
+system exists to keep.
 
 ## Invariants
 

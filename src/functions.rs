@@ -55,10 +55,12 @@ struct MemRow {
     t2_wall: Option<f64>,
     value: f64,
     n_outcomes: i64,
+    /// True when the host tagged this memory kind='procedural'.
+    procedural: bool,
 }
 
 /// The six extension-maintained columns, in canonical SELECT/RETURNING order.
-const MEM_COLS: &str = "access_count, created_at, last_access, bla_cache, value_score, outcome_count";
+const MEM_COLS: &str = "access_count, created_at, last_access, bla_cache, value_score, outcome_count, kind = 'procedural'";
 
 fn decode_mem(row: &[Option<f64>]) -> MemRow {
     MemRow {
@@ -68,12 +70,13 @@ fn decode_mem(row: &[Option<f64>]) -> MemRow {
         t2_wall: row[3],
         value: row[4].unwrap_or(0.0),
         n_outcomes: row[5].unwrap_or(0.0) as i64,
+        procedural: row[6].unwrap_or(0.0) != 0.0,
     }
 }
 
 fn load_mem(db: *mut sqlite3, id: i64) -> Result<MemRow> {
     let sql_text = format!("SELECT {MEM_COLS} FROM rfm_memories WHERE id = {id}");
-    let row = sql::query_row(db, &sql_text, 6)?.ok_or_else(|| no_such_id(id))?;
+    let row = sql::query_row(db, &sql_text, 7)?.ok_or_else(|| no_such_id(id))?;
     Ok(decode_mem(&row))
 }
 
@@ -117,12 +120,25 @@ fn score_of(row: &MemRow, now: f64, d: f64, w_a: f64, w_v: f64, shrink_k: f64) -
     math::score(b, v_eff, w_a, w_v)
 }
 
+/// Weights for this row: ACT-R scores procedural knowledge by learned utility
+/// and declarative knowledge by base-level activation, so a memory the host
+/// tagged 'procedural' uses the utility-weighted pair.
+fn weights_for(row: &MemRow, c: &RfmConfig) -> (f64, f64) {
+    if row.procedural { (c.w_a_proc, c.w_v_proc) } else { (c.w_a, c.w_v) }
+}
+
 pub fn rfm_init(
     context: *mut sqlite3_context,
     _values: &[*mut sqlite3_value],
     _aux: &SharedConfig,
 ) -> Result<()> {
-    sql::exec_multi(db_of(context), SCHEMA)?;
+    let db = db_of(context);
+    // Pre-v0.3 databases predate `kind`; add it before the schema script so
+    // CREATE TABLE IF NOT EXISTS is a no-op on them. Both failure modes here
+    // ("no such table" on a fresh DB, "duplicate column" on a current one)
+    // are the expected steady state, hence ignored.
+    let _ = sql::exec(db, "ALTER TABLE rfm_memories ADD COLUMN kind TEXT");
+    sql::exec_multi(db, SCHEMA)?;
     api::result_text(context, "ok")?;
     Ok(())
 }
@@ -161,7 +177,7 @@ pub fn rfm_record_access(
              bla_cache = last_access, last_access = {now_lit} \
              WHERE id = {id} RETURNING {MEM_COLS}"
         ),
-        6,
+        7,
     )?
     .ok_or_else(|| no_such_id(id))?;
     api::result_double(context, activation_of(&decode_mem(&row), now, c.decay));
@@ -275,9 +291,10 @@ pub fn rfm_score(
     let c = cfg(aux)?;
     let row = load_mem(db_of(context), value_id(values)?)?;
     let now = clock::now(&c);
+    let (w_a, w_v) = weights_for(&row, &c);
     api::result_double(
         context,
-        score_of(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k),
+        score_of(&row, now, c.decay, w_a, w_v, c.shrink_k),
     );
     Ok(())
 }
@@ -295,7 +312,8 @@ pub fn rfm_prior(
     let c = cfg(aux)?;
     let row = load_mem(db_of(context), value_id(values)?)?;
     let now = clock::now(&c);
-    let s = score_of(&row, now, c.decay, c.w_a, c.w_v, c.shrink_k);
+    let (w_a, w_v) = weights_for(&row, &c);
+    let s = score_of(&row, now, c.decay, w_a, w_v, c.shrink_k);
     api::result_double(context, (1.0 - c.beta) + c.beta * s);
     Ok(())
 }
@@ -328,6 +346,42 @@ pub fn rfm_score_w(
     };
     let now = clock::now(&c);
     api::result_double(context, score_of(&row, now, decay, w_a, w_v, c.shrink_k));
+    Ok(())
+}
+
+/// rfm_prunable(id, max_unused_days) → 1 when a memory has gone unused for
+/// longer than the window AND has never demonstrated usefulness.
+///
+/// Borrowed from Codex's memory retention: there, citing a memory refreshes
+/// it and uncited rows past a window are pruned — usage drives RETENTION, not
+/// just ranking. mem-rfm had no GC at all, so memories accumulated forever.
+///
+/// This is a read-only predicate rather than a delete: the tables are
+/// host-owned, and irreversibly dropping a user's memories is the host's
+/// decision, not the extension's. Because a mutating scan of the table being
+/// mutated has undefined order in SQLite, collect ids first:
+///
+///   SELECT id FROM rfm_memories WHERE rfm_prunable(id, 30);
+///
+/// The value guard matters: a memory retrieved rarely but successfully is
+/// exactly what this system exists to keep, so anything with a positive
+/// outcome record is never prunable however long it has been idle.
+pub fn rfm_prunable(
+    context: *mut sqlite3_context,
+    values: &[*mut sqlite3_value],
+    aux: &SharedConfig,
+) -> Result<()> {
+    let c = cfg(aux)?;
+    let row = load_mem(db_of(context), value_id(values)?)?;
+    let max_days = require_f64(values, 1, "max_unused_days")?;
+    if max_days < 0.0 {
+        return Err(Error::new_message("rfm: max_unused_days must be >= 0"));
+    }
+    // Never accessed → measure from creation, so imported-but-unused rows age out.
+    let anchor = row.last_access.unwrap_or(row.created_at);
+    let idle_days = (clock::now(&c) - anchor).max(0.0) / 86_400.0;
+    let proved_useful = row.n_outcomes > 0 && row.value > 0.0;
+    api::result_int(context, i32::from(idle_days > max_days && !proved_useful));
     Ok(())
 }
 

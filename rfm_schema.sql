@@ -15,7 +15,14 @@ CREATE TABLE IF NOT EXISTS rfm_memories (
                                             -- last_access this is everything rfm_activation needs —
                                             -- no scan of rfm_accesses.
   value_score   REAL NOT NULL DEFAULT 0.0,  -- EWMA of outcome feedback in [-1, 1]
-  outcome_count INTEGER NOT NULL DEFAULT 0  -- number of outcomes received; drives confidence shrink
+  outcome_count INTEGER NOT NULL DEFAULT 0, -- number of outcomes received; drives confidence shrink
+  kind          TEXT                        -- host-set: 'procedural' | 'declarative' | NULL.
+                                            -- ACT-R keeps these in separate modules and scores them
+                                            -- differently: declarative chunks by base-level
+                                            -- activation, procedural rules by learned utility.
+                                            -- 'procedural' therefore scores with w_a_proc/w_v_proc
+                                            -- (utility-weighted). NULL/anything else = declarative,
+                                            -- so untagged stores are unaffected.
 );
 
 CREATE TABLE IF NOT EXISTS rfm_accesses (
