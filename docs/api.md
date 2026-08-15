@@ -86,11 +86,15 @@ sqlite-vec, tags, scopes, whatever. The extension only touches its own.
 
 ## Memory kinds
 
-ACT-R keeps two memory systems, and scores them differently: declarative
+ACT-R keeps two memory systems and scores them differently: declarative
 chunks by base-level activation, procedural rules by learned **utility**.
-mem-rfm implements both halves (see [theory](theory.md)), so a row tagged
-`kind='procedural'` scores with `w_a_proc`/`w_v_proc` — weighting the outcome
-axis higher, i.e. more sensitive to whether it actually worked.
+mem-rfm implements both halves, so a row tagged `kind='procedural'` scores
+with `w_a_proc`/`w_v_proc` — weighting the outcome axis higher, i.e. more
+sensitive to whether it actually worked.
+
+This is the *only* memory-type distinction we model. Working memory is the
+context window (not a store), and we don't split semantic from episodic —
+[theory](theory.md) explains what we cover, what we leave out, and why.
 
 ```sql
 INSERT INTO rfm_memories(content, created_at, kind)

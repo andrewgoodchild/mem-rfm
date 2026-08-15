@@ -106,18 +106,6 @@ One thing we have that ACT-R doesn't: a **confidence shrink**
 uses noise instead; the shrink is the better choice for a deterministic
 ranker.
 
-### Kinds
-
-The `kind` column makes the split explicit: rows tagged `'procedural'` score
-with `w_a_proc`/`w_v_proc` (default 0.3/0.7), weighting outcomes higher.
-Untagged rows are unaffected.
-
-The effect is **sensitivity, not inflation** — the gap between a procedural
-memory that keeps working and one that keeps failing is wider. (With few
-outcomes the shrink pulls value toward neutral, so weighting it more can
-*lower* a score; an early test of ours asserted otherwise and was wrong.)
-These weights are theoretically motivated and **unmeasured**.
-
 ### Conformance
 
 The equations are checked against reference implementations rather than
@@ -127,6 +115,81 @@ k-sweep. Two divergences we document rather than fix: our lag floor is 1ms
 where Lisp ACT-R uses 50ms (nobody agrees, and on seconds-to-days timescales
 it never binds), and Petrov's two-page poster publishes **no error bounds**,
 so we quote our own measured error rather than a figure from the paper.
+
+---
+
+## Memory types: what we model, and what we don't
+
+The usual agentic-AI taxonomy has five entries: **short-term/working** memory,
+and **long-term** memory split into **semantic** (facts), **episodic** (events
+tied to a time), and **procedural** (skills). That is Tulving's and Squire's
+psychology, and it is a reasonable map of the territory.
+
+mem-rfm models **one distinction** from it: procedural versus everything else.
+The `kind` column tags a row `'procedural'`, which scores it with
+`w_a_proc`/`w_v_proc` (default 0.3/0.7), weighting outcomes higher. Untagged
+rows are unaffected, so this changes nothing until you opt in. The effect is
+**sensitivity, not inflation** — the gap between a procedural memory that keeps
+working and one that keeps failing is wider. (With few outcomes the shrink
+pulls value toward neutral, so weighting it more can *lower* a score; an early
+test of ours asserted otherwise and was wrong.)
+
+### Why that one and not the others
+
+**Short-term / working memory is out of scope, and not because it's
+unimportant.** It isn't a *store*: it has no retrieval ranking, no
+accumulation, and it resets. It is the context window, and managing it is the
+harness's job. A `kind` value for it would be a label with no mechanism behind
+it.
+
+**We don't split semantic from episodic**, for two reasons. First, ACT-R
+doesn't: its declarative module holds both, and the episodic/semantic
+distinction is Tulving's, not part of the architecture we implement. Second
+and more practically, we haven't measured that the split would change any
+decision.
+
+**But that distinction is the one our data most nearly justifies**, so it is
+the obvious next candidate rather than a closed question. Our clearest
+empirical result is exactly episodic-versus-procedural: per-bug lessons tied
+to a single event transferred at **~6%** (15 of 16 outcomes negative), while
+the one memory that earned sustained positive value across 70 sessions was an
+operational procedure. Type predicts worth.
+
+### Why types are a prior, not a permanent weight
+
+There is a design subtlety here worth stating, because our current
+implementation arguably has it wrong.
+
+Does a type tell the system anything the outcome loop doesn't eventually
+learn by itself? Mostly no: if an episodic memory doesn't transfer, it gets
+retrieved, fails to help, earns negatives and sinks. **Type is a prior; the
+outcome EWMA is the posterior.**
+
+That locates precisely where typing earns its keep — **cold start**, before a
+memory has any outcome history, which is also where we have measured that
+priors matter most (an authored manual was worth +42.6 points over
+MultiDoc2Dial's first 500 interactions). And it implies the right mechanism is
+an *initial* value that evidence washes out, not a permanent weight that keeps
+overriding evidence forever. The confidence shrink `n/(n+k)` already
+implements exactly that handoff.
+
+The second place types could plausibly earn their keep is **retention** rather
+than ranking: an episodic memory is tied to an event and should age out, while
+a procedural one shouldn't. That is a per-type window on `rfm_prunable`, and
+it is where the 6% transfer finding would actually cash out.
+
+### Current status: honest
+
+The procedural weights are **theoretically motivated and unmeasured**. A dev
+sweep (Amendment 11, V2) gave +0.003 with the confidence interval sitting on
+zero — no evidence yet that typing helps at all, though BEAM is the wrong
+venue to judge it (its labels are evidence turns, and no outcome feedback
+accumulates there, so the value axis is inert).
+
+So the position is: one distinction implemented because ACT-R draws it and our
+data supports it, three more left out until something measures them. If typing
+shows nothing on the procedure-labelled dialog datasets, the honest response is
+to *remove* `kind` rather than extend it.
 
 ---
 
