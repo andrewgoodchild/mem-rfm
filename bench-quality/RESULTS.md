@@ -578,3 +578,52 @@ repairs ranking — which is exactly the "detect, don't rank" position the
 concentration detector already supported. Liability also helps the
 single-actor case (+0.0380) and is free on a clean store, so it is a
 reasonable default for a shared store; it is not a collusion fix.
+
+## Amendment 11 dev sweep: ACT-R parameters and decay kernels
+
+BEAM dev only, MiniLM, paired NDCG@10 against the frozen configuration.
+Runner: `model_eval.py`. No selection applied — freezing and the one-shot
+test run come next.
+
+**Runner bug found and fixed before these numbers.** A first version gave
+never-accessed memories a sentinel activation instead of the extension's
+creation-age fallback (`−d·ln(L)`). Because most BEAM memories are never
+retrieved, every kernel collapsed to the same constant and all variants
+scored identically — the tell was three exponential half-lives and the
+count-only model returning byte-identical NDCG. The runner now carries a
+`--selfcheck` that reconciles its in-process activation against the shipped
+extension (exact for n ≤ 2; the n = 3 divergence is Petrov's approximation
+working as designed).
+
+**V3 decay kernel — the substantive result.** The power law wins:
+
+| model | Δ NDCG@10 vs frozen |
+|---|---|
+| ACT-R power law | baseline |
+| exponential, 1-day half-life | −0.029 [−0.041, −0.018] |
+| exponential, 7-day half-life | −0.031 [−0.043, −0.020] |
+| exponential, 30-day half-life | −0.027 [−0.037, −0.017] |
+| Codex model (citation count, no decay) | −0.022 [−0.033, −0.012] |
+
+This is, as far as we know, the first empirical comparison of decay kernels
+in agent memory, and it replicates what the recommender-systems literature
+found on human access streams (Kowald et al., WWW'17, rejecting the
+exponential at p<.001). It also answers "should we just do what Codex does":
+citation-count ranking with no decay is 2.2 NDCG points worse than ACT-R
+activation on this dev set.
+
+**V1 squash (theta, s).** The hardcoded default is essentially the best of
+the grid: `theta=0, s=0.2` gives +0.0046 [−0.0001, +0.0094] (CI includes
+zero) and every other setting is worse — lowering τ costs up to −0.063.
+Lowering τ lifts P(B) toward saturation, i.e. increases the activation axis's
+influence, and that **hurts** — the same conclusion the original composition
+experiment reached from the other direction. The bound is the finding, not a
+compromise.
+
+**V2 procedural weighting.** +0.0033 to +0.0035, CIs at or barely above zero.
+Not a result. BEAM is also the wrong dataset for it: its labels are evidence
+turns, not procedures, and no outcome feedback accumulates there, so the
+value axis is constant. Testing this properly needs the procedure-labelled
+dialog datasets.
+
+Caveats on all of the above: dev set, one embedder, value axis inert.

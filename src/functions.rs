@@ -120,6 +120,13 @@ fn score_of(row: &MemRow, now: f64, d: f64, w_a: f64, w_v: f64, shrink_k: f64) -
     math::score(b, v_eff, w_a, w_v)
 }
 
+fn score_of_cfg(row: &MemRow, now: f64, c: &RfmConfig) -> f64 {
+    let (w_a, w_v) = weights_for(row, c);
+    let b = activation_of(row, now, c.decay);
+    let v_eff = math::shrink(row.value, row.n_outcomes, c.shrink_k);
+    math::score_p(b, v_eff, w_a, w_v, c.theta, c.s)
+}
+
 /// Weights for this row: ACT-R scores procedural knowledge by learned utility
 /// and declarative knowledge by base-level activation, so a memory the host
 /// tagged 'procedural' uses the utility-weighted pair.
@@ -291,11 +298,7 @@ pub fn rfm_score(
     let c = cfg(aux)?;
     let row = load_mem(db_of(context), value_id(values)?)?;
     let now = clock::now(&c);
-    let (w_a, w_v) = weights_for(&row, &c);
-    api::result_double(
-        context,
-        score_of(&row, now, c.decay, w_a, w_v, c.shrink_k),
-    );
+    api::result_double(context, score_of_cfg(&row, now, &c));
     Ok(())
 }
 
@@ -312,8 +315,7 @@ pub fn rfm_prior(
     let c = cfg(aux)?;
     let row = load_mem(db_of(context), value_id(values)?)?;
     let now = clock::now(&c);
-    let (w_a, w_v) = weights_for(&row, &c);
-    let s = score_of(&row, now, c.decay, w_a, w_v, c.shrink_k);
+    let s = score_of_cfg(&row, now, &c);
     api::result_double(context, (1.0 - c.beta) + c.beta * s);
     Ok(())
 }

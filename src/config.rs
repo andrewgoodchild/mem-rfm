@@ -21,6 +21,15 @@ pub struct RfmConfig {
     /// much usage history can perturb a similarity ranking. Default frozen
     /// at 0.3 by the pre-registered composition experiment (PROTOCOL.md).
     pub beta: f64,
+    /// ACT-R's retrieval threshold τ and activation noise s, which set where
+    /// the activation→[0,1] squash is centred and how steep it is. ACT-R fits
+    /// these PER MODEL (τ spans −60..+0.5 across its own tutorial; s is
+    /// recommended in [0.2, 0.8]). Ours were hardcoded at 0.0/1.0, which on
+    /// second-scale lags puts a whole store in the squash's left tail — see
+    /// docs/theory.md. Exposed for fitting under PROTOCOL.md Amendment 11;
+    /// defaults unchanged so nothing moves until an experiment says so.
+    pub theta: f64,
+    pub s: f64,
     /// Weights for memories tagged kind='procedural'. ACT-R selects
     /// production rules by learned UTILITY rather than base-level activation,
     /// so procedural memories weight the outcome axis higher. Theoretically
@@ -42,6 +51,8 @@ impl Default for RfmConfig {
             w_v: 0.3,
             shrink_k: 3.0,
             beta: 0.3,
+            theta: 0.0,
+            s: 1.0,
             w_a_proc: 0.3,
             w_v_proc: 0.7,
             frozen_now: None,
@@ -64,6 +75,10 @@ pub fn check_lambda(v: f64) -> Result<(), String> {
     if v > 0.0 && v <= 1.0 { Ok(()) } else { Err("rfm: lambda must be in (0, 1]".into()) }
 }
 
+pub fn check_positive(key: &str, v: f64) -> Result<(), String> {
+    if v > 0.0 { Ok(()) } else { Err(format!("rfm: {key} must be > 0")) }
+}
+
 pub fn check_nonnegative(key: &str, v: f64) -> Result<(), String> {
     if v >= 0.0 { Ok(()) } else { Err(format!("rfm: {key} must be >= 0")) }
 }
@@ -82,6 +97,8 @@ impl RfmConfig {
             "w_v" => Ok(Some(self.w_v)),
             "shrink_k" => Ok(Some(self.shrink_k)),
             "beta" => Ok(Some(self.beta)),
+            "theta" => Ok(Some(self.theta)),
+            "s" => Ok(Some(self.s)),
             "w_a_proc" => Ok(Some(self.w_a_proc)),
             "w_v_proc" => Ok(Some(self.w_v_proc)),
             "now" => Ok(self.frozen_now),
@@ -113,6 +130,8 @@ impl RfmConfig {
             "w_v" => { check_nonnegative(key, v)?; self.w_v = v }
             "shrink_k" => { check_nonnegative(key, v)?; self.shrink_k = v }
             "beta" => { check_beta(v)?; self.beta = v }
+            "theta" => { self.theta = v }
+            "s" => { check_positive(key, v)?; self.s = v }
             "w_a_proc" => { check_nonnegative(key, v)?; self.w_a_proc = v }
             "w_v_proc" => { check_nonnegative(key, v)?; self.w_v_proc = v }
             "now" => self.frozen_now = Some(v),
