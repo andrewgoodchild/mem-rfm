@@ -138,7 +138,8 @@ ratings within the same window.
 | | |
 |---|---|
 | [findings.md](docs/findings.md) | when memory helps and when it doesn't, in full |
-| [theory.md](docs/theory.md) | the model: Belady, ACT-R, memory types, the lifecycle |
+| [theory.md](docs/theory.md) | the model: Belady, ACT-R, memory types |
+| [lifecycle.md](docs/lifecycle.md) | formation to retention: who decides at each stage, and why |
 | [api.md](docs/api.md) | functions, config, schema, MCP server |
 | [methodology.md](docs/methodology.md) | pre-registration, corrections, known limits |
 | [team-memory.md](docs/team-memory.md) | the team exploration, and why we stopped |
