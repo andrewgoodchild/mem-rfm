@@ -219,12 +219,11 @@ def delta(results, label):
 
 
 def selfcheck():
-    """The in-process activation must agree with the shipped extension on the
-    frozen configuration, or none of the deltas above mean anything."""
+    """The in-process activation must agree with the shipped engine (rfm.py)
+    on the frozen configuration, or none of the deltas above mean anything."""
     import sqlite3
     db = sqlite3.connect(":memory:")
-    db.enable_load_extension(True)
-    db.load_extension(common.DYLIB)
+    common.rfm.register(db)
     db.execute("SELECT rfm_init()")
     now = 1_000_000.0
     db.execute("INSERT INTO rfm_memories(id, content, created_at) VALUES (1,'x',0.0)")

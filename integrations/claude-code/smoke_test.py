@@ -68,7 +68,6 @@ async def run(check):
     # Drop config that would change the server under test: a developer's
     # exported RFM_EMBED_BACKEND/RFM_EMBEDDER flips similarity-dependent
     # checks (or breaks the venv's fastembed-only install outright).
-    # RFM_DYLIB deliberately survives — the test needs the built extension.
     for var in ("RFM_EMBEDDER", "RFM_EMBED_BACKEND", "RFM_MAX_TOKENS",
                 "RFM_LOG_CONTENT"):
         env.pop(var, None)

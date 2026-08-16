@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Is rfm_prior reproducible in plain SQL, exactly?
 
-If it is, the extension becomes an optimization rather than a dependency:
-the scoring runs on hosted SQLite, on a Python build without
-enable_load_extension, and anywhere else loadable extensions are banned. That
-is a bigger claim than a speedup, so it is checked the way everything else
-here is -- against the shipped code, over the states that actually occur,
-including the ones that only occur at the boundaries.
+If it is, hosts with no UDF surface at all can score: hosted SQLite, a
+language with no create_function binding, anywhere the engine module
+cannot run. That is a bigger claim than a convenience, so it is checked
+the way everything else here is -- against the shipped engine (rfm.py),
+over the states that actually occur, including the ones that only occur
+at the boundaries.
 
-The expression below is a transcription of math.rs (bla_hybrid_k2, logistic_p,
-shrink, value01, score_p) and functions.rs (activation_of, score_of_cfg).
+The expression below is a transcription of rfm.py (bla_hybrid_k2,
+logistic_p, shrink, value01, score_p and the activation/score plumbing),
+originally derived from the retired Rust extension's math.rs/functions.rs.
 
 Usage: pure_sql_check.py [--rows 2000]
 """
@@ -68,9 +69,7 @@ def main():
     args = ap.parse_args()
 
     db = sqlite3.connect(":memory:")
-    db.enable_load_extension(True)
-    db.load_extension(common.resolve_dylib())
-    db.enable_load_extension(False)
+    common.rfm.register(db)
     db.execute("SELECT rfm_init()")
 
     now = 1_800_000_000.0

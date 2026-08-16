@@ -37,7 +37,6 @@ import numpy as np
 import common
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DYLIB = common.DYLIB
 DATA = os.path.join(HERE, "data", "longmemeval_s_cleaned.json")
 CACHE = os.path.join(HERE, "cache")
 USAGE_K = 5
@@ -81,9 +80,7 @@ class Memory:
 
     def __init__(self, inst, turn_embs):
         self.db = sqlite3.connect(":memory:")
-        self.db.enable_load_extension(True)
-        self.db.load_extension(DYLIB)
-        self.db.enable_load_extension(False)
+        common.rfm.register(self.db)
         self.db.execute("SELECT rfm_init()")
         order = sorted(range(len(inst["haystack_sessions"])),
                        key=lambda i: parse_ts(inst["haystack_dates"][i]))

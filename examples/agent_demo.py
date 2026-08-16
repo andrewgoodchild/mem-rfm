@@ -5,41 +5,17 @@ Seeds 50 memories, simulates 200 retrievals with mixed outcome feedback over
 30 simulated days, and prints the top-5 ranking before and after: memories
 that keep getting used *and keep helping* rise; stale or unhelpful ones decay.
 
-Python stdlib only. If this Python's sqlite3 module supports loadable
-extensions it is used directly; otherwise (e.g. macOS system Python) the
-script drives a .load-capable sqlite3 CLI via subprocess. Set SQLITE3_BIN to
-point at one (default: /usr/local/opt/sqlite/bin/sqlite3).
+Python stdlib only — rfm.py registers the scoring functions on any sqlite3
+connection, so there is nothing to build or .load.
 """
 import os
 import random
-import shutil
 import sqlite3
-import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TARGET = os.path.join(HERE, "..", "target")
-
-# Candidate artifacts/binaries, probed at startup: builds and Homebrew
-# prefixes differ per machine (native arm64 vs Rosetta/Intel), so resolution
-# is by trying, not by assuming this machine's layout. Env vars override.
-def _dylib_candidates():
-    if os.environ.get("RFM_DYLIB"):
-        return [os.environ["RFM_DYLIB"]]
-    return [p for p in (
-        os.path.join(TARGET, "release", "librfm.dylib"),
-        os.path.join(TARGET, "x86_64-apple-darwin", "release", "librfm.dylib"),
-    ) if os.path.exists(p)]
-
-def _sqlite3_candidates():
-    if os.environ.get("SQLITE3_BIN"):
-        return [os.environ["SQLITE3_BIN"]]
-    found = [p for p in (
-        "/opt/homebrew/opt/sqlite/bin/sqlite3",
-        "/usr/local/opt/sqlite/bin/sqlite3",
-        shutil.which("sqlite3"),
-    ) if p and os.path.exists(p)]
-    return found
+sys.path.insert(0, os.path.join(HERE, ".."))
+import rfm  # noqa: E402
 
 T0 = 1_800_000_000.0
 DAY = 86_400.0
@@ -106,54 +82,19 @@ def build_script() -> str:
     )
     return "\n".join(lines)
 
-# Both output paths keep the same lines: section headers and score rows.
+# Only section headers and score rows make it to the terminal.
 KEEP = ("---", "score=")
 
-def run_stdlib(script: str, dylib: str) -> str:
+def main() -> None:
     db = sqlite3.connect(":memory:")
-    db.enable_load_extension(True)
-    db.load_extension(dylib)
-    db.enable_load_extension(False)
-    out = []
-    for stmt in script.split(";\n"):
+    rfm.register(db)
+    for stmt in build_script().split(";\n"):
         if not stmt.strip():
             continue
         for row in db.execute(stmt):
             line = str(row[0])
             if any(k in line for k in KEEP):
-                out.append(line)
-    return "\n".join(out)
-
-def run_cli(script: str, sqlite3_bin: str, dylib: str) -> str:
-    proc = subprocess.run(
-        [sqlite3_bin, "-batch", "-noheader", ":memory:", "-cmd", f".load {dylib}"],
-        input=script, capture_output=True, text=True,
-    )
-    if proc.returncode != 0:
-        raise RuntimeError(f"{sqlite3_bin} failed:\n{proc.stderr}")
-    return "\n".join(l for l in proc.stdout.splitlines() if any(k in l for k in KEEP))
-
-def main() -> None:
-    script = build_script()
-    dylibs = _dylib_candidates()
-    if not dylibs:
-        sys.exit("no librfm.dylib found — run `cargo build --release` (or set RFM_DYLIB)")
-    errors = []
-    if hasattr(sqlite3.Connection, "enable_load_extension"):
-        for dylib in dylibs:
-            try:
-                print(run_stdlib(script, dylib))
-                return
-            except sqlite3.OperationalError as e:
-                errors.append(f"stdlib + {dylib}: {e}")
-    for sqlite3_bin in _sqlite3_candidates():
-        for dylib in dylibs:
-            try:
-                print(run_cli(script, sqlite3_bin, dylib))
-                return
-            except RuntimeError as e:
-                errors.append(str(e))
-    sys.exit("could not run the demo with any sqlite3/dylib combination:\n" + "\n".join(errors))
+                print(line)
 
 if __name__ == "__main__":
     main()

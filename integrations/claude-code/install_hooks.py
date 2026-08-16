@@ -35,8 +35,9 @@ Merge semantics, chosen so re-running is always safe:
     not a pile: the file is only written when something actually changes.
 
 Paths are derived from this file's location, so a moved checkout just needs
-a re-run. The venv interpreter is used for both hooks: session_start needs
-sqlite3 extension loading, which macOS system Python lacks.
+a re-run. The venv interpreter is used for both hooks — the pure-Python
+scoring engine runs on any Python, but pointing at the venv keeps one
+interpreter for everything the integration runs.
 
 Usage:  .venv/bin/python install_hooks.py [--dry-run] [--remove]
 """
