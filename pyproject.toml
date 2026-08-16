@@ -1,0 +1,35 @@
+# Packaging for the engine alone: `pip install sqlite-rfm` gets rfm.py and
+# nothing else — the embeddable-primitive story, no server, no embedder.
+# The MCP server under integrations/claude-code/ ships separately (it has
+# real dependencies; this module has none beyond the stdlib).
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqlite-rfm"
+description = "RFM-scored agent memory for SQLite: ACT-R activation (recency + frequency) plus outcome-feedback value, as pure-Python SQL functions"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+keywords = ["agent-memory", "sqlite", "act-r", "rfm", "ranking", "mcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/andrewgoodchild/mem-rfm"
+Documentation = "https://github.com/andrewgoodchild/mem-rfm/tree/main/docs"
+
+[tool.setuptools]
+py-modules = ["rfm"]
+
+# Version is single-sourced from rfm.VERSION.
+[tool.setuptools.dynamic]
+version = { attr = "rfm.VERSION" }

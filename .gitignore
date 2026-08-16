@@ -10,6 +10,10 @@ integrations/claude-code/.venv/
 integrations/claude-code/ab/ab_log.jsonl
 __pycache__/
 *.pyc
+# packaging artifacts (pyproject.toml builds)
+build/
+dist/
+*.egg-info/
 integrations/claude-code/ab/ab_sessions.jsonl
 # private strategy/research notes — never publish
 /research/
