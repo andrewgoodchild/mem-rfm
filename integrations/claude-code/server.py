@@ -2,14 +2,14 @@
 """sqlite-rfm memory MCP server — plug persistent, outcome-ranked memory into
 Claude Code (or any MCP client).
 
-Memories live in one SQLite database scored by librfm: retrieval relevance is
-embedding similarity (MiniLM, local) x rfm_score (ACT-R recency+frequency
-activation + outcome-feedback value). Searching records accesses; feedback
-records outcomes; ranking improves as memories prove themselves.
+Memories live in one SQLite database scored by rfm.py (pure Python, no
+compiled extension): retrieval relevance is embedding similarity (MiniLM,
+local) x rfm_score (ACT-R recency+frequency activation + outcome-feedback
+value). Searching records accesses; feedback records outcomes; ranking
+improves as memories prove themselves.
 
 Env:
   RFM_MEMORY_DB  database path   (default ~/.sqlite-rfm/claude-code.db)
-  RFM_DYLIB      librfm path     (default: this repo's target/release build)
   RFM_EMBEDDER   embedding model id (default all-MiniLM-L6-v2)
   RFM_EMBED_BACKEND  'fastembed' (default, ONNX, ~137MB) or
                  'sentence-transformers' (pulls torch, ~988MB). Both produce
@@ -22,6 +22,7 @@ import math
 import os
 import sqlite3
 import struct
+import sys
 import threading
 import time
 
@@ -38,6 +39,9 @@ except ImportError:                     # mcp 1.x
 from mcp.types import ToolAnnotations
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, "..", ".."))
+import rfm  # noqa: E402  (repo-root module; scoring engine)
+
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 EMBEDDER_ID = os.environ.get("RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
 MAX_TOKENS = int(os.environ.get("RFM_MAX_TOKENS", "256"))
@@ -132,18 +136,6 @@ if _ann("self-check", read_only=True).model_dump(by_alias=True).get("readOnlyHin
         "would silently fall back to destructive/open-world defaults")
 
 
-def resolve_dylib():
-    if os.environ.get("RFM_DYLIB"):
-        return os.environ["RFM_DYLIB"]
-    for p in (
-        os.path.join(HERE, "..", "..", "target", "release", "librfm.dylib"),
-        os.path.join(HERE, "..", "..", "target", "x86_64-apple-darwin", "release", "librfm.dylib"),
-    ):
-        if os.path.exists(p):
-            return p
-    raise RuntimeError("librfm.dylib not found — run `cargo build --release` or set RFM_DYLIB")
-
-
 # MCP SDK 2.0 dispatches sync tool handlers on a worker thread, so the
 # connection is no longer confined to one thread the way it was under 1.x.
 # Two things are needed, and only having one of them is a trap:
@@ -182,14 +174,14 @@ def db():
                 os.makedirs(dirname, exist_ok=True)
             conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=10.0)
             # Fully initialise before publishing to the global: caching the
-            # connection first means one failed init (missing dylib, say)
-            # reports its real cause once, then every later call skips init
-            # and fails with 'no such table/function' forever.
+            # connection first means one failed init reports its real cause
+            # once, then every later call skips init and fails with 'no such
+            # table/function' forever.
             try:
                 conn.enable_load_extension(True)
                 sqlite_vec.load(conn)
-                conn.load_extension(resolve_dylib())
                 conn.enable_load_extension(False)
+                rfm.register(conn)
                 conn.execute("SELECT rfm_init()")
                 conn.execute("PRAGMA journal_mode=WAL")
                 cols = [r[1] for r in conn.execute("PRAGMA table_info(rfm_memories)")]

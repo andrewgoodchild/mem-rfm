@@ -1,6 +1,10 @@
 """Shared machinery for the three benchmark evals (LongMemEval, LoCoMo, BEAM):
-extension loading, a generic memory store wrapping librfm, ranking conditions,
-and retrieval metrics. Datasets differ per eval; scoring must not."""
+the rfm scoring engine, a generic memory store wrapping it, ranking
+conditions, and retrieval metrics. Datasets differ per eval; scoring must
+not. Scoring is rfm.py (repo root) registered as SQLite UDFs — the same
+module the MCP server runs, so benchmarked numbers are numbers the shipped
+engine produces. (No staleness check needed: interpreted source cannot lag
+its own build the way the retired Rust dylib could.)"""
 import math
 import os
 import sqlite3
@@ -9,51 +13,10 @@ import sys
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, ".."))
+import rfm  # noqa: E402
+
 SIM_RECENCY_TAU = 7 * 86_400.0
-
-
-def resolve_dylib():
-    """Env override, else the first candidate this Python can actually load
-    (arch must match the interpreter, so probe rather than assume)."""
-    if os.environ.get("RFM_DYLIB"):
-        return os.environ["RFM_DYLIB"]
-    candidates = [
-        os.path.join(HERE, "..", "target", "release", "librfm.dylib"),
-        os.path.join(HERE, "..", "target", "x86_64-apple-darwin", "release", "librfm.dylib"),
-    ]
-    for p in candidates:
-        if not os.path.exists(p):
-            continue
-        probe = sqlite3.connect(":memory:")
-        try:
-            probe.enable_load_extension(True)
-            probe.load_extension(p)
-            check_fresh(p)
-            return p
-        except sqlite3.OperationalError:
-            continue
-        finally:
-            probe.close()
-    sys.exit("no loadable librfm.dylib found — run `cargo build --release` (or set RFM_DYLIB)")
-
-
-def check_fresh(dylib):
-    """Refuse to benchmark a dylib older than the Rust sources that built it.
-
-    `cargo test` builds the x86_64 target (the .load-capable Homebrew CLI is
-    Intel) while this arm64 harness loads target/release — so a green test run
-    does NOT imply the benchmarked build is current. Publishing numbers from a
-    stale extension would be unauditable, so this is fatal, not a warning."""
-    src = os.path.join(HERE, "..", "src")
-    newest = max(
-        [os.path.getmtime(os.path.join(src, f)) for f in os.listdir(src)]
-        + [os.path.getmtime(os.path.join(HERE, "..", "Cargo.toml"))]
-    )
-    if newest > os.path.getmtime(dylib):
-        sys.exit(f"stale extension: {dylib} predates src/ — run `cargo build --release`")
-
-
-DYLIB = resolve_dylib()
 
 
 # Embedder is swappable via env for robustness runs, e.g.
@@ -143,16 +106,14 @@ def encode(embedder, texts, kind="doc"):
 
 
 class MemoryStore:
-    """One benchmark item's memories in a fresh in-memory DB with librfm.
+    """One benchmark item's memories in a fresh in-memory DB with rfm scoring.
 
     rows: list of (mem_id, text, created_at); embs: matrix aligned with rows.
     """
 
     def __init__(self, rows, embs):
         self.db = sqlite3.connect(":memory:")
-        self.db.enable_load_extension(True)
-        self.db.load_extension(DYLIB)
-        self.db.enable_load_extension(False)
+        rfm.register(self.db)
         self.db.execute("SELECT rfm_init()")
         self.db.executemany(
             "INSERT INTO rfm_memories(id, content, created_at) VALUES (?,?,?)",
@@ -178,7 +139,7 @@ class MemoryStore:
         return np.array([got[m] for m in ids])
 
     def priors(self, ids):
-        """rfm_prior(id) computed BY THE EXTENSION, so every config key it
+        """rfm_prior(id) computed BY THE ENGINE, so every config key it
         reads (beta, w_a, w_v, decay, shrink_k, theta, s) actually applies.
 
         `rank(..., "rfm_betaX")` recomputes the blend in Python with a literal

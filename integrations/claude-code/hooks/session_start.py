@@ -21,16 +21,8 @@ TOP_K = 5
 CHAR_BUDGET = 1500
 
 
-def resolve_dylib():
-    if os.environ.get("RFM_DYLIB"):
-        return os.environ["RFM_DYLIB"]
-    for p in (
-        os.path.join(HERE, "..", "..", "..", "target", "release", "librfm.dylib"),
-        os.path.join(HERE, "..", "..", "..", "target", "x86_64-apple-darwin", "release", "librfm.dylib"),
-    ):
-        if os.path.exists(p):
-            return p
-    return None
+sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))
+import rfm  # noqa: E402  (repo-root module; scoring engine)
 
 
 def write_sidecar():
@@ -65,13 +57,10 @@ def main():
     # RFM_AB_ARM), inject only in the rfm arm so the control stays clean.
     if os.environ.get("RFM_AB_ARM", "rfm") != "rfm":
         sys.exit(0)
-    dylib = resolve_dylib()
-    if dylib is None or not os.path.exists(DB_PATH):
+    if not os.path.exists(DB_PATH):
         sys.exit(0)  # nothing to inject; stay silent
     db = sqlite3.connect(DB_PATH)
-    db.enable_load_extension(True)
-    db.load_extension(dylib)
-    db.enable_load_extension(False)
+    rfm.register(db)
     rows = db.execute(
         "SELECT id, content, rfm_score(id) AS s FROM rfm_memories "
         "ORDER BY s DESC LIMIT ?", (TOP_K,)).fetchall()
