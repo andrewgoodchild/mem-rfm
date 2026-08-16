@@ -1,10 +1,13 @@
 # API reference
 
-The extension registers scalar SQL functions. Loading it is the only setup:
+`rfm.py` (repo root, stdlib-only) registers scalar SQL functions on a
+sqlite3 connection. Registering it is the only setup:
 
-```sql
-.load ./target/release/librfm
-SELECT rfm_init();
+```python
+import sqlite3, rfm
+db = sqlite3.connect("memories.db")
+rfm.register(db)
+db.execute("SELECT rfm_init()")
 ```
 
 `rfm_init()` creates the tables and indexes and is idempotent — it also
@@ -25,7 +28,7 @@ migrates older databases by adding columns introduced later.
 | `rfm_prunable(id, max_unused_days)` | 1 when a memory is idle past the window AND never proved useful |
 | `rfm_prior_of(access_count, created_at, last_access, bla_cache, value_score, outcome_count)` | same number as `rfm_prior(id)`, without the row lookup |
 | `rfm_config(key[, value])` | read or set a per-connection setting |
-| `rfm_version()` | extension version — `rfm_init()` migrates schemas, so hosts can check what they loaded |
+| `rfm_version()` | engine version — `rfm_init()` migrates schemas, so hosts can check what they loaded |
 
 ### Three ways to compute the same number
 
@@ -33,28 +36,29 @@ migrates older databases by adding columns introduced later.
 the id is interpolated into the statement. That is right for scoring a
 handful of candidates and wrong for ranking a whole table. `rfm_prior_of`
 takes the columns instead, so the scan reads each row once, as it was going
-to anyway. And the arithmetic is plain enough to write in SQL, which matters
-because it means the extension is an optimization rather than a dependency.
+to anyway. And the arithmetic is plain enough to write in SQL, which
+matters because it means even the engine is an optimization rather than a
+dependency.
 
-Measured on 50,000 rows, `ORDER BY … DESC LIMIT 10`:
+Measured on 50,000 rows, `ORDER BY … DESC LIMIT 10` (Python engine; the
+retired Rust extension's numbers live at the `rust-extension` tag):
 
 | form | time | when |
 |---|---|---|
-| `rfm_prior_of(cols)` | **19.5 ms** | ranking a table |
-| pure SQL (no extension) | 155 ms | hosts that can't load extensions |
-| `rfm_prior(id)` | 438 ms | scoring a few known ids; most readable |
+| pure SQL (no UDFs) | **40.5 ms** | ranking a table — no per-row Python call |
+| `rfm_prior_of(cols)` | 92.2 ms | ranking a table through the engine |
+| `rfm_prior(id)` | 171.9 ms | scoring a few known ids; most readable |
 
 All three agree exactly. `bench-quality/pure_sql_check.py` generates the SQL
-and checks it against the extension over 2,000 rows covering every branch of
+and checks it against the engine over 2,000 rows covering every branch of
 the hybrid activation and its boundaries: max difference 1.1e-16, identical
-ranking. `rfm_prior_of` is checked against `rfm_prior` on every row of a
-50,000-row table, and pinned by a test.
+ranking. `rfm_prior_of` decodes through the same row logic as `rfm_prior`
+and is pinned to it by `tests/test_rfm.py`.
 
-The pure-SQL path is what makes this portable to places an extension cannot
-go. macOS system Python has no `enable_load_extension` at all, and it ranks
-a store built by the extension identically — same top-10, no extension
-loaded. It needs `SQLITE_ENABLE_MATH_FUNCTIONS` (`ln`, `exp`, `pow`), which
-is present in macOS's system SQLite 3.51, `node:sqlite` and better-sqlite3.
+The pure-SQL path is what makes this portable to places the engine cannot
+go: hosted SQLite, or a host language with no UDF surface. It needs
+`SQLITE_ENABLE_MATH_FUNCTIONS` (`ln`, `exp`, `pow`), which is present in
+macOS's system SQLite 3.51, `node:sqlite` and better-sqlite3.
 
 `rfm_prunable`'s window is in **days**, while every timestamp and `tau` is in
 seconds. That is deliberate — a retention policy is a human-scale decision —
@@ -110,7 +114,7 @@ that can be measured; the defaults do not move until an experiment says so.
 
 ## Schema
 
-Tables are host-owned; the extension maintains the marked columns.
+Tables are host-owned; the engine maintains the marked columns.
 
 ```sql
 rfm_memories(
@@ -124,7 +128,7 @@ rfm_accesses(memory_id, accessed_at, outcome)
 ```
 
 You own `content` and any columns you add — an `embedding BLOB` for
-sqlite-vec, tags, scopes, whatever. The extension only touches its own.
+sqlite-vec, tags, scopes, whatever. The engine only touches its own.
 
 ## Retention
 
@@ -213,7 +217,7 @@ project is about. Correcting a memory by deleting and re-saving it resets
 `access_count`, `last_access`, `bla_cache`, `value_score` and
 `outcome_count` — the entire accumulated record — on what is the single most
 common maintenance operation. Because `content` and `embedding` are
-host-owned and every scoring column is extension-maintained, a plain
+host-owned and every scoring column is engine-maintained, a plain
 `UPDATE` preserves all of it; only the embedding is recomputed.
 
 Outcome history carries over deliberately: it is evidence about the slot
@@ -228,7 +232,6 @@ Environment:
 | variable | meaning |
 |---|---|
 | `RFM_MEMORY_DB` | database path (default `~/.sqlite-rfm/claude-code.db`) |
-| `RFM_DYLIB` | path to `librfm` (default: this repo's release build) |
 | `RFM_EMBEDDER` | embedding model id (default `sentence-transformers/all-MiniLM-L6-v2`); must be in fastembed's registry unless the sentence-transformers backend is installed |
 | `RFM_EMBED_BACKEND` | `fastembed` (default) or `sentence-transformers` — the latter needs a separate `pip install sentence-transformers`; the documented install ships fastembed only |
 | `RFM_MAX_TOKENS` | truncation length, default 256 — see below |

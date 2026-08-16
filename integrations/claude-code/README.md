@@ -11,7 +11,6 @@ local — no API keys, one SQLite file.
 cd integrations/claude-code
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python mcp sqlite-vec fastembed numpy
-cargo build --release          # from the repo root, if not already built
 
 # check it actually works before wiring it in
 .venv/bin/python smoke_test.py
@@ -55,11 +54,10 @@ Register in `~/.claude/settings.json`:
 | env | default | |
 |---|---|---|
 | `RFM_MEMORY_DB` | `~/.sqlite-rfm/claude-code.db` | one DB = one memory scope |
-| `RFM_DYLIB` | repo `target/release/librfm.dylib` | extension artifact |
 | `RFM_EMBEDDER` | `sentence-transformers/all-MiniLM-L6-v2` | any fastembed-supported id (a sentence-transformers id outside that registry needs `pip install sentence-transformers`, which the install above does not include) |
 
 Remove with `claude mcp remove rfm-memory`. The database is plain SQLite —
-inspect it with any sqlite3 that can `.load` the extension. Session-start
+inspect it with any sqlite3 client; scoring columns are plain REALs. Session-start
 injection is capped at 1,500 characters (token bloat is a leading
 abandonment cause for memory tools); `memory_save` rejects content over
 4,000 characters, and `memory_export` truncates at 80,000.

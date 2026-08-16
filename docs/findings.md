@@ -134,7 +134,7 @@ Treat rank-1 improvement as a possible bonus, not the reason to deploy.
 A mechanism can be **implemented** (the code runs), **connected** (something
 reads its output), and **earn its place** (removing it makes results worse).
 Most memory systems claim the first. We had never measured the third about
-our own components, so we ablated each one through the shipped extension.
+our own components, so we ablated each one through the shipped engine.
 
 ### On BEAM: only the outcome axis
 

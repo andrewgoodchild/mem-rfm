@@ -447,7 +447,7 @@ ledger including what died. The mapping:
 | pooling beats per-agent stores | `star_eval.py`, `md2d_eval.py`, `flodial_eval.py`, `abcd_eval.py` | `results-star/`, `results-md2d/`, `results-flodial/` |
 | experience out-ranks the authored manual | `abcd_manual.py` | RESULTS.md |
 | staleness recovery under a procedure change | `abcd_staleness.py` | RESULTS.md |
-| scoring is O(1): ~4.6µs flat, error 0.049 | `throughput.sh` | RESULTS.md |
+| scoring is O(1): ~3.5µs/row (4.6µs in the retired Rust extension); hybrid-vs-exact max error ≤ 0.4 on synthetic histories | `throughput.py` | RESULTS.md |
 | hybrid BM25, pruning, content-value signals — all failed | `hybrid_eval.py`, `prune_eval.py`, `signal_screen.py` | RESULTS.md |
 | only the outcome axis earns its place; Hebbian hurts | `ablation_eval.py` | `results-ablation/` |
 
@@ -456,19 +456,20 @@ Adversarial results (attacks, defences, the six that failed) live in
 `team-experiments` tag rather than on `main`.
 
 Two habits worth stating because they are cheap and they catch real
-problems. Every extension change is checked for **retrieval regression** by
+problems. Every engine change is checked for **retrieval regression** by
 re-running a committed benchmark and diffing per-question rows, not just by
 running unit tests — adding the `kind` column and `rfm_prunable` was verified
 bit-identical across all 1,065 BEAM rows. And `model_eval.py` carries a
 `--selfcheck` that reconciles its in-process activation against the shipped
-extension, after an early version of that runner scored every decay kernel
+engine, after an early version of that runner scored every decay kernel
 identically because never-accessed memories took a sentinel value instead of
 the creation-age fallback. A silent dead channel invalidates every number
 downstream of it, so the harness is built to fail loudly instead.
 
 ## Sources
 
-Every equation is cited in the code implementing it (`src/math.rs`).
+Every equation is cited in the code implementing it (`rfm.py`; originally
+`src/math.rs`, preserved at the `rust-extension` tag).
 
 - Belady, L. A. (1966) — the optimal replacement algorithm.
 - Lee, D. et al. (2001). *LRFU: a spectrum of policies subsuming LRU and LFU*.
