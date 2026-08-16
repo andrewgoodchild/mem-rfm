@@ -2,7 +2,8 @@
 
 **Agent memory that learns which memories are actually worth keeping.**
 
-A SQLite extension (plus an MCP server for Claude Code) that ranks stored
+A pure-Python SQLite scoring engine (plus an MCP server for Claude Code)
+that ranks stored
 memories by whether they *helped* — not just whether they look relevant.
 Shipped with ~30 pre-registered experiments on when agent memory pays off,
 when it doesn't, and what happens when someone abuses it.
@@ -58,15 +59,18 @@ plus evidence — one file, one process, no server.
 
 ## Install
 
-Needs a SQLite that can load extensions (≥ 3.35). Apple's bundled CLI has
-loading compiled out — use Homebrew's.
+Needs Python 3.10+ with its bundled sqlite3 (≥ 3.35) — nothing to compile:
 
-```sh
-cargo build --release
-sqlite3
-.load ./target/release/librfm
-SELECT rfm_init();
+```python
+import sqlite3, rfm            # rfm.py, repo root, stdlib-only
+db = sqlite3.connect("memories.db")
+rfm.register(db)
+db.execute("SELECT rfm_init()")
 ```
+
+Non-Python hosts rank with the verified plain-SQL expression instead —
+`bench-quality/pure_sql_check.py` generates it and pins it to the engine;
+see [api.md](docs/api.md).
 
 For Claude Code, an MCP server with local embeddings and one SQLite file:
 
@@ -151,9 +155,9 @@ died), `DESIGN_NOTES.md` (design decisions and trade-offs).
 ## Repository
 
 ```
-src/                      the extension (lib, functions, math, sql shim, config, clock)
+rfm.py                    the scoring engine (registers the rfm_* SQL functions)
 rfm_schema.sql            standalone schema
-tests/                    unit + CLI integration tests (cargo test)
+tests/                    engine unit + SQL-surface tests (python3 tests/test_rfm.py)
 bench-quality/            all evidence: retrieval evals, live A/B, throughput, RESULTS.md
 integrations/claude-code/ MCP server, hooks, capture snippet, A/B kit
 docs/                     the writeups linked above

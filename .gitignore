@@ -1,4 +1,3 @@
-/target
 bench-quality/*.db
 bench-quality/*.db-wal
 bench-quality/*.db-shm

@@ -116,7 +116,7 @@ Three habits came out of it, and they are cheap:
    scored rows had a varying prior. An arm at 0.0000 is flagged
    `DEAD SIGNAL` in the output rather than silently averaged.
 2. **Score through the shipped code path.** Ablation arms call the
-   extension's own `rfm_prior()`, so every config key they set actually
+   engine's own `rfm_prior()`, so every config key they set actually
    applies. A harness-side re-implementation is where the β bug hid.
 3. **Treat an exact zero as a bug report.** Across hundreds of paired
    questions, a delta of precisely 0.0000 is almost never a real null — it
@@ -140,8 +140,8 @@ as agreeing on the inputs you have. The committed per-question rows are what
 made the difference visible, which is the argument for committing them.
 
 Related: `model_eval.py --selfcheck` reconciles its in-process activation
-against the extension (exact for n ≤ 2; the n = 3 divergence is Petrov's
-approximation working as designed), and every extension change is checked for
+against the engine (exact for n ≤ 2; the n = 3 divergence is Petrov's
+approximation working as designed), and every engine change is checked for
 **retrieval regression** by re-running a committed benchmark and diffing
 per-question rows — adding the `kind` column, `rfm_prunable` and the squash
 parameters was verified bit-identical across all 1,065 BEAM rows.
@@ -185,9 +185,9 @@ Stated plainly, because they bound every number above:
 ## Reproducing
 
 ```sh
-cargo build --release
-cargo test --release          # 17 tests: unit + CLI integration
+python3 tests/test_rfm.py     # engine unit + SQL-surface tests
 cd bench-quality
+python3 pure_sql_check.py     # plain-SQL expression pinned to the engine
 # dataset download commands are in bench-quality/README.md
 python locomo_eval.py         # and the other *_eval.py runners
 ```
