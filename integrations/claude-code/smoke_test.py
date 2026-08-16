@@ -306,6 +306,34 @@ async def run(check):
                 # The log is what a dogfooding run is judged on; it must exist.
                 check("wrote a log", os.path.exists(env["RFM_LOG"])
                       and os.path.getsize(env["RFM_LOG"]) > 0)
+
+        # --- a second session against the same store ------------------
+        # The server stamps its start time as the session boundary. A
+        # memory whose loop was closed LAST session is re-surfaced by
+        # injection (which writes no access row), so feedback on it must
+        # count as this session's retrieval — regression: it bounced as a
+        # duplicate, capping every injection-surfaced memory at one
+        # outcome, ever. Only feedback/get run here, so the relaunch never
+        # loads the embedder and stays cheap.
+        async with stdio_client(params) as (r, w):
+            async with ClientSession(r, w) as s:
+                await s.initialize()
+                fb2 = await s.call_tool(
+                    "memory_feedback", {"memory_id": inj_id, "helped": False,
+                                        "note": "smoke: cross-session"})
+                row2 = structured(await s.call_tool(
+                    "memory_get", {"memory_id": inj_id}))
+                check("cross-session feedback records the implied access",
+                      not is_error(fb2) and row2["accesses"] == 2
+                      and row2["outcomes"] == 2,
+                      f"is_error={is_error(fb2)}, accesses={row2['accesses']}, "
+                      f"outcomes={row2['outcomes']}")
+                check("negative cross-session feedback moves the value down",
+                      row2["value"] < 1.0, f"value={row2['value']}")
+                check("duplicate feedback within a session is still rejected",
+                      is_error(await s.call_tool(
+                          "memory_feedback",
+                          {"memory_id": inj_id, "helped": True})))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
