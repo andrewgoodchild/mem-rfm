@@ -32,10 +32,10 @@ try:                                    # mcp >= 2.0
     from mcp.server.mcpserver import MCPServer as _Server
 except ImportError:                     # mcp 1.x
     from mcp.server.fastmcp import FastMCP as _Server
-try:
-    from mcp.types import ToolAnnotations
-except ImportError:
-    from mcp_types import ToolAnnotations
+# No fallback needed: mcp 1.x ships ToolAnnotations in mcp.types natively,
+# and mcp 2.x mirrors the mcp_types package there ("every name is the same
+# object"). A version too old to have it cannot run this server anyway.
+from mcp.types import ToolAnnotations
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
@@ -74,6 +74,9 @@ class MemoryRow(BaseModel):
     value: float = Field(description="outcome EWMA in [-1, 1]")
     outcomes: int
     score: float
+    scope: str | None = Field(
+        default=None, description="scope this memory is confined to; None = "
+        "visible everywhere. Surfaced so a wrong-scope save is diagnosable.")
 
 
 class ListResult(BaseModel):
@@ -118,6 +121,17 @@ def _ann(title, read_only=False, destructive=False, idempotent=False):
                            idempotentHint=idempotent, openWorldHint=False)
 
 
+# The camelCase kwargs above are field names on mcp 1.x but only *aliases* on
+# mcp 2.x, and pydantic's default for unknown kwargs is extra='ignore' — so an
+# SDK that stopped accepting the aliases would not raise, it would silently
+# construct all-None hints and every tool would present with the spec's
+# worst-case defaults. Fail at startup instead.
+if _ann("self-check", read_only=True).model_dump(by_alias=True).get("readOnlyHint") is not True:
+    raise RuntimeError(
+        "ToolAnnotations no longer accepts camelCase hint kwargs; annotations "
+        "would silently fall back to destructive/open-world defaults")
+
+
 def resolve_dylib():
     if os.environ.get("RFM_DYLIB"):
         return os.environ["RFM_DYLIB"]
@@ -141,8 +155,14 @@ def resolve_dylib():
 #   several rfm_record_access, then commit -- interleave two of those on one
 #   connection and a commit lands on another call's half-finished work.
 #
-# Tool calls are sub-millisecond, so serialising them costs nothing.
+# The DB statements are sub-millisecond, so serialising them costs nothing.
+# Embedding is NOT sub-millisecond — its first call may download and load an
+# entire model — so _save/_update/_search embed BEFORE taking this lock,
+# under the separate _embed_lock, and other tools never queue behind a model
+# load. db() acquires the (re-entrant) lock itself, so its lazy init cannot
+# race even from a future caller that forgets @serialized.
 _lock = threading.RLock()
+_embed_lock = threading.Lock()
 
 
 def serialized(fn):
@@ -155,28 +175,44 @@ def serialized(fn):
 
 def db():
     global _db
-    if _db is None:
-        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-        _db = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=10.0)
-        _db.enable_load_extension(True)
-        sqlite_vec.load(_db)
-        _db.load_extension(resolve_dylib())
-        _db.enable_load_extension(False)
-        _db.execute("SELECT rfm_init()")
-        _db.execute("PRAGMA journal_mode=WAL")
-        cols = [r[1] for r in _db.execute("PRAGMA table_info(rfm_memories)")]
-        if "embedding" not in cols:
-            _db.execute("ALTER TABLE rfm_memories ADD COLUMN embedding BLOB")
-        if "scope" not in cols:
-            _db.execute("ALTER TABLE rfm_memories ADD COLUMN scope TEXT")
+    with _lock:
+        if _db is None:
+            dirname = os.path.dirname(DB_PATH)
+            if dirname:                 # bare filename → cwd, nothing to create
+                os.makedirs(dirname, exist_ok=True)
+            conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=10.0)
+            # Fully initialise before publishing to the global: caching the
+            # connection first means one failed init (missing dylib, say)
+            # reports its real cause once, then every later call skips init
+            # and fails with 'no such table/function' forever.
+            try:
+                conn.enable_load_extension(True)
+                sqlite_vec.load(conn)
+                conn.load_extension(resolve_dylib())
+                conn.enable_load_extension(False)
+                conn.execute("SELECT rfm_init()")
+                conn.execute("PRAGMA journal_mode=WAL")
+                cols = [r[1] for r in conn.execute("PRAGMA table_info(rfm_memories)")]
+                if "embedding" not in cols:
+                    conn.execute("ALTER TABLE rfm_memories ADD COLUMN embedding BLOB")
+                if "scope" not in cols:
+                    conn.execute("ALTER TABLE rfm_memories ADD COLUMN scope TEXT")
+            except BaseException:
+                conn.close()
+                raise
+            _db = conn
     return _db
 
 
 def embed(text: str) -> bytes:
+    # Own lock, never nested inside _lock: the first call loads (and on a
+    # cold cache, downloads) the model, and that must not block the DB lock
+    # that every other tool waits on.
     global _embedder
-    if _embedder is None:
-        _embedder = _load_embedder()
-    vec = _embedder(text[:2000])
+    with _embed_lock:
+        if _embedder is None:
+            _embedder = _load_embedder()
+        vec = _embedder(text[:2000])
     return struct.pack(f"{len(vec)}f", *vec)
 
 
@@ -189,6 +225,7 @@ def _load_embedder():
     model's tokenizer at 128 tokens while sentence-transformers uses 256, and
     the mismatch is invisible on short text -- the backends agree to
     1.000000 below the cut -- but silently halves anything longer."""
+    fastembed_err = None
     if os.environ.get("RFM_EMBED_BACKEND", "fastembed") == "fastembed":
         try:
             from fastembed import TextEmbedding
@@ -204,9 +241,27 @@ def _load_embedder():
                 n = math.sqrt(sum(x * x for x in v)) or 1.0
                 return [x / n for x in v]
             return encode
-        except Exception:
-            pass
-    from sentence_transformers import SentenceTransformer
+        except Exception as e:
+            fastembed_err = e
+    try:
+        from sentence_transformers import SentenceTransformer
+    except ImportError as e:
+        # The default install ships fastembed only. Without this, any
+        # fastembed failure (bad RFM_EMBEDDER id, offline first run) was
+        # swallowed by the except above and surfaced as an unchained 'No
+        # module named sentence_transformers' — pointing at a 988MB non-fix
+        # while the real cause was discarded.
+        if fastembed_err is not None:
+            raise RuntimeError(
+                f"fastembed backend failed ({fastembed_err}) and the "
+                f"sentence-transformers fallback is not installed; fix the "
+                f"fastembed error or `pip install sentence-transformers`"
+            ) from fastembed_err
+        raise RuntimeError(
+            "RFM_EMBED_BACKEND=sentence-transformers but the package is not "
+            "installed (the default install ships fastembed only); "
+            "`pip install sentence-transformers` or unset RFM_EMBED_BACKEND"
+        ) from e
     st = SentenceTransformer(EMBEDDER_ID)
     # show_progress_bar must stay off: the MCP transport is stdio and any
     # stray stdout output corrupts the protocol.
@@ -221,9 +276,16 @@ def _load_embedder():
 # JSONL beside the database records enough to answer all three; log_stats.py
 # reads it. Never writes to stdout — the MCP transport is stdio and a stray
 # byte corrupts the protocol.
-LOG_PATH = os.path.expanduser(os.environ.get(
-    "RFM_LOG", os.path.join(os.path.dirname(DB_PATH), "rfm-log.jsonl")))
-LOG_ENABLED = os.environ.get("RFM_LOG", "1") not in ("0", "off", "")
+# RFM_LOG is both a switch and a path: 0/off/empty disables, an on-ish
+# sentinel (1/on/true — users mirror the source's own default) keeps the
+# default path beside the database, anything else IS the path. Treating "1"
+# as a path made LOG_PATH="1", whose empty dirname made every log() raise
+# into the bare except below — logging enabled yet silently dead.
+_LOG_RAW = os.environ.get("RFM_LOG", "1")
+LOG_ENABLED = _LOG_RAW not in ("0", "off", "")
+LOG_PATH = (os.path.join(os.path.dirname(DB_PATH), "rfm-log.jsonl")
+            if _LOG_RAW in ("0", "off", "", "1", "on", "true")
+            else os.path.expanduser(_LOG_RAW))
 # Queries and memory content are the sensitive part. They sit in the same
 # directory as the database, which already holds the memories themselves, so
 # the default logs them; RFM_LOG_CONTENT=0 keeps lengths and ids only.
@@ -235,7 +297,9 @@ def log(op: str, **fields):
         return
     try:
         rec = {"t": round(time.time(), 3), "op": op, **fields}
-        os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+        log_dir = os.path.dirname(LOG_PATH)
+        if log_dir:                     # bare filename → cwd, nothing to create
+            os.makedirs(log_dir, exist_ok=True)
         with open(LOG_PATH, "a") as fh:
             fh.write(json.dumps(rec) + "\n")
     except Exception:
@@ -292,25 +356,31 @@ def _check(content: str) -> str:
     return content
 
 
-@serialized
 def _save(content: str, scope: str | None = None) -> SaveResult:
     content = _check(content)
-    d = db()
-    dup = d.execute("SELECT id FROM rfm_memories WHERE content = ?", (content,)).fetchone()
-    if dup:
-        log("save", id=dup[0], status="duplicate", chars=len(content))
-        return SaveResult(id=dup[0], status="already stored")
-    cur = d.execute(
-        "INSERT INTO rfm_memories(content, created_at, embedding, scope) "
-        "VALUES (?, ?, ?, ?)",
-        (content, time.time(), embed(content), scope))
-    d.commit()
+    vec = embed(content)                # before _lock: may load the model
+    with _lock:
+        d = db()
+        # Dedup within the same scope only (IS is NULL-safe equality). A
+        # content-only match returned 'already stored' with another scope's
+        # row id — a success envelope for a memory that scope's searches
+        # could never retrieve.
+        dup = d.execute(
+            "SELECT id FROM rfm_memories WHERE content = ? AND scope IS ?",
+            (content, scope)).fetchone()
+        if dup:
+            log("save", id=dup[0], status="duplicate", chars=len(content))
+            return SaveResult(id=dup[0], status="already stored")
+        cur = d.execute(
+            "INSERT INTO rfm_memories(content, created_at, embedding, scope) "
+            "VALUES (?, ?, ?, ?)",
+            (content, time.time(), vec, scope))
+        d.commit()
     log("save", id=cur.lastrowid, status="saved", chars=len(content),
         scope=scope, content=_redact(content))
     return SaveResult(id=cur.lastrowid, status="saved")
 
 
-@serialized
 def _update(memory_id: int, content: str) -> UpdateResult:
     """Rewrite a memory's content while keeping everything it has earned.
 
@@ -327,21 +397,26 @@ def _update(memory_id: int, content: str) -> UpdateResult:
     memory can bank a reputation and then be rewritten, so updates are worth
     the same scrutiny as saves."""
     content = _check(content)
-    d = db()
-    row = d.execute(
-        "SELECT access_count, value_score, outcome_count FROM rfm_memories "
-        "WHERE id = ?", (memory_id,)).fetchone()
-    if row is None:
-        raise ValueError(f"no memory with id {memory_id}")
-    clash = d.execute(
-        "SELECT id FROM rfm_memories WHERE content = ? AND id != ?",
-        (content, memory_id)).fetchone()
-    if clash:
-        raise ValueError(f"memory {clash[0]} already has that exact content; "
-                         f"delete one of the two rather than duplicating")
-    d.execute("UPDATE rfm_memories SET content = ?, embedding = ? WHERE id = ?",
-              (content, embed(content), memory_id))
-    d.commit()
+    vec = embed(content)                # before _lock: may load the model
+    with _lock:
+        d = db()
+        row = d.execute(
+            "SELECT access_count, value_score, outcome_count, scope "
+            "FROM rfm_memories WHERE id = ?", (memory_id,)).fetchone()
+        if row is None:
+            raise ValueError(f"no memory with id {memory_id}")
+        # Clash within the target's own scope only: the same text in another
+        # scope serves different searches, and refusing the update with
+        # 'delete one of the two' would destroy a valid memory's history.
+        clash = d.execute(
+            "SELECT id FROM rfm_memories WHERE content = ? AND id != ? "
+            "AND scope IS ?", (content, memory_id, row[3])).fetchone()
+        if clash:
+            raise ValueError(f"memory {clash[0]} already has that exact content; "
+                             f"delete one of the two rather than duplicating")
+        d.execute("UPDATE rfm_memories SET content = ?, embedding = ? WHERE id = ?",
+                  (content, vec, memory_id))
+        d.commit()
     log("update", id=memory_id, chars=len(content), content=_redact(content),
         accesses=row[0], value=row[1], outcomes=row[2])
     return UpdateResult(id=memory_id, status="updated", accesses=row[0],
@@ -353,71 +428,80 @@ def _get(memory_id: int) -> MemoryRow:
     d = db()
     r = d.execute(
         """SELECT id, content, created_at, access_count, value_score,
-                  outcome_count, rfm_score(id) FROM rfm_memories WHERE id = ?""",
+                  outcome_count, rfm_score(id), scope
+           FROM rfm_memories WHERE id = ?""",
         (memory_id,)).fetchone()
     if r is None:
         raise ValueError(f"no memory with id {memory_id}")
     return MemoryRow(id=r[0], content=r[1],
                      created=time.strftime("%Y-%m-%d", time.localtime(r[2])),
                      accesses=r[3], value=round(r[4], 3), outcomes=r[5],
-                     score=round(r[6], 4))
+                     score=round(r[6], 4), scope=r[7])
 
 
-@serialized
 def _search(query: str, limit: int = 5, scope: str | None = None,
             min_score: float = 0.0) -> list[SearchHit]:
-    d = db()
-    qvec = embed(query)
-    # The FROZEN composition (PROTOCOL.md): clamped similarity x bounded prior
-    # rfm_prior(id) = (1-beta) + beta*rfm_score(id), beta = 0.3. The unbounded
-    # sim x rfm_score variant was falsified by the pre-registered experiment.
-    # Split into a subquery only so the two factors can be logged separately —
-    # the arithmetic and the ordering are unchanged.
-    rows = d.execute(
-        f"""SELECT id, content, sim, prior, sim * prior AS score, last_access FROM (
-               SELECT id, content, last_access,
-                      max(1.0 - vec_distance_cosine(embedding, ?), 0) AS sim,
-                      rfm_prior(id) AS prior
-               FROM rfm_memories WHERE embedding IS NOT NULL {_scope_sql(scope)})
-           WHERE score >= ? ORDER BY score DESC LIMIT ?""",
-        (qvec, *_scope_args(scope), min_score, limit)).fetchall()
+    # Same clamp as _list: SQLite reads LIMIT -1 as unlimited, so an
+    # unclamped limit=-1 (or k=-1) dumped the whole store into context AND
+    # recorded an access on every row outside the window.
+    limit = max(1, min(int(limit), 200))
+    qvec = embed(query)                 # before _lock: may load the model
+    with _lock:
+        d = db()
+        # The FROZEN composition (PROTOCOL.md): clamped similarity x bounded
+        # prior rfm_prior(id) = (1-beta) + beta*rfm_score(id), beta = 0.3.
+        # The unbounded sim x rfm_score variant was falsified by the
+        # pre-registered experiment. Split into a subquery only so the two
+        # factors can be logged separately — the arithmetic and the ordering
+        # are unchanged.
+        rows = d.execute(
+            f"""SELECT id, content, sim, prior, sim * prior AS score, last_access FROM (
+                   SELECT id, content, last_access,
+                          max(1.0 - vec_distance_cosine(embedding, ?), 0) AS sim,
+                          rfm_prior(id) AS prior
+                   FROM rfm_memories WHERE embedding IS NOT NULL {_scope_sql(scope)})
+               WHERE score >= ? ORDER BY score DESC LIMIT ?""",
+            (qvec, *_scope_args(scope), min_score, limit)).fetchall()
 
-    # Retrieval IS usage: returned memories earn an access (recency+frequency).
-    # But only genuine re-encounters count. A client that retries, or fires
-    # speculative searches, would otherwise manufacture frequency out of
-    # nothing -- and because activation clamps the age of an access at
-    # EPS=1e-3 days, a burst of near-instant re-accesses is not a small
-    # error but the largest possible one. ACT-R's spacing effect is about
-    # genuine rehearsal; suppressing a re-access inside the window keeps the
-    # measured quantity the one the model is about.
-    now = time.time()
-    fresh = [r for r in rows
-             if r[5] is None or now - r[5] >= ACCESS_WINDOW]
-    for r in fresh:
-        d.execute("SELECT rfm_record_access(?)", (r[0],))
-    d.commit()
+        # Retrieval IS usage: returned memories earn an access
+        # (recency+frequency). But only genuine re-encounters count. A client
+        # that retries, or fires speculative searches, would otherwise
+        # manufacture frequency out of nothing -- and because activation
+        # clamps the age of an access at EPS=1e-3 days, a burst of
+        # near-instant re-accesses is not a small error but the largest
+        # possible one. ACT-R's spacing effect is about genuine rehearsal;
+        # suppressing a re-access inside the window keeps the measured
+        # quantity the one the model is about.
+        now = time.time()
+        fresh = [r for r in rows
+                 if r[5] is None or now - r[5] >= ACCESS_WINDOW]
+        for r in fresh:
+            d.execute("SELECT rfm_record_access(?)", (r[0],))
+        d.commit()
 
-    if LOG_ENABLED and rows:
-        # The question that decides whether any of this is load-bearing: would
-        # plain similarity have returned the same thing? Logged per search so
-        # a long dogfooding run can answer it empirically rather than by
-        # assertion.
-        sim_only = [r[0] for r in d.execute(
-            f"""SELECT id FROM rfm_memories WHERE embedding IS NOT NULL
-                {_scope_sql(scope)}
-                ORDER BY max(1.0 - vec_distance_cosine(embedding, ?), 0) DESC
-                LIMIT ?""", (*_scope_args(scope), qvec, limit))]
-        got = [r[0] for r in rows]
-        priors = [r[3] for r in rows]
-        log("search", query=_redact(query), limit=limit, scope=scope,
-            results=[{"id": r[0], "sim": round(r[2], 4),
-                      "prior": round(r[3], 4), "score": round(r[4], 4)}
-                     for r in rows],
-            prior_spread=round(max(priors) - min(priors), 4),
-            set_changed=set(got) != set(sim_only),
-            order_changed=got != sim_only,
-            accesses_recorded=len(fresh), accesses_suppressed=len(rows) - len(fresh),
-            sim_only=sim_only)
+        if LOG_ENABLED and rows:
+            # The question that decides whether any of this is load-bearing:
+            # would plain similarity have returned the same thing? Logged per
+            # search so a long dogfooding run can answer it empirically
+            # rather than by assertion. Stays under the lock deliberately:
+            # the comparison is only meaningful against the same table
+            # snapshot the main query saw.
+            sim_only = [r[0] for r in d.execute(
+                f"""SELECT id FROM rfm_memories WHERE embedding IS NOT NULL
+                    {_scope_sql(scope)}
+                    ORDER BY max(1.0 - vec_distance_cosine(embedding, ?), 0) DESC
+                    LIMIT ?""", (*_scope_args(scope), qvec, limit))]
+            got = [r[0] for r in rows]
+            priors = [r[3] for r in rows]
+            log("search", query=_redact(query), limit=limit, scope=scope,
+                results=[{"id": r[0], "sim": round(r[2], 4),
+                          "prior": round(r[3], 4), "score": round(r[4], 4)}
+                         for r in rows],
+                prior_spread=round(max(priors) - min(priors), 4),
+                set_changed=set(got) != set(sim_only),
+                order_changed=got != sim_only,
+                accesses_recorded=len(fresh), accesses_suppressed=len(rows) - len(fresh),
+                sim_only=sim_only)
     return [SearchHit(id=r[0], content=r[1], score=round(r[4], 4)) for r in rows]
 
 
@@ -467,7 +551,7 @@ def _list(limit: int = 20, offset: int = 0) -> ListResult:
     offset = max(0, int(offset))
     rows = d.execute(
         """SELECT id, content, created_at, access_count, value_score, outcome_count,
-                  rfm_score(id) AS score
+                  rfm_score(id) AS score, scope
            FROM rfm_memories ORDER BY score DESC LIMIT ? OFFSET ?""",
         (limit, offset)).fetchall()
     total = d.execute("SELECT count(*) FROM rfm_memories").fetchone()[0]
@@ -476,7 +560,7 @@ def _list(limit: int = 20, offset: int = 0) -> ListResult:
         items=[MemoryRow(id=r[0], content=r[1],
                          created=time.strftime("%Y-%m-%d", time.localtime(r[2])),
                          accesses=r[3], value=round(r[4], 3), outcomes=r[5],
-                         score=round(r[6], 4)) for r in rows],
+                         score=round(r[6], 4), scope=r[7]) for r in rows],
         total=total, has_more=offset + len(rows) < total)
 
 
@@ -502,15 +586,16 @@ def _export() -> str:
     d = db()
     rows = d.execute(
         "SELECT id, content, created_at, access_count, value_score, "
-        "rfm_score(id) AS score FROM rfm_memories ORDER BY score DESC").fetchall()
+        "rfm_score(id) AS score, scope FROM rfm_memories ORDER BY score DESC").fetchall()
     if not rows:
         return "# mem-rfm export\n\n(no memories)"
     lines = ["# mem-rfm export", ""]
     used = 0
-    for mid, content, created, acc, val, score in rows:
+    for mid, content, created, acc, val, score, mscope in rows:
         day = time.strftime("%Y-%m-%d", time.localtime(created))
+        scope_tag = f", scope {mscope}" if mscope else ""
         line = (f"- [{mid}] ({day}, {acc} uses, value {val:+.2f}, "
-                f"score {score:.3f}) {content}")
+                f"score {score:.3f}{scope_tag}) {content}")
         if used + len(line) > EXPORT_CAP:
             lines.append(f"... truncated at {EXPORT_CAP} chars "
                          f"({len(rows)} memories total)")

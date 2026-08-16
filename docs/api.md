@@ -229,10 +229,10 @@ Environment:
 |---|---|
 | `RFM_MEMORY_DB` | database path (default `~/.sqlite-rfm/claude-code.db`) |
 | `RFM_DYLIB` | path to `librfm` (default: this repo's release build) |
-| `RFM_EMBEDDER` | embedding model id (default `all-MiniLM-L6-v2`) |
-| `RFM_EMBED_BACKEND` | `fastembed` (default) or `sentence-transformers` |
+| `RFM_EMBEDDER` | embedding model id (default `sentence-transformers/all-MiniLM-L6-v2`); must be in fastembed's registry unless the sentence-transformers backend is installed |
+| `RFM_EMBED_BACKEND` | `fastembed` (default) or `sentence-transformers` — the latter needs a separate `pip install sentence-transformers`; the documented install ships fastembed only |
 | `RFM_MAX_TOKENS` | truncation length, default 256 — see below |
-| `RFM_LOG` | log path, or `0` to disable |
+| `RFM_LOG` | log path (`0`/`off` disables; `1`/`on`/`true` keep the default path beside the DB) |
 | `RFM_LOG_CONTENT` | `0` logs lengths and ids but not query/memory text |
 | `RFM_ACCESS_WINDOW` | seconds before a repeat retrieval re-counts as usage (default 60; `0` disables) |
 
@@ -251,7 +251,8 @@ correct at a moment when `pip install mcp` resolved to 2.0 and the server
 would not import at all; the same upgrade moved tool handlers onto a worker
 thread, which broke a module-level SQLite connection intermittently rather
 than outright. Both are invisible without a real launch. The server now runs
-green on mcp 1.x and 2.x.
+green on recent mcp 1.x (tested on 1.28; the structured-output surface it
+relies on needs ≥ 1.10) and 2.x.
 
 ### Embedding backend
 
