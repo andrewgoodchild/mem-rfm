@@ -21,6 +21,7 @@ import os
 import shutil
 import sys
 import tempfile
+import traceback
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -64,6 +65,13 @@ class Checks:
 async def run(check):
     tmp = tempfile.mkdtemp(prefix="rfm-smoke-")
     env = dict(os.environ)
+    # Drop config that would change the server under test: a developer's
+    # exported RFM_EMBED_BACKEND/RFM_EMBEDDER flips similarity-dependent
+    # checks (or breaks the venv's fastembed-only install outright).
+    # RFM_DYLIB deliberately survives — the test needs the built extension.
+    for var in ("RFM_EMBEDDER", "RFM_EMBED_BACKEND", "RFM_MAX_TOKENS",
+                "RFM_LOG_CONTENT"):
+        env.pop(var, None)
     env.update({
         "RFM_MEMORY_DB": os.path.join(tmp, "smoke.db"),
         "RFM_LOG": os.path.join(tmp, "smoke-log.jsonl"),
@@ -76,8 +84,9 @@ async def run(check):
         async with stdio_client(params) as (r, w):
             async with ClientSession(r, w) as s:
                 init = await s.initialize()
+                info = g(init, "serverInfo", "server_info")
                 check("server starts over stdio",
-                      g(init, "serverInfo", "server_info").name == "sqlite-rfm-memory")
+                      info is not None and info.name == "sqlite-rfm-memory")
 
                 tools = {t.name: t for t in (await s.list_tools()).tools}
                 expected = {"memory_save", "memory_search", "memory_feedback",
@@ -99,10 +108,14 @@ async def run(check):
                 # as a constructor kwarg, so the server is fine on both and only
                 # the reader has to cope.
                 def ann(n, camel, snake):
-                    a = tools[n].annotations
+                    t = tools.get(n)     # missing tool → None → named FAIL,
+                    a = t.annotations if t else None    # not a KeyError abort
                     return g(a, camel, snake) if a else None
 
-                open_world = [n for n in expected
+                # Iterate the SERVED tools, not the expected set: a future
+                # tool added without annotations would otherwise ship the
+                # spec's worst-case defaults unchecked.
+                open_world = [n for n in tools
                               if ann(n, "openWorldHint", "open_world_hint") is not False]
                 check("nothing claims to be open-world", not open_world, f"{open_world}")
                 check("read-only tools marked read-only",
@@ -121,7 +134,12 @@ async def run(check):
                     "content": "in this repo, run cargo build --release before "
                                "benchmarking; cargo test does not refresh the dylib"})
                 saved = structured(res)
-                check("save returns structured content", bool(saved))
+                if not check("save returns structured content", bool(saved)):
+                    # Every later check needs structured output; a None here
+                    # used to abort the whole run with a TypeError in exactly
+                    # the regression scenario this suite targets.
+                    print("  cannot continue: structured output missing")
+                    return
                 mid = saved["id"]
 
                 dup = structured(await s.call_tool("memory_save", {
@@ -133,7 +151,7 @@ async def run(check):
                 # --- search -----------------------------------------------
                 res = await s.call_tool("memory_search",
                                         {"query": "how do I benchmark", "limit": 3})
-                hits = structured(res)["result"]
+                hits = (structured(res) or {}).get("result") or []
                 check("search returns structured results", bool(hits))
                 check("search finds the saved memory", any(h["id"] == mid for h in hits))
 
@@ -144,13 +162,17 @@ async def run(check):
                 # Repeat retrieval inside the window must not re-count: a
                 # retrying client would otherwise manufacture frequency.
                 before = got["accesses"]
+                repeat_errs = 0
                 for _ in range(3):
-                    await s.call_tool("memory_search",
-                                      {"query": "how do I benchmark", "limit": 3})
+                    r_ = await s.call_tool("memory_search",
+                                           {"query": "how do I benchmark", "limit": 3})
+                    if is_error(r_):     # an erroring search records nothing,
+                        repeat_errs += 1  # which would pass this vacuously
                 after = structured(await s.call_tool("memory_get",
                                                     {"memory_id": mid}))["accesses"]
                 check("repeat retrieval suppressed inside the window",
-                      after == before, f"{before} -> {after}")
+                      repeat_errs == 0 and after == before,
+                      f"errors={repeat_errs}, {before} -> {after}")
 
                 # --- feedback ---------------------------------------------
                 fb = structured(await s.call_tool(
@@ -173,9 +195,9 @@ async def run(check):
                 part_id = structured(await s.call_tool("memory_save", {
                     "content": "prefer ripgrep over grep for repo-wide searches"
                 }))["id"]
-                seen = [h["id"] for h in structured(await s.call_tool(
+                seen = [h["id"] for h in (structured(await s.call_tool(
                     "memory_search", {"query": "ripgrep repo-wide search",
-                                      "limit": 10}))["result"]]
+                                      "limit": 10})) or {}).get("result", [])]
                 check("the new memory was retrieved", part_id in seen)
                 part = structured(await s.call_tool(
                     "memory_feedback", {"memory_id": part_id, "helped": True,
@@ -210,9 +232,9 @@ async def run(check):
                     "content": "user prefers short commit messages"}))["id"]
                 # limit high enough that exclusion cannot be confused with
                 # simply ranking below the cut.
-                scoped = [h["id"] for h in structured(await s.call_tool(
+                scoped = [h["id"] for h in (structured(await s.call_tool(
                     "memory_search", {"query": "where does config live",
-                                      "limit": 50, "scope": "proj-a"}))["result"]]
+                                      "limit": 50, "scope": "proj-a"})) or {}).get("result", [])]
                 check("scoped search includes its own scope", a_id in scoped)
                 check("scoped search includes unscoped memories", glob_id in scoped)
                 check("scoped search excludes other scopes", b_id not in scoped,
@@ -221,12 +243,16 @@ async def run(check):
                 # --- min_score gates accounting, not just display ----------
                 cold = structured(await s.call_tool("memory_save", {
                     "content": "unrelated note about deep sea marine biology"}))["id"]
-                await s.call_tool("memory_search", {"query": "cargo build flags",
-                                                    "limit": 10, "min_score": 0.9})
+                res_ms = await s.call_tool("memory_search",
+                                           {"query": "cargo build flags",
+                                            "limit": 10, "min_score": 0.9})
                 cold_row = structured(await s.call_tool("memory_get",
                                                         {"memory_id": cold}))
+                # A crashed search also records nothing — assert it succeeded
+                # so this cannot pass vacuously.
                 check("min_score keeps weak matches from earning usage",
-                      cold_row["accesses"] == 0, f"accesses={cold_row['accesses']}")
+                      not is_error(res_ms) and cold_row["accesses"] == 0,
+                      f"is_error={is_error(res_ms)}, accesses={cold_row['accesses']}")
 
                 # --- list / status / export -------------------------------
                 lst = structured(await s.call_tool("memory_list", {"limit": 2}))
@@ -246,7 +272,7 @@ async def run(check):
                                                       "content": "x"}),
                                    ("memory_feedback", {"memory_id": 99999,
                                                         "helped": True}),
-                                   ("memory_feedback", {"memory_id": 1,
+                                   ("memory_feedback", {"memory_id": mid,
                                                         "helped": True,
                                                         "score": 7.0})):
                     r_ = await s.call_tool(name, args)
@@ -276,20 +302,18 @@ def main():
     print("mem-rfm MCP smoke test (real stdio launch)")
     check = Checks(args.verbose)
     try:
-        asyncio.run(run(check))
-    except BaseException as e:
-        # An ExceptionGroup hides the real cause behind a TaskGroup wrapper,
-        # which is useless in a smoke test's output.
+        # Watchdog: without it, a stalled server (the regression class this
+        # suite exists to catch) hangs the test forever instead of failing.
+        # Generous, because a cold cache re-downloads the embedding model.
+        asyncio.run(asyncio.wait_for(run(check), timeout=300))
+    except Exception as e:
+        # Not BaseException: Ctrl-C should stay a KeyboardInterrupt, not an
+        # exit-1 that CI reads as an ordinary test failure. traceback renders
+        # the full ExceptionGroup tree AND chained causes — the hand-rolled
+        # leaf printer it replaces double-printed plain exceptions and
+        # stopped at wrappers whose real cause was chained, not grouped.
         print(f"\nABORTED: {type(e).__name__}: {e}")
-
-        def leaves(exc, depth=1):
-            subs = getattr(exc, "exceptions", ())
-            if not subs:
-                print(f"{'  ' * depth}cause: {type(exc).__name__}: {exc}")
-                return
-            for sub in subs:
-                leaves(sub, depth + 1)
-        leaves(e)
+        traceback.print_exception(e)
         return 1
     total = check.passed + check.failed
     print(f"\n{check.passed}/{total} checks passed")

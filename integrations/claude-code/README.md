@@ -25,9 +25,11 @@ claude mcp add -s user rfm-memory -- \
 stdio, the way Claude Code does, then exercises every tool against a
 temporary database. That is deliberately not an in-process test: the tool
 bodies can be perfectly correct while the server fails to start or ships no
-output schemas. It runs green on both mcp 1.x and 2.x — worth knowing,
-because 2.0 removed the module the server used to import and moved tool
-handlers onto a worker thread, and only a real launch showed either.
+output schemas. It runs green on both recent mcp 1.x (tested on 1.28; the
+structured-output surface the server relies on needs ≥ 1.10) and 2.x —
+worth knowing, because 2.0 removed the module the server used to import and
+moved tool handlers onto a worker thread, and only a real launch showed
+either.
 
 Tools exposed: `memory_save`, `memory_search`, `memory_feedback`,
 `memory_update`, `memory_get`, `memory_status`, `memory_list`,
@@ -54,13 +56,13 @@ Register in `~/.claude/settings.json`:
 |---|---|---|
 | `RFM_MEMORY_DB` | `~/.sqlite-rfm/claude-code.db` | one DB = one memory scope |
 | `RFM_DYLIB` | repo `target/release/librfm.dylib` | extension artifact |
-| `RFM_EMBEDDER` | `all-MiniLM-L6-v2` | any sentence-transformers id |
+| `RFM_EMBEDDER` | `sentence-transformers/all-MiniLM-L6-v2` | any fastembed-supported id (a sentence-transformers id outside that registry needs `pip install sentence-transformers`, which the install above does not include) |
 
 Remove with `claude mcp remove rfm-memory`. The database is plain SQLite —
 inspect it with any sqlite3 that can `.load` the extension. Session-start
 injection is capped at 1,500 characters (token bloat is a leading
 abandonment cause for memory tools); `memory_save` rejects content over
-4,000 characters, and `memory_export` truncates at 200,000.
+4,000 characters, and `memory_export` truncates at 80,000.
 
 ## A/B testing vs Claude Code built-in memory
 
