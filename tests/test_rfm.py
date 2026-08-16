@@ -163,6 +163,61 @@ def test_sql_surface():
           q("SELECT rfm_prunable(1, 0)") == 0)
 
 
+def test_regressions():
+    """Ports of integration.rs regression tests that had no equivalent here,
+    plus pins for validation gaps found after the port."""
+    # epoch_zero_timestamps_keep_t2_and_stay_consistent: bla_cache's old 0.0
+    # sentinel dropped a legitimate second access at wall time <= 0, and
+    # rfm_record_access's return diverged from what rfm_activation read back.
+    db = sqlite3.connect(":memory:")
+    rfm.register(db)
+    q = lambda sql, *p: db.execute(sql, p).fetchone()[0]
+    q("SELECT rfm_init()")
+    db.execute("SELECT rfm_config('now', 0.0)")
+    db.execute("INSERT INTO rfm_memories(id, content, created_at) "
+               "VALUES (1, 'x', -100.0)")
+    db.execute("SELECT rfm_record_access(1)")
+    db.execute("SELECT rfm_config('now', 100.0)")
+    returned = q("SELECT rfm_record_access(1)")
+    expected = rfm.bla_hybrid_k2(2, 0.0, 100.0, 200.0, D)
+    close("epoch-0 returned activation", returned, expected)
+    close("epoch-0 reread activation", q("SELECT rfm_activation(1)"), expected)
+    check("epoch-0 access survives as t2",
+          q("SELECT bla_cache FROM rfm_memories WHERE id = 1") == 0.0)
+
+    # prunable_respects_idle_window_and_proven_value (wide-window branch and
+    # the negative-days error path were unported).
+    db = sqlite3.connect(":memory:")
+    rfm.register(db)
+    q = lambda sql, *p: db.execute(sql, p).fetchone()[0]
+    q("SELECT rfm_init()")
+    db.execute("SELECT rfm_config('now', 0.0)")
+    db.execute("INSERT INTO rfm_memories(id, content, created_at) VALUES "
+               "(1, 'idle useless', 0.0), (2, 'idle useful', 0.0), "
+               "(3, 'fresh', 0.0)")
+    db.execute("SELECT rfm_record_access(1)")
+    db.execute("SELECT rfm_record_outcome(1, -1.0)")
+    db.execute("SELECT rfm_record_access(2)")
+    db.execute("SELECT rfm_record_outcome(2, 1.0)")
+    db.execute("SELECT rfm_config('now', 3456000.0)")  # 40 days later
+    db.execute("SELECT rfm_record_access(3)")
+    check("idle and never useful -> prunable", q("SELECT rfm_prunable(1, 30)") == 1)
+    check("proven useful never prunable", q("SELECT rfm_prunable(2, 30)") == 0)
+    check("recent access keeps it alive", q("SELECT rfm_prunable(3, 30)") == 0)
+    check("still inside a wider window", q("SELECT rfm_prunable(1, 90)") == 0)
+
+    def refuses(name, sql):
+        try:
+            db.execute(sql)
+            check(name, False, "no error raised")
+        except sqlite3.Error:
+            pass
+    refuses("negative window refused", "SELECT rfm_prunable(1, -1)")
+    refuses("non-finite window refused", "SELECT rfm_prunable(1, 1e400)")
+    refuses("NULL window refused", "SELECT rfm_prunable(1, NULL)")
+    refuses("explicit NULL decay refused", "SELECT rfm_score_w(1, 0.5, 0.5, NULL)")
+
+
 def test_schema_files_agree():
     """rfm.py's inline schema and the standalone rfm_schema.sql must create
     identical structures — same pinning discipline as pure_sql_check.
@@ -190,7 +245,8 @@ def test_schema_files_agree():
 
 
 if __name__ == "__main__":
-    for fn in (test_math, test_sql_surface, test_schema_files_agree):
+    for fn in (test_math, test_sql_surface, test_regressions,
+               test_schema_files_agree):
         fn()
     if FAILED:
         print(f"\n{len(FAILED)} FAILURE(S)")

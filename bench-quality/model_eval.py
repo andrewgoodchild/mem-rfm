@@ -235,7 +235,7 @@ def selfcheck():
         lags.append(t)
         db.execute("SELECT rfm_config('now', ?)", (now,))
         ext = list(db.execute("SELECT rfm_activation(1)"))[0][0]
-        mine = bla_power([now - x for x in lags])
+        mine = bla_power([now - x for x in lags], now)  # created_at=0 → L=now
         worst = max(worst, abs(ext - mine))
         print(f"  n={step+1}  extension={ext:+.6f}  in-process={mine:+.6f}  "
               f"diff={abs(ext-mine):.2e}")

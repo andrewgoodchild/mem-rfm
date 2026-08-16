@@ -28,9 +28,12 @@ NOW = 1_800_000_000.0
 def bench(n, accesses):
     path = os.path.join(HERE, f"bench_{n}_{accesses}.db")
     if not os.path.exists(path):
-        subprocess.run([sys.executable, os.path.join(HERE, "throughput_gen.py"),
-                        path, str(n), str(accesses)],
-                       check=True, capture_output=True)
+        gen = subprocess.run([sys.executable,
+                              os.path.join(HERE, "throughput_gen.py"),
+                              path, str(n), str(accesses)],
+                             capture_output=True, text=True)
+        if gen.returncode != 0:
+            sys.exit(f"throughput_gen.py failed for {path}:\n{gen.stderr}")
     db = sqlite3.connect(path)
     rfm.register(db)
     db.execute("SELECT rfm_config('now', ?)", (NOW,))
@@ -54,16 +57,24 @@ def bench(n, accesses):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--sizes", default="10000,100000")
-    ap.add_argument("--accesses", type=int, default=20)
+    # Same four combinations throughput.sh measured (including the largest-N
+    # scaling point and the access-density point), expressible per entry as
+    # ROWS or ROWS:ACCESSES.
+    ap.add_argument("--sizes",
+                    default="10000:20,100000:20,1000000:20,100000:200",
+                    help="comma-separated ROWS[:ACCESSES] specs")
+    ap.add_argument("--accesses", type=int, default=20,
+                    help="accesses/row for entries without an explicit :A")
     args = ap.parse_args()
 
     print("| rows | accesses/row | rfm_score (s) | exact recompute (s) "
           "| us/row | max abs err |")
     print("|---|---|---|---|---|---|")
-    for n in (int(s) for s in args.sizes.split(",")):
-        t_score, t_exact, err = bench(n, args.accesses)
-        print(f"| {n} | {args.accesses} | {t_score:.3f} | {t_exact:.3f} "
+    for spec in args.sizes.split(","):
+        n, _, acc = spec.partition(":")
+        n, acc = int(n), int(acc) if acc else args.accesses
+        t_score, t_exact, err = bench(n, acc)
+        print(f"| {n} | {acc} | {t_score:.3f} | {t_exact:.3f} "
               f"| {t_score / n * 1e6:.2f} | {err:.3g} |")
 
 

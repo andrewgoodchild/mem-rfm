@@ -28,9 +28,11 @@ depends on it firing.
 **Retrieval.** `hooks/session_start.py` injects the top memories by pure
 `rfm_score` — no query exists at session start, so this is the prior doing
 exactly its job — capped at 1,500 characters. Injection is push; `memory_search`
-is pull; both feed recency and frequency through recorded accesses (search
-does today; see the usage gap below). Retrieval is an *event*, which is what
-makes the cache analogy live rather than decorative.
+is pull; both feed recency and frequency through recorded accesses — search
+records the access at retrieval, an injected memory records its access only
+when it is acted on (the "use is the access event" rule under Getting the M
+below). Retrieval is an *event*, which is what makes the cache analogy live
+rather than decorative.
 
 **Outcome.** `rfm_record_outcome` supplies the dimension similarity cannot:
 staleness. A memory that stops being useful — because a procedure changed,
