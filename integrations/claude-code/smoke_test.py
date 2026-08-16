@@ -188,6 +188,23 @@ async def run(check):
                       is_error(await s.call_tool(
                           "memory_feedback", {"memory_id": mid, "helped": True})))
 
+                # A memory surfaced only by SessionStart injection has no
+                # recorded access — feedback on it must record the access it
+                # implies rather than bounce, or the primary retrieval path
+                # would be the one that can't take feedback.
+                inj_id = structured(await s.call_tool("memory_save", {
+                    "content": "injected-only memory exercising the feedback path"
+                }))["id"]
+                inj_fb = await s.call_tool(
+                    "memory_feedback", {"memory_id": inj_id, "helped": True})
+                inj_row = structured(await s.call_tool("memory_get",
+                                                       {"memory_id": inj_id}))
+                check("feedback on a never-accessed memory records the implied access",
+                      not is_error(inj_fb) and inj_row["accesses"] == 1
+                      and inj_row["outcomes"] == 1,
+                      f"is_error={is_error(inj_fb)}, accesses={inj_row['accesses']}, "
+                      f"outcomes={inj_row['outcomes']}")
+
                 # A partial score therefore needs its own retrieval to attach
                 # to. First outcome initialises the EWMA directly, so the
                 # stored value is exactly what was passed.
