@@ -392,65 +392,15 @@ extension surface on this evidence.
 
 ## The lifecycle of a memory
 
-Four stages. Each is a decision with evidence behind it.
-
-### 1. Formation — how a memory gets made
-
-The usual design asks the agent mid-task whether something is worth
-remembering. We measured that going badly: across 70 live sessions the agent
-saved 17 sincerely-chosen lessons and **15 of 16 later outcomes were
-negative**. Judging durability while working means predicting the future.
-
-Post-hoc formation is what Hermes and Codex both do instead — review the
-session afterwards, when what mattered is visible. `hooks/session_end.py`
-implements the cheap deterministic slice: it extracts the one signal
-objectively present in a transcript, **a command that failed followed by a
-variant that worked**. That is a gotcha the session paid for, and it lands in
-the category our A/B says transfers.
-
-A frequency-based miner over the same transcripts surfaced only `pytest -q`
-and `git stash` — generic behaviour the model already knows. **Repetition
-finds what agents do; correction finds what they had to learn.**
-
-It **proposes, never writes**. Unreviewed accumulation is what every retreating
-vendor had in common, and an ETH Zurich study (arXiv:2602.11988) found
-LLM-generated context files *reduced* task success.
-
-### 2. Retrieval — what surfaces
-
-Similarity picks candidates; the bounded prior reorders among plausible ones.
-Retrieval is itself an event: it feeds recency and frequency, which is what
-makes the cache analogy live rather than decorative.
-
-### 3. Outcome — what it was worth
-
-`rfm_record_outcome` supplies the dimension Belady lacks. Exactly one outcome
-is accepted per access, enforced, so the access log always reproduces the
-summary state and any score can be recomputed from first principles.
-
-This stage is also what makes forgetting possible. A memory that stops being
-useful — because a procedure changed, not because it grew less similar — can
-only be detected here. Similarity cannot see staleness: a stale memory stays
-semantically perfect forever.
-
-### 4. Retention — what stays
-
-Ranking decides what surfaces, not what stays, and stores grew forever.
-`rfm_prunable(id, max_unused_days)` borrows Codex's policy, where citation
-refreshes a memory and uncited rows age out — usage driving *retention*, not
-just rank:
-
-```sql
-SELECT id FROM rfm_memories WHERE rfm_prunable(id, 30);
-```
-
-A read-only predicate, not a delete: the tables are host-owned. The guard is
-the substantive part — **anything with a positive outcome record is never
-prunable**, however idle. A memory retrieved rarely but successfully is
-exactly what this system exists to keep, and exactly what a pure cache policy
-would evict. That guard is the Belady framing's limit showing through:
-optimal caching drops the rarely-used item, and here that would be the wrong
-call.
+Four stages — formation, retrieval, outcome, retention — each a decision
+with evidence behind it. The full treatment is
+[lifecycle.md](lifecycle.md): who decides at each stage, the survey of
+shipped systems, why discretionary formation under-fires, and the design
+rules that follow. The short version: formation and outcome recording must
+be harness-owned and post-hoc (mid-task discretion measurably fails — 15 of
+16 agent-chosen lessons had negative outcomes); retrieval feeds the recency
+and frequency terms; retention is guarded by `rfm_prunable`, where a
+positive outcome record makes a memory unprunable however idle.
 
 ---
 
