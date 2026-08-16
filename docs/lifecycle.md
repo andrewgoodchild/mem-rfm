@@ -1,249 +1,169 @@
 # The lifecycle of a memory
 
-Four stages: **formation** (does a memory get written at all), **retrieval**
-(what surfaces), **outcome** (what it was worth), **retention** (what stays).
-Each is a decision, and the load-bearing question at every stage is the same:
-*who* decides, *when*, on *what evidence*. The math behind retrieval and
-outcome lives in [theory.md](theory.md); this document is the lifecycle
-itself — with formation treated at full depth, because formation is where
-the field's default design measurably fails, and everything downstream of it
-assumes a populated store.
+Four stages — formation, retrieval, outcome, retention — and at every stage
+this repo runs two paths at once: **in-session tool calls**, which exist
+because they're cheap and sometimes fire, and a **post-hoc, harness-owned
+path, which is the one that actually carries the load.** The design rule
+behind the whole document: never make the loop depend on the model deciding
+mid-task to do memory work. It measurably doesn't.
 
-## 1. Formation — who decides a memory exists
+## What we do
 
-The usual design delegates the write decision to the model mid-task. The
-evidence below — one first-hand measurement, one survey of shipped systems
-(as of August 2026), and the vendors' own architecture choices — says that
-design produces empty stores.
+| stage | in-session (scaffolding) | post-hoc, harness-owned (load-bearing) |
+|---|---|---|
+| **Formation** | `memory_save` for durable facts; "remember this" | SessionEnd hook mines the transcript for failed→fixed command pairs, stages them; `/memory-review` ratifies |
+| **Retrieval** | `memory_search` before exploring from scratch | SessionStart hook injects the top-5 by `rfm_score` |
+| **Outcome** | `memory_feedback(id, helped)` | SessionEnd hook infers outcomes from *use*: acted-on + how it went |
+| **Retention** | `memory_delete` on "forget that" | `rfm_prunable(id, days)`; positive outcomes are never prunable |
 
-### The store that stayed empty
+**Formation.** `hooks/session_end.py` extracts the one signal objectively
+present in a transcript — a command that failed followed by a variant that
+worked. That is a gotcha the session paid for, in the category
+(operational knowledge) our A/B says transfers. Candidates are staged to
+`pending-memories.md`, never auto-saved; the `/memory-review` skill is the
+ratification step. The in-session `memory_save` path stays available and a
+CLAUDE.md block (maintained by `install_hooks.py`) prompts it, but nothing
+depends on it firing.
 
-This repo's own MCP server is the motivating measurement. It ran in live
-Claude Code sessions from July 2026 onward: connected over stdio in ~1.4s,
-advertised its nine tools every session, never errored. And in all that time
-**not one tool call reached the database** — the database directory did not
-exist until a deliberate smoke test on 2026-08-15 created it. Nothing was
-broken. The server was available, described, and ignored, because every
-moment of every session had something more urgent to do than remember.
+**Retrieval.** `hooks/session_start.py` injects the top memories by pure
+`rfm_score` — no query exists at session start, so this is the prior doing
+exactly its job — capped at 1,500 characters. Injection is push; `memory_search`
+is pull; both feed recency and frequency through recorded accesses (search
+does today; see the usage gap below). Retrieval is an *event*, which is what
+makes the cache analogy live rather than decorative.
 
-That is the shape of the problem: formation doesn't fail loudly. It just
-never happens.
+**Outcome.** `rfm_record_outcome` supplies the dimension similarity cannot:
+staleness. A memory that stops being useful — because a procedure changed,
+not because it grew less similar — is only detectable here. One outcome per
+access, enforced, so the log always reproduces the summary state. How
+outcomes actually arrive is the load-bearing question — "Getting the M"
+below.
 
-### Who decides, in shipped systems
+**Retention.** Ranking decides what surfaces; `rfm_prunable` decides what
+stays: idle past the window AND never proved useful. The guard is the
+substantive part — a memory retrieved rarely but successfully is exactly
+what this system exists to keep. Retention is also formation's safety net:
+prolific harness capture is only tolerable because evidence-based pruning
+sits downstream.
 
-| System | Writes decided by | Write trigger | Retrieval |
+## Getting the M
+
+Without outcomes, `rfm_prior` degenerates to recency + frequency — and we
+measured what that is worth: ranked by R and F alone, a store collapses
+under sequential load (NDCG ≈ 0.01, [findings.md](findings.md)), and the
+ablation found the value axis the *only* component whose removal hurts. No
+feedback loop, no reason for RFM to exist.
+
+But `memory_feedback` is a discretionary second tool call, competing with
+the task for the model's attention, payoff deferred to a future session —
+the exact structure that makes discretionary *formation* under-fire. A
+CLAUDE.md instruction raises the fire rate; it cannot make it reliable.
+
+The answer is the same answer as formation: **move it post-hoc**. The
+SessionEnd hook infers outcomes from the transcript, which contains
+everything an outcome needs, in three deterministic steps:
+
+1. **Which memories were in play** — the SessionStart injection block
+   carries the `[rfm-memory:…]` marker and memory ids, and `memory_search`
+   results with ids sit in the transcript verbatim.
+2. **Whether one was acted on** — operational memories are commands, pins,
+   paths. A backtick-quoted span from the memory reproduced in a later
+   command, or a command whose tokens are drawn from the memory (program
+   match plus overlap threshold — the correction-miner's own discipline).
+3. **How that went** — the harness recorded the command's result. Acted on
+   and succeeded → `+1`. Acted on and failed → `−1` (which also catches the
+   session's own failed→fixed pair overturning a memory's advice). In play
+   but never used → **no outcome**: absence of use is what `rfm_prunable`
+   measures, not negative evidence.
+
+Three rules keep it honest. **Explicit feedback wins** — if the latest
+access already carries a model-recorded outcome, inference defers to it.
+**Use is the access event** — an injected memory records its access when it
+is acted on, not when it is displayed, so injection alone never inflates
+recency and frequency. **Precision over recall** — a missed outcome costs
+little (the prior shrinks toward neutral), a wrong one pollutes, so the
+matching thresholds are tight, and every inferred outcome is logged to
+`rfm-log.jsonl` with the command that triggered it, auditable after the
+fact.
+
+Unlike formation, outcomes are **written directly, not staged**, and the
+asymmetry is principled: formation admits new unbounded *claims* into the
+store, which needs a human; an outcome adjusts the weight on an existing
+claim inside a frozen bounded blend (EWMA λ=0.3, confidence shrink,
+β-capped composition). The math is the review step, and a wrong outcome
+decays — a wrong memory doesn't.
+
+So the M arrives through three channels, by reliability: explicit user or
+model feedback when it happens (rare, highest signal), the in-session
+`memory_feedback` call the CLAUDE.md block prompts for (raises the fire
+rate, cannot be relied on), and the post-hoc inference above (deterministic
+floor — every session that *acts on* a memory closes that memory's loop).
+What we deliberately do not do is Codex-style whole-session credit: a
+citation-bump with no valence and no per-memory attribution is the design
+this repo exists to improve on.
+
+## Why: what the field taught us
+
+We surveyed who decides formation in shipped systems (2026-08):
+
+| system | writes decided by | trigger | retrieval |
 |---|---|---|---|
-| Claude Code auto-memory | model, full discretion | none — model must spontaneously judge utility | passive: first 200 lines / 25KB of `MEMORY.md` injected at session start |
-| Claude Code `CLAUDE.md` / Codex `AGENTS.md` | user | user edits (or explicit ask) | injected in full at session start |
-| Codex memories (Apr 2026 preview) | **harness only — model forbidden to write** | background job after a thread is idle ≥ 6h (default), ≤ 30 days old, quota permitting | passive: consolidated `memory_summary.md` injected at session start |
-| MCP memory servers (reference server, mem0, this repo) | model, full discretion | tool descriptions are the only hint | model must decide to search |
-| This repo's `hooks/session_end.py` | harness proposes, human ratifies | session end, deterministic | staged to `pending-memories.md` for review |
+| Claude Code auto-memory | model, full discretion | none | index injected at session start |
+| `CLAUDE.md` / `AGENTS.md` | user | user edits | injected in full |
+| Codex memories (Apr 2026) | **harness only — model forbidden** | background job, ≥ 6h idle | summary injected at session start |
+| MCP memory servers | model, full discretion | tool descriptions | model must decide to search |
+| this repo | harness proposes, human ratifies | session end | staged for review |
 
-Three findings from that table deserve emphasis.
+The poles are instructive. Claude Code leaves formation entirely to the
+model ("decides what's worth remembering") — and our own server ran in live
+sessions for six weeks without a single tool call reaching the database.
+OpenAI went the other way: Codex's in-session model is told, in its own
+system prompt, **"Never update memories. You can only read them."** There
+is no "model decides to save" moment anywhere in its design. The MCP
+ecosystem still ships discretion and routes around it with scaffolding (the
+reference memory server's README forces the model to open every chat with
+"Remembering…").
 
-**Claude Code leaves formation entirely to the model.** The official docs
-say Claude "decides what's worth remembering based on whether the
-information would be useful in a future conversation" — no trigger on
-corrections, no trigger on preferences, no harness capture. Retrieval is
-push, not pull: the memory index is injected blindly at session start, and
-nothing in the loop ever makes the model *want* a memory it doesn't have.
+Discretion under-fires for structural reasons: saving is never on the
+task's critical path (cost now, payoff in a session this instance never
+sees); no moment forces the decision; and push-only retrieval means the
+model never experiences the failed memory query that would teach it writing
+has value. Worse, when discretion *does* fire it anti-selects — across 70
+live sessions our agent saved 17 sincerely-chosen lessons and **15 of 16
+later outcomes were negative**. Judging durability mid-task means
+predicting the future; post-hoc, "what did we have to learn?" is an
+observation.
 
-**OpenAI, having presumably watched the same failure, went to the opposite
-pole.** Codex's memory feature (shipped as an opt-in preview April 2026) is
-100% harness-driven: a background pipeline summarizes threads after they've
-been idle six hours, a consolidation pass merges summaries into a durable
-`MEMORY.md`, and the result is injected at the next session start. The
-in-session model is explicitly instructed — in the injected system prompt —
-**"Never update memories. You can only read them."** There is no "model
-decides to save" moment anywhere in the native design. Write timing is
-wall-clock and quota, not semantic judgment.
+Post-hoc capture over-produces — that's its known failure mode. Every
+vendor that auto-captured into a long-lived store retreated, and the ETH
+Zurich study (arXiv:2602.11988) found LLM-generated context files *reduced*
+task success. Hence the two defenses that compose: stage for review, and
+let outcome-ranked retention prune. Human memory works the same way —
+encoding is cheap and indiscriminate, and the environment's recurrence
+statistics do the selecting (Anderson & Schooler 1991, the same result the
+activation math is built on). Cheap indiscriminate writes plus ruthless
+evidence-based retention beats careful discretionary writes plus similarity
+ranking, because it puts each decision where its evidence is.
 
-**The MCP ecosystem still ships the discretionary design, and routes around
-it with scaffolding.** The reference knowledge-graph memory server's own
-README ships a system prompt commanding the model to *"Always begin your
-chat by saying only 'Remembering...' and retrieve all relevant
-information"* — an admission that without forced instructions the tools
-simply don't get called. Community hook systems (e.g. OpenViking's
-UserPromptSubmit/Stop hooks, May 2026) capture and inject memories
-deterministically, "rather than requiring the model to voluntarily invoke
-memory tools."
+Distilled:
 
-### Why discretion under-fires
-
-Four mechanisms, and they compound.
-
-**1. Saving is never on the critical path.** The model's in-session
-objective is finishing the task; a memory write is a cost paid now for a
-payoff that lands in a session this instance never experiences. LangChain's
-memory docs state the trade plainly: a "hot path" agent "must multitask
-between memory creation and its other responsibilities, potentially
-affecting the quantity and quality of memories created." Nothing connects
-the future benefit back to the present decision.
-
-**2. There is no forcing moment.** The facts worth keeping — a build quirk,
-a dependency pin, a correction — do not arrive labeled. Each one,
-individually, looks skippable, and skipping is always locally correct.
-
-**3. When discretion does fire, it fires badly.** We measured this
-directly: across 70 live sessions the agent saved 17 sincerely-chosen
-lessons, and **15 of 16 later outcomes were negative**. Judging durability
-*while working* means predicting the future, and the agent can't.
-Discretionary formation is not just rare — it is anti-selected.
-
-**4. Passive retrieval kills demand.** In every shipped system above,
-retrieval is injection at session start. The model never issues a memory
-query, so it never experiences a query that *fails* — the one signal that
-would teach it writing has value. Push-only retrieval starves the write
-side of its reason to exist.
-
-### The convergent answer: post-hoc, harness-owned
-
-Every system that ships memory at scale arrived at the same place from
-different directions: **take the decision away from the in-session model
-and move it after the fact**, when what mattered is visible.
-
-- Codex: background extraction + consolidation, model read-only.
-- Hermes: post-session background review.
-- LangMem/LangChain: "background" memory formation as the named
-  alternative to hot-path tool calls.
-- Community Codex/Claude hooks: deterministic capture at prompt-submit and
-  session-stop.
-- This repo: `hooks/session_end.py` extracts the one signal objectively
-  present in a transcript — **a command that failed followed by a variant
-  that worked** — a gotcha the session demonstrably paid for, in the
-  category (operational knowledge) our A/B says transfers.
-
-Post-hoc formation also fixes the anti-selection problem: after the
-session, "what did we have to learn?" is an observation, not a prediction.
-And the signal has to be *correction*, not repetition: a frequency-based
-miner over the same transcripts surfaced only `pytest -q` and `git stash` —
-generic behaviour the model already knows. **Repetition finds what agents
-do; correction finds what they had to learn.**
-
-### Over-formation is the ranking problem — which is the point
-
-Deterministic capture over-produces; that is its failure mode, and it is
-well documented. Every vendor that auto-captured into a shared or
-long-lived store retreated, and the ETH Zurich context-file study
-(arXiv:2602.11988) found LLM-generated context files *reduced* task
-success. Unreviewed accumulation makes things worse.
-
-There are two defenses, and they compose:
-
-**Stage, don't write.** `session_end.py` proposes candidates to
-`pending-memories.md` for human review (the `/memory-review` skill is the
-tooling for that step). Staging is what the surviving products do.
-
-**Let retention prune, on evidence.** This is where formation meets the
-rest of the repo. Human memory solves formation the same way: encoding is
-cheap and largely indiscriminate, and the *environment's* statistics of
-recurrence do the selection afterwards — that is precisely the Anderson &
-Schooler (1991) result the activation math is built on. The filter belongs
-downstream of formation, where evidence exists. But downstream filtering
-under load is exactly where similarity-only ranking collapses
-(rich-get-richer, NDCG ≈ 0.01 — see [findings.md](findings.md)); the
-outcome axis is what makes prolific formation *safe*. Formation and
-retention are not separate features. Cheap indiscriminate writes plus
-outcome-ranked retention beats careful discretionary writes plus
-similarity ranking — because the first pair puts each decision where its
-evidence is.
-
-### Formation design rules
-
-1. **Never ask an agent mid-task whether something is worth remembering.**
-   Measured: 15 of 16 such judgments were wrong.
-2. **Capture at deterministic moments the harness owns** — session end,
-   failure→success pairs — not at moments the model must notice.
-3. **Stage into review, never auto-write** into a shared or long-lived
-   store.
-4. **Make formation cheap and prolific; make retention ruthless.** That
-   requires an outcome axis, because similarity cannot prune.
-5. **Force the outcome loop the same way you force the write loop.**
-   Discretionary feedback is discretionary formation's twin and fails the
-   same way (see stage 3 below).
-6. **Trigger-specific tool descriptions are scaffolding, not a solution.**
-   They raise the fire rate of discretionary calls; they do not make them
-   reliable.
-7. **Expect cold start.** Codex ships a six-hour idle gate — by design,
-   nothing exists on day one. First-session value must come from somewhere
-   else (e.g. checked-in `AGENTS.md`/`CLAUDE.md`, which every vendor
-   positions as the home for rules too important to leave to generated
-   memory).
-
-## 2. Retrieval — what surfaces
-
-Similarity picks candidates; the bounded prior reorders among plausible ones
-(the math is in [theory.md](theory.md)). Retrieval is itself an event: it
-feeds recency and frequency, which is what makes the cache analogy live
-rather than decorative.
-
-Retrieval design also feeds back into formation. Injection at session start
-(this repo's `hooks/session_start.py`, Claude Code's memory index, Codex's
-summary) is push, not pull — reliable, but as noted above, a model that
-never queries never learns what a missing memory costs. The two modes
-compose: inject the prior-ranked top-K deterministically, keep search
-available for the model, and let neither be the only path.
-
-## 3. Outcome — what it was worth
-
-`rfm_record_outcome` supplies the dimension Belady lacks. Exactly one
-outcome is accepted per access, enforced, so the access log always
-reproduces the summary state and any score can be recomputed from first
-principles.
-
-This stage is also what makes forgetting possible. A memory that stops
-being useful — because a procedure changed, not because it grew less
-similar — can only be detected here. Similarity cannot see staleness: a
-stale memory stays semantically perfect forever.
-
-**Outcome recording has formation's problem one level down.** Even when a
-memory is retrieved, recording whether it *helped* is a second
-discretionary tool call (`memory_feedback`), competing with the task for
-the model's attention, with the payoff again deferred. It under-fires for
-the same four reasons formation does — and if it does, the prior stays
-flat and the value axis never engages. Whatever harness mechanism forces
-formation must also infer or force outcomes: correction-pair detection,
-task-result inspection at session end, standing instructions
-(`install_hooks.py` maintains a CLAUDE.md block for exactly this), or
-explicit review — not model discretion mid-task.
-
-## 4. Retention — what stays
-
-Ranking decides what surfaces, not what stays, and stores grew forever.
-`rfm_prunable(id, max_unused_days)` borrows Codex's policy, where citation
-refreshes a memory and uncited rows age out — usage driving *retention*,
-not just rank:
-
-```sql
-SELECT id FROM rfm_memories WHERE rfm_prunable(id, 30);
-```
-
-A read-only predicate, not a delete: the tables are host-owned. The guard
-is the substantive part — **anything with a positive outcome record is
-never prunable**, however idle. A memory retrieved rarely but successfully
-is exactly what this system exists to keep, and exactly what a pure cache
-policy would evict. That guard is the Belady framing's limit showing
-through: optimal caching drops the rarely-used item, and here that would be
-the wrong call.
-
-Retention is also formation's safety net, per stage 1: a prolific,
-harness-owned capture pipeline is only tolerable because pruning and
-outcome-ranking sit downstream of it.
+1. Never ask an agent mid-task whether something is worth remembering
+   (measured: 15 of 16 wrong).
+2. Capture and record outcomes at deterministic moments the harness owns.
+3. Stage into review; never auto-write to a long-lived store.
+4. Make formation cheap and retention ruthless — which requires the
+   outcome axis, because similarity cannot prune.
+5. Expect cold start (Codex ships six empty hours by design); first-session
+   value belongs in checked-in files like `CLAUDE.md`/`AGENTS.md`.
 
 ## Sources
 
-Formation survey conducted 2026-08-15. Official docs, verified live: Claude
-Code memory (code.claude.com/docs/en/memory.md), Claude Code MCP
-quickstart, Codex memories (developers.openai.com/codex/memories) and
-changelog, AGENTS.md guide (developers.openai.com/codex/guides/agents-md),
-LangChain memory concepts (docs.langchain.com/oss/python/concepts/memory).
-Primary discussion: openai/codex Discussion #12567 (memory design
-questions, Feb 2026), Issue #19195 ("Never update memories" prompt,
-Apr 2026), Discussion #23364 (hook-based capture, May 2026), Issues
-#21932/#3981 (no AGENTS.md auto-update path). Ecosystem: reference
-knowledge-graph MCP memory server README; mem0's Codex analyses. Pipeline
-internals for Codex (extraction model, ~5k-token summary budget, exact
-config ranges) are community-sourced (codex.danielvaughan.com deep-dives)
-and consistent with, but not confirmed by, official docs. First-hand
-measurements (idle server, 70-session formation A/B, correction-pair
-mining) are this repo's; see [methodology.md](methodology.md).
+Survey conducted 2026-08-15 against live official docs: Claude Code memory
+and MCP docs (code.claude.com), Codex memories and AGENTS.md guides
+(developers.openai.com), LangChain memory concepts. Primary discussion:
+openai/codex Discussion #12567, Issue #19195 ("Never update memories"),
+Discussion #23364 (hook-based capture). Codex pipeline internals beyond the
+official docs are community-sourced (codex.danielvaughan.com). First-hand
+measurements (the idle server, the 70-session formation A/B,
+correction-pair mining) are this repo's; see
+[methodology.md](methodology.md).
