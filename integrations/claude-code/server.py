@@ -521,6 +521,19 @@ def _feedback(memory_id: int, helped: bool, score: float | None = None,
     d = db()
     try:
         _rfm.last_error = None
+        # SessionStart injection surfaces a memory without recording an
+        # access, so feedback on an injected-only memory would bounce with
+        # "no recorded access" — the primary retrieval path would be the one
+        # that can't take feedback. The feedback itself is evidence the
+        # memory was in play: record the access it implies, exactly as
+        # hooks/session_end.py does before writing an inferred outcome.
+        # Only when there is no access at all — a latest access that already
+        # carries an outcome must still error (one outcome per retrieval).
+        cnt = d.execute("SELECT access_count FROM rfm_memories WHERE id = ?",
+                        (memory_id,)).fetchone()
+        implied_access = cnt is not None and cnt[0] == 0
+        if implied_access:
+            d.execute("SELECT rfm_record_access(?)", (memory_id,))
         row = d.execute("SELECT rfm_record_outcome(?, ?)",
                         (memory_id, outcome)).fetchone()
         d.commit()
@@ -535,7 +548,7 @@ def _feedback(memory_id: int, helped: bool, score: float | None = None,
     n = d.execute("SELECT outcome_count FROM rfm_memories WHERE id = ?",
                   (memory_id,)).fetchone()
     log("feedback", id=memory_id, helped=helped, outcome=outcome,
-        note=_redact(note) if note else None,
+        note=_redact(note) if note else None, access_recorded=implied_access,
         value=round(row[0], 4), outcomes=n[0] if n else None)
     return FeedbackResult(id=memory_id, value_score=round(row[0], 4),
                           outcomes=n[0] if n else 0)
@@ -654,7 +667,11 @@ def memory_feedback(memory_id: int, helped: bool, note: str = "",
 
     `score` overrides the implied ±1 with any value in [-1, 1], for a memory
     that was partly useful. `note` records why, for later diagnosis; it is
-    written to the log, not stored on the memory."""
+    written to the log, not stored on the memory.
+
+    Feedback on a memory surfaced only by session-start injection (never
+    searched, so no recorded access) counts as its use: the access is
+    recorded implicitly — no need to memory_search first."""
     return _feedback(memory_id, helped, score, note)
 
 
