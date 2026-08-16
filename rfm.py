@@ -11,9 +11,10 @@ working verbatim:
     db.execute("SELECT id FROM rfm_memories ORDER BY rfm_score(id) DESC")
 
 This is a port of src/{math,functions,config,clock}.rs, retired in favor of
-this module once bench-quality/py_parity_check.py showed the two agree to
-float round-off over a branch-covering corpus and identical operation
-sequences. Semantics preserved deliberately:
+this module once a parity check (run at the `rust-extension` tag, before the
+Rust sources were removed) showed the two agree to float round-off over a
+branch-covering corpus and identical operation sequences; tests/test_rfm.py
+now pins the semantics. Preserved deliberately:
 
   * One config per register() call (connection-wide, never cross-process),
     mutated through rfm_config with the same validation and error strings.
@@ -33,8 +34,8 @@ Differences from the extension, all inherent to stdlib sqlite3:
     are callable from views/triggers. Do not do that.
   * A UDF that raises surfaces to the caller as sqlite3.OperationalError
     ("user-defined function raised exception"); the specific rfm: message
-    is printed to stderr instead of carried in the exception. Hosts that
-    need the message use sqlite3.enable_callback_tracebacks(True).
+    is printed to stderr and kept on the state object register() returns
+    (r.last_error) for hosts that relay errors to a caller.
   * Parameters are bound, not interpolated: stdlib prepare supports it,
     so f64 literal formatting is unnecessary.
 
@@ -42,7 +43,6 @@ Every equation cites its source at the point of use; the derivations are
 docs/theory.md.
 """
 import math as _m
-import sqlite3
 import sys
 import time
 
@@ -164,12 +164,30 @@ DEFAULTS = {"tau": 86_400.0, "decay": 0.5, "lambda": 0.3, "w_a": 0.7,
             "s": 1.0, "now": None}
 
 
+def _normalize_row(n, created, t1w, t2w, value, n_out):
+    """The six extension-maintained columns (access_count, created_at,
+    last_access, bla_cache, value_score, outcome_count), typed and defended
+    against a NULL n/created/value/n_out a caller-supplied row might carry
+    (the schema's own NOT NULL columns never are). t1w/t2w stay None rather
+    than collapsing to 0.0 -- that distinction is bla_hybrid_k2's k=0/k=1/k=2
+    branch selector. One shape, shared by _load, rfm_record_access, and
+    rfm_prior_of."""
+    return (int(n or 0), float(created or 0.0),
+            None if t1w is None else float(t1w),
+            None if t2w is None else float(t2w),
+            float(value or 0.0), int(n_out or 0))
+
+
 class _Rfm:
     """One instance per register() call; every UDF closes over it."""
 
     def __init__(self, conn):
         self.conn = conn
         self.cfg = dict(DEFAULTS)
+        # Message of the most recent UDF error. stdlib sqlite3 replaces a
+        # raising UDF's message with a generic one; hosts that want the
+        # specific rfm: text read this right after catching OperationalError.
+        self.last_error = None
 
     # -- plumbing ---------------------------------------------------------
 
@@ -185,11 +203,7 @@ class _Rfm:
             (mid,)).fetchone()
         if row is None:
             raise ValueError(f"rfm: no such memory id {mid}")
-        n, created, t1w, t2w, value, n_out = row
-        return (int(n or 0), float(created or 0.0),
-                None if t1w is None else float(t1w),
-                None if t2w is None else float(t2w),
-                float(value or 0.0), int(n_out or 0))
+        return _normalize_row(*row)
 
     def _activation(self, row, now):
         n, created, t1w, t2w, _v, _no = row
@@ -230,12 +244,7 @@ class _Rfm:
             "value_score, outcome_count", (now, mid)).fetchone()
         if row is None:
             raise ValueError(f"rfm: no such memory id {mid}")
-        n, created, t1w, t2w, value, n_out = row
-        return self._activation(
-            (int(n), float(created),
-             None if t1w is None else float(t1w),
-             None if t2w is None else float(t2w),
-             float(value), int(n_out)), now)
+        return self._activation(_normalize_row(*row), now)
 
     def rfm_record_outcome(self, mid, outcome):
         if outcome is None or not _m.isfinite(float(outcome)):
@@ -285,15 +294,20 @@ class _Rfm:
         beta = self.cfg["beta"]
         return (1.0 - beta) + beta * self._score(self._load(mid), self.now())
 
-    def rfm_score_w(self, mid, w_a, w_v, decay=None):
+    def rfm_score_w(self, mid, w_a, w_v, *decay):
+        # *decay so the 3-arg registration means "omitted" while an explicit
+        # SQL NULL in the 4-arg form stays distinguishable and is refused,
+        # exactly as the extension's require_f64 did.
         row = self._load(mid)
         for name, w in (("w_a", w_a), ("w_v", w_v)):
             if w is None or not _m.isfinite(float(w)) or float(w) < 0.0:
                 raise ValueError("rfm: weights must be finite and >= 0")
-        if decay is None:
+        if not decay:
             d = self.cfg["decay"]
         else:
-            d = float(decay)
+            if decay[0] is None:
+                raise ValueError("rfm: decay must not be NULL")
+            d = float(decay[0])
             if not 0.0 < d < 1.0:
                 raise ValueError("rfm: decay must be in (0, 1)")
         now = self.now()
@@ -307,18 +321,22 @@ class _Rfm:
 
     def rfm_prunable(self, mid, max_days):
         row = self._load(mid)
-        if max_days is None or float(max_days) < 0.0:
+        if max_days is None:
+            raise ValueError("rfm: max_unused_days must not be NULL")
+        m = float(max_days)
+        if not _m.isfinite(m):
+            # inf would silently mean "never prunable"; fail like the
+            # extension's require_f64 did instead of masking a caller bug.
+            raise ValueError("rfm: max_unused_days must be finite")
+        if m < 0.0:
             raise ValueError("rfm: max_unused_days must be >= 0")
         anchor = row[2] if row[2] is not None else row[1]
         idle_days = max(self.now() - anchor, 0.0) / 86_400.0
         proved_useful = row[5] > 0 and row[4] > 0.0
-        return int(idle_days > float(max_days) and not proved_useful)
+        return int(idle_days > m and not proved_useful)
 
     def rfm_prior_of(self, n, created, t1w, t2w, value, n_out):
-        row = (int(n or 0), float(created or 0.0),
-               None if t1w is None else float(t1w),
-               None if t2w is None else float(t2w),
-               float(value or 0.0), int(n_out or 0))
+        row = _normalize_row(n, created, t1w, t2w, value, n_out)
         beta = self.cfg["beta"]
         return (1.0 - beta) + beta * self._score(row, self.now())
 
@@ -353,11 +371,13 @@ def register(conn):
 
     def wrap(fn):
         # stdlib sqlite3 replaces a raising UDF's message with a generic one;
-        # keep the specific rfm: message visible on stderr for diagnosis.
+        # keep the specific rfm: message visible on stderr for diagnosis and
+        # on r.last_error for hosts that relay errors to a caller.
         def call(*args):
             try:
                 return fn(*args)
             except Exception as e:
+                r.last_error = f"{e}"
                 print(f"{e}", file=sys.stderr)
                 raise
         return call

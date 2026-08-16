@@ -41,6 +41,7 @@ from mcp.types import ToolAnnotations
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", ".."))
 import rfm  # noqa: E402  (repo-root module; scoring engine)
+import log_env  # noqa: E402  (sibling module; shared RFM_LOG contract)
 
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 EMBEDDER_ID = os.environ.get("RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
@@ -51,6 +52,7 @@ MAX_TOKENS = int(os.environ.get("RFM_MAX_TOKENS", "256"))
 # imports. The decorator, annotations and run() surfaces are the same.
 mcp = _Server("sqlite-rfm-memory")
 _db = None
+_rfm = None      # rfm.register() state; carries last_error for diagnostics
 _embedder = None
 
 
@@ -166,7 +168,7 @@ def serialized(fn):
 
 
 def db():
-    global _db
+    global _db, _rfm
     with _lock:
         if _db is None:
             dirname = os.path.dirname(DB_PATH)
@@ -181,14 +183,24 @@ def db():
                 conn.enable_load_extension(True)
                 sqlite_vec.load(conn)
                 conn.enable_load_extension(False)
-                rfm.register(conn)
+                _rfm = rfm.register(conn)
                 conn.execute("SELECT rfm_init()")
                 conn.execute("PRAGMA journal_mode=WAL")
                 cols = [r[1] for r in conn.execute("PRAGMA table_info(rfm_memories)")]
-                if "embedding" not in cols:
-                    conn.execute("ALTER TABLE rfm_memories ADD COLUMN embedding BLOB")
-                if "scope" not in cols:
-                    conn.execute("ALTER TABLE rfm_memories ADD COLUMN scope TEXT")
+                for col, ddl in (
+                    ("embedding", "ALTER TABLE rfm_memories ADD COLUMN embedding BLOB"),
+                    ("scope", "ALTER TABLE rfm_memories ADD COLUMN scope TEXT"),
+                ):
+                    if col in cols:
+                        continue
+                    try:
+                        conn.execute(ddl)
+                    except sqlite3.OperationalError as e:
+                        # The store is user-global: two sessions starting at
+                        # once can both see the column missing and race the
+                        # ALTER. Losing that race is success, not failure.
+                        if "duplicate column" not in str(e):
+                            raise
             except BaseException:
                 conn.close()
                 raise
@@ -199,12 +211,18 @@ def db():
 def embed(text: str) -> bytes:
     # Own lock, never nested inside _lock: the first call loads (and on a
     # cold cache, downloads) the model, and that must not block the DB lock
-    # that every other tool waits on.
+    # that every other tool waits on. The lock guards only the load —
+    # encoding is safe to run concurrently once the model exists (ONNX
+    # Runtime documents concurrent Run(); the tokenizer holds no per-call
+    # state), so warm-path embeds from parallel tool calls don't queue.
     global _embedder
-    with _embed_lock:
-        if _embedder is None:
-            _embedder = _load_embedder()
-        vec = _embedder(text[:2000])
+    enc = _embedder
+    if enc is None:
+        with _embed_lock:
+            if _embedder is None:
+                _embedder = _load_embedder()
+            enc = _embedder
+    vec = enc(text[:2000])
     return struct.pack(f"{len(vec)}f", *vec)
 
 
@@ -268,20 +286,12 @@ def _load_embedder():
 # JSONL beside the database records enough to answer all three; log_stats.py
 # reads it. Never writes to stdout — the MCP transport is stdio and a stray
 # byte corrupts the protocol.
-# RFM_LOG is both a switch and a path: 0/off/empty disables, an on-ish
-# sentinel (1/on/true — users mirror the source's own default) keeps the
-# default path beside the database, anything else IS the path. Treating "1"
-# as a path made LOG_PATH="1", whose empty dirname made every log() raise
-# into the bare except below — logging enabled yet silently dead.
-_LOG_RAW = os.environ.get("RFM_LOG", "1")
-LOG_ENABLED = _LOG_RAW not in ("0", "off", "")
-LOG_PATH = (os.path.join(os.path.dirname(DB_PATH), "rfm-log.jsonl")
-            if _LOG_RAW in ("0", "off", "", "1", "on", "true")
-            else os.path.expanduser(_LOG_RAW))
-# Queries and memory content are the sensitive part. They sit in the same
-# directory as the database, which already holds the memories themselves, so
-# the default logs them; RFM_LOG_CONTENT=0 keeps lengths and ids only.
-LOG_CONTENT = os.environ.get("RFM_LOG_CONTENT", "1") not in ("0", "off")
+# RFM_LOG / RFM_LOG_CONTENT semantics are shared with log_stats.py and
+# hooks/session_end.py (log_env.py), which read/write this same file and
+# must agree on where it lives and whether it's on.
+LOG_ENABLED, LOG_PATH = log_env.resolve_log(
+    os.environ.get("RFM_LOG", "1"), os.path.dirname(DB_PATH))
+LOG_CONTENT = log_env.content_enabled(os.environ.get("RFM_LOG_CONTENT", "1"))
 
 
 def log(op: str, **fields):
@@ -299,7 +309,7 @@ def log(op: str, **fields):
 
 
 def _redact(text: str) -> str:
-    return text if LOG_CONTENT else f"<{len(text)} chars>"
+    return log_env.redact(text, LOG_CONTENT)
 
 
 # Seconds within which a repeat retrieval of the same memory does NOT record
@@ -510,12 +520,18 @@ def _feedback(memory_id: int, helped: bool, score: float | None = None,
         raise ValueError(f"score must be in [-1, 1], got {outcome}")
     d = db()
     try:
+        _rfm.last_error = None
         row = d.execute("SELECT rfm_record_outcome(?, ?)",
                         (memory_id, outcome)).fetchone()
         d.commit()
     except sqlite3.OperationalError as e:
-        log("feedback", id=memory_id, outcome=outcome, error=str(e))
-        raise ValueError(str(e)) from e
+        # stdlib sqlite3 masks a raising UDF as the generic 'user-defined
+        # function raised exception'; the engine keeps the real rfm: message
+        # (no such id / no recorded access / already has an outcome) on the
+        # state object — relay that, so the model can self-correct.
+        msg = _rfm.last_error or str(e)
+        log("feedback", id=memory_id, outcome=outcome, error=msg)
+        raise ValueError(msg) from e
     n = d.execute("SELECT outcome_count FROM rfm_memories WHERE id = ?",
                   (memory_id,)).fetchone()
     log("feedback", id=memory_id, helped=helped, outcome=outcome,

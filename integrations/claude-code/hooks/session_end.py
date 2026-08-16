@@ -38,8 +38,8 @@ human), an outcome adjusts the weight on an existing claim inside a frozen
 bounded blend (EWMA lambda=0.3, confidence shrink, beta-capped composition
 — the math is the review step, and a wrong outcome decays). Thresholds are
 tuned for precision over recall: a missed outcome costs little, a wrong one
-pollutes. Every inferred outcome is logged to rfm-log.jsonl with the
-matched command, so the inference is auditable after the fact.
+pollutes. Every inferred outcome — and every failure to record one — is
+logged to rfm-log.jsonl, so the inference is auditable after the fact.
 
 Install (settings.json):
 
@@ -49,6 +49,7 @@ Install (settings.json):
 Reads the hook payload on stdin; writes candidates to
 $RFM_MEMORY_DB's directory as `pending-memories.md` and outcomes to the DB.
 """
+import collections
 import json
 import os
 import re
@@ -57,13 +58,21 @@ import sys
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))
+sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))  # repo root: rfm.py
+sys.path.insert(0, os.path.join(HERE, ".."))               # server.py's dir
 import rfm  # noqa: E402  (repo-root module; scoring engine)
+import log_env  # noqa: E402  (server.py's sibling; shared RFM_LOG contract)
 
 DB_PATH = os.path.expanduser(
     os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 OUT = os.path.join(os.path.dirname(DB_PATH), "pending-memories.md")
-LOG = os.path.join(os.path.dirname(DB_PATH), "rfm-log.jsonl")
+# log_env mirrors server.py's RFM_LOG/RFM_LOG_CONTENT semantics exactly (one
+# owner for both processes), so the hook's audit lines land in the same file
+# the server writes, RFM_LOG=0 silences the hook too, and content redaction
+# follows the same rule as server.py's _redact.
+LOG_ENABLED, LOG = log_env.resolve_log(
+    os.environ.get("RFM_LOG", "1"), os.path.dirname(DB_PATH))
+LOG_CONTENT = log_env.content_enabled(os.environ.get("RFM_LOG_CONTENT", "1"))
 MAX_CANDIDATES = 10
 
 # A failure worth learning from names a cause. Exit-code noise ("1") and
@@ -74,6 +83,16 @@ FAILURE = re.compile(
     r"modulenotfounderror|importerror|cannot find module|"
     r"unable to load|not a loadable|undefined symbol|"
     r"no matches found|bad interpreter", re.I)
+
+# One Bash-call event, in order. `is_err` is the harness's own verdict, kept
+# separate from the FAILURE regex (which runs over OUTPUT text, so a
+# successful `grep -rn ModuleNotFoundError` must not read as a failure just
+# because its matches contain failure words). `got` distinguishes a clean
+# exit from a command whose result never arrived (session ended mid-flight)
+# — an unknown result is not a success. Named fields everywhere a field is
+# read, instead of a positional tuple threaded by index across four
+# functions.
+Event = collections.namedtuple("Event", "cmd is_err body got")
 
 
 def tokens(cmd):
@@ -89,29 +108,59 @@ def program(cmd):
     return ""
 
 
-def load_events(path):
-    """(command, errored, text) per Bash call, in order."""
-    pending, events = {}, []
+def _is_bash_call(block):
+    """A tool_use block that launches a real (non-empty) Bash command.
+    Shared by load_events and in_play_memories so their two views of "which
+    Bash calls happened" cannot silently diverge — in_play_memories' n_bash
+    offset must line up with load_events' events list."""
+    return (block.get("type") == "tool_use" and block.get("name") == "Bash"
+            and bool((block.get("input") or {}).get("command", "")))
+
+
+def _log(fields):
+    """Append one line to rfm-log.jsonl. Never raises — a log write must
+    not be the reason the hook fails."""
+    if not LOG_ENABLED:
+        return
+    try:
+        with open(LOG, "a") as fh:
+            fh.write(json.dumps({"t": round(time.time(), 3), **fields}) + "\n")
+    except OSError:
+        pass
+
+
+def _parse_transcript(path):
+    """Every JSONL record in the transcript, parsed once. load_events and
+    in_play_memories both scan it (for different signals); a shared parse
+    avoids reading and JSON-decoding a potentially multi-MB transcript
+    twice per hook run."""
     try:
         lines = open(path, errors="replace").read().splitlines()
     except OSError:
-        return events
+        return []
+    out = []
     for line in lines:
         try:
-            d = json.loads(line)
+            out.append(json.loads(line))
         except Exception:
             continue
+    return out
+
+
+def load_events(records):
+    """[Event, ...] per Bash call, in order."""
+    pending, raw = {}, []
+    for d in records:
         content = (d.get("message") or {}).get("content")
         if not isinstance(content, list):
             continue
         for b in content:
             if not isinstance(b, dict):
                 continue
-            if b.get("type") == "tool_use" and b.get("name") == "Bash":
+            if _is_bash_call(b):
                 cmd = (b.get("input") or {}).get("command", "")
-                if cmd:
-                    pending[b.get("id")] = len(events)
-                    events.append([cmd, False, ""])
+                pending[b.get("id")] = len(raw)
+                raw.append([cmd, False, "", False])
             elif b.get("type") == "tool_result":
                 idx = pending.pop(b.get("tool_use_id"), None)
                 if idx is None:
@@ -121,9 +170,10 @@ def load_events(path):
                     body = " ".join(x.get("text", "") for x in body
                                     if isinstance(x, dict))
                 body = (body or "")[:800]
-                events[idx][2] = body
-                events[idx][1] = bool(b.get("is_error")) or bool(FAILURE.search(body))
-    return events
+                raw[idx][2] = body
+                raw[idx][1] = bool(b.get("is_error"))
+                raw[idx][3] = True
+    return [Event(*r) for r in raw]
 
 
 def corrections(events):
@@ -131,41 +181,48 @@ def corrections(events):
 
     Requires substantial token overlap so we pair a command with its own
     retry rather than with whatever happened to run next, and requires the
-    fix to have succeeded."""
+    fix to have succeeded. A candidate must name a cause (FAILURE match):
+    ordinary exit-1 noise — a failing test the agent is working on — is not
+    a gotcha, per the module docstring. Failures are mined from the harness
+    verdict OR an error-shaped output (a `.load`-style tool can fail while
+    exiting 0), but the fix must be clean on both signals."""
     out, used = [], set()
-    for i, (cmd, failed, err) in enumerate(events):
-        if not failed:
-            continue
-        base = tokens(cmd)
+    for i, e in enumerate(events):
+        reason = FAILURE.search(e.body) if e.got else None
+        if not e.got or not (e.is_err or reason):
+            continue        # not a known failure
+        if reason is None:
+            continue        # failed, but names no cause: expected noise
+        base = tokens(e.cmd)
         if not base:
             continue
         for j in range(i + 1, min(i + 6, len(events))):
             if j in used:
                 continue
-            fix, fix_failed, _ = events[j]
+            fix = events[j]
             # Identity is checked on the FULL text: two heredoc calls can share
             # a first line while differing entirely in body.
-            if fix_failed or fix.strip() == cmd.strip():
+            if (not fix.got or fix.is_err or FAILURE.search(fix.body)
+                    or fix.cmd.strip() == e.cmd.strip()):
                 continue
             # The fix must be a retry of the SAME program, not merely the next
             # thing that ran — without this, an unrelated success gets paired
             # with the failure that happened to precede it.
-            prog = program(cmd)
-            if not prog or prog not in tokens(fix):
+            prog = program(e.cmd)
+            if not prog or prog not in tokens(fix.cmd):
                 continue
-            overlap = len(base & tokens(fix)) / max(1, len(base))
+            overlap = len(base & tokens(fix.cmd)) / max(1, len(base))
             if overlap >= 0.5:
-                head_a = cmd.split("\n")[0][:200]
-                head_b = fix.split("\n")[0][:200]
+                head_a = e.cmd.split("\n")[0][:200]
+                head_b = fix.cmd.split("\n")[0][:200]
                 # Two heredoc calls can differ only in their body; the rendered
                 # advice would then read "X fails; use X instead". Useless.
                 if head_a == head_b:
                     continue
-                reason = FAILURE.search(err)
                 out.append({
                     "failed": head_a,
                     "fixed": head_b,
-                    "error": (reason.group(0) if reason else "failed").lower(),
+                    "error": reason.group(0).lower(),
                 })
                 used.add(j)
                 break
@@ -175,26 +232,28 @@ def corrections(events):
 INJECTED = re.compile(r"^- \[(\d+)\] (.+)$", re.M)
 
 
-def in_play_memories(path):
-    """{memory_id: content} for memories the session could have acted on:
-    the SessionStart injection block and memory_search tool results, both of
-    which sit verbatim in the transcript."""
+def in_play_memories(records):
+    """{memory_id: (content, first_event_idx)} for memories the session could
+    have acted on: the SessionStart injection block and memory_search tool
+    results, both of which sit verbatim in the transcript.
+
+    first_event_idx is how many Bash events precede the memory's first
+    appearance (0 for injected ones), counted with load_events' own
+    _is_bash_call predicate. A memory cannot have influenced a command that
+    ran before the session ever saw it, so outcome inference starts matching
+    there."""
     mems, search_calls = {}, set()
+    n_bash = 0
+
+    def note(mid, content):
+        mems.setdefault(int(mid), (content, n_bash))
 
     def scan_text(text):
         if "[rfm-memory:" in text:
             for mid, content in INJECTED.findall(text):
-                mems.setdefault(int(mid), content)
+                note(mid, content)
 
-    try:
-        lines = open(path, errors="replace").read().splitlines()
-    except OSError:
-        return mems
-    for line in lines:
-        try:
-            d = json.loads(line)
-        except Exception:
-            continue
+    for d in records:
         content = (d.get("message") or {}).get("content")
         if isinstance(content, str):
             scan_text(content)
@@ -206,6 +265,8 @@ def in_play_memories(path):
                 continue
             if b.get("type") == "text":
                 scan_text(b.get("text", ""))
+            elif _is_bash_call(b):
+                n_bash += 1
             elif (b.get("type") == "tool_use"
                   and str(b.get("name", "")).endswith("memory_search")):
                 search_calls.add(b.get("id"))
@@ -217,21 +278,30 @@ def in_play_memories(path):
                                     if isinstance(x, dict))
                 try:
                     for r in json.loads(body or "{}").get("result", []):
-                        mems.setdefault(int(r["id"]), str(r.get("content", "")))
+                        note(r["id"], str(r.get("content", "")))
                 except Exception:
                     continue
     return mems
 
 
-def acted_on(mem_content, cmd):
-    """Did this command come from this memory? Precision over recall: a
-    backtick-quoted span reproduced verbatim, or the command's tokens drawn
-    from the memory with its program named there."""
-    for span in re.findall(r"`([^`]{8,})`", mem_content):
+def _signature(mem_content):
+    """(backtick spans, program-tokens) for a memory's content, computed
+    once and reused against every candidate command — acted_on's inputs
+    that don't vary per command, hoisted out of infer_outcomes' inner
+    loop."""
+    return re.findall(r"`([^`]{8,})`", mem_content), tokens(mem_content)
+
+
+def acted_on(sig, cmd):
+    """Did this command come from the memory this signature was built for?
+    Precision over recall: a backtick-quoted span reproduced verbatim, or
+    the command's tokens drawn from the memory with its program named
+    there."""
+    spans, mt = sig
+    for span in spans:
         if span in cmd:
             return True
     prog = program(cmd)
-    mt = tokens(mem_content)
     if not prog or prog not in mt:
         return False
     ct = tokens(cmd)
@@ -240,14 +310,26 @@ def acted_on(mem_content, cmd):
 
 def infer_outcomes(mems, events):
     """First acted-on command per memory decides the outcome. In play but
-    never acted on -> no outcome (idleness is rfm_prunable's signal)."""
+    never acted on -> no outcome (idleness is rfm_prunable's signal).
+
+    Precision over recall, so abstain wherever the verdict is not the
+    harness's own: matching starts at the memory's first appearance (an
+    earlier command cannot have come from it), a command whose result never
+    arrived decides nothing, and a zero-exit command whose output still
+    looks error-shaped is ambiguous — no outcome beats a wrong one."""
     out = []
-    for mid, content in mems.items():
-        for cmd, failed, _err in events:
-            if acted_on(content, cmd):
-                out.append({"id": mid, "outcome": -1.0 if failed else 1.0,
-                            "cmd": cmd.split("\n")[0][:200]})
-                break
+    for mid, (content, first_idx) in mems.items():
+        sig = _signature(content)
+        for e in events[first_idx:]:
+            if not acted_on(sig, e.cmd):
+                continue
+            if not e.got:
+                break                 # result never arrived: verdict unknown
+            if not e.is_err and FAILURE.search(e.body):
+                break                 # zero-exit but error-shaped: ambiguous
+            out.append({"id": mid, "outcome": -1.0 if e.is_err else 1.0,
+                        "cmd": e.cmd.split("\n")[0][:200]})
+            break
     return out
 
 
@@ -258,29 +340,43 @@ def record_outcomes(inferred):
     access that already carries an explicit outcome is left alone."""
     if not inferred or not os.path.exists(DB_PATH):
         return 0
-    db = sqlite3.connect(DB_PATH, timeout=10.0)
-    rfm.register(db)
+    try:
+        db = sqlite3.connect(DB_PATH, timeout=10.0)
+    except sqlite3.Error as e:
+        _log({"op": "outcome_inferred_failed", "error": f"connect: {e}"})
+        return 0
     done = 0
-    for o in inferred:
-        try:
-            row = db.execute(
-                "SELECT outcome FROM rfm_accesses WHERE memory_id = ? "
-                "ORDER BY accessed_at DESC, rowid DESC LIMIT 1",
-                (o["id"],)).fetchone()
-            if row is not None and row[0] is not None:
-                continue      # model gave explicit feedback; it wins
-            if row is None:
-                db.execute("SELECT rfm_record_access(?)", (o["id"],))
-            db.execute("SELECT rfm_record_outcome(?, ?)",
-                       (o["id"], o["outcome"]))
-            done += 1
-            with open(LOG, "a") as fh:
-                fh.write(json.dumps({"t": round(time.time(), 3),
-                                     "op": "outcome_inferred", **o}) + "\n")
-        except (sqlite3.Error, OSError):
-            continue          # unknown id or log trouble — never break the hook
-    db.commit()
-    db.close()
+    try:
+        rfm.register(db)
+        for o in inferred:
+            try:
+                row = db.execute(
+                    "SELECT outcome FROM rfm_accesses WHERE memory_id = ? "
+                    "ORDER BY accessed_at DESC, rowid DESC LIMIT 1",
+                    (o["id"],)).fetchone()
+                if row is not None and row[0] is not None:
+                    continue      # model gave explicit feedback; it wins
+                if row is None:
+                    db.execute("SELECT rfm_record_access(?)", (o["id"],))
+                db.execute("SELECT rfm_record_outcome(?, ?)",
+                           (o["id"], o["outcome"]))
+                done += 1
+                rec = dict(o)
+                rec["cmd"] = log_env.redact(o["cmd"], LOG_CONTENT)
+                _log({"op": "outcome_inferred", **rec})
+            except sqlite3.Error as e:
+                # Unknown id or other DB trouble on this one item — logged
+                # so a systematic failure is distinguishable from "nothing
+                # was acted on this session", never fatal to the hook.
+                _log({"op": "outcome_inferred_failed", "id": o["id"],
+                      "error": str(e)})
+                continue
+        db.commit()
+    except sqlite3.Error as e:
+        _log({"op": "outcome_inferred_failed", "error": f"commit: {e}"})
+        done = 0          # e.g. locked past the timeout at commit: best-effort
+    finally:
+        db.close()
     return done
 
 
@@ -292,14 +388,15 @@ def main():
     transcript = payload.get("transcript_path")
     if not transcript or not os.path.exists(transcript):
         return
-    events = load_events(transcript)
+    records = _parse_transcript(transcript)
+    events = load_events(records)
     notes = []
 
     found = corrections(events)
     if found:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with open(OUT, "a") as f:
-            f.write(f"\n## Candidates from session {payload.get('session_id', '?')[:8]}\n")
+            f.write(f"\n## Candidates from session {(payload.get('session_id') or '?')[:8]}\n")
             f.write("<!-- Proposed, not saved. Review, then keep the useful ones\n"
                     "     with memory_save. -->\n\n")
             for c in found[:MAX_CANDIDATES]:
@@ -308,7 +405,7 @@ def main():
         notes.append(f"staged {min(len(found), MAX_CANDIDATES)} memory "
                      f"candidate(s) in {OUT}")
 
-    recorded = record_outcomes(infer_outcomes(in_play_memories(transcript), events))
+    recorded = record_outcomes(infer_outcomes(in_play_memories(records), events))
     if recorded:
         notes.append(f"recorded {recorded} inferred outcome(s)")
     if notes:

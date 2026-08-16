@@ -43,6 +43,7 @@ Usage:  .venv/bin/python install_hooks.py [--dry-run] [--remove]
 """
 import json
 import os
+import shlex
 import shutil
 import sys
 
@@ -81,14 +82,38 @@ MD_BLOCK = f"""{MD_BEGIN}
 {MD_END}"""
 
 
+def _marker(script):
+    return f"# rfm-memory-hook:{os.path.basename(script)}"
+
+
 def hook_entry(script):
+    # shlex.quote: the command is run through a shell, and a checkout under
+    # a path with a space (common under /Users/First Last/...) would
+    # otherwise word-split into a hook that silently never launches.
+    # The trailing marker is a harmless shell comment ('#' and everything
+    # after it is ignored) that mentions() below matches on.
     return {"type": "command",
-            "command": f"{PYTHON} {script}",
+            "command": f"{shlex.quote(PYTHON)} {shlex.quote(script)}  {_marker(script)}",
             "timeout": 30}
 
 
 def mentions(entry, script):
-    return os.path.basename(script) in entry.get("command", "")
+    """Is this settings entry one of ours, for `script` specifically? A
+    per-script sentinel comment, not a substring match on the bare basename
+    or the repo's directory layout: 'session_start.py' is a generic name a
+    substring match could adopt from another tool's hook (then rewrite or
+    --remove it), and matching a hard-coded path suffix ties ownership to
+    where this repo happens to keep its hooks today. Same technique the
+    CLAUDE.md block below uses to identify its own fenced section.
+
+    The path-suffix fallback recognizes a hook installed by a prior version
+    of this script (which had no marker) so a re-run upgrades it in place
+    instead of installing a duplicate alongside it."""
+    cmd = entry.get("command", "")
+    if _marker(script) in cmd:
+        return True
+    legacy_suffix = "integrations/claude-code/hooks/" + os.path.basename(script)
+    return legacy_suffix in cmd
 
 
 def install(settings, remove=False):
@@ -141,8 +166,15 @@ def sync_claude_md(dry=False, remove=False):
         change = f"added outcome-loop block to {CLAUDE_MD}"
     if not dry:
         os.makedirs(os.path.dirname(CLAUDE_MD), exist_ok=True)
-        with open(CLAUDE_MD, "w") as f:
+        # Same discipline as settings.json below: back up what exists, then
+        # write atomically. CLAUDE.md holds the user's own instructions; an
+        # interrupted in-place rewrite must not be able to truncate it.
+        if os.path.exists(CLAUDE_MD):
+            shutil.copy2(CLAUDE_MD, CLAUDE_MD + ".bak-rfm")
+        tmp = CLAUDE_MD + ".tmp-rfm"
+        with open(tmp, "w") as f:
             f.write(new)
+        os.replace(tmp, CLAUDE_MD)
     return [change]
 
 
@@ -154,15 +186,23 @@ def sync_skill(dry=False, remove=False):
         if not dry:
             shutil.rmtree(SKILL_DST)
         return [f"removed {SKILL_DST}"]
-    src_manifest = os.path.join(SKILL_SRC, "SKILL.md")
-    if not os.path.exists(src_manifest):
-        sys.exit(f"skill source missing: {src_manifest}")
-    dst_manifest = os.path.join(SKILL_DST, "SKILL.md")
-    try:
-        if open(src_manifest).read() == open(dst_manifest).read():
-            return []
-    except FileNotFoundError:
-        pass
+    if not os.path.exists(os.path.join(SKILL_SRC, "SKILL.md")):
+        sys.exit(f"skill source missing: {os.path.join(SKILL_SRC, 'SKILL.md')}")
+
+    def tree(root):
+        """{relative path: contents} for every file under root."""
+        out = {}
+        for dirpath, _dirs, files in os.walk(root):
+            for name in files:
+                p = os.path.join(dirpath, name)
+                with open(p, "rb") as f:
+                    out[os.path.relpath(p, root)] = f.read()
+        return out
+
+    # Whole-tree comparison, not just SKILL.md: a skill that grows a helper
+    # file must resync when only that file changed.
+    if os.path.isdir(SKILL_DST) and tree(SKILL_SRC) == tree(SKILL_DST):
+        return []
     if not dry:
         os.makedirs(os.path.dirname(SKILL_DST), exist_ok=True)
         if os.path.isdir(SKILL_DST):

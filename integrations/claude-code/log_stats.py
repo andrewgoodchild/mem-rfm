@@ -28,8 +28,17 @@ import sys
 import time
 from collections import Counter, defaultdict
 
-DEFAULT = os.path.expanduser(os.environ.get(
-    "RFM_LOG", "~/.sqlite-rfm/rfm-log.jsonl"))
+import log_env  # sibling module; shared RFM_LOG contract with server.py
+
+# log_env.resolve_log mirrors server.py's RFM_LOG semantics exactly: on/off
+# sentinels keep the default path beside the database ($RFM_MEMORY_DB's
+# directory), anything else IS the path. Reading RFM_LOG as a bare path here
+# used to make RFM_LOG=1 (the server's own default spelling) resolve to a
+# file literally named "1".
+_DB_PATH = os.path.expanduser(
+    os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
+_, DEFAULT = log_env.resolve_log(
+    os.environ.get("RFM_LOG", "1"), os.path.dirname(_DB_PATH))
 
 
 def main():
