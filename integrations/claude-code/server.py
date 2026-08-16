@@ -316,6 +316,12 @@ def _redact(text: str) -> str:
 # a second access. 0 disables the suppression.
 ACCESS_WINDOW = float(os.environ.get("RFM_ACCESS_WINDOW", "60"))
 
+# Stamped at import: Claude Code launches this server once per session over
+# stdio, so process start IS the session boundary. _feedback uses it to tell
+# a previous session's closed retrieval (this feedback implies a new access)
+# from a duplicate vote on a retrieval made in this one (still an error).
+_SERVER_START = time.time()
+
 
 def _scope_sql(scope):
     """A scoped search sees its own scope plus unscoped memories. Project
@@ -522,16 +528,22 @@ def _feedback(memory_id: int, helped: bool, score: float | None = None,
     try:
         _rfm.last_error = None
         # SessionStart injection surfaces a memory without recording an
-        # access, so feedback on an injected-only memory would bounce with
-        # "no recorded access" — the primary retrieval path would be the one
-        # that can't take feedback. The feedback itself is evidence the
-        # memory was in play: record the access it implies, exactly as
-        # hooks/session_end.py does before writing an inferred outcome.
-        # Only when there is no access at all — a latest access that already
-        # carries an outcome must still error (one outcome per retrieval).
-        cnt = d.execute("SELECT access_count FROM rfm_memories WHERE id = ?",
-                        (memory_id,)).fetchone()
-        implied_access = cnt is not None and cnt[0] == 0
+        # access, so the one-outcome-per-retrieval guard needs a session
+        # boundary to tell a new injection retrieval from a duplicate vote.
+        # No access at all, or a latest access whose outcome predates this
+        # server process: that loop was closed in a PREVIOUS session, and
+        # the only retrieval this feedback can be about is this session's
+        # injection — record the access it implies, exactly as
+        # hooks/session_end.py does before writing an inferred outcome. An
+        # outcome-bearing access from this session's lifetime still errors:
+        # that is the duplicate the guard exists for.
+        last = d.execute(
+            "SELECT accessed_at, outcome FROM rfm_accesses "
+            "WHERE memory_id = ? "
+            "ORDER BY accessed_at DESC, rowid DESC LIMIT 1",
+            (memory_id,)).fetchone()
+        implied_access = last is None or (
+            last[1] is not None and last[0] < _SERVER_START)
         if implied_access:
             d.execute("SELECT rfm_record_access(?)", (memory_id,))
         row = d.execute("SELECT rfm_record_outcome(?, ?)",
@@ -669,9 +681,10 @@ def memory_feedback(memory_id: int, helped: bool, note: str = "",
     that was partly useful. `note` records why, for later diagnosis; it is
     written to the log, not stored on the memory.
 
-    Feedback on a memory surfaced only by session-start injection (never
-    searched, so no recorded access) counts as its use: the access is
-    recorded implicitly — no need to memory_search first."""
+    Feedback on a memory surfaced by session-start injection counts as its
+    use, even when earlier sessions already used it: the access is recorded
+    implicitly — no need to memory_search first. Only repeating feedback for
+    the same retrieval within one session is rejected."""
     return _feedback(memory_id, helped, score, note)
 
 

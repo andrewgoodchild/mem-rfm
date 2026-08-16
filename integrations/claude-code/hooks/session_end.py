@@ -39,7 +39,9 @@ bounded blend (EWMA lambda=0.3, confidence shrink, beta-capped composition
 — the math is the review step, and a wrong outcome decays). Thresholds are
 tuned for precision over recall: a missed outcome costs little, a wrong one
 pollutes. Every inferred outcome — and every failure to record one — is
-logged to rfm-log.jsonl, so the inference is auditable after the fact.
+logged to rfm-log.jsonl, and every run ends with a summary line (events,
+in-play memories, staged, outcomes), so an empty run is distinguishable
+from the hook never firing and the inference is auditable after the fact.
 
 Install (settings.json):
 
@@ -50,6 +52,7 @@ Reads the hook payload on stdin; writes candidates to
 $RFM_MEMORY_DB's directory as `pending-memories.md` and outcomes to the DB.
 """
 import collections
+import datetime
 import json
 import os
 import re
@@ -284,6 +287,28 @@ def in_play_memories(records):
     return mems
 
 
+def session_start_time(records):
+    """Epoch seconds of the earliest transcript timestamp — the session
+    boundary record_outcomes needs: explicit feedback given THIS session
+    wins over an inferred outcome, but an outcome closed in a previous
+    session must not block this session's use from being recorded (injection
+    writes no access row, so the previous outcome is still the latest).
+    None when nothing parses; the caller then abstains from overriding any
+    existing outcome — the conservative reading."""
+    best = None
+    for d in records:
+        ts = d.get("timestamp")
+        if not isinstance(ts, str):
+            continue
+        try:
+            t = datetime.datetime.fromisoformat(
+                ts.replace("Z", "+00:00")).timestamp()
+        except ValueError:
+            continue
+        best = t if best is None else min(best, t)
+    return best
+
+
 def _signature(mem_content):
     """(backtick spans, program-tokens) for a memory's content, computed
     once and reused against every candidate command — acted_on's inputs
@@ -333,11 +358,15 @@ def infer_outcomes(mems, events):
     return out
 
 
-def record_outcomes(inferred):
-    """Write outcomes, deferring to any loop the model already closed:
-    an outstanding access gets the outcome attached; a never-accessed
-    (injected-only) memory gets its use recorded as the access; a latest
-    access that already carries an explicit outcome is left alone."""
+def record_outcomes(inferred, session_start):
+    """Write outcomes, deferring to any loop the model already closed THIS
+    session: an outstanding access gets the outcome attached; a memory with
+    no access — or whose latest access carries an outcome from a PREVIOUS
+    session, which is a closed retrieval, not this one — gets its use
+    recorded as a fresh access; a latest access whose outcome was recorded
+    this session is left alone (explicit feedback wins). With no
+    session_start (no parseable transcript timestamp), any existing outcome
+    defers — abstaining beats double-counting."""
     if not inferred or not os.path.exists(DB_PATH):
         return 0
     try:
@@ -351,12 +380,14 @@ def record_outcomes(inferred):
         for o in inferred:
             try:
                 row = db.execute(
-                    "SELECT outcome FROM rfm_accesses WHERE memory_id = ? "
+                    "SELECT accessed_at, outcome FROM rfm_accesses "
+                    "WHERE memory_id = ? "
                     "ORDER BY accessed_at DESC, rowid DESC LIMIT 1",
                     (o["id"],)).fetchone()
-                if row is not None and row[0] is not None:
-                    continue      # model gave explicit feedback; it wins
-                if row is None:
+                if row is not None and row[1] is not None and (
+                        session_start is None or row[0] >= session_start):
+                    continue      # explicit feedback this session; it wins
+                if row is None or row[1] is not None:
                     db.execute("SELECT rfm_record_access(?)", (o["id"],))
                 db.execute("SELECT rfm_record_outcome(?, ?)",
                            (o["id"], o["outcome"]))
@@ -390,24 +421,32 @@ def main():
         return
     records = _parse_transcript(transcript)
     events = load_events(records)
+    session = (payload.get("session_id") or "?")[:8]
     notes = []
 
     found = corrections(events)
+    staged = min(len(found), MAX_CANDIDATES)
     if found:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with open(OUT, "a") as f:
-            f.write(f"\n## Candidates from session {(payload.get('session_id') or '?')[:8]}\n")
+            f.write(f"\n## Candidates from session {session}\n")
             f.write("<!-- Proposed, not saved. Review, then keep the useful ones\n"
                     "     with memory_save. -->\n\n")
             for c in found[:MAX_CANDIDATES]:
                 f.write(f"- In this project, `{c['failed']}` fails ({c['error']}); "
                         f"use `{c['fixed']}` instead.\n")
-        notes.append(f"staged {min(len(found), MAX_CANDIDATES)} memory "
-                     f"candidate(s) in {OUT}")
+        notes.append(f"staged {staged} memory candidate(s) in {OUT}")
 
-    recorded = record_outcomes(infer_outcomes(in_play_memories(records), events))
+    mems = in_play_memories(records)
+    recorded = record_outcomes(infer_outcomes(mems, events),
+                               session_start_time(records))
     if recorded:
         notes.append(f"recorded {recorded} inferred outcome(s)")
+    # Run marker, written even when every count is zero: without it, a run
+    # that found nothing is indistinguishable in the log from the hook never
+    # firing, and the formation loop cannot be audited.
+    _log({"op": "session_end", "session": session, "events": len(events),
+          "in_play": len(mems), "staged": staged, "outcomes": recorded})
     if notes:
         print("rfm: " + "; ".join(notes), file=sys.stderr)
 

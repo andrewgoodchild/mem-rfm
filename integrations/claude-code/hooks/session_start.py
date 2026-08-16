@@ -67,17 +67,26 @@ def main():
     if not rows:
         sys.exit(0)
     lines, used = [], 0
-    for mid, content, _s in rows:
+    for i, (mid, content, _s) in enumerate(rows):
         # Stored content is untrusted data headed into a model's context:
         # flatten control chars/whitespace and defuse the </memories> close
         # tag so one memory can't fabricate extra list items or break out of
         # the data block (server sanitizes identically at save; this covers
         # rows written by other clients).
         flat = "".join(ch if ch.isprintable() else " " for ch in str(content))
-        flat = " ".join(flat.replace("</memories>", "(/memories)").split())[:300]
+        flat = " ".join(flat.replace("</memories>", "(/memories)").split())
         line = f"- [{mid}] {flat}"
-        if used + len(line) > CHAR_BUDGET:
-            break
+        # Each memory may spend an even share of the REMAINING budget, not a
+        # fixed slice: a small store shows its memories whole instead of
+        # cutting them mid-sentence while most of the budget goes unused, a
+        # full store degrades to the same per-memory cap as before, and a
+        # short entry donates its slack to the ones after it. A cut is
+        # marked, so truncated advice cannot read as complete.
+        share = (CHAR_BUDGET - used) // (len(rows) - i)
+        if len(line) > share:
+            if share < len(f"- [{mid}] ") + 40:
+                break     # not enough room left for a useful line
+            line = line[:share - 1].rstrip() + "…"
         lines.append(line)
         used += len(line) + 1
     if not lines:
