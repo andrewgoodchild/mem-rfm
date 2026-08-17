@@ -85,7 +85,13 @@ FAILURE = re.compile(
     r"unrecognized option|invalid option|is not recognized|"
     r"modulenotfounderror|importerror|cannot find module|"
     r"unable to load|not a loadable|undefined symbol|"
-    r"no matches found|bad interpreter", re.I)
+    r"no matches found|bad interpreter|"
+    # Environment/startup exception class (validated on the pilot-2 replay:
+    # recovered the run's top-value gotcha — the era-pin stub workaround —
+    # with zero noise, where a generic \w+Error class staged ordinary test
+    # failures). Names an env cause, not code-under-test behavior.
+    r"extensionerror|versionrequirementerror|distributionnotfound|"
+    r"pkg_resources", re.I)
 
 # One Bash-call event, in order. `is_err` is the harness's own verdict, kept
 # separate from the FAILURE regex (which runs over OUTPUT text, so a
@@ -257,6 +263,19 @@ def in_play_memories(records):
                 note(mid, content)
 
     for d in records:
+        # Headless (sdk-cli) transcripts carry the SessionStart injection in
+        # an attachment record (attachment.type == "hook_additional_context"),
+        # never inside message.content — scanning only messages misses the
+        # PRIMARY way memories enter a session (pilot 2: inference recovered
+        # 1 of 15 outcomes until this branch existed). Interactive transcripts
+        # embed it in a message, so both paths stay.
+        att = d.get("attachment")
+        if isinstance(att, dict) and att.get("type") == "hook_additional_context":
+            body = att.get("content")
+            for part in (body if isinstance(body, list) else [body]):
+                if isinstance(part, str):
+                    scan_text(part)
+            continue
         content = (d.get("message") or {}).get("content")
         if isinstance(content, str):
             scan_text(content)
@@ -284,6 +303,28 @@ def in_play_memories(records):
                         note(r["id"], str(r.get("content", "")))
                 except Exception:
                     continue
+    return mems
+
+
+def rehydrate(mems):
+    """Replace transcript-derived memory content with the store's full text.
+    Injected lines are cut to the injection char budget, so a signature
+    built from the transcript can lack exactly the backtick spans that
+    identify acted-on commands (pilot 2: the top memory's stubs path sat
+    past the cut in every session, and inference recovered 1 of 15
+    outcomes). The transcript text stays as fallback for deleted ids."""
+    if not mems or not os.path.exists(DB_PATH):
+        return mems
+    try:
+        db = sqlite3.connect(DB_PATH, timeout=10.0)
+        for mid, (content, idx) in list(mems.items()):
+            row = db.execute("SELECT content FROM rfm_memories WHERE id = ?",
+                             (mid,)).fetchone()
+            if row is not None:
+                mems[mid] = (row[0], idx)
+        db.close()
+    except sqlite3.Error:
+        pass
     return mems
 
 
@@ -444,7 +485,7 @@ def main():
                         f"use `{c['fixed']}` instead.\n")
         notes.append(f"staged {staged} memory candidate(s) in {OUT}")
 
-    mems = in_play_memories(records)
+    mems = rehydrate(in_play_memories(records))
     recorded = record_outcomes(infer_outcomes(mems, events),
                                session_start_time(records))
     if recorded:
