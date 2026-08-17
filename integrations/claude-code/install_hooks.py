@@ -67,17 +67,16 @@ MD_BLOCK = f"""{MD_BEGIN}
 ## Memory (rfm-memory MCP)
 
 - Before exploring a recurring problem from scratch, `memory_search` for it.
-- **After acting on any retrieved or injected memory, record the outcome:
-  `memory_feedback(id, helped=true/false)`.** This is not optional polish —
-  outcome feedback is the ranking signal; skipping it leaves every memory
-  scored by recency and frequency alone.
-- `memory_save` durable operational facts only (build quirks, dependency
-  pins, invocation details, decisions, preferences) — never task state or
-  anything derivable from the repo. Scope repo-specific facts to the repo
-  name.
+- Outcomes for memories you act on are inferred from the transcript at
+  session end. Call `memory_feedback(id, helped)` only for what inference
+  cannot see: a memory that misled or wasted effort (helped=false), or one
+  that clearly saved real work (helped=true). Skip routine confirmations.
+- Do not volunteer `memory_save` mid-task — durable lessons are mined from
+  the session automatically and staged for /memory-review. "remember this"
+  from the user still means `memory_save` (durable operational facts only,
+  scoped to the repo name); "forget that" means `memory_delete`.
 - `memory_update` when a stored fact is outdated but still worth keeping —
   it preserves the memory's earned usage record; delete-then-save does not.
-- "remember this" means `memory_save`; "forget that" means `memory_delete`.
 - To review staged memory candidates from past sessions, run /memory-review.
 {MD_END}"""
 
