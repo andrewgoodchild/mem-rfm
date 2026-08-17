@@ -412,6 +412,13 @@ def record_outcomes(inferred, session_start):
 
 
 def main():
+    # A/B gating: when an experiment is running (ab/ab-claude sets
+    # RFM_AB_ARM), a control-arm session must neither stage candidates nor
+    # record outcomes — the arms run the same task back-to-back, so a
+    # control lesson ratified into the shared store would leak the current
+    # task into the rfm arm. Mirrors session_start.py's gate.
+    if os.environ.get("RFM_AB_ARM", "rfm") != "rfm":
+        return
     try:
         payload = json.load(sys.stdin)
     except Exception:
