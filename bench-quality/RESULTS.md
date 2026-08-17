@@ -1151,3 +1151,56 @@ The *knowledge* finding it was built on survives and is unaffected:
 procedural knowledge transfers and episodic per-task lessons don't (~6%).
 That belongs in the capture policy — what you choose to store — rather than
 in the ranking function, which is what the null established.
+
+## Pilot 2 (exploratory, NOT pre-registered): hooks-era stack, live paired A/B
+
+Run 2026-08-17. run_pilot2.py: 10 validated sphinx tasks (2020–2021,
+era-coherent so operational gotchas CAN recur), chronological, paired
+headless sessions, fresh store under live-ab/pilot2/. First run of the
+harness-owned pipeline under load: SessionStart injection, SessionEnd
+correction mining + inferred outcomes, ratify_staged.py standing in for
+/memory-review (approve-all) between tasks. Arm isolation verified: 0/11
+control transcripts carry the injection marker; 9/10 rfm transcripts do
+(the first session's store was empty).
+
+Task performance: memory did NOT help. Resolution 9/10 in BOTH arms
+(sphinx-7462 failed in both — the task, not the arms). rfm slower on
+every task (+13..+258s, median ~+45s), +45% assistant messages (42 vs
+29), +87% output tokens (14.2k vs 7.6k). Net value on this workload:
+negative — the savings the memories produced were real but smaller than
+the machinery's per-session overhead.
+
+Mechanism: every stage fired, and the ranking was RIGHT about what
+mattered. The environment gotcha (era-pinned clone needs the PYTHONPATH
+stubs workaround) earned helped=true in 9/10 sessions, value 0.965,
+prior 0.21→0.41, rank 1 throughout — the July operational-fact finding
+(+0.58 over 5 uses) replicating at +0.96 over 9. One of the two
+hook-MINED candidates (the stubs pytest invocation) became the store's
+#2 earner (9 accesses, 8 closed outcomes, value 0.80): the deterministic
+miner out-earned nearly everything the agent saved deliberately.
+Demotion operated live: two per-bug code lessons took negative feedback
+(values −1.0 / −0.7) and sank; 8 more agent-saved per-bug lessons ended
+at 0 outcomes (inert — rfm_prunable's signal). The two outcome channels
+composed correctly: 15 explicit feedback calls (driven by the injection
+trailer alone; the CLAUDE.md instruction block was stripped for the whole
+run) plus 3 session_end-inferred outcomes landing exactly where explicit
+feedback was missing. Formation staged only in session 1 and then went
+quiet; feedback notes say the injected advice made later sessions pass
+"on first try", so the failed-then-fixed pattern the miner needs stopped
+occurring — the intended steady state.
+
+Reading: consistent with the recurrence law, and it sharpens it into a
+break-even bar — memory pays where the recurring cost it eliminates
+exceeds per-session overhead (here ~45s wall + ~7k output tokens). These
+1–8-minute episodic tasks sit under that bar; ABCD sits far above it.
+Caveats: n=10, exploratory, resolution ceilinged by design; the
+top-earning gotcha is partly an artifact of the harness's era pins (the
+recurrence is real but the workload manufactured it); and overhead is
+dominated by agent-VOLUNTEERED per-bug saves (11 of 13 saves, all
+inert) that the harness-owned formation design says should not exist —
+the cost side is reducible, and that is the next lever.
+
+Trace committed: live-ab/pilot2/rfm-log.jsonl (full injection/feedback/
+outcome log), live-ab/pilot2/results.jsonl (per-session rows),
+live-ab/pilot2/pending-reviewed.md (what the miner staged). Session
+transcripts and DBs stay untracked, per live-ab policy.
