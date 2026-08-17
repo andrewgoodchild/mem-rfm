@@ -12,6 +12,18 @@ SWE-bench protocol (gold test patches). Results: `results.jsonl`
 > you don't accept that. Each full run also spends real LLM quota
 > (~54 sessions).
 
+`run_pilot2.py` (exploratory, NOT pre-registered) re-runs the paired design
+against the hooks-era stack: SessionStart injection, SessionEnd correction
+mining + inferred outcomes, and `ratify_staged.py` standing in for
+/memory-review between tasks (approve-all). 10 era-coherent sphinx tasks,
+chronological, fresh store under `pilot2/`. It is an integration test of the
+harness-owned formation/outcome pipeline plus a first read on the recurrence
+hypothesis (operational gotchas repay across same-repo tasks); resolution is
+recorded but secondary — analyze wall/turns/tokens via `ab/ab_stats.py` and
+the memory trace via `log_stats.py pilot2/rfm-log.jsonl`. Requires the hooks
+registered (`install_hooks.py`); temporarily strips the managed rfm block
+from `~/.claude/CLAUDE.md` while running (restored on exit, even on Ctrl-C).
+
 Provenance: task/issue text in `tasks*.json` is verbatim upstream SWE-bench
 content from public pytest/sphinx issue trackers (third-party usernames and
 paths that appear there are already public). `validation*.jsonl` records
