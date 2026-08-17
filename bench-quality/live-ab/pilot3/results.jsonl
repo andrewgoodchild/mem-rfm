@@ -1,0 +1,10 @@
+{"instance_id": "sphinx-doc__sphinx-7454", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "pilot": 3, "resolved": true, "wall_s": 254, "timed_out": false, "detail": "1 passed, 2 warnings in 0.06s"}
+{"instance_id": "sphinx-doc__sphinx-7462", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "pilot": 3, "resolved": false, "wall_s": 132, "timed_out": false, "detail": "1 failed, 1 passed, 2 warnings in 0.10s"}
+{"instance_id": "sphinx-doc__sphinx-7757", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "rfm", "pilot": 3, "resolved": true, "wall_s": 160, "timed_out": false, "detail": "1 passed, 2 warnings in 0.08s"}
+{"instance_id": "sphinx-doc__sphinx-7889", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "pilot": 3, "resolved": true, "wall_s": 32, "timed_out": false, "detail": "1 passed, 2 warnings in 0.02s"}
+{"instance_id": "sphinx-doc__sphinx-7910", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "pilot": 3, "resolved": true, "wall_s": 76, "timed_out": false, "detail": "1 passed, 2 warnings in 0.02s"}
+{"instance_id": "sphinx-doc__sphinx-8056", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "rfm", "pilot": 3, "resolved": true, "wall_s": 145, "timed_out": false, "detail": "1 passed, 2 warnings in 0.04s"}
+{"instance_id": "sphinx-doc__sphinx-9281", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "pilot": 3, "resolved": true, "wall_s": 72, "timed_out": false, "detail": "1 passed in 0.10s"}
+{"instance_id": "sphinx-doc__sphinx-9320", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "pilot": 3, "resolved": true, "wall_s": 69, "timed_out": false, "detail": "1 passed in 0.02s"}
+{"instance_id": "sphinx-doc__sphinx-9367", "repo": "sphinx", "difficulty": "<15 min fix", "arm": "rfm", "pilot": 3, "resolved": true, "wall_s": 32, "timed_out": false, "detail": "1 passed in 0.01s"}
+{"instance_id": "sphinx-doc__sphinx-9658", "repo": "sphinx", "difficulty": "15 min - 1 hour", "arm": "rfm", "pilot": 3, "resolved": true, "wall_s": 83, "timed_out": false, "detail": "1 passed in 0.06s"}

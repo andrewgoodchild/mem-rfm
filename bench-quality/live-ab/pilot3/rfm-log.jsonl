@@ -1,0 +1,20 @@
+{"t": 1786961009.708, "op": "injection", "session": "631a8819", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786961261.641, "op": "session_end", "session": "631a8819", "events": 9, "in_play": 0, "staged": 0, "outcomes": 0}
+{"t": 1786961266.883, "op": "injection", "session": "ef8812c4", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786961397.028, "op": "session_end", "session": "ef8812c4", "events": 6, "in_play": 0, "staged": 0, "outcomes": 0}
+{"t": 1786961401.487, "op": "injection", "session": "2443d1e9", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786961560.57, "op": "session_end", "session": "2443d1e9", "events": 9, "in_play": 0, "staged": 0, "outcomes": 0}
+{"t": 1786961565.572, "op": "injection", "session": "9b5012af", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786961596.066, "op": "session_end", "session": "9b5012af", "events": 2, "in_play": 0, "staged": 0, "outcomes": 0}
+{"t": 1786961600.303, "op": "injection", "session": "adaac9f2", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786961675.511, "op": "session_end", "session": "adaac9f2", "events": 5, "in_play": 0, "staged": 0, "outcomes": 0}
+{"t": 1786961680.137, "op": "injection", "session": "5cd2b6f4", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786961824.347, "op": "session_end", "session": "5cd2b6f4", "events": 8, "in_play": 0, "staged": 0, "outcomes": 0}
+{"t": 1786961829.395, "op": "injection", "session": "151b09ed", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786961899.52, "op": "session_end", "session": "151b09ed", "events": 5, "in_play": 0, "staged": 0, "outcomes": 0}
+{"t": 1786961905.074, "op": "injection", "session": "a1843d6e", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786961971.919, "op": "session_end", "session": "a1843d6e", "events": 4, "in_play": 0, "staged": 0, "outcomes": 0}
+{"t": 1786961977.27, "op": "injection", "session": "1adfe421", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786962007.502, "op": "session_end", "session": "1adfe421", "events": 1, "in_play": 0, "staged": 0, "outcomes": 0}
+{"t": 1786962012.338, "op": "injection", "session": "bc0c33ad", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1786962093.96, "op": "session_end", "session": "bc0c33ad", "events": 5, "in_play": 0, "staged": 0, "outcomes": 0}

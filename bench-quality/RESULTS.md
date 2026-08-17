@@ -1204,3 +1204,68 @@ Trace committed: live-ab/pilot2/rfm-log.jsonl (full injection/feedback/
 outcome log), live-ab/pilot2/results.jsonl (per-session rows),
 live-ab/pilot2/pending-reviewed.md (what the miner staged). Session
 transcripts and DBs stay untracked, per live-ab policy.
+
+## Pilot 3 (exploratory, NOT pre-registered): cost interventions, and a confound
+
+Run 2026-08-17, same 10 tasks, rfm arm only (the interventions do not
+touch the control arm, so pilot 2's control rows remain the baseline).
+Interventions: no volunteered saves (trailer + task prompt), injection
+floor (outcome-demoted memories are never re-injected — pilot 2 re-
+injected two demoted memories seven more times because feedback's implied
+access kept refreshing their recency), feedback-on-surprise trailer with
+session_end inference carrying routine outcomes, and the miner widened
+with the environment-error class. The inference and miner changes were
+validated OFFLINE first by replaying pilot 2's 21 transcripts
+(miner_replay.py): two real bugs found and fixed — headless transcripts
+carry the injection block in attachment records the parser never scanned,
+and signatures were built from injection text truncated at the char
+budget, cutting exactly the spans that identify acted-on commands.
+Post-fix, inference recovers 9/15 of pilot 2's explicit outcomes with 0
+sign flips; the 6 misses are relevance judgments, which is what the
+trailer still asks for. The widened miner recovers pilot 2's top-value
+gotcha with zero added noise; a generic *Error class stages ordinary test
+failures (rejected); a frequency miner is confirmatory, not formative
+(rejected — its only recurring invocation recurred BECAUSE injection
+suggested it).
+
+Overhead: GONE. Wall 1,055s total vs control 1,117s (pilot 2 rfm:
+1,983s); 6.4k output tokens/session vs control 7.6k (pilot 2 rfm:
+14.2k); 29.6 assistant messages vs 29 (42). Resolution 9/10 — sphinx-7462
+fails in every arm of every pilot; it is the task.
+
+Formation: ZERO. The store ended empty — no volunteered saves (by
+design), nothing staged, no searches, no outcomes. 7/10 sessions still
+mentioned the era-pin env error, yet no correction pair ever formed.
+
+The confound that explains both: Claude Code's BUILT-IN auto-memory.
+Present in both arms by design (ab-claude: control = built-in only, rfm =
+built-in + mem-rfm), it captured the same era-pin stubs lesson during
+pilot 2 in BOTH arms independently — project-scoped markdown notes whose
+timestamps match the pilot-2 sessions; the rfm-side note is near-verbatim
+mem-rfm's memory 2, same origin session — and it persists keyed to the
+clone directory, so it crossed into pilot 3, whose agents opened with
+"Check if PYTHONPATH env stubs still exist." The /tmp stubs artifact
+itself also survived between pilots. Pilot 3's speed is therefore partly
+inherited state, and the miner had nothing to catch because the failure
+never recurred in mineable form.
+
+Consequences:
+1. Methodological. The live A/B has always measured mem-rfm's MARGINAL
+   value on top of built-in memory (deliberate in July; the pilots show
+   built-in now captures the same operational class well). Future pilots
+   must declare which design they run — marginal-over-built-in or
+   clean-room (fresh per-run project-memory dir + /tmp reset + isolated
+   CLAUDE_CONFIG_DIR) — and clean cross-run state either way.
+2. Strategic. On single-repo coding, the harness's own auto-memory
+   already owns the operational-facts niche these pilots measured —
+   without outcome ranking, and well enough for tasks this short.
+   mem-rfm's differentiators are what built-in does not do: a signed
+   outcome ledger (provable value, honest negatives), cross-repo and
+   team-pooled stores, and staleness demotion under procedure change
+   (ABCD). The pilot series' verdict stands and sharpens: mem-rfm is not
+   a single-repo coding accelerator; that seat is taken by the harness
+   itself.
+
+Committed: pilot3/{results.jsonl, rfm-log.jsonl}; miner_replay.py (the
+offline harness the interventions were validated on). Transcripts, DBs,
+and the built-in-memory dirs stay untracked.
