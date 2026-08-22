@@ -1319,3 +1319,54 @@ Caveats: n=10, exploratory; the seed gives the rfm arm knowledge control
 lacks BY DESIGN (steady-state question, stated above); wall deltas on
 short tasks are noise-scale individually. Trace committed:
 pilot4/{results.jsonl, rfm-log.jsonl, pending-reviewed.md}.
+
+## Registered revalidation: scored (REVALIDATION.md, frozen stack)
+
+Runs 2026-08-22, registration committed before any session (65027d8).
+Score: 5 PASS, 2 NOT TRIGGERED, 0 FAIL. Resolution: pytest 9/10 both arms
+(10356, July's discordant hard task, now fails in both); sphinx 6/6 both.
+
+Track 1 — pytest two-phase (empty store, ledger earned in-protocol):
+* T1-P1 machinery cost: PASS. Phase A rfm wall −7.6% vs control (bound
+  +10%); rfm mean output tokens −12.4% (bound +15%).
+* T1-P2 formation: PASS. Named-cause failures occurred; the miner staged
+  2 correction pairs, both ratified (one live during the 6197 session).
+* T1-P3 steady state: NOT TRIGGERED. No memory earned value > 0 in
+  Phase A — the store ended at three memories, all value 0.0, zero
+  outcomes across 12 injections. July's finding that pytest bug-work
+  doesn't transfer, replicating under the new stack, exactly as the
+  registration anticipated by declining to predict a wall advantage.
+* T1-P4 selection discipline: PASS (weak form — no memory ever went
+  negative, so the floor was never exercised on this track).
+
+Track 2 — sphinx hold-out era (pilot-4 seed vs 2022–2023 pins):
+* T2-P1 absence of harm: PASS. rfm total +3.0% (bound +10%) — and rfm
+  won 4 of 6 pairs outright (−8, −121, −103, −119s); the hardest task
+  (11510, +356s) swung the total positive.
+* T2-P2 staleness exclusion: NOT TRIGGERED — no value went negative. The
+  era-specific stubs memory took two explicit partial negatives (−0.3,
+  notes saying its claim does not hold at 5.x checkouts) and the EWMA
+  held at 0.77, so the floor's exclusion clause never fired. What DID
+  happen: it fell from injection rank 1 to rank 3 as the invocation
+  memories out-earned it, and the agent issued a memory_update scoping
+  its claim to the old checkout states — content self-correction on top
+  of score demotion.
+* T2-P3 ledger adjusts downward: PASS. The stubs memory's value fell
+  0.998 → 0.77 under new-era evidence while the track stayed at +3.0% —
+  no fabricated wins, no harm.
+
+Also observed, disclosed:
+* Feedback economics held: sphinx closed 11 outcomes by inference vs 2
+  explicit calls; pytest closed 0 — correctly, since nothing was acted
+  on (inference abstains rather than inventing outcomes).
+* Cold-start formation on unseen pins works: the sphinx track mined and
+  ratified a NEW-era candidate that ended at value 1.0 (2 outcomes).
+* A policy coverage hole: the no-volunteered-saves instruction rides the
+  injection trailer, which does not render when the store is empty, so
+  cold-start sessions ran policy-blind and one pytest agent volunteered
+  a save (1 of 20 sessions). Fixed post-scoring — the hook now states
+  the policy even with nothing to inject; the fix is outside the frozen
+  claims (no prediction touched trailer rendering).
+
+Traces committed: reval-pytest/ and reval-sphinx/ {results.jsonl,
+rfm-log.jsonl}.
