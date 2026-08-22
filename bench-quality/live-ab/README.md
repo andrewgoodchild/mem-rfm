@@ -24,6 +24,31 @@ the memory trace via `log_stats.py pilot2/rfm-log.jsonl`. Requires the hooks
 registered (`install_hooks.py`); temporarily strips the managed rfm block
 from `~/.claude/CLAUDE.md` while running (restored on exit, even on Ctrl-C).
 
+## Reproducing the environment
+
+`clones/` is gitignored (upstream repos are never redistributed). To
+rebuild it:
+
+```sh
+cd clones
+for arm in control rfm; do
+  git clone https://github.com/sphinx-doc/sphinx sphinx-$arm
+  git clone https://github.com/pytest-dev/pytest pytest-$arm
+  uv venv --python 3.9 sphinx-$arm-venv
+  uv venv --python 3.9 pytest-$arm-venv
+done
+```
+
+Per-task checkouts, editable installs, and era pins (old sphinx needs
+`pytest<7.2 setuptools<60 jinja2<3.1 markupsafe<2.1`, pre-2022 also
+`docutils<0.18`; pytest needs `hypothesis`) are applied by the runners'
+`prepare()` per session — nothing else is manual. Then gate the task
+list: `python3 run_stream.py --validate` (no LLM; committed
+`validation.jsonl` records the run this repo's results used). Runners
+require the hooks registered (`../../integrations/claude-code/
+install_hooks.py`) and temporarily strip the managed rfm block from
+`~/.claude/CLAUDE.md` while running (restored on exit).
+
 Provenance: task/issue text in `tasks*.json` is verbatim upstream SWE-bench
 content from public pytest/sphinx issue trackers (third-party usernames and
 paths that appear there are already public). `validation*.jsonl` records
