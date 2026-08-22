@@ -151,14 +151,21 @@ def main():
         return
 
     seed_store()
-    clean_room()
     done = set()
     if os.path.exists(RESULTS):
         for line in open(RESULTS):
             rec = json.loads(line)
             done.add((rec["instance_id"], rec["arm"]))
     if done:
-        print(f"resuming: {len(done)} session(s) already recorded")
+        # A resume must NOT re-clean: clean-room means no CROSS-run
+        # inheritance; within-run accumulation is part of the design, and
+        # wiping it mid-run makes the boundary pair asymmetric (its control
+        # ran with accumulated state, its rfm without). Learned on the
+        # 2026-08-22 run, whose 8056 pair is flagged for exactly this.
+        print(f"resuming: {len(done)} session(s) already recorded "
+              "(clean-room skipped)")
+    else:
+        clean_room()
 
     for change in install_hooks.sync_claude_md(remove=True):
         print(f"CLAUDE.md: {change}")
