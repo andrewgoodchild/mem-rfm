@@ -28,16 +28,29 @@ MAX_TURNS = "60"
 REPO = {
     "pytest": {"tests_dir": "testing/", "memory_db": "rfm-memory.db"},
     "sphinx": {"tests_dir": "tests/", "memory_db": "rfm-memory-sphinx.db"},
+    "xarray": {"tests_dir": "xarray/tests/", "memory_db": "rfm-memory-xarray.db"},
 }
 
 
 def era_pins(repo, task):
     """Version pins so era-appropriate deps resolve: old sphinx needs
     pkg_resources (gone in new setuptools), pytest<8 plugin API, jinja2<3.1
-    (environmentfilter), markupsafe<2.1, docutils<0.18 (sphinx 3.x)."""
+    (environmentfilter), markupsafe<2.1, docutils<0.18 (sphinx 3.x).
+    xarray: numpy<1.24 (np.bool removal breaks pre-2023 code), pandas eras,
+    setuptools-scm for the legacy setup.py builds."""
+    created = task["created_at"]
     if repo == "pytest":
         return ["hypothesis"]
-    created = task["created_at"]
+    if repo == "xarray":
+        # arm64 floor: numpy grows Apple-Silicon wheels at 1.21, pandas at
+        # 1.3 — older pins cannot install on this host. numpy<1.24 caps the
+        # np.bool removal that breaks pre-2023 code.
+        pins = ["setuptools-scm", "packaging", "pytest<8"]
+        if created < "2022":
+            pins += ["numpy>=1.21,<1.24", "pandas>=1.3,<1.4"]
+        elif created < "2023":
+            pins += ["numpy<1.24", "pandas<2"]
+        return pins
     if created >= "2023":
         return []
     pins = ["pytest<7.2", "setuptools<60", "jinja2<3.1", "markupsafe<2.1"]
@@ -73,9 +86,17 @@ def prepare(repo, arm, task):
     if r.returncode != 0:
         raise RuntimeError(f"checkout {task['base_commit']} failed: {r.stderr[-200:]}")
     sh(["git", "-C", clone, "clean", "-fdq"])
+    env = {**os.environ, "VIRTUAL_ENV": venv}
+    if repo == "xarray" and task["created_at"] < "2022":
+        # Legacy xarray setup.py imports pkg_resources at build time; uv's
+        # isolated build env ignores venv pins and would use setuptools 81+
+        # (pkg_resources removed). Constrain the BUILD env instead — <81
+        # still ships pkg_resources and the PEP 660 editable hook.
+        env["UV_BUILD_CONSTRAINT"] = os.path.join(
+            HERE, "build-constraints-legacy.txt")
     spec = f"{clone}[test]" if repo == "sphinx" else clone
-    r = sh(["uv", "pip", "install", "-q", "-e", spec, *era_pins(repo, task)],
-           env={**os.environ, "VIRTUAL_ENV": venv})
+    r = sh(["uv", "pip", "install", "-q", "-e", spec,
+            *era_pins(repo, task)], env=env)
     if r.returncode != 0:
         raise RuntimeError(f"install: {r.stderr[-300:]}")
     return clone, venv

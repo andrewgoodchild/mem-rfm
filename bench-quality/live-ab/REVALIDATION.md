@@ -73,3 +73,41 @@ never as passes.
 Track 3 (future, not registered here): a never-seen repo — xarray (22
 SWE-bench-CL tasks, pure Python, era pins tractable) — same two-phase
 design, once clone/venv/validation are built.
+
+## Track 3 — xarray two-phase (never-seen repo; registered 2026-08-22, before any session)
+
+The first track on a repository no pilot or revalidation has touched.
+22 SWE-Bench-CL tasks, all 22 validated under the committed era pins
+(tasks_xarray.json, validation-xarray.jsonl; three environment
+iterations to get there — pkg_resources via UV_BUILD_CONSTRAINT
+setuptools<81, arm64 wheel floors numpy>=1.21/pandas>=1.3 — all
+committed with this registration). Stack: as of the registration commit,
+which now includes the empty-store policy trailer and the SessionEnd
+retention pass (RFM_PRUNE_DAYS=30) — both post-dating Tracks 1–2 and
+disclosed as such.
+
+Design: chronological halves, paired arms, empty store, ledger earned
+in-protocol. Phase A (accumulate): xarray-2905..4687 (2019-04..2020-12).
+Phase B (measure): xarray-4695..7393 (2020-12..2022-12). The era shift
+inside Phase B (13 months idle between 4966 and 6461, pins change) is
+disclosed: memories earned on 2019–2020 checkouts may stop applying
+mid-phase, which produces staleness observations in passing (recorded,
+not predicted).
+
+Registered predictions (same shapes as Track 1):
+  T3-P1 (machinery cost): Phase A rfm total wall within +10% of control;
+        rfm mean output tokens within +15% of control.
+  T3-P2 (formation, conditional): IF any rfm transcript contains a
+        named-cause failure per the committed FAILURE class, the miner
+        stages >=1 candidate across the run.
+  T3-P3 (steady state, conditional): IF >=1 memory earns value > 0 in
+        Phase A, its Phase-B injections earn positive outcomes in >=50%
+        of the sessions where it is injected.
+  T3-P4 (selection discipline): no memory whose value sits negative at
+        injection time is ever injected; explicit negative feedback in
+        session N excludes the memory from injection in sessions > N
+        once its value is negative.
+No wall-clock advantage is predicted: xarray's recurrence profile is
+unknown, and the honest prior after Tracks 1–2 is that scientific-stack
+env friction (numpy/pandas era pins) may recur like sphinx's or may not,
+like pytest's. That question is what the track exists to answer.

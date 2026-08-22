@@ -52,6 +52,40 @@ TRACKS = {
         "seed": os.path.join(HERE, "pilot4", "rfm-memory.db"),
         "tmp": ["/tmp/sphinx*", "/tmp/*_repro", "/tmp/napoleon_repro"],
     },
+    "xarray": {
+        "repo": "xarray",
+        # REVALIDATION.md Track 3: chronological halves, all 22 validated.
+        # Phase A accumulates (2019-04..2020-12), phase B measures
+        # (2020-12..2022-12; the 2022 era shift inside B is disclosed).
+        "phases": {
+            "A": ["pydata__xarray-2905",
+                  "pydata__xarray-3095",
+                  "pydata__xarray-3151",
+                  "pydata__xarray-3305",
+                  "pydata__xarray-3677",
+                  "pydata__xarray-3993",
+                  "pydata__xarray-4075",
+                  "pydata__xarray-4094",
+                  "pydata__xarray-4356",
+                  "pydata__xarray-4629",
+                  "pydata__xarray-4687"],
+            "B": ["pydata__xarray-4695",
+                  "pydata__xarray-4966",
+                  "pydata__xarray-6461",
+                  "pydata__xarray-6599",
+                  "pydata__xarray-6721",
+                  "pydata__xarray-6744",
+                  "pydata__xarray-6938",
+                  "pydata__xarray-6992",
+                  "pydata__xarray-7229",
+                  "pydata__xarray-7233",
+                  "pydata__xarray-7393"],
+        },
+        "seed": None,
+        "tmp": ["/tmp/xarray*", "/tmp/*_repro"],
+        "tasks_file": "tasks_xarray.json",
+        "validation_file": "validation-xarray.jsonl",
+    },
 }
 
 
@@ -74,24 +108,26 @@ def preflight(track):
         if not [h for g in settings.get("hooks", {}).get(event, [])
                 for h in g.get("hooks", []) if install_hooks.mentions(h, script)]:
             problems.append(f"{event} hook not registered — run install_hooks.py")
+    vfile = os.path.join(HERE, track.get("validation_file", "validation.jsonl"))
     valid = set()
     try:
-        for line in open(os.path.join(HERE, "validation.jsonl")):
+        for line in open(vfile):
             rec = json.loads(line)
             if rec.get("valid"):
                 valid.add(rec["instance_id"])
     except OSError:
-        problems.append("validation.jsonl missing")
+        problems.append(f"{os.path.basename(vfile)} missing — run with --validate first")
     ids = [i for ph in track["phases"].values() for i in ph]
     missing = [i for i in ids if i not in valid]
     if missing and valid:
         problems.append(f"not validated: {missing}")
     if track["seed"] and not os.path.exists(track["seed"]):
         problems.append(f"seed store missing: {track['seed']}")
-    by_id = {t["instance_id"]: t for t in rs.TASKS}
+    tfile = os.path.join(HERE, track.get("tasks_file", "tasks_v2.json"))
+    by_id = {t["instance_id"]: t for t in json.load(open(tfile))}
     absent = [i for i in ids if i not in by_id]
     if absent:
-        problems.append(f"not in tasks_v2.json: {absent}")
+        problems.append(f"not in {os.path.basename(tfile)}: {absent}")
     return problems, by_id
 
 
@@ -157,6 +193,47 @@ def ratify(track, db):
                            f"{(r.stderr or '')[-300:]}")
 
 
+def validate(track, by_id):
+    """LLM-free gate, same checks as run_stream.validate: gold test patch
+    applies, F2P fails pre-fix, passes with the gold patch. Writes the
+    track's validation file; the run skips tasks that fail."""
+    repo = track["repo"]
+    vfile = os.path.join(HERE, track.get("validation_file", "validation.jsonl"))
+    ok = 0
+    ids = [i for ph in track["phases"].values() for i in ph]
+    with open(vfile, "w") as sink:
+        for iid in ids:
+            task = by_id[iid]
+            rec = {"instance_id": iid, "repo": repo}
+            try:
+                clone, venv = rs.prepare(repo, "control", task)
+                if not rs.apply_test_patch(clone, task):
+                    raise RuntimeError("test_patch apply failed")
+                pre_pass, _ = rs.run_f2p(clone, venv, task)
+                if pre_pass:
+                    raise RuntimeError("F2P passes pre-fix")
+                r = rs.sh(["git", "-C", clone, "apply", "-"],
+                          input=task["gold_patch"])
+                if r.returncode != 0:
+                    raise RuntimeError("gold patch apply failed")
+                post_pass, tail = rs.run_f2p(clone, venv, task)
+                if not post_pass:
+                    raise RuntimeError(f"F2P fails WITH gold patch: {tail}")
+                rec["valid"] = True
+                ok += 1
+            except (RuntimeError, Exception) as e:
+                rec.update(valid=False, reason=str(e)[:200])
+            finally:
+                clone = os.path.join(HERE, "clones", f"{repo}-control")
+                rs.sh(["git", "-C", clone, "checkout", "-qf", task["base_commit"]])
+                rs.sh(["git", "-C", clone, "clean", "-fdq"])
+            sink.write(json.dumps(rec) + "\n")
+            sink.flush()
+            print(f"{iid}: {'ok' if rec['valid'] else 'EXCLUDED: ' + rec['reason']}",
+                  flush=True)
+    print(f"validated {ok}/{len(ids)}", flush=True)
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     if len(args) != 1 or args[0] not in TRACKS:
@@ -167,6 +244,11 @@ def main():
     results = os.path.join(pilot_dir, "results.jsonl")
     sessions_dir = os.path.join(pilot_dir, "sessions")
 
+    if "--validate" in sys.argv:
+        tfile = os.path.join(HERE, track.get("tasks_file", "tasks_v2.json"))
+        by_id = {t["instance_id"]: t for t in json.load(open(tfile))}
+        validate(track, by_id)
+        return
     problems, by_id = preflight(track)
     if problems:
         for p in problems:
