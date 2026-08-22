@@ -171,8 +171,6 @@ def main():
                       for mid, _c, s in rows],
           "injected": [mid for mid, _c, _s in rows[:len(lines)]],
           "truncated": truncated, "chars": used, "staged": staged})
-    if not lines and not note:
-        sys.exit(0)  # nothing to inject; stay silent
     parts = []
     if lines:
         # Injection marker: lets ab_stats detect injected transcripts (a
@@ -207,6 +205,18 @@ def main():
             "this' from the user still means memory_save, 'forget that' "
             "means memory_delete; memory_update keeps an outdated fact's "
             "earned record).")
+    else:
+        # The formation/feedback policy must not depend on the store having
+        # content: the registered revalidation's cold-start sessions ran
+        # policy-blind (this trailer only rendered alongside memories) and
+        # one agent volunteered a save. An empty store still states the
+        # rules — the short form, since there is nothing to act on.
+        marker = f"[rfm-memory:{os.environ.get('RFM_AB_SESSION', 'standalone')}]"
+        parts.append(
+            f"{marker} No stored memories surfaced for this session. Do "
+            "not volunteer memory_save — durable lessons are mined from "
+            "the session automatically and staged for review ('remember "
+            "this' from the user still means memory_save).")
     if note:
         parts.append(note)
     context = "\n".join(parts)
