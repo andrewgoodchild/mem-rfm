@@ -33,21 +33,32 @@ either.
 Tools exposed: `memory_save`, `memory_search`, `memory_feedback`,
 `memory_update`, `memory_get`, `memory_status`, `memory_list`,
 `memory_delete`, `memory_export`. The tool
-descriptions steer the model; for reliable agent-decided capture, paste the
-snippet from `capture.md` into your CLAUDE.md. `memory_list`/`memory_export`
+descriptions steer the model; durable capture is harness-owned — install
+the hooks below instead of pasting capture instructions (`capture.md`
+predates them and remains only as A/B-kit documentation: the live pilots
+measured agent-volunteered saves at 11 of 13 never earning an outcome). `memory_list`/`memory_export`
 give full inspectability of what is remembered; `memory_delete` honors
 "forget that".
 
-## Optional: session-start injection
+## The formation loop (hooks)
 
-`hooks/session_start.py` injects the top-5 memories by pure `rfm_score` at
-session start (no query exists yet — this is the RFM prior standalone).
-Register in `~/.claude/settings.json`:
+`install_hooks.py` registers both hooks in `~/.claude/settings.json`
+(idempotent; backs the file up first), maintains the fenced memory-usage
+block in `~/.claude/CLAUDE.md`, and installs the `/memory-review` skill.
+`--remove` undoes all of it.
 
-```json
-{"hooks": {"SessionStart": [{"hooks": [{"type": "command",
-  "command": "/path/to/.venv/bin/python /path/to/hooks/session_start.py"}]}]}}
-```
+- `hooks/session_start.py` injects the top-3 memories by pure `rfm_score`
+  (no query exists yet — the RFM prior standalone) and never a memory whose
+  outcomes sit negative. K=3 and prior-ranking were chosen by replaying a
+  live pilot against outcome ground truth
+  (`bench-quality/live-ab/eval_selection.py`); query-similarity ranking was
+  evaluated there and rejected — it anti-selects the memories that
+  transfer.
+- `hooks/session_end.py` mines the transcript for failed→fixed command
+  pairs and stages them to `pending-memories.md` (ratified by
+  `/memory-review`, never auto-saved), and infers outcomes for memories the
+  session acted on — so routine feedback costs no model turns; explicit
+  `memory_feedback` is reserved for what inference cannot see.
 
 ## Configuration
 

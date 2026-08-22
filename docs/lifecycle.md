@@ -12,7 +12,7 @@ mid-task to do memory work. It measurably doesn't.
 | stage | in-session (scaffolding) | post-hoc, harness-owned (load-bearing) |
 |---|---|---|
 | **Formation** | `memory_save` for durable facts; "remember this" | SessionEnd hook mines the transcript for failed→fixed command pairs, stages them; `/memory-review` ratifies |
-| **Retrieval** | `memory_search` before exploring from scratch | SessionStart hook injects the top-5 by `rfm_score` |
+| **Retrieval** | `memory_search` before exploring from scratch | SessionStart hook injects the top-3 by `rfm_score`, never a memory whose outcomes sit negative |
 | **Outcome** | `memory_feedback(id, helped)` | SessionEnd hook infers outcomes from *use*: acted-on + how it went |
 | **Retention** | `memory_delete` on "forget that" | `rfm_prunable(id, days)`; positive outcomes are never prunable |
 

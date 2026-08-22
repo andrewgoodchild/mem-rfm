@@ -77,8 +77,10 @@ For Claude Code, an MCP server with local embeddings and one SQLite file:
 ```sh
 cd integrations/claude-code && uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python mcp sqlite-vec fastembed numpy
-.venv/bin/python smoke_test.py     # 35 checks over a real stdio launch
+.venv/bin/python smoke_test.py     # 39 checks over a real stdio launch
 claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py"
+.venv/bin/python install_hooks.py  # formation loop: injection, transcript
+                                   # mining, inferred outcomes, /memory-review
 ```
 
 It logs every save, search and outcome to `rfm-log.jsonl` beside the
@@ -94,7 +96,25 @@ Memory pays where work **recurs** and doesn't where it's episodic — on
 scattered real-bug fixing, the system measured its own lesson-transfer rate
 at ~6% and was a mild net tax. Outcome feedback is the component carrying its
 weight: an ablation of every part of the scoring function found it the only
-one whose removal measurably hurts.
+one whose removal measurably hurts, and against the one corpus with real
+test-verified rewards (52,104 Terminal-Bench trials) the value axis recovers
+true utility ordering at Spearman 0.83 within 25 observations.
+
+A four-run live pilot series on real bug-fixing (paired Claude Code
+sessions, gold-test scoring, full traces committed) turned that into a
+mechanism story. With naive settings, memory was a net tax even though the
+ranking was right about which memories mattered (pilot 2). Cutting
+agent-volunteered saves — 11 of 13 earned nothing — and letting the harness
+infer routine outcomes from the transcript removed the entire overhead
+(pilot 3). With an earned ledger and selection that trusts it, the memory
+arm beat control on wall clock and tokens for the first time (pilot 4), the
+wins landing exactly on the tasks where operational knowledge recurs. The
+selection finding is the one to remember: ranking injections by query
+similarity was measured and **rejected** — it anti-selects the memories
+that transfer, because per-bug content surface-matches new bug reports
+while the operational gotchas that actually help match nothing in
+particular. Relevance is not value. A registered held-out revalidation of
+the frozen stack lives in `bench-quality/live-ab/REVALIDATION.md`.
 
 The honest headline is a modest one, because a large gain was never the
 claim. This is a small, deliberately bounded adjustment to similarity search,
@@ -132,7 +152,14 @@ primitive rather than a service. Concurrent 2026 research is converging on
 the same loop ([RoMeRL](https://arxiv.org/abs/2608.02508),
 [Chen & Cheng](https://arxiv.org/abs/2606.12945)).
 
-Checked against current sources on 2026-08-15, and dated because this
+Formation splits the other way: an August 2026 survey of formation
+pipelines found shipping products gate new memories on human approval and
+research systems on outcomes — none shipped does the latter — and only two
+published LLM-free miners, which is the family the SessionEnd
+correction-pair miner here belongs to.
+
+Checked against current sources on 2026-08-15 (retrieval) and 2026-08-17
+(formation), and dated because this
 landscape moves quickly — Mem0 v2 was a breaking change whose MCP servers
 are now archived, and Zep v3 removed its `memory.*` namespace and fact
 ratings within the same window.
@@ -148,7 +175,8 @@ ratings within the same window.
 | [methodology.md](docs/methodology.md) | pre-registration, corrections, known limits |
 | [team-memory.md](docs/team-memory.md) | the team exploration, and why we stopped |
 
-Also: `PROTOCOL.md` (pre-registrations, amendments 1–13),
+Also: `PROTOCOL.md` (pre-registrations, amendments 1–14) and
+`bench-quality/live-ab/REVALIDATION.md` (the registered held-out revalidation),
 `bench-quality/RESULTS.md` (the complete ledger, including everything that
 died), `DESIGN_NOTES.md` (design decisions and trade-offs).
 

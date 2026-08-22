@@ -242,7 +242,7 @@ Environment:
 ### Checking it works
 
 `integrations/claude-code/smoke_test.py` spawns the server and speaks MCP
-over stdio against a temporary database — 35 checks covering every tool,
+over stdio against a temporary database — 39 checks covering every tool,
 the output schemas, the annotations, `isError` on each failure path, and the
 behaviours that are easy to break silently: that update preserves usage,
 that a repeat retrieval inside the window does not re-count, that a weak
