@@ -77,6 +77,13 @@ LOG_ENABLED, LOG = log_env.resolve_log(
     os.environ.get("RFM_LOG", "1"), os.path.dirname(DB_PATH))
 LOG_CONTENT = log_env.content_enabled(os.environ.get("RFM_LOG_CONTENT", "1"))
 MAX_CANDIDATES = 10
+# Retention window (days). rfm_prunable's guard makes automatic deletion
+# safe: only memories idle past the window AND never proved useful qualify —
+# a positive outcome record is never prunable however long idle
+# (docs/lifecycle.md calls pruning formation's safety net; this is where it
+# is wired). <= 0 disables; the value is never passed through at <= 0
+# because rfm_prunable(id, 0) would mean "prune anything idle".
+PRUNE_DAYS = float(os.environ.get("RFM_PRUNE_DAYS", "30"))
 
 # A failure worth learning from names a cause. Exit-code noise ("1") and
 # ordinary test failures are not gotchas — the agent expects those.
@@ -452,6 +459,38 @@ def record_outcomes(inferred, session_start):
     return done
 
 
+def prune(window_days):
+    """Retention pass: delete memories that rfm_prunable marks — idle past
+    the window AND never useful. Mirrors server _delete (both tables), and
+    logs each removal with redacted content so an audit can see what left
+    and why. Best-effort like everything else in this hook."""
+    if window_days <= 0 or not os.path.exists(DB_PATH):
+        return 0
+    try:
+        db = sqlite3.connect(DB_PATH, timeout=10.0)
+    except sqlite3.Error:
+        return 0
+    pruned = 0
+    try:
+        rfm.register(db)
+        rows = db.execute(
+            "SELECT id, content FROM rfm_memories "
+            "WHERE rfm_prunable(id, ?) = 1", (float(window_days),)).fetchall()
+        for mid, content in rows:
+            db.execute("DELETE FROM rfm_memories WHERE id = ?", (mid,))
+            db.execute("DELETE FROM rfm_accesses WHERE memory_id = ?", (mid,))
+            _log({"op": "prune", "id": mid, "window_days": window_days,
+                  "content": log_env.redact(str(content), LOG_CONTENT)})
+            pruned += 1
+        db.commit()
+    except sqlite3.Error as e:
+        _log({"op": "prune_failed", "error": str(e)})
+        pruned = 0
+    finally:
+        db.close()
+    return pruned
+
+
 def main():
     # A/B gating: when an experiment is running (ab/ab-claude sets
     # RFM_AB_ARM), a control-arm session must neither stage candidates nor
@@ -490,11 +529,16 @@ def main():
                                session_start_time(records))
     if recorded:
         notes.append(f"recorded {recorded} inferred outcome(s)")
+    pruned = prune(PRUNE_DAYS)
+    if pruned:
+        notes.append(f"pruned {pruned} idle never-useful memor"
+                     + ("y" if pruned == 1 else "ies"))
     # Run marker, written even when every count is zero: without it, a run
     # that found nothing is indistinguishable in the log from the hook never
     # firing, and the formation loop cannot be audited.
     _log({"op": "session_end", "session": session, "events": len(events),
-          "in_play": len(mems), "staged": staged, "outcomes": recorded})
+          "in_play": len(mems), "staged": staged, "outcomes": recorded,
+          "pruned": pruned})
     if notes:
         print("rfm: " + "; ".join(notes), file=sys.stderr)
 

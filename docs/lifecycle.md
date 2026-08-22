@@ -14,7 +14,7 @@ mid-task to do memory work. It measurably doesn't.
 | **Formation** | `memory_save` for durable facts; "remember this" | SessionEnd hook mines the transcript for failed→fixed command pairs, stages them; `/memory-review` ratifies |
 | **Retrieval** | `memory_search` before exploring from scratch | SessionStart hook injects the top-3 by `rfm_score`, never a memory whose outcomes sit negative |
 | **Outcome** | `memory_feedback(id, helped)` | SessionEnd hook infers outcomes from *use*: acted-on + how it went |
-| **Retention** | `memory_delete` on "forget that" | `rfm_prunable(id, days)`; positive outcomes are never prunable |
+| **Retention** | `memory_delete` on "forget that" | SessionEnd hook deletes what `rfm_prunable(id, days)` marks (`RFM_PRUNE_DAYS`, default 30; each removal logged); positive outcomes are never prunable |
 
 **Formation.** `hooks/session_end.py` extracts the one signal objectively
 present in a transcript — a command that failed followed by a variant that
@@ -42,7 +42,9 @@ outcomes actually arrive is the load-bearing question — "Getting the M"
 below.
 
 **Retention.** Ranking decides what surfaces; `rfm_prunable` decides what
-stays: idle past the window AND never proved useful. The guard is the
+stays: idle past the window AND never proved useful. The SessionEnd hook
+runs the pass after outcomes (`RFM_PRUNE_DAYS`, default 30; `<= 0`
+disables), logging every removal with redacted content. The guard is the
 substantive part — a memory retrieved rarely but successfully is exactly
 what this system exists to keep. Retention is also formation's safety net:
 prolific harness capture is only tolerable because evidence-based pruning
