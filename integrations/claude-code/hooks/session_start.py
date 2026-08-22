@@ -20,7 +20,14 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
-TOP_K = 5
+# K=3, from replaying pilot 2's selection offline (eval in pilot 4 notes,
+# RESULTS.md): prior top-3 + the negative-value floor kept 18 of the
+# as-run top-5's 19 outcome hits at 43% less injected context and half
+# the distractors. Query-similarity ranking was evaluated and REJECTED:
+# it anti-selects transferable memories (per-bug content surface-matches
+# new bug reports; the operational gotchas that actually help match
+# nothing in particular). The outcome prior is the better selector.
+TOP_K = int(os.environ.get("RFM_INJECT_K", "3"))
 # Hard injection budget: token bloat is a leading abandonment cause for
 # memory tools; stay far under Claude Code's own 25KB MEMORY.md discipline.
 CHAR_BUDGET = 1500
