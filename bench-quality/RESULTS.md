@@ -1269,3 +1269,53 @@ Consequences:
 Committed: pilot3/{results.jsonl, rfm-log.jsonl}; miner_replay.py (the
 offline harness the interventions were validated on). Transcripts, DBs,
 and the built-in-memory dirs stay untracked.
+
+## Pilot 4 (exploratory, NOT pre-registered): clean-room paired A/B, seeded ledger
+
+Run 2026-08-22, same 10 tasks, both arms, pilot 3's stack plus the
+selection policy chosen OFFLINE first: eval_selection.py replayed pilot
+2's ten rfm sessions against outcome ground truth — prior top-3 + the
+negative-value floor keeps 18/19 of the as-run hits at 43% less injected
+context and half the distractors, while query-similarity ranking (the
+"obvious" improvement) drops to 12–16 hits because it ANTI-SELECTS
+transferable memories: per-bug content surface-matches new bug reports;
+the operational gotchas that actually help match nothing in particular.
+Relevance is not value; the outcome prior out-selects semantic search on
+its own telemetry. A query-aware injection hook was therefore not built.
+
+Design: clean-room (both clones' built-in auto-memory archived, pilot
+/tmp artifacts removed — the pilot-3 confound handled), rfm store SEEDED
+with pilot 2's earned ledger for ids 1–4 only (per-bug memories dropped
+against same-task leakage; one demoted memory kept to exercise the
+floor). This measures the steady state — the value of an ACCUMULATED
+store — not cold start, and clean-room control is a harsher baseline
+than real usage, which has built-in memory. One resume mid-run re-ran
+the clean-room step (now guarded); the 8056 pair is flagged
+boundary-compromised and excluded totals are reported alongside.
+
+Result — the first rfm arm to beat control:
+* Wall: rfm 1,382s vs control 1,512s (−130s); excluding the flagged
+  pair, 1,190s vs 1,237s (−47s). rfm wins big exactly on the
+  env-heavy tasks (7757 −47s, 9658 −103s) and pays small on short ones —
+  the break-even structure made visible in a single table.
+* Tokens: rfm 9.7k/session vs control 10.9k — memory guidance now SAVES
+  tokens net. Messages at parity (42 vs 43). Resolution 9/10 both arms
+  (7462 fails everywhere, fourth run in a row).
+* Selection: 33 injected / 17 hits / 0 distractors (pilot 2: 44/19/2) —
+  precision up, distractors gone, and the seeded demoted memory was
+  floor-excluded until session 1's evidence contradicted its demotion
+  (inferred positive), after which it was readmitted and ended at value
+  0.02 with 3 outcomes: the ladder self-corrects in both directions.
+* Feedback economics: 17 inferred outcomes vs 3 explicit feedback calls
+  — the loop closed 20 times at the cost of 3 LLM turns.
+* Formation, clean-room: the widened miner staged one correction pair in
+  the 9281 session (a stubs-invocation variant), the ratifier admitted
+  it, it was injected in the final session and earned value 1.0 —
+  formation → ratification → injection → outcome closed end-to-end,
+  deterministically, with volunteered saves disabled. Store end state:
+  the two seeded earners at value 0.998 (17 outcomes) and 0.992 (14).
+
+Caveats: n=10, exploratory; the seed gives the rfm arm knowledge control
+lacks BY DESIGN (steady-state question, stated above); wall deltas on
+short tasks are noise-scale individually. Trace committed:
+pilot4/{results.jsonl, rfm-log.jsonl, pending-reviewed.md}.
