@@ -285,6 +285,36 @@ help where a workload both **repeats** and leaves the retriever making
 mistakes. On a corpus with 150 repetitions per label but a 0.98 baseline,
 nothing we could add or remove moved the number at all.
 
+## The live pilot series (August 2026)
+
+Four paired-session runs on real sphinx/pytest bugs — headless Claude Code,
+gold-test scoring, full injection/outcome traces committed under
+`bench-quality/live-ab/` — turned the benchmark findings into a mechanism
+story on live work:
+
+- **Pilot 2**: with naive settings the ranking was *right* (the one
+  operational gotcha earned helped-votes in 9 of 10 sessions and held rank
+  1; per-bug lessons were demoted or sat inert) but the margin was
+  negative — the machinery cost more than the reuse saved.
+- **Pilot 3**: suppressing agent-volunteered saves (11 of 13 never earned
+  an outcome) and inferring routine outcomes from the transcript removed
+  the entire overhead — and exposed that Claude Code's own built-in memory
+  had been quietly learning the same operational facts in both arms, a
+  confound now handled by the clean-room protocol.
+- **Selection eval** (offline, against pilot 2's outcome ground truth):
+  prior top-3 plus a negative-value floor keeps 18 of 19 hits at 43% less
+  injected context. Query-similarity ranking drops to 12–16 hits — it
+  anti-selects transferable memories. Adopted and rejected respectively.
+- **Pilot 4** (clean-room, seeded with the earned ledger): the first
+  memory arm to beat control — wall −47..−130s, tokens below control, 17
+  of 20 outcome-loop closures inferred free from the transcript, zero
+  injection distractors, and the miner closed formation→ratification→
+  injection→earned-value inside a single run.
+
+The frozen stack's held-out revalidation is registered in
+`bench-quality/live-ab/REVALIDATION.md` before its runs; predictions score
+PASS/FAIL there and in RESULTS.md.
+
 ## What died along the way
 
 Reported at the same length as the successes, in
@@ -298,6 +328,9 @@ Reported at the same length as the successes, in
   demand-recurrence) — all weak or benchmark-dependent as priors.
 - **The rank-1 replication bar** — passed on one of three datasets.
 - **Six collusion defences** — see [team-memory](team-memory.md).
+- **Similarity-ranked injection** — anti-selects the memories that
+  transfer; the outcome prior out-selects semantic relevance on live
+  telemetry (`bench-quality/live-ab/eval_selection.py`).
 - **One published number that was wrong**, caught in pre-publication review
   and corrected in place, with the error disclosed. See "Corrections" in
   RESULTS.md.

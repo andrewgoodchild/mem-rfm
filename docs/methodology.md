@@ -7,7 +7,9 @@ been decided after the fact.
 
 ## Pre-registration
 
-`PROTOCOL.md` holds the original protocol plus Amendments 1–10. Each states,
+`PROTOCOL.md` holds the original protocol plus Amendments 1–14, and
+`bench-quality/live-ab/REVALIDATION.md` registers the held-out live
+revalidation. Each states,
 **before the runs it governs**:
 
 - the candidate mechanisms, and that no others will be reported as primary
