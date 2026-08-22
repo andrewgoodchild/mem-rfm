@@ -44,14 +44,47 @@ for i in $(seq 1 20); do mkdir -p data/beam/$i
   curl -sL -o data/beam/$i/probing_questions.json \
     "https://raw.githubusercontent.com/mohammadtavakoli78/BEAM/main/chats/100K/$i/probing_questions/probing_questions.json"
 done
+# LongMemEval oracle split (ku_eval.py)
+curl -sL -o data/longmemeval_oracle.json \
+  "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main/longmemeval_oracle.json"
 # STAR (star_eval.py — MIT; authored task flowcharts, real wizard IDs)
-git clone --depth 1 https://github.com/RasaHQ/STAR data/star
+# Pinned to the commit evaluated here — registered results depend on it.
+git clone https://github.com/RasaHQ/STAR data/star
+git -C data/star checkout -q 3058975092cdd09798e4a3a9e4ae135755824545
 # FloDial (flodial_eval.py — CDLA-Sharing-1.0; authored troubleshooting flowcharts)
-git clone --depth 1 https://github.com/dair-iitd/FloDial data/flodial
+git clone https://github.com/dair-iitd/FloDial data/flodial
+git -C data/flodial checkout -q 71c782e1d7297d50aff186c77b0921113b6277d0
 # MultiDoc2Dial (md2d_eval.py — CC-BY-3.0; 488 authored gov documents)
 curl -sL -o data/multidoc2dial.zip \
   "https://doc2dial.github.io/multidoc2dial/file/multidoc2dial.zip"
 unzip -o -q data/multidoc2dial.zip -d data/ && rm data/multidoc2dial.zip
+# ABCD (abcd_eval.py etc. — MIT; Chen et al., NAACL 2021)
+curl -sL -o data/abcd_v1.1.json.gz \
+  "https://raw.githubusercontent.com/asappresearch/abcd/master/data/abcd_v1.1.json.gz"
+gunzip -k data/abcd_v1.1.json.gz
+curl -sL -o data/abcd_guidelines.json \
+  "https://raw.githubusercontent.com/asappresearch/abcd/master/data/guidelines.json"
+# SWE-Bench-CL (swe_eval.py — MIT; derived from SWE-bench Verified)
+curl -sL -o data/SWE-Bench-CL-Curriculum.json \
+  "https://raw.githubusercontent.com/thomasjoshi/agents-never-forget/main/data/SWE-Bench-CL-Curriculum.json"
+# Terminal-Bench 2.0 trajectories (calibration_eval.py — Apache-2.0;
+# 52,104 test-verified trials over 89 tasks, scraped leaderboard runs)
+uv pip install --python .venv/bin/python huggingface_hub
+.venv/bin/python - <<'PY'
+from huggingface_hub import snapshot_download
+snapshot_download("yoonholee/terminalbench-trajectories",
+                  repo_type="dataset", local_dir="data/terminalbench")
+PY
+# calibration_eval.py globs data/terminalbench/*.parquet, so the shard
+# names HF serves are fine as-is.
+```
+
+Verify the single-file downloads against the exact bytes the committed
+results were produced from (HF shard layouts may differ for terminalbench;
+content is what matters there):
+
+```sh
+shasum -a 256 -c data.sha256
 ```
 
 ## Setup
