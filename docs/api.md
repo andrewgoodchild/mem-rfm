@@ -238,6 +238,7 @@ Environment:
 | `RFM_LOG` | log path (`0`/`off` disables; `1`/`on`/`true` keep the default path beside the DB) |
 | `RFM_LOG_CONTENT` | `0` logs lengths and ids but not query/memory text |
 | `RFM_ACCESS_WINDOW` | seconds before a repeat retrieval re-counts as usage (default 60; `0` disables) |
+| `RFM_PRUNE_DAYS` | retention window for the SessionEnd prune pass — idle past this AND never useful is deleted (default 30; `<= 0` disables) |
 
 ### Checking it works
 
