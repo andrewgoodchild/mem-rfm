@@ -192,6 +192,18 @@ def load_events(records):
     return [Event(*r) for r in raw]
 
 
+def informative_head(cmd):
+    """Can this command's HEAD LINE serve as one side of rendered advice?
+    Candidates are rendered from head lines only, so a bare interpreter fed
+    by heredoc/stdin ('python - <<EOF') renders as advice with no reusable
+    trigger — Track 3's mining artifacts, demoted by outcomes only after
+    they had cost injection slots. Requires a token beyond the program,
+    env prefixes, flags, and the stdin dash."""
+    toks = cmd.split("<<")[0].split("\n")[0].split()
+    toks = [t for t in toks if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", t)]
+    return any(t != "-" and not t.startswith("-") for t in toks[1:])
+
+
 def corrections(events):
     """Failed command → the later command that fixed it.
 
@@ -234,6 +246,10 @@ def corrections(events):
                 # Two heredoc calls can differ only in their body; the rendered
                 # advice would then read "X fails; use X instead". Useless.
                 if head_a == head_b:
+                    continue
+                # Both rendered sides must carry a reusable trigger/action;
+                # a heredoc-bodied bare interpreter on either side does not.
+                if not (informative_head(e.cmd) and informative_head(fix.cmd)):
                     continue
                 out.append({
                     "failed": head_a,

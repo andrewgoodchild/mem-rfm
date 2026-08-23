@@ -53,6 +53,10 @@ spot: build quirks, dependency pins, project conventions, user preferences.
 **Probably not if** each task is unrelated to the last, or your workload is
 "answer one question about a big pile of documents." We measured both and
 memory didn't help; on scattered bug-fixing it was mildly *negative*.
+Budget either way for the cost no memory system reports: attaching one
+adds its tool schemas to every session's context before the first memory
+is saved, and our one registered FAIL is currently best explained by
+exactly that tax.
 
 **Definitely not if** you want a memory service. This is a scoring primitive
 plus evidence — one file, one process, no server.
@@ -113,8 +117,21 @@ selection finding is the one to remember: ranking injections by query
 similarity was measured and **rejected** — it anti-selects the memories
 that transfer, because per-bug content surface-matches new bug reports
 while the operational gotchas that actually help match nothing in
-particular. Relevance is not value. A registered held-out revalidation of
-the frozen stack lives in `bench-quality/live-ab/REVALIDATION.md`.
+particular. Relevance is not value.
+
+The registered revalidation then held the frozen stack to its predictions
+on held-out tasks (`bench-quality/live-ab/REVALIDATION.md`). Two tracks
+passed clean — 5 PASS, 2 NOT TRIGGERED, including the staleness test,
+where an era-specific memory took honest negatives and had its claim
+scoped down by the agent. The third track, a never-seen scientific-Python
+repo, delivered the series' **first registered FAIL**: the machinery-cost
+bound broke (+32% wall) alongside a resolution gap that no memory-side
+mechanism explains — three of its four failures ran with *empty*
+injections and 0–2 memory calls. The surviving suspects are the
+**attachment tax** (the constant context cost of a memory server's tool
+schemas riding in every session, paid before the first memory is ever
+saved) and plain n=11 variance; the ablation to separate them is the
+registered next question. Every trace is committed.
 
 The honest headline is a modest one, because a large gain was never the
 claim. This is a small, deliberately bounded adjustment to similarity search,
