@@ -453,7 +453,7 @@ ledger including what died. The mapping:
 
 Adversarial results (attacks, defences, the six that failed) live in
 [team-memory](team-memory.md); their runners are preserved at the
-`team-experiments` tag rather than on `main`.
+`archive/team-experiments` tag rather than on `main`.
 
 Two habits worth stating because they are cheap and they catch real
 problems. Every engine change is checked for **retrieval regression** by
@@ -469,7 +469,7 @@ downstream of it, so the harness is built to fail loudly instead.
 ## Sources
 
 Every equation is cited in the code implementing it (`rfm.py`; originally
-`src/math.rs`, preserved at the `rust-extension` tag).
+`src/math.rs`, preserved at the `archive/rust-extension` tag).
 
 - Belady, L. A. (1966) — the optimal replacement algorithm.
 - Lee, D. et al. (2001). *LRFU: a spectrum of policies subsuming LRU and LFU*.

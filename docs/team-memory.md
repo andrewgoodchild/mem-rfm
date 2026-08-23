@@ -15,7 +15,7 @@ Three things killed it, in increasing order of importance:
    results are not encouraging.
 
 The code that produced every number below is preserved at the
-**`team-experiments`** git tag. It was removed from `main` afterwards to keep
+**`archive/team-experiments`** git tag. It was removed from `main` afterwards to keep
 the shipped primitive small.
 
 ---
@@ -383,10 +383,10 @@ file, and read §3 before you let anyone you don't employ write to it.
 The extension flags (`exclude_self`, `one_vote`, `trust`, `trust_weighted`,
 `endorser_liability`), the `rfm_actors` reputation table, the actor-tagging
 columns, the adversarial harnesses and the audit queries all live at the
-**`team-experiments`** tag:
+**`archive/team-experiments`** tag:
 
 ```sh
-git checkout team-experiments
+git checkout archive/team-experiments
 cargo build --release
 cd bench-quality && python adversary_eval.py --dataset star --attack collude
 ```
