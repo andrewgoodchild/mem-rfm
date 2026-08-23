@@ -312,8 +312,39 @@ story on live work:
   injection→earned-value inside a single run.
 
 The frozen stack's held-out revalidation is registered in
-`bench-quality/live-ab/REVALIDATION.md` before its runs; predictions score
-PASS/FAIL there and in RESULTS.md.
+`bench-quality/live-ab/REVALIDATION.md` before its runs and scored in
+RESULTS.md: Tracks 1–2 (pytest cold start, sphinx stale-era seed) went
+5 PASS / 2 NOT TRIGGERED / 0 FAIL; Track 3 (xarray, a never-seen repo)
+delivered the series' first registered FAIL and its most instructive
+trace — see the cost accounting below.
+
+## The cost of memory, itemized
+
+Three separable costs emerged from the pilot and revalidation series,
+and they behave differently:
+
+1. **Machinery turns** — saves, feedback, reading injections. Measured,
+   and removable: suppressing volunteered saves and inferring routine
+   outcomes took it from +45s/+87% tokens per session (pilot 2) to below
+   control (pilot 4, pytest Phase A −7.6%/−12.4%).
+2. **Cold-start burden** — an empty store costs before it can pay.
+   Sometimes near-zero (pytest Phase A), sometimes not: xarray Phase A
+   broke its registered bound at +32% wall with a 7/11-vs-11/11
+   resolution gap. Crucially, the trace acquits the memories themselves:
+   three of four failures ran with empty injections and 0–2 memory
+   calls.
+3. **The attachment tax** — the cost of the memory server merely being
+   attached: its tool schemas ride in every session's context, a
+   constant spend that no tool-call count captures and that applies to
+   every MCP-based memory product, not this one. It is the leading
+   explanation for cost 2's xarray reading (the alternative is n=11
+   variance), and it is unmeasured — the registered next experiment is
+   a three-arm ablation (bare control / server-attached-idle / full
+   stack) to price it.
+
+Until 3 is priced, the break-even law should be read as: memory must
+recoup machinery turns (near zero now), plus its share of the
+attachment tax, plus the cold-start investment — out of recurrence.
 
 ## What died along the way
 

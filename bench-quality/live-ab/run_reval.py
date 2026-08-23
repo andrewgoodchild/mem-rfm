@@ -27,6 +27,17 @@ INTEGRATION = os.path.join(HERE, "..", "..", "integrations", "claude-code")
 sys.path.insert(0, INTEGRATION)
 import install_hooks  # noqa: E402
 
+# Registered Tracks 1-3 ran p3.PROMPT, which keeps "If memory tools are
+# available, check them..." — a harness artifact that forces memory
+# engagement real sessions don't have (Track 3 measured it at 0-2 calls
+# per session against a thin store: pure cost, and part of a FAIL).
+# Future runs use the clause-free prompt: the injection trailer is the
+# only memory steering, as in real usage.
+PROMPT = p3.PROMPT.replace(
+    "\n\nIf memory tools are available, check them for relevant lessons "
+    "from earlier work on this codebase before exploring,.", "")
+assert PROMPT != p3.PROMPT, "prompt surgery no longer matches"
+
 TRACKS = {
     "pytest": {
         "repo": "pytest",
@@ -155,7 +166,7 @@ def run_session(track, task, arm, db, sessions_dir):
            "RFM_MEMORY_DB": db}
     cmd = [rs.AB, "--arm", arm,
            "--label", f"reval-{repo}-{task['instance_id']}",
-           "-p", p3.PROMPT.format(repo=repo,
+           "-p", PROMPT.format(repo=repo,
                                   problem=task["problem_statement"],
                                   tests_dir=rs.REPO[repo]["tests_dir"]),
            "--max-turns", rs.MAX_TURNS, "--allowedTools", rs.ALLOWED]
