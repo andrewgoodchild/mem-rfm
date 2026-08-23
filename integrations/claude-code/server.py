@@ -488,7 +488,7 @@ def _search(query: str, limit: int = 5, scope: str | None = None,
         d.commit()
 
         if LOG_ENABLED and rows:
-            # The question that decides whether any of this is load-bearing:
+            # The question that decides whether any of this actually matters:
             # would plain similarity have returned the same thing? Logged per
             # search so a long dogfooding run can answer it empirically
             # rather than by assertion. Stays under the lock deliberately:

@@ -9,7 +9,7 @@ mid-task to do memory work. It measurably doesn't.
 
 ## What we do
 
-| stage | in-session (scaffolding) | post-hoc, harness-owned (load-bearing) |
+| stage | in-session (scaffolding) | post-hoc, harness-owned (does the real work) |
 |---|---|---|
 | **Formation** | `memory_save` for durable facts; "remember this" | SessionEnd hook mines the transcript for failed→fixed command pairs, stages them; `/memory-review` ratifies |
 | **Retrieval** | `memory_search` before exploring from scratch | SessionStart hook injects the top-3 by `rfm_score`, never a memory whose outcomes sit negative |
@@ -38,7 +38,7 @@ rather than decorative.
 staleness. A memory that stops being useful — because a procedure changed,
 not because it grew less similar — is only detectable here. One outcome per
 access, enforced, so the log always reproduces the summary state. How
-outcomes actually arrive is the load-bearing question — "Getting the M"
+outcomes actually arrive is the decisive question — "Getting the M"
 below.
 
 **Retention.** Ranking decides what surfaces; `rfm_prunable` decides what

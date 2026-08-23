@@ -148,7 +148,7 @@ system exists to keep.
 
 ## Invariants
 
-Two guarantees the implementation enforces, both load-bearing:
+Two guarantees the implementation enforces, neither of them optional:
 
 **One outcome per access.** A second `rfm_record_outcome` without an
 intervening access is refused. This means the access log always reproduces
