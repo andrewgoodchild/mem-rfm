@@ -43,9 +43,7 @@ RESULTS = os.path.join(PILOT_DIR, "results.jsonl")
 def clean_room():
     stamp = time.strftime("%Y%m%d-%H%M%S")
     for arm in ("control", "rfm"):
-        mem = os.path.expanduser(
-            "~/.claude/projects/-Users-andrewgoodchild-code-mem-rfm-"
-            f"bench-quality-live-ab-clones-sphinx-{arm}/memory")
+        mem = rs.builtin_memory_dir("sphinx", arm)
         if os.path.isdir(mem):
             dst = os.path.join(PILOT_DIR, "builtin-archive", f"{arm}-{stamp}")
             os.makedirs(os.path.dirname(dst), exist_ok=True)

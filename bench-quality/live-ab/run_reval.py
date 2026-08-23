@@ -101,10 +101,7 @@ TRACKS = {
 
 
 def clone_mem_dirs(repo):
-    return [os.path.expanduser(
-        "~/.claude/projects/-Users-andrewgoodchild-code-mem-rfm-"
-        f"bench-quality-live-ab-clones-{repo}-{arm}/memory")
-        for arm in ("control", "rfm")]
+    return [rs.builtin_memory_dir(repo, arm) for arm in ("control", "rfm")]
 
 
 def preflight(track):

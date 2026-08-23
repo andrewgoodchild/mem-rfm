@@ -24,7 +24,7 @@ import struct
 import sys
 import collections
 
-REPO = "/Users/andrewgoodchild/code/mem-rfm"
+REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 CC = os.path.join(REPO, "integrations", "claude-code")
 PILOT = os.path.join(REPO, "bench-quality", "live-ab", "pilot2")
 os.environ["RFM_LOG"] = "0"

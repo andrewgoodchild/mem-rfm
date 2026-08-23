@@ -55,12 +55,8 @@ SEED_SRC = os.path.join(HERE, "pilot2", "rfm-memory.db")
 SESSIONS = os.path.join(PILOT_DIR, "sessions")
 RESULTS = os.path.join(PILOT_DIR, "results.jsonl")
 
-CLONE_MEM = {
-    arm: os.path.expanduser(
-        "~/.claude/projects/-Users-andrewgoodchild-code-mem-rfm-"
-        f"bench-quality-live-ab-clones-sphinx-{arm}/memory")
-    for arm in ("control", "rfm")
-}
+CLONE_MEM = {arm: rs.builtin_memory_dir("sphinx", arm)
+             for arm in ("control", "rfm")}
 TMP_ARTIFACTS = ["/tmp/sphinx*", "/tmp/quickstart_9367_repro.py",
                  "/tmp/napoleon_repro", "/tmp/*_repro"]
 
