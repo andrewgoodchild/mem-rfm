@@ -1370,3 +1370,57 @@ Also observed, disclosed:
 
 Traces committed: reval-pytest/ and reval-sphinx/ {results.jsonl,
 rfm-log.jsonl}.
+
+## Track 3 scored: xarray, the first never-seen repo — and the first FAIL
+
+Runs 2026-08-22/23, registration 0dfd6e5 before any session. Score:
+2 PASS, 1 FAIL, 1 ambiguous-as-registered. Resolution: Phase A control
+11/11 vs rfm 7/11 (the series' first arm gap); Phase B 9/11 both arms
+(6992 and 7229 fail in both).
+
+* T3-P1 machinery cost: FAIL, both clauses — Phase A rfm wall +32.0%
+  (bound +10%), rfm mean output tokens +35.5% (bound +15%). The
+  pilot-3/4 overhead removal did NOT transfer to this workload. No
+  causal story is established; what the trace rules OUT is the obvious
+  one — see the resolution note below.
+* T3-P2 formation: PASS. 8 candidates staged and ratified, all
+  miner-mined (pending-reviewed.md count matches saves exactly — zero
+  volunteered saves, the empty-store trailer fix validated live).
+* T3-P3 steady state: AMBIGUOUS AS REGISTERED, disclosed as a
+  registration defect — "IF >=1 memory earns value > 0 in Phase A, its
+  Phase-B injections earn positive outcomes in >=50% of injected
+  sessions" does not say whether "its" quantifies existentially or
+  universally. Existential reading: PASS (memory 6: 8/8 Phase-B
+  sessions). Universal reading: FAIL (memories 3 and 4: 1/7 each).
+  Both are reported; neither is claimed. The per-memory split is the
+  real finding: the memories that kept earning through Phase B
+  (6: 8/8, 7: 5/5, 8: 3/3) are invocation patterns; the ones that died
+  (3, 4: 1/7) are early-era patterns that stopped applying at the
+  disclosed 2022 era shift inside Phase B — the staleness observation
+  the registration promised in passing, delivered on schedule.
+* T3-P4 selection discipline: PASS, and mechanically verified end to
+  end: the first mined memory (a heredoc head-line artifact — the miner
+  precision gap this track exposed) took an inferred −1.0 in session 3,
+  was floor-excluded from session 4 onward, then took two +0.5 explicit
+  rehabilitations via search — EWMA −1 → −0.55 → −0.235, matching the
+  stored value to three decimals — and correctly stayed excluded.
+
+Resolution-gap note, disclosed without a causal claim: three of the
+four Phase-A rfm failures (2905, 3677, 3993) ran with EMPTY injections —
+no memory content was in context — so bad mined memories cannot explain
+them. The systematic differences in those sessions reduce to the MCP
+server's presence, per-session memory searches against a thin store,
+and the prompt's memory clause. Failed sessions also run long, which
+couples the resolution gap to the wall/token FAIL. n=11 per phase;
+this is the strongest argument yet for the next run being larger.
+
+What Track 3 adds to the ledger: the honest boundary. On a
+scientific-stack repo with heredoc-heavy repro workflows, the current
+miner stages head-line artifacts (the "suspected tier" from the
+formation survey is now directly motivated), the machinery is NOT free
+the way it was on pytest/sphinx, and one prediction failed its bar in
+public. The demotion floor, formation-without-volunteering, and the
+staleness adjustment all worked exactly as designed while it happened.
+
+Traces committed: reval-xarray/{results.jsonl, rfm-log.jsonl,
+pending-reviewed.md}.
