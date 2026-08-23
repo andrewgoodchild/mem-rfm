@@ -372,13 +372,18 @@ and they behave differently:
    three of four failures ran with empty injections and 0–2 memory
    calls.
 3. **The attachment tax** — the cost of the memory server merely being
-   attached: its tool schemas ride in every session's context, a
-   constant spend that no tool-call count captures and that applies to
-   every MCP-based memory product, not this one. It is the leading
-   explanation for cost 2's xarray reading (the alternative is n=11
-   variance), and it is unmeasured — the registered next experiment is
-   a three-arm ablation (bare control / server-attached-idle / full
-   stack) to price it.
+   attached, before the first memory is saved. MEASURED (Track 4,
+   registered 5db11b0): a near-perfect constant +189 input tokens of
+   first-turn context per session (9 of 10 pairs exactly; paired mean
+   +218, 95% CI [+152, +284]), ~0.9% of baseline — with wall at +1.0%
+   and resolution identical, i.e. context-cost-only at this scale. The
+   size is the insight: an order of magnitude below the schemas' full
+   text, because Claude Code defers MCP schemas and loads them on
+   demand; the resident cost is the deferred-tool stub. The tax is
+   therefore harness-dependent — a harness without schema deferral pays
+   the schemas' full text. Consequence, per the registered decision
+   rule: Track 3's cold-start gap attributes to variance-or-unknown,
+   not the tax, and pilot 4's win loses its last unmeasured confound.
 
 Until 3 is priced, the break-even law should be read as: memory must
 recoup machinery turns (near zero now), plus its share of the
