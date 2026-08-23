@@ -218,6 +218,86 @@ def test_regressions():
     refuses("explicit NULL decay refused", "SELECT rfm_score_w(1, 0.5, 0.5, NULL)")
 
 
+def test_meta_and_compact():
+    """The lambda path-dependence guard and access-log compaction (v0.3.0)."""
+    db = sqlite3.connect(":memory:")
+    rfm.register(db)
+    q = lambda sql, *p: db.execute(sql, p).fetchone()[0]
+    q("SELECT rfm_init()")
+    db.execute("SELECT rfm_config('now', 1000.0)")
+    check("init writes no stamp (DDL-only; a DML write would leave the "
+          "implicit transaction open under the invoking SELECT)",
+          q("SELECT count(*) FROM rfm_meta") == 0)
+
+    db.execute("INSERT INTO rfm_memories(id, content, created_at) "
+               "VALUES (1, 'a', 0.0), (2, 'b', 0.0)")
+    db.execute("SELECT rfm_record_access(1)")
+    close("outcome under stamped lambda", q("SELECT rfm_record_outcome(1, 1.0)"), 1.0)
+    close("first outcome stamps the ledger's lambda",
+          q("SELECT value FROM rfm_meta WHERE key = 'lambda'"), 0.3)
+
+    # A mismatched lambda is refused BEFORE any row is touched...
+    db.execute("SELECT rfm_record_access(1)")
+    db.execute("SELECT rfm_config('lambda', 0.1)")
+    try:
+        db.execute("SELECT rfm_record_outcome(1, 0.5)")
+        check("mismatched lambda refused", False, "no error raised")
+    except sqlite3.Error:
+        pass
+    # ...so restoring the stamped lambda lets the SAME access take its outcome.
+    db.execute("SELECT rfm_config('lambda', 0.3)")
+    close("restored lambda accepted on the same access",
+          q("SELECT rfm_record_outcome(1, 0.5)"),
+          rfm.ewma_update(1.0, 1, 0.5, 0.3))
+
+    # Compaction: resolved history goes, the latest row (the outcome slot)
+    # and the score stay.
+    db.execute("SELECT rfm_config('now', 2000.0)")
+    db.execute("SELECT rfm_record_access(1)")
+    db.execute("SELECT rfm_record_outcome(1, 1.0)")
+    db.execute("SELECT rfm_config('now', 3000.0)")
+    db.execute("SELECT rfm_record_access(1)")
+    score_before = q("SELECT rfm_score(1)")
+    n_before = q("SELECT count(*) FROM rfm_accesses WHERE memory_id = 1")
+    deleted = q("SELECT rfm_compact(1e9)")
+    check("compact drops resolved non-latest rows", deleted == n_before - 1,
+          f"deleted {deleted} of {n_before}")
+    close("compaction never changes a score", q("SELECT rfm_score(1)"),
+          score_before, tol=0.0)
+    v_prev = q("SELECT value_score FROM rfm_memories WHERE id = 1")
+    n_prev = q("SELECT outcome_count FROM rfm_memories WHERE id = 1")
+    close("the outcome slot survives compaction",
+          q("SELECT rfm_record_outcome(1, -1.0)"),
+          rfm.ewma_update(v_prev, n_prev, -1.0, 0.3))
+
+    # A lone resolved row IS the latest row: compact must keep it.
+    db.execute("SELECT rfm_record_access(2)")
+    db.execute("SELECT rfm_record_outcome(2, 1.0)")
+    check("latest row survives even when resolved",
+          q("SELECT rfm_compact(1e9)") == 0)
+
+    def refuses(name, sql):
+        try:
+            db.execute(sql)
+            check(name, False, "no error raised")
+        except sqlite3.Error:
+            pass
+    refuses("compact NULL refused", "SELECT rfm_compact(NULL)")
+    refuses("compact non-finite refused", "SELECT rfm_compact(1e400)")
+
+    # Legacy DB with no rfm_meta at all: outcomes still work, no guard.
+    db2 = sqlite3.connect(":memory:")
+    rfm.register(db2)
+    db2.execute("SELECT rfm_init()")
+    db2.execute("DROP TABLE rfm_meta")
+    db2.execute("SELECT rfm_config('now', 1000.0)")
+    db2.execute("INSERT INTO rfm_memories(id, content, created_at) "
+                "VALUES (1, 'x', 0.0)")
+    db2.execute("SELECT rfm_record_access(1)")
+    close("legacy DB without rfm_meta still records outcomes",
+          db2.execute("SELECT rfm_record_outcome(1, 1.0)").fetchone()[0], 1.0)
+
+
 def test_schema_files_agree():
     """rfm.py's inline schema and the standalone rfm_schema.sql must create
     identical structures — same pinning discipline as pure_sql_check.
@@ -246,7 +326,7 @@ def test_schema_files_agree():
 
 if __name__ == "__main__":
     for fn in (test_math, test_sql_surface, test_regressions,
-               test_schema_files_agree):
+               test_meta_and_compact, test_schema_files_agree):
         fn()
     if FAILED:
         print(f"\n{len(FAILED)} FAILURE(S)")

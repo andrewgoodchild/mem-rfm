@@ -10,11 +10,12 @@ working verbatim:
     db.execute("SELECT rfm_init()")
     db.execute("SELECT id FROM rfm_memories ORDER BY rfm_score(id) DESC")
 
-This is a port of src/{math,functions,config,clock}.rs, retired in favor of
-this module once a parity check (run at the `rust-extension` tag, before the
-Rust sources were removed) showed the two agree to float round-off over a
-branch-covering corpus and identical operation sequences; tests/test_rfm.py
-now pins the semantics. Preserved deliberately:
+This is a port of the retired Rust extension's src/{math,functions,config,
+clock}.rs — sources that exist only at the `archive/rust-extension` git tag
+now, not in this tree. It replaced the extension once a parity check (run at
+that tag, before the Rust sources were removed) showed the two agree to
+float round-off over a branch-covering corpus and identical operation
+sequences; tests/test_rfm.py now pins the semantics. Preserved deliberately:
 
   * One config per register() call (connection-wide, never cross-process),
     mutated through rfm_config with the same validation and error strings.
@@ -46,14 +47,19 @@ import math as _m
 import sys
 import time
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 # Minimum lag in seconds: power-law decay t^(-d) is singular at t = 0, so
 # lags are clamped, mirroring common ACT-R implementation practice.
 EPS = 1e-3
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS rfm_memories (
+# One tuple entry per statement — never a single string split on ";", which
+# breaks silently the day the schema gains a trigger or a string literal
+# containing a semicolon. executescript is not an option either: rfm_init
+# runs inside a UDF, and executescript issues an implicit COMMIT
+# mid-statement.
+SCHEMA_STATEMENTS = (
+    """CREATE TABLE IF NOT EXISTS rfm_memories (
   id            INTEGER PRIMARY KEY,
   content       TEXT NOT NULL,
   created_at    REAL NOT NULL,
@@ -62,15 +68,23 @@ CREATE TABLE IF NOT EXISTS rfm_memories (
   bla_cache     REAL,
   value_score   REAL NOT NULL DEFAULT 0.0,
   outcome_count INTEGER NOT NULL DEFAULT 0
-);
-CREATE TABLE IF NOT EXISTS rfm_accesses (
+)""",
+    """CREATE TABLE IF NOT EXISTS rfm_accesses (
   memory_id   INTEGER NOT NULL REFERENCES rfm_memories(id),
   accessed_at REAL NOT NULL,
   outcome     REAL
-);
-CREATE INDEX IF NOT EXISTS rfm_accesses_mem_time
-  ON rfm_accesses(memory_id, accessed_at DESC);
-"""
+)""",
+    """CREATE INDEX IF NOT EXISTS rfm_accesses_mem_time
+  ON rfm_accesses(memory_id, accessed_at DESC)""",
+    # The ledger's path-dependent parameters. value_score is an EWMA, so it
+    # is a function of the lambda it was built under; nothing else in the
+    # summary row depends on config history.
+    """CREATE TABLE IF NOT EXISTS rfm_meta (
+  key   TEXT PRIMARY KEY,
+  value REAL NOT NULL
+)""",
+)
+SCHEMA = ";\n".join(SCHEMA_STATEMENTS) + ";"
 
 
 # ---------------------------------------------------------------- pure math
@@ -222,10 +236,16 @@ class _Rfm:
     # -- UDF bodies (names/arities match src/lib.rs) ------------------------
 
     def rfm_init(self):
+        # DDL only, deliberately: a DML write here would leave the
+        # connection's implicit transaction open underneath the SELECT that
+        # invoked this UDF, and the host's next statement — the MCP server's
+        # is PRAGMA journal_mode=WAL — fails with "cannot change into wal
+        # mode from within a transaction". The lambda stamp is therefore
+        # written lazily by rfm_record_outcome at the ledger's first outcome,
+        # which is also when the ledger's lambda-dependence actually begins.
         cur = self.conn.cursor()
-        for stmt in SCHEMA.strip().split(";"):
-            if stmt.strip():
-                cur.execute(stmt)
+        for stmt in SCHEMA_STATEMENTS:
+            cur.execute(stmt)
         return "ok"
 
     def rfm_record_access(self, mid):
@@ -257,7 +277,28 @@ class _Rfm:
             raise ValueError(
                 f"rfm: memory {mid} has no recorded access; "
                 "call rfm_record_access first")
-        new_value = ewma_update(row[4], row[5], outcome, self.cfg["lambda"])
+        lam = self.cfg["lambda"]
+        # Path-dependence guard: refuse to extend a ledger under a different
+        # lambda than it was built with. A DB predating rfm_meta (or one
+        # whose host manages schema itself) gets stamped on first use with
+        # the active lambda — the best available truth for a legacy ledger.
+        try:
+            stamped = self.conn.execute(
+                "SELECT value FROM rfm_meta WHERE key = 'lambda'").fetchone()
+        except Exception:
+            stamped = False    # no rfm_meta table at all: legacy, no guard
+        if stamped is None:
+            self.conn.execute("INSERT OR IGNORE INTO rfm_meta(key, value) "
+                              "VALUES ('lambda', ?)", (lam,))
+        elif stamped and abs(stamped[0] - lam) > 1e-12:
+            raise ValueError(
+                f"rfm: this ledger was built under lambda={stamped[0]:g} and "
+                f"the active lambda is {lam:g} — value_score is an EWMA, "
+                "path-dependent on lambda, so extending it would silently "
+                f"blend two regimes. Restore rfm_config('lambda', "
+                f"{stamped[0]:g}), or re-stamp deliberately: UPDATE rfm_meta "
+                f"SET value = {lam:g} WHERE key = 'lambda'")
+        new_value = ewma_update(row[4], row[5], outcome, lam)
         cur = self.conn.cursor()
         got = cur.execute(
             "UPDATE rfm_accesses SET outcome = ? WHERE rowid = "
@@ -335,6 +376,28 @@ class _Rfm:
         proved_useful = row[5] > 0 and row[4] > 0.0
         return int(idle_days > m and not proved_useful)
 
+    def rfm_compact(self, before_ts):
+        """Drop resolved access-log rows older than before_ts. Each memory's
+        LATEST row always survives — the one-outcome-per-access slot lives
+        there — as does every unresolved row. Scoring reads the summary row
+        only, so compaction never changes a score; what it spends is the
+        ability to replay the pruned span from the log."""
+        if before_ts is None:
+            raise ValueError("rfm: before_ts must not be NULL")
+        t = float(before_ts)
+        if not _m.isfinite(t):
+            raise ValueError("rfm: before_ts must be finite")
+        cur = self.conn.cursor()
+        cur.execute(
+            "DELETE FROM rfm_accesses WHERE accessed_at < ? "
+            "AND outcome IS NOT NULL AND rowid NOT IN "
+            "(SELECT rowid FROM "
+            " (SELECT rowid, ROW_NUMBER() OVER "
+            "   (PARTITION BY memory_id "
+            "    ORDER BY accessed_at DESC, rowid DESC) AS rn "
+            "  FROM rfm_accesses) WHERE rn = 1)", (t,))
+        return cur.rowcount
+
     def rfm_prior_of(self, n, created, t1w, t2w, value, n_out):
         row = _normalize_row(n, created, t1w, t2w, value, n_out)
         beta = self.cfg["beta"]
@@ -395,6 +458,7 @@ def register(conn):
         ("rfm_score_w", 3, r.rfm_score_w),
         ("rfm_score_w", 4, r.rfm_score_w),
         ("rfm_prunable", 2, r.rfm_prunable),
+        ("rfm_compact", 1, r.rfm_compact),
         ("rfm_prior_of", 6, r.rfm_prior_of),
         ("rfm_version", 0, r.rfm_version),
         ("rfm_config", 1, r.rfm_config),
