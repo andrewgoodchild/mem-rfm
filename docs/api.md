@@ -303,3 +303,14 @@ like normal operation from the outside.
 (bias it toward operational facts — see [findings](findings.md)), and an
 optional SessionStart hook injects top memories by pure `rfm_score` with no
 query at all, capped at 1,500 characters.
+
+## Repository layout
+
+```
+rfm.py                    the scoring engine (registers the rfm_* SQL functions)
+rfm_schema.sql            standalone schema
+tests/                    engine unit + SQL-surface tests (python3 tests/test_rfm.py)
+bench-quality/            all evidence: retrieval evals, live A/B, throughput, RESULTS.md
+integrations/claude-code/ MCP server, hooks, A/B kit — the live measurement harness
+docs/                     the writeups
+```

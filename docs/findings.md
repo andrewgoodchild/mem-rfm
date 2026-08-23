@@ -21,6 +21,24 @@ retiring stale content, and making shared stores resistant to abuse. Which of
 its two axes — recency/frequency, or outcome value — is doing the work varies
 by corpus; ablating both is the one part of this nobody else has published.
 
+## Relevance is not value
+
+The most transportable result in this repository, and it is about
+retrieval in general, not this implementation. In our live pilots the
+closest textual match to a new bug report in Sphinx's napoleon extension
+was a stored lesson about a previous napoleon bug — injected on
+similarity, never once confirmed useful. The era-pinned build
+workaround, similar to no query in particular, earned its keep in nine
+sessions of ten. That is the general pattern: per-bug content
+surface-matches new bug reports but per-bug lessons don't transfer
+(~6% measured), while the operational knowledge that helps session
+after session matches nothing. So ranking injections by query
+similarity *anti-selects* the memories that transfer — replayed against
+outcome ground truth (the pilot-series section below), it dropped a
+third of the confirmed-useful retrievals, while the outcome-ranked
+prior retained 18 of 19 at 43% less injected context. Similarity
+ranking was measured and rejected.
+
 ## Where memory helps
 
 ### Recurring work
@@ -319,6 +337,24 @@ RESULTS.md: Tracks 1–2 (pytest cold start, sphinx stale-era seed) went
 5 PASS / 2 NOT TRIGGERED / 0 FAIL; Track 3 (xarray, a never-seen repo)
 delivered the series' first registered FAIL and its most instructive
 trace — see the cost accounting below.
+
+### When the harness already ships memory
+
+Claude Code, Cursor, Devin and Windsurf all ship native memory — no
+attachment tax, better transcript access, the default slot. We measured
+the overlap directly: in our own live pilots, the harness's built-in
+memory silently captured the same operational lesson as our store, in
+both arms. Running mem-rfm alongside a native memory adds cost without a
+measured marginal benefit. What survives the overlap is what native
+memory doesn't do: an outcome ledger with signed negatives, auditable
+staleness demotion, a store that travels across harnesses.
+
+### What the live program cost
+
+196 headless Claude Code sessions and ~10 hours of agent wall clock, on
+the order of a few million tokens end to end. Phase sizes of n=10–11
+are a budget bound, not a choice — treat the live results as mechanism
+evidence, not effect-size estimates.
 
 ## The cost of memory, itemized
 
