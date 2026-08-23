@@ -1424,3 +1424,31 @@ staleness adjustment all worked exactly as designed while it happened.
 
 Traces committed: reval-xarray/{results.jsonl, rfm-log.jsonl,
 pending-reviewed.md}.
+
+## Track 4 scored: the attachment tax, measured
+
+Runs 2026-08-23, registration 5db11b0 before any session. Two arms over
+the 10 pilot sphinx tasks: control (no MCP server) vs idle (rfm-memory
+server attached; store empty — in fact never initialized, the DB file
+holds no tables, so not one memory operation occurred; hooks inert).
+
+* T4-P1: PASS, and the number is better than the prediction dared —
+  the idle server's context cost is a near-perfect constant: +189 input
+  tokens of first-turn context in 9 of 10 pairs (one +481 outlier;
+  paired mean +218, 95% CI [+152, +284]), ~0.9% of the ~25k baseline.
+  The size is the finding: an order of magnitude below the full text of
+  the nine tool schemas, because Claude Code DEFERS MCP schemas and
+  loads them on demand — the resident cost is the deferred-tool stub.
+  The attachment tax is therefore harness-dependent: a harness without
+  schema deferral pays the schemas' full text; Claude Code pays ~189
+  tokens.
+* T4-D1 (registered decision rule): resolves to CONTEXT-COST-ONLY.
+  Idle wall +1.0% vs control (rule: within ±10%); resolution identical,
+  9/10 both arms (7462 fails in both, as in every run of every
+  experiment). Consequences, as registered: Track 3's Phase-A gap is
+  attributed to variance-or-unknown, NOT to the attachment tax — and
+  pilot 4's win loses its last unmeasured confound.
+
+Per-arm output tokens at parity (10.9k vs 11.1k). Trace committed:
+tax/{results.jsonl}; transcripts and the never-initialized DB stay
+untracked.
