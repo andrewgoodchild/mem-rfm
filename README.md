@@ -1,22 +1,23 @@
 # mem-rfm
 
-**A study of when agent memory actually pays — with the SQLite primitive
-we built to measure it.**
+**Outcome-ranked agent memory in one SQLite file — and the full account
+of what happened when we made it prove itself.**
 
 RFM here is recency, frequency, and — where retail analytics puts
 "monetary" — *measured outcomes*: the two ACT-R activation axes plus a
 signed record of whether each memory, once retrieved, actually helped.
-The primitive is a pure-Python SQLite scoring engine (plus an MCP server
-and hooks for Claude Code). The study is ~30 pre-registered experiments
-and a live paired-session program on when memory pays off, when it
-doesn't, and what happens when someone abuses it — failures scored in
-public alongside the wins. The baseline throughout is what agent memory
+What we shipped is a pure-Python SQLite scoring engine, plus an MCP
+server and hooks for Claude Code. What happened when we ran it — ~30
+pre-registered experiments and a live paired-session program — is the
+rest of this page: when memory pays, when it doesn't, what someone can
+do to a shared store, with failures scored in public alongside the
+wins. The baseline throughout is what agent memory
 ships today: similarity search over stored text — a retrieval loop in
 which nothing ever notices whether a memory helped.
 
 ## The findings
 
-**Relevance is not value.** The study's most transportable result, and it
+**Relevance is not value.** The most transportable result here, and it
 is about retrieval in general, not this implementation. One instance
 shows it whole: in our live pilots, a stored lesson about one napoleon
 docstring bug was the closest textual match to the *next* napoleon bug
@@ -85,7 +86,7 @@ until now — the registered ablation below isolates it.
 
 Full registrations and scoring: `bench-quality/live-ab/REVALIDATION.md`
 and `bench-quality/RESULTS.md`. The staleness row hides the best
-mechanism trace in the study: an era-specific memory took honest
+mechanism trace of the whole program: an era-specific memory took honest
 negatives on a new era, slid down the injection ranking, and had its
 claim scoped down by the agent — demotion and content correction working
 together on held-out data.
@@ -157,8 +158,8 @@ explained by exactly that tax.
 memory.** Claude Code, Cursor, Devin and Windsurf all do, natively — no
 attachment tax, better transcript access, the default slot. We say this
 while our only shipped integration *is* Claude Code, and that is not an
-accident: the integration is this study's instrument, and the study is
-what found the overlap — in our own pilots, the harness's built-in
+accident: the integration is our measurement harness, and the
+measurements are what found the overlap — in our own pilots, the harness's built-in
 memory silently captured the same operational lesson as our store, in
 both arms. Running mem-rfm alongside a native memory adds cost without a
 measured marginal benefit. What survives the overlap is what native
@@ -260,7 +261,7 @@ rfm.py                    the scoring engine (registers the rfm_* SQL functions)
 rfm_schema.sql            standalone schema
 tests/                    engine unit + SQL-surface tests (python3 tests/test_rfm.py)
 bench-quality/            all evidence: retrieval evals, live A/B, throughput, RESULTS.md
-integrations/claude-code/ MCP server, hooks, A/B kit — the study's live instrument
+integrations/claude-code/ MCP server, hooks, A/B kit — the live measurement harness
 docs/                     the writeups linked above
 ```
 
