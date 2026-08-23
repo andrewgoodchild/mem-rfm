@@ -243,6 +243,9 @@ died), `DESIGN_NOTES.md` (design decisions and trade-offs).
 
 ## Repository
 
+One thing, three names, by context: the repo is `mem-rfm`, the pip
+package is `sqlite-rfm`, the module you import is `rfm`.
+
 ```
 rfm.py                    the scoring engine (registers the rfm_* SQL functions)
 rfm_schema.sql            standalone schema

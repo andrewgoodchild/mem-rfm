@@ -148,6 +148,16 @@ system exists to keep.
 
 ## Invariants
 
+**Never call the mutators inside a scan of `rfm_memories`.**
+`rfm_record_access` and `rfm_record_outcome` update the row mid-statement,
+and SQLite's behavior for rows modified while the same statement is
+scanning them is undefined. That is why every example in this repository
+retrieves first and records afterwards, as separate statements — collapse
+them into one `SELECT` and you are in undefined territory. (Python's
+`create_function` cannot mark a function `DIRECTONLY`, so the engine
+cannot enforce this for you; this line is the enforcement.)
+
+
 Two guarantees the implementation enforces, neither of them optional:
 
 **One outcome per access.** A second `rfm_record_outcome` without an
