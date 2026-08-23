@@ -64,14 +64,14 @@ committed before the run it governs.
 
 | what we asked | prediction | outcome |
 |---|---|---|
-| cold start, familiar repo | machinery cost stays within +10% wall / +15% tokens | **PASS** — −7.6% / −12.4% |
-| cold start, never-seen repo | same bound | **FAIL** — +32.0% / +35.5%, cause not established |
+| cold start, familiar repo (pytest) | machinery cost stays within +10% wall / +15% tokens | **PASS** — −7.6% / −12.4% |
+| cold start, never-seen repo (xarray) | same bound | **FAIL** — +32.0% / +35.5%, cause not established |
 | does the miner catch what sessions pay for? | it stages a candidate whenever a named-cause failure occurs | **PASS** — staged and ratified in-run |
-| does a proven memory keep earning? | a memory that earned in phase one earns again in phase two | **NOT TRIGGERED** — nothing earned value on that repo, as registered |
-| same question, never-seen repo | as above | our registered wording was defective — **disclosed**, not repaired after the fact |
-| do stale memories do harm? | an outdated earned ledger stays within +10% wall | **PASS** — +3.0%, and the ledger demoted itself |
+| does a proven memory keep earning? (pytest) | a memory that earned in phase one earns again in phase two | **NOT TRIGGERED** — nothing earned value on that repo, as registered |
+| same question, never-seen repo (xarray) | as above | **AMBIGUOUS** — our registered wording was defective; disclosed, not repaired after the fact |
+| do stale memories do harm? (sphinx, new era) | an outdated earned ledger stays within +10% wall | **PASS** — +3.0%, and the ledger demoted itself |
 | do demoted memories stay demoted? | outcome-demoted memories are never re-injected | **PASS** — verified in-run |
-| what does an idle memory server cost? | measurable context overhead from tool schemas alone; two-sided decision rule on wall and resolution | **REGISTERED — result pending** |
+| what does an idle memory server cost? (sphinx) | measurable context overhead from tool schemas alone; two-sided decision rule on wall and resolution | **REGISTERED — result pending** |
 
 Full registrations and scoring: `bench-quality/live-ab/REVALIDATION.md`
 and `bench-quality/RESULTS.md`. The stale-memories row hides the best
@@ -138,10 +138,8 @@ preferences.
 **Probably not if** each task is unrelated to the last, or your workload
 is "answer one question about a big pile of documents." We measured both
 and memory didn't help; on scattered bug-fixing it was mildly
-*negative*. Budget either way for the cost no memory system reports:
-attaching one adds its tool schemas to every session's context before
-the first memory is saved, and our one registered FAIL is currently best
-explained by exactly that tax.
+*negative*. Budget either way for the attachment tax
+above — our one registered FAIL is currently best explained by it.
 
 **Probably not if someone else owns your harness and it ships its own
 memory.** Claude Code, Cursor, Devin and Windsurf all do, natively — no
