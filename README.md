@@ -52,15 +52,31 @@ knowledge that comes back session after session.
 
 | measured | result | basis |
 |---|---|---|
-| putting the right memory first, on recurring work | **+0.012 hit@1** [95% CI +0.005, +0.020], rising to +0.020 over the final third as feedback accumulates | 3,000 real support calls; exploratory, oracle-labelled outcomes |
-| retiring facts that a procedure change made wrong | recovers to **0.56 hit@1** where similarity-only is still recommending the dead procedure at **0.20**, 1,500 calls later | same corpus, procedures revised mid-stream |
-| preferring an updated fact over the version it replaced | **0.43 → 0.66**, with no loss of fresh-fact recall | LongMemEval knowledge-update tasks |
-| scoring a memory by how useful it truly was | **Spearman 0.83** against ground truth within 25 observations | 52,104 test-verified Terminal-Bench trials — real rewards, not labels |
-| a live coding run once the ledger has been earned | memory arm beat control: **−8.6% wall**, 9.7k vs 10.9k output tokens | 10 paired Claude Code sessions; exploratory, not pre-registered |
+| putting the right memory first, on recurring work | **+0.012 hit@1** [95% CI +0.005, +0.020], rising to +0.020 over the final third as feedback accumulates | 3,000 real support calls; exploratory, **oracle** outcomes |
+| retiring facts that a procedure change made wrong | recovers to **0.56 hit@1** where similarity-only is still recommending the dead procedure at **0.20**, 1,500 calls later | same corpus, procedures revised mid-stream; **oracle** outcomes |
+| preferring an updated fact over the version it replaced | **0.43 → 0.66**, with no loss of fresh-fact recall | LongMemEval knowledge-update tasks; **oracle** labels |
+| scoring a memory by how useful it truly was | **Spearman 0.83** against ground truth within 25 observations | 52,104 Terminal-Bench trials — **real** test-verified rewards |
+| a live coding run once the ledger has been earned | memory arm beat control: **−8.6% wall**, 9.7k vs 10.9k output tokens | 10 paired Claude Code sessions; **wild** feedback, exploratory |
 
-The pattern across those rows is the same one the design predicts:
-memory pays where work recurs, and pays most at the top slot — the
-position that matters when you hand an agent one suggestion.
+The pattern across those rows is the one the design predicts: memory pays
+where work recurs, and pays most at the top slot — the position that
+matters when you hand an agent one suggestion.
+
+**The assumption underneath them, stated plainly.** Three of those rows
+use oracle outcomes. They establish what ranking does *given* correct
+feedback; they do not establish that a system obtains correct feedback
+in the wild. That acquisition step is the load-bearing assumption of
+this whole design, and it has the least clean measurement on the page —
+if the thesis fails, it fails there, not at +0.012 hit@1.
+
+What we can say about acquisition: across six live runs the loop closed
+**67 times by transcript inference against 23 explicit model calls**,
+and replaying those transcripts with explicit feedback as ground truth,
+inference recovered 9 of 15 outcomes with **zero sign errors** — it
+misses (the relevance judgments it structurally cannot see) but it does
+not invert. What has never been measured is the head-to-head: whether a
+ledger built entirely from wild feedback ranks as well as one built from
+oracle labels. That experiment is the next registration.
 
 ### What it costs, and where it doesn't pay
 
