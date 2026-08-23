@@ -1,28 +1,90 @@
 # mem-rfm
 
-**Agent memory that learns which memories are actually worth keeping.**
+**A study of when agent memory actually pays — with the SQLite primitive
+we built to measure it.**
 
-A pure-Python SQLite scoring engine (plus an MCP server for Claude Code)
-that ranks stored
-memories by whether they *helped* — not just whether they look relevant.
-Shipped with ~30 pre-registered experiments on when agent memory pays off,
-when it doesn't, and what happens when someone abuses it.
+RFM here is recency, frequency, and — where retail analytics puts
+"monetary" — *measured outcomes*: the two ACT-R activation axes plus a
+signed record of whether each memory, once retrieved, actually helped.
+The primitive is a pure-Python SQLite scoring engine (plus an MCP server
+and hooks for Claude Code). The study is ~30 pre-registered experiments
+and a live paired-session program on when memory pays off, when it
+doesn't, and what happens when someone abuses it — failures scored in
+public alongside the wins.
 
-## The problem
+## The findings
+
+**Relevance is not value.** The study's most transportable result, and it
+is about retrieval in general, not this implementation: ranking injected
+memories by query similarity was measured and **rejected**, because
+similarity *anti-selects* the memories that transfer. Per-bug content
+surface-matches new bug reports and per-bug lessons don't transfer
+(~6% measured); the operational gotchas that help session after session —
+env workarounds, invocation patterns — are similar to nothing in
+particular. An outcome-ranked prior kept 18 of 19 hits at 43% less
+injected context; similarity ranking dropped a third of the hits.
+
+**Recurrence gates value.** Memory pays where work recurs and doesn't
+where it's episodic. On scattered real-bug fixing it was a mild net tax;
+on a maximal-recurrence support workload the same frozen scoring beat
+similarity at rank-1 with CI > 0; a live paired series found the wins
+landing exactly on the tasks where operational knowledge recurs.
+
+**Outcome feedback is the term that earns its keep.** An ablation of
+every component of the scoring function found it the only one whose
+removal measurably hurts across corpora — and against the one corpus
+with real test-verified rewards (52,104 Terminal-Bench trials), the
+value axis recovers true utility ordering at Spearman 0.83 within 25
+observations, despite having been designed entirely on oracle labels.
+
+**Memory's cost has three parts, and only one was widely known.** A
+four-pilot live series plus a registered held-out revalidation priced
+them: *machinery turns* (reading injections, saving, feedback — measured,
+and removable: suppressing agent-volunteered saves, 11 of 13 of which
+earned nothing, and inferring routine outcomes from the transcript took
+the memory arm from +45s/session to at-or-below control); *cold-start
+burden* (an empty store costs before it can pay — sometimes near zero,
+and once badly not: a never-seen repo broke its registered cost bound at
++32% wall, the series' **first registered FAIL**, with a resolution gap
+that no memory-side mechanism explains — three of its four failures ran
+with empty injections); and the ***attachment tax*** — the constant
+context cost of a memory server's tool schemas riding in every session,
+paid before the first memory is saved. That last one is the leading
+suspect for the FAIL, it quietly sits under every MCP-based memory
+product ever benchmarked, and it is unmeasured — the registered next
+experiment isolates it.
+
+The registered revalidation otherwise held: 5 PASS, 2 NOT TRIGGERED
+across a cold-start track and a staleness track, where an era-specific
+memory took honest negatives, slid down the ranking, and had its claim
+scoped by the agent — demotion and content correction working together
+on held-out data (`bench-quality/live-ab/REVALIDATION.md`).
+
+What this cost to learn: the live program behind these numbers is 196
+headless Claude Code sessions and ~10 hours of agent wall clock, on the
+order of a few million tokens end to end. Phase sizes of n=10–11 are a
+budget bound, not a choice — treat the live results as mechanism
+evidence, not effect-size estimates.
+
+**[All findings, including the ones that argue against using this →](docs/findings.md)**
+
+We also explored pooling memory across a team, measured what a bad team
+member can do to a shared store, and then stopped: the mechanism works,
+but the market has run that experiment repeatedly and it hasn't landed.
+None of it ships here. **[The full write-up →](docs/team-memory.md)**
+
+## The instrument
 
 Agent memory systems retrieve by similarity: you ask, they return the
-memories whose embeddings sit closest. Nothing in that loop ever notices the
-outcome. A memory that was retrieved ten times and wasted the agent's time on
-all ten looks exactly as relevant on the eleventh.
-
-So bad memories never leave, and stale ones don't either — when a procedure
+memories whose embeddings sit closest. Nothing in that loop ever notices
+the outcome. A memory that was retrieved ten times and wasted the
+agent's time on all ten looks exactly as relevant on the eleventh. Bad
+memories never leave, and stale ones don't either — when a procedure
 changes, the old version stays semantically perfect for the query that
 matches it.
 
-## What this does
-
-It closes the loop. After a memory is retrieved you record whether it helped,
-and that verdict becomes part of the ranking.
+The primitive closes the loop. After a memory is retrieved you record
+whether it helped, and that verdict becomes part of the ranking:
 
 ```sql
 -- rank by similarity, adjusted by how well each memory has performed
@@ -34,43 +96,48 @@ SELECT rfm_record_access(42);        -- we retrieved memory 42
 SELECT rfm_record_outcome(42, 1.0);  -- ...and it helped (-1.0 if it didn't)
 ```
 
-That's the whole interface. Scoring is one indexed row read — no API keys, no
-network, no LLM anywhere in the ranking path.
+That's the whole interface. Scoring is one indexed row read — no API
+keys, no network, no LLM anywhere in the ranking path.
 
-Underneath, the problem is cache replacement: too many memories to put in
-front of the model, so you must predict which are worth having. Recency and
-frequency come from ACT-R, a cognitive model of human memory. The outcome
-axis is the part a cache policy doesn't have — because a cache hit is always
-valuable and a retrieved memory isn't.
+Underneath, the problem is cache replacement: too many memories to put
+in front of the model, so you must predict which are worth having.
+Recency and frequency come from ACT-R, a cognitive model of human
+memory. The outcome axis is the part a cache policy doesn't have —
+because a cache hit is always valuable and a retrieved memory isn't.
+Everything above was measured through this instrument, with every
+retrieval, injection, and outcome logged to an auditable JSONL trace.
 **[How the model works →](docs/theory.md)**
 
-## Should you use this?
+## Should you use the primitive?
 
 **Probably yes if** your agent's work *recurs* — the same problems,
-procedures or environments coming back. Operational knowledge is the sweet
-spot: build quirks, dependency pins, project conventions, user preferences.
+procedures or environments coming back. Operational knowledge is the
+sweet spot: build quirks, dependency pins, project conventions, user
+preferences.
 
-**Probably not if** each task is unrelated to the last, or your workload is
-"answer one question about a big pile of documents." We measured both and
-memory didn't help; on scattered bug-fixing it was mildly *negative*.
-Budget either way for the cost no memory system reports: attaching one
-adds its tool schemas to every session's context before the first memory
-is saved, and our one registered FAIL is currently best explained by
-exactly that tax.
+**Probably not if** each task is unrelated to the last, or your workload
+is "answer one question about a big pile of documents." We measured both
+and memory didn't help; on scattered bug-fixing it was mildly
+*negative*. Budget either way for the cost no memory system reports:
+attaching one adds its tool schemas to every session's context before
+the first memory is saved, and our one registered FAIL is currently best
+explained by exactly that tax.
 
 **Probably not if someone else owns your harness and it ships its own
 memory.** Claude Code, Cursor, Devin and Windsurf all do, natively — no
-attachment tax, better transcript access, the default slot. We measured
-the overlap directly: in our own live pilots, the harness's built-in
+attachment tax, better transcript access, the default slot. We say this
+while our only shipped integration *is* Claude Code, and that is not an
+accident: the integration is this study's instrument, and the study is
+what found the overlap — in our own pilots, the harness's built-in
 memory silently captured the same operational lesson as our store, in
-both arms. Running mem-rfm alongside it there adds cost without a
-measured marginal benefit. What survives the overlap is only what native
+both arms. Running mem-rfm alongside a native memory adds cost without a
+measured marginal benefit. What survives the overlap is what native
 memory doesn't do — an outcome ledger with signed negatives, auditable
 staleness demotion, a store that travels across harnesses. Want those,
 use it for those; otherwise the harness has this covered.
 
-**Definitely not if** you want a memory service. This is a scoring primitive
-plus evidence — one file, one process, no server.
+**Definitely not if** you want a memory service. This is a scoring
+primitive plus evidence — one file, one process, no server.
 
 ## Install
 
@@ -99,63 +166,11 @@ claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py
 ```
 
 It logs every save, search and outcome to `rfm-log.jsonl` beside the
-database. `log_stats.py` turns that into the numbers that decide whether it
-is working for you: whether feedback is actually coming back, and how often
-the ranking differed from plain similarity.
+database. `log_stats.py` turns that into the numbers that decide whether
+it is working for you: whether feedback is actually coming back, and how
+often the ranking differed from plain similarity.
 
 **[Full API and configuration →](docs/api.md)**
-
-## What we found
-
-Memory pays where work **recurs** and doesn't where it's episodic — on
-scattered real-bug fixing, the system measured its own lesson-transfer rate
-at ~6% and was a mild net tax. Outcome feedback is the component carrying its
-weight: an ablation of every part of the scoring function found it the only
-one whose removal measurably hurts, and against the one corpus with real
-test-verified rewards (52,104 Terminal-Bench trials) the value axis recovers
-true utility ordering at Spearman 0.83 within 25 observations.
-
-A four-run live pilot series on real bug-fixing (paired Claude Code
-sessions, gold-test scoring, full traces committed) turned that into a
-mechanism story. With naive settings, memory was a net tax even though the
-ranking was right about which memories mattered (pilot 2). Cutting
-agent-volunteered saves — 11 of 13 earned nothing — and letting the harness
-infer routine outcomes from the transcript removed the entire overhead
-(pilot 3). With an earned ledger and selection that trusts it, the memory
-arm beat control on wall clock and tokens for the first time (pilot 4), the
-wins landing exactly on the tasks where operational knowledge recurs. The
-selection finding is the one to remember: ranking injections by query
-similarity was measured and **rejected** — it anti-selects the memories
-that transfer, because per-bug content surface-matches new bug reports
-while the operational gotchas that actually help match nothing in
-particular. Relevance is not value.
-
-The registered revalidation then held the frozen stack to its predictions
-on held-out tasks (`bench-quality/live-ab/REVALIDATION.md`). Two tracks
-passed clean — 5 PASS, 2 NOT TRIGGERED, including the staleness test,
-where an era-specific memory took honest negatives and had its claim
-scoped down by the agent. The third track, a never-seen scientific-Python
-repo, delivered the series' **first registered FAIL**: the machinery-cost
-bound broke (+32% wall) alongside a resolution gap that no memory-side
-mechanism explains — three of its four failures ran with *empty*
-injections and 0–2 memory calls. The surviving suspects are the
-**attachment tax** (the constant context cost of a memory server's tool
-schemas riding in every session, paid before the first memory is ever
-saved) and plain n=11 variance; the ablation to separate them is the
-registered next question. Every trace is committed.
-
-The honest headline is a modest one, because a large gain was never the
-claim. This is a small, deliberately bounded adjustment to similarity search,
-and most of what it buys is safety and maintenance — keeping a usage prior
-from eating itself, and retiring content that similarity would recommend
-forever.
-
-**[All findings, including the ones that argue against using this →](docs/findings.md)**
-
-We also explored pooling memory across a team, measured what a bad team
-member can do to a shared store, and then stopped: the mechanism works, but
-the market has run that experiment repeatedly and it hasn't landed. None of
-it ships here. **[The full write-up →](docs/team-memory.md)**
 
 ## How this compares
 
@@ -215,7 +230,7 @@ rfm.py                    the scoring engine (registers the rfm_* SQL functions)
 rfm_schema.sql            standalone schema
 tests/                    engine unit + SQL-surface tests (python3 tests/test_rfm.py)
 bench-quality/            all evidence: retrieval evals, live A/B, throughput, RESULTS.md
-integrations/claude-code/ MCP server, hooks, capture snippet, A/B kit
+integrations/claude-code/ MCP server, hooks, A/B kit — the study's live instrument
 docs/                     the writeups linked above
 ```
 
