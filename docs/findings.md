@@ -123,9 +123,11 @@ similarity search and skip all of this.
 ### The top-slot gain is real but narrow
 
 Outcome ranking beat plain similarity for the *first* result — the position
-that matters when you hand an agent one suggestion — on two datasets. It
-**failed its pre-registered replication bar on two others**. Cost was bounded
-everywhere it ran.
+that matters when you hand an agent one suggestion — on two datasets. On
+ABCD, the maximal-recurrence workload, the edge was +0.012 hit@1
+[95% CI +0.005, +0.020], growing to +0.020 [+0.007, +0.034] over the last
+thousand calls as feedback accumulated. It **failed its pre-registered
+replication bar on two others**. Cost was bounded everywhere it ran.
 
 Treat rank-1 improvement as a possible bonus, not the reason to deploy.
 
