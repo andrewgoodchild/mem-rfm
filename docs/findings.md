@@ -338,6 +338,47 @@ RESULTS.md: Tracks 1–2 (pytest cold start, sphinx stale-era seed) went
 delivered the series' first registered FAIL and its most instructive
 trace — see the cost accounting below.
 
+### The registered FAIL, in detail
+
+On `pydata/xarray` — a repository no pilot had touched — a registered
+bound said the machinery would cost no more than +10% wall and +15%
+output tokens against a no-memory control. Phase A came in at **+32.0%
+wall and +35.5% tokens**, with the series' only resolution gap: control
+resolved 11 of 11, the memory arm 7 of 11. It is scored FAIL and stays
+that way.
+
+What the trace rules out:
+
+- **The memories in context.** Three of the four failed sessions ran
+  with *empty injections* — no memory content reached the model — and
+  0–2 memory tool calls each. Whatever cost those sessions, the
+  retrieved memories were not in the room.
+- **The attachment tax.** It was the leading hypothesis, so we
+  registered an ablation (Track 4) while the failure stood unexplained,
+  with a decision rule written in advance that could clear it. It did:
+  an idle attached server costs +189 tokens of context, +1.0% wall, and
+  no resolution difference. Excluded.
+
+What we found afterwards, which is a defect in the instrument rather
+than an explanation of the gap: two of the eight memories that run
+mined were `python - <<'EOF'` heredoc artifacts — the correction miner
+capturing a bare interpreter's head line, which renders as advice with
+no reusable trigger. Between them they took **29 accesses and earned
+zero positive outcomes**: one had to be dragged to −0.23 through three
+negative outcomes, the other sat at 0.0 after 16 accesses, occupying an
+injection slot every time. The other six all ended at value 1.0. The
+miner has since been guarded (`informative_head`) and refuses both
+artifacts while keeping all six earners — verified by replaying the
+recorded transcripts.
+
+So the honest state is: the bound broke, the memories didn't cause it,
+the platform cost didn't cause it, and a quarter of the store was junk
+the current miner would never create. That leaves variance at n=11, or
+something we have not identified. A registered replication on the
+repaired stack would settle which — and if it is ever run, this result
+stays in the table beside it, because a bound that broke once on a
+defective instrument is a fact about both.
+
 ### When the harness already ships memory
 
 Claude Code, Cursor, Devin and Windsurf all ship native memory — no

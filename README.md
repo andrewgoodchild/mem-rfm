@@ -68,10 +68,10 @@ run it governs:
 | what we asked | prediction | outcome |
 |---|---|---|
 | cold start, familiar repo (pytest) | machinery cost stays within +10% wall / +15% tokens | **PASS** — −7.6% / −12.4% |
-| cold start, never-seen repo (xarray) | same bound | **FAIL** — +32.0% / +35.5%, cause not established |
+| cold start, never-seen repo (xarray) | same bound | **FAIL** — +32.0% / +35.5%. The leading suspect was excluded by the last row; still unexplained at n=11 ([forensics](docs/findings.md#the-registered-fail-in-detail)) |
 | does the miner catch what sessions pay for? | it stages a candidate whenever a named-cause failure occurs | **PASS** — staged and ratified in-run |
 | does a proven memory keep earning? (pytest) | a memory that earned in phase one earns again in phase two | **NOT TRIGGERED** — nothing earned value on that repo, as registered |
-| same question, never-seen repo (xarray) | as above | **AMBIGUOUS** — our registered wording was defective; disclosed, not repaired after the fact |
+| same question, never-seen repo (xarray) | as above | **AMBIGUOUS** — our registered wording was defective; disclosed rather than quietly repaired, and [corrected for future registrations](bench-quality/live-ab/REVALIDATION.md) |
 | do stale memories do harm? (sphinx, new era) | an outdated earned ledger stays within +10% wall | **PASS** — +3.0%, and the ledger demoted itself |
 | do demoted memories stay demoted? | outcome-demoted memories are never re-injected | **PASS** — verified in-run |
 | what does an idle memory server cost? (sphinx) | measurable context overhead from tool schemas alone; two-sided decision rule on wall and resolution | **MEASURED** — +189 tokens/session (~0.9% of context), wall +1.0%, resolution identical: context-cost-only |
