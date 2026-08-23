@@ -58,6 +58,17 @@ adds its tool schemas to every session's context before the first memory
 is saved, and our one registered FAIL is currently best explained by
 exactly that tax.
 
+**Probably not if someone else owns your harness and it ships its own
+memory.** Claude Code, Cursor, Devin and Windsurf all do, natively — no
+attachment tax, better transcript access, the default slot. We measured
+the overlap directly: in our own live pilots, the harness's built-in
+memory silently captured the same operational lesson as our store, in
+both arms. Running mem-rfm alongside it there adds cost without a
+measured marginal benefit. What survives the overlap is only what native
+memory doesn't do — an outcome ledger with signed negatives, auditable
+staleness demotion, a store that travels across harnesses. Want those,
+use it for those; otherwise the harness has this covered.
+
 **Definitely not if** you want a memory service. This is a scoring primitive
 plus evidence — one file, one process, no server.
 
