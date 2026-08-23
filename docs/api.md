@@ -41,7 +41,7 @@ matters because it means even the engine is an optimization rather than a
 dependency.
 
 Measured on 50,000 rows, `ORDER BY … DESC LIMIT 10` (Python engine; the
-retired Rust extension's numbers live at the `rust-extension` tag):
+retired Rust extension's numbers live at the `archive/rust-extension` tag):
 
 | form | time | when |
 |---|---|---|
