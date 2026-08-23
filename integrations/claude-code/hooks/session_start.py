@@ -110,8 +110,15 @@ def staged_review_note():
 def main():
     hook_input = read_hook_input()
     # Sidecar first — it must be written for BOTH arms, before any of the
-    # injection early-exits below.
+    # early-exits below (including hooks-off: it records which transcript
+    # belongs to which ab session and writes NOTHING into the session, so
+    # the ablation's idle arm stays joinable without being touched).
     write_sidecar(hook_input)
+    # RFM_HOOKS_OFF=1: run with the hooks otherwise inert — the
+    # attachment-tax ablation (REVALIDATION.md Track 4) needs an arm where
+    # the MCP server is attached but nothing else happens.
+    if os.environ.get("RFM_HOOKS_OFF") == "1":
+        return
     # A/B gating: when an experiment is running (ab/ab-claude sets
     # RFM_AB_ARM), inject only in the rfm arm so the control stays clean.
     if os.environ.get("RFM_AB_ARM", "rfm") != "rfm":

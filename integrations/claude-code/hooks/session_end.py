@@ -508,6 +508,11 @@ def prune(window_days):
 
 
 def main():
+    # RFM_HOOKS_OFF=1: run with the hooks inert — the attachment-tax
+    # ablation (REVALIDATION.md Track 4) needs an arm where the MCP
+    # server is attached but nothing else happens.
+    if os.environ.get("RFM_HOOKS_OFF") == "1":
+        return
     # A/B gating: when an experiment is running (ab/ab-claude sets
     # RFM_AB_ARM), a control-arm session must neither stage candidates nor
     # record outcomes — the arms run the same task back-to-back, so a
