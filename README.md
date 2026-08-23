@@ -1,7 +1,5 @@
 # mem-rfm
 
-## What is mem-rfm?
-
 mem-rfm is long-term memory for coding agents that ranks what it
 remembers by whether it actually *helped*. The whole thing is one SQLite
 file and a pure-Python scoring engine; an MCP server and a pair of hooks
@@ -44,7 +42,7 @@ path and a harness-owned path that does the real work:
 
 **[The full lifecycle, and who decides at each stage →](docs/lifecycle.md)**
 
-## Benefits
+## What it's for, and what it costs
 
 Memory pays for procedural things that repeat — build quirks, dependency
 pins, environment workarounds, invocation patterns: the operational
@@ -53,6 +51,13 @@ the measured wins landed: in live paired runs, the memory arm's
 advantage sat on the tasks where operational knowledge recurred, and the
 ranking consistently promoted the memories that kept proving out while
 demoting the ones that didn't.
+
+Where it didn't pay is measured too: unrelated episodic tasks and
+one-question-over-a-document-pile workloads showed no benefit, and
+scattered bug-fixing was mildly negative. And if your harness already
+ships its own memory — Claude Code, Cursor and Devin all do — the
+overlap is real and measured: in our own pilots the native memory
+captured the same operational lessons our store did.
 
 The claims are pre-registered and scored. The live program ran paired
 Claude Code sessions on real bugs in three open-source Python repos —
@@ -70,6 +75,15 @@ run it governs:
 | do stale memories do harm? (sphinx, new era) | an outdated earned ledger stays within +10% wall | **PASS** — +3.0%, and the ledger demoted itself |
 | do demoted memories stay demoted? | outcome-demoted memories are never re-injected | **PASS** — verified in-run |
 | what does an idle memory server cost? (sphinx) | measurable context overhead from tool schemas alone; two-sided decision rule on wall and resolution | **MEASURED** — +189 tokens/session (~0.9% of context), wall +1.0%, resolution identical: context-cost-only |
+
+How to read the table: a large gain was never the claim. This is a
+small, deliberately bounded adjustment to similarity search, and most of
+what it buys is safety and maintenance — keeping a usage prior from
+eating itself, and retiring content that similarity would recommend
+forever. The last row closes the loop on the failure above it: the
+idle-server ablation was registered while the xarray FAIL stood
+unexplained, and its verdict — context-cost-only — is what attributes
+that failure to variance rather than to the machinery.
 
 **[All findings, and everything that died along the way →](docs/findings.md)**
 
