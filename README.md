@@ -21,8 +21,9 @@ which nothing ever notices whether a memory helped.
 ([evidence](docs/findings.md#the-live-pilot-series-august-2026)) The most
 transportable result here, and it's about retrieval in general, not this
 implementation. In our live pilots the closest textual match to a new
-napoleon bug report was a stored lesson about a previous napoleon bug —
-injected on similarity, never once confirmed useful. The era-pinned build
+bug report in Sphinx's napoleon extension was a stored lesson about a
+previous napoleon bug — injected on similarity, never once confirmed
+useful. The era-pinned build
 workaround, similar to no query in particular, earned its keep in nine
 sessions of ten. Per-bug lessons don't transfer; operational knowledge
 does, and it matches nothing. So similarity ranking of injections
@@ -56,19 +57,24 @@ below isolates it.
 
 ### The register
 
-| experiment | registered prediction | outcome |
+The live program ran paired Claude Code sessions on real bugs in three
+open-source Python repos — memory arm against control, resolution scored
+by each project's own tests. Every prediction below was written down and
+committed before the run it governs.
+
+| what we asked | prediction | outcome |
 |---|---|---|
-| pytest cold start | machinery cost within +10% wall / +15% tokens | **PASS** — −7.6% / −12.4% |
-| pytest formation | miner stages a candidate when named-cause failures occur | **PASS** — staged and ratified in-run |
-| pytest steady state | a Phase-A-proven memory keeps earning in Phase B | **NOT TRIGGERED** — nothing earned value on pytest, as the registration anticipated |
-| sphinx stale seed | an outdated earned ledger does no harm (within +10% wall) | **PASS** — +3.0%, and the ledger adjusted itself downward |
-| selection discipline | outcome-demoted memories are never re-injected | **PASS** — floor arithmetic verified to three decimals in-run |
-| xarray, never-seen repo | machinery cost within +10% / +15% | **FAIL** — +32.0% / +35.5%, cause not established |
-| xarray steady state | as pytest steady state | **AMBIGUOUS AS REGISTERED** — wording defect disclosed; passes existentially, fails universally |
-| attachment tax | an idle attached server shows measurable context overhead; two-sided decision rule on wall and resolution | **REGISTERED — result pending** |
+| cold start, familiar repo | machinery cost stays within +10% wall / +15% tokens | **PASS** — −7.6% / −12.4% |
+| cold start, never-seen repo | same bound | **FAIL** — +32.0% / +35.5%, cause not established |
+| does the miner catch what sessions pay for? | it stages a candidate whenever a named-cause failure occurs | **PASS** — staged and ratified in-run |
+| does a proven memory keep earning? | a memory that earned in phase one earns again in phase two | **NOT TRIGGERED** — nothing earned value on that repo, as registered |
+| same question, never-seen repo | as above | our registered wording was defective — **disclosed**, not repaired after the fact |
+| do stale memories do harm? | an outdated earned ledger stays within +10% wall | **PASS** — +3.0%, and the ledger demoted itself |
+| do demoted memories stay demoted? | outcome-demoted memories are never re-injected | **PASS** — verified in-run |
+| what does an idle memory server cost? | measurable context overhead from tool schemas alone; two-sided decision rule on wall and resolution | **REGISTERED — result pending** |
 
 Full registrations and scoring: `bench-quality/live-ab/REVALIDATION.md`
-and `bench-quality/RESULTS.md`. The staleness row hides the best
+and `bench-quality/RESULTS.md`. The stale-memories row hides the best
 mechanism trace of the whole program: an era-specific memory took honest
 negatives on a new era, slid down the injection ranking, and had its
 claim scoped down by the agent — demotion and content correction working
