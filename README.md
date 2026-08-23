@@ -17,59 +17,42 @@ which nothing ever notices whether a memory helped.
 
 ## The findings
 
-**Relevance is not value.** The most transportable result here, and it
-is about retrieval in general, not this implementation. One instance
-shows it whole: in our live pilots, a stored lesson about one napoleon
-docstring bug was the closest textual match to the *next* napoleon bug
-report — injected on similarity, useless in practice, zero confirmed
-uses ever. The era-pinned build workaround, similar to no query in
-particular, was confirmed useful in nine sessions of ten. That is the
-general pattern: per-bug content surface-matches new bug reports but
-per-bug lessons don't transfer (~6% measured), while the operational
-knowledge that helps session after session matches nothing. So ranking
-injections by query similarity *anti-selects* the memories that
-transfer — replayed against outcome ground truth, it dropped a third of
-the confirmed-useful retrievals, while the outcome-ranked prior retained
-18 of 19 at 43% less injected context. Similarity ranking was measured
-and **rejected**.
+**Relevance is not value.**
+([evidence](docs/findings.md#the-live-pilot-series-august-2026)) The most
+transportable result here, and it's about retrieval in general, not this
+implementation. In our live pilots the closest textual match to a new
+napoleon bug report was a stored lesson about a previous napoleon bug —
+injected on similarity, never once confirmed useful. The era-pinned build
+workaround, similar to no query in particular, earned its keep in nine
+sessions of ten. Per-bug lessons don't transfer; operational knowledge
+does, and it matches nothing. So similarity ranking of injections
+*anti-selects* the memories that help. Measured and **rejected**.
 
-**Recurrence gates value.** Memory pays where work recurs and doesn't
-where it's episodic. On scattered real-bug fixing it was a mild net tax;
-on a maximal-recurrence support workload the same frozen scoring beat
-similarity at rank-1 by +0.012 hit@1 [95% CI +0.005, +0.020], the edge
-growing as feedback accumulated over the stream; a live paired series found the wins
-landing exactly on the tasks where operational knowledge recurs.
+**Recurrence gates value.**
+([evidence](docs/findings.md#recurring-work)) Memory pays where work
+recurs and doesn't where it's episodic. Mild net tax on scattered
+bug-fixing; a real edge on a high-recurrence support workload; in the
+live series, the wins landed exactly on the tasks where operational
+knowledge repeated.
 
-**Outcome feedback is the term that earns its keep.** An ablation of
-every component of the scoring function found it the only one whose
-removal measurably hurts across corpora — and against the one corpus
-with real test-verified rewards (52,104 Terminal-Bench trials), the
-value axis recovers true utility ordering at Spearman 0.83 within 25
-observations, despite having been designed entirely on oracle labels.
+**Outcome feedback is the term that earns its keep.**
+([evidence](docs/findings.md#which-parts-of-the-system-actually-earn-their-place))
+Ablate every component of the scoring function and it's the only one
+whose removal measurably hurts — and against the one corpus with real
+test-verified rewards, the value axis recovers true utility ordering
+(Spearman 0.83) within a couple dozen observations.
 
-**Memory's cost has three parts, and only one was widely known.** A
-four-pilot live series plus a registered held-out revalidation priced
-them separately.
-
-*Machinery turns* — reading injections, saving, giving feedback. Measured
-and removable: agent-volunteered saves earned nothing in 11 of 13 cases,
-and suppressing them while inferring routine outcomes from the
-transcript took the memory arm from +45 s and +87% output tokens per
-session to at-or-below control.
-
-*Cold-start burden* — an empty store costs before it can pay. Sometimes
-near zero (pytest cold start: −7.6% wall), and once badly not: a
-never-seen repo broke its registered cost bound at +32% wall, the
-series' **first registered FAIL**, with a resolution gap no memory-side
-mechanism explains — three of its four failures ran with *empty*
-injections and 0–2 memory calls.
-
-*The attachment tax* — the constant context cost of a memory server's
-tool schemas riding in every session, paid before the first memory is
-saved. It sits under any MCP-attached memory product, ours included; it
-is the leading suspect for the FAIL above, it is an unmeasured confound
-under our own best positive result, and it was unmeasured everywhere
-until now — the registered ablation below isolates it.
+**Memory's cost has three parts, and only one was widely known.**
+([evidence](docs/findings.md#the-cost-of-memory-itemized)) *Machinery
+turns* — reading, saving, giving feedback: measured, and largely
+removable. *Cold-start burden* — an empty store costs before it can pay;
+usually small, once badly not. *The attachment tax* — the constant
+context cost of a memory server's tool schemas riding in every session,
+paid before the first memory is saved. It sits under any MCP-attached
+memory product, ours included. It's the leading suspect for our one
+registered FAIL, an unmeasured confound under our own best positive
+result, and unmeasured everywhere else too. The registered ablation
+below isolates it.
 
 ### The register
 
