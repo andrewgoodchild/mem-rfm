@@ -1574,3 +1574,46 @@ invented memories in 20 sessions under an explicit invitation to save.
 The capture question remains open and untested.
 
 Traces committed: synth6/{results.jsonl, rfm-log.jsonl, pending-reviewed.md}.
+
+### Addendum: Track 7 was not run, because the trigger — not the workload — is wrong
+
+Track 6's write-up proposed re-running the synthesis experiment on the
+sphinx clones, where the environment is genuinely broken. Before
+registering it, the trigger rate was measured across every sphinx session
+this project has recorded, using the trigger's own threshold and
+generic-program exclusion:
+
+| run / arm | sessions | would fire | classes seen |
+|---|---|---|---|
+| pilot2 control / rfm | 10 / 10 | 0 / 0 | versionrequirementerror 2 · mixed 3 |
+| pilot3 rfm | 10 | 0 | none |
+| pilot4 control / rfm | 10 / 10 | 0 / 0 | versionrequirementerror 2 · no-such-file 2 |
+| reval-sphinx control / rfm | 6 / 6 | 0 / 0 | 2 · 3 |
+| tax control / rfm | 10 / 10 | 0 / **1** | versionrequirementerror 4 · 5 |
+
+**1 firing in 82 sphinx sessions.** With pytest's 2 in 20 (one spurious),
+the trigger fires in **3 of 102 sessions across every workload we own**.
+Sphinx is not a better venue; there is no better venue. Registering Track
+7 would have spent a run to re-learn Track 6's lesson.
+
+**Why it fails, and it is diagnosable.** The trigger requires the same
+error class to fail twice *within one session*. Agents adapt too fast for
+that — `versionrequirementerror` appears 2, 4 and 5 times in various runs,
+but spread across sessions, not repeated inside one. The struggle is real
+and this project has already measured it: reval-sphinx's control arm
+needed 6 events to reach a green test against the memory arm's 1, and 2 of
+6 control sessions never got there. **We chose a struggle signal we never
+validated, while holding one we did.**
+
+The trigger should fire on the signal the counterfactual instrument
+already proved discriminates — elapsed events with no passing test — not
+on repeated identical error classes. That is a different experiment with a
+different mechanism, and it needs its own registration and its own
+pre-flight rate check before any session runs.
+
+**Method note.** The rate check that produced this table costs nothing and
+would have prevented Track 6 as well. Any future trigger design gets it
+before registration: measure on recorded transcripts how often the
+proposed trigger would fire, and refuse to register anything that fires in
+under ~20% of sessions — below that, a 10-session run cannot distinguish
+the mechanism from variance.
