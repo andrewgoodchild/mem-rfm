@@ -57,7 +57,16 @@ SKILL_DST = os.path.expanduser("~/.claude/skills/memory-review")
 HOOKS = {
     "SessionStart": os.path.join(HERE, "hooks", "session_start.py"),
     "SessionEnd": os.path.join(HERE, "hooks", "session_end.py"),
+    # Struggle-triggered synthesis (REVALIDATION.md Track 5). Registered
+    # always, INERT unless RFM_SYNTHESIS=1 — it is a registered experiment,
+    # not a default. Matched to Bash: this fires per tool call, and a Python
+    # spawn on every Read/Edit/Grep would add latency to the very sessions
+    # whose cost the experiment measures.
+    "PostToolUse": os.path.join(HERE, "hooks", "post_tool_use.py"),
 }
+MATCHERS = {"PostToolUse": "Bash"}
+# Per-tool-call hooks need a short leash; session hooks can take longer.
+TIMEOUTS = {"PostToolUse": 10}
 
 # Sentinel-fenced so re-runs replace rather than append, and --remove can
 # strip it cleanly. Everything outside the fence is never touched.
@@ -91,9 +100,10 @@ def hook_entry(script):
     # otherwise word-split into a hook that silently never launches.
     # The trailing marker is a harmless shell comment ('#' and everything
     # after it is ignored) that mentions() below matches on.
+    event = next((e for e, s in HOOKS.items() if s == script), None)
     return {"type": "command",
             "command": f"{shlex.quote(PYTHON)} {shlex.quote(script)}  {_marker(script)}",
-            "timeout": 30}
+            "timeout": TIMEOUTS.get(event, 30)}
 
 
 def mentions(entry, script):
@@ -133,7 +143,10 @@ def install(settings, remove=False):
             continue
         desired = hook_entry(script)
         if not ours:
-            groups.append({"hooks": [desired]})
+            group = {"hooks": [desired]}
+            if event in MATCHERS:
+                group["matcher"] = MATCHERS[event]
+            groups.append(group)
             changes.append(f"registered {event} -> {desired['command']}")
         else:
             for g, h in ours:

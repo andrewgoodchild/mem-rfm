@@ -172,3 +172,62 @@ chosen by a rule fixed in advance:
 
 Both readings of the original remain reported for Track 3. This
 correction does not change that score.
+
+## Track 5 — struggle-triggered synthesis (registered 2026-08-23, before any session)
+
+**What this tests, and what it does not.** This is a CAPTURE test, not a
+benefit test. It asks whether a synthesis channel writes down the expensive
+knowledge the failed→fixed miner provably misses. It makes no performance
+claim: a benefit claim requires the token-matched control design
+(arXiv 2606.15017 showed a vanilla baseline given the same token budget
+matches or beats AWM/ASI/ReasoningBank), and that is deferred to a
+follow-up. Nothing here should be read as "memory helped".
+
+**Why capture and not precision.** An independent oracle experiment
+(research/formation-survey-2-2026-08-23.md) deleted every never-contributing
+memory — a perfect filter removing up to 49.5% of a store — and moved
+accuracy by ~0, every CI covering zero; our own stores agree (pilot 2 spent
+59% of injection slots on never-earners and displaced nothing). Precision
+has no headroom. Separately, our own calibration curve found re-derivation
+cost does NOT predict realized usefulness (Spearman +0.146, n=19, and the
+two most expensive pairs in the corpus are junk artifacts), which kills the
+cost-prior alternative. Recall is what is left.
+
+**The gap being targeted, measured.** formation_study.py's coverage
+scorecard on reval-pytest: the two costliest knowledge classes —
+`modulenotfounderror` (11 control-arm events across 5 of 10 sessions) and
+`pkg_resources` (8 events, 4 sessions) — are both **NOT CAPTURED**, while
+the three memories formation did store earned nothing. Zero recall on the
+expensive knowledge.
+
+**Mechanism.** hooks/post_tool_use.py counts failures per named error class
+and fires exactly one nudge per session, at the moment a class that failed
+>= RFM_SYNTHESIS_N (=2) times is finally resolved by a success of the same
+program — struggle-then-resolution, when the knowledge exists and the
+reasoning is still in context. The harness supplies the detection; the agent
+supplies only the explanation (agents diagnose their own failures badly:
+0 of 121 reflections named the correct object in arXiv 2605.29463, and
+programmatic signal extraction moved that to 86%). The nudge carries memU's
+no-op line verbatim and explicitly supersedes the standing
+do-not-volunteer instruction for that one moment.
+
+**Design.** run_synth.py, the 10 pytest tasks of Track 1, rfm arm only,
+fresh store, clause-free prompt, RFM_SYNTHESIS=1. The comparison baseline is
+**reval-pytest's own rfm arm** — same tasks, same stack, same prompt, miner
+only — so the delta isolates the synthesis channel.
+
+Registered predictions:
+  T5-P1 (capture): the synthesis channel produces >= 1 memory whose text
+        names one of the classes the scorecard marked NOT CAPTURED on this
+        repo (modulenotfounderror / pkg_resources / importerror).
+        Falsifies: the channel fires and still misses the costly knowledge.
+  T5-P2 (no-op discipline): sessions in which the nudge did NOT fire
+        produce zero saved memories. Falsifies: the channel leaks into an
+        open invitation to volunteer.
+  T5-P3 (over-extraction bound): at most one saved memory per session.
+  T5-P4 (cost): total wall clock within +15% of reval-pytest's rfm arm.
+        Falsifies: synthesis is not affordable at this trigger rate.
+
+Scored PASS/FAIL/NOT TRIGGERED in RESULTS.md as usual; a conditional whose
+condition never fires (no session struggles) is NOT TRIGGERED, and would
+itself be the finding.
