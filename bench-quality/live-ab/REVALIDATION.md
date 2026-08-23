@@ -111,3 +111,33 @@ No wall-clock advantage is predicted: xarray's recurrence profile is
 unknown, and the honest prior after Tracks 1–2 is that scientific-stack
 env friction (numpy/pandas era pins) may recur like sphinx's or may not,
 like pytest's. That question is what the track exists to answer.
+
+## Track 4 — the attachment tax (registered 2026-08-23, before any session)
+
+Track 3's FAIL left two suspects standing: the constant cost of the
+memory server's mere presence (tool schemas in every session's context),
+and n=11 variance. External review flagged the same unknown from the
+other side: it sits unmeasured under pilot 4's win too. This track
+isolates it.
+
+Design: run_tax.py, two arms over the 10 pilot sphinx tasks (a
+development set — acceptable here because no memory content exists to
+overfit with): control (no MCP server) vs idle (rfm-memory server
+attached, store empty and verified to stay empty, hooks inert via
+RFM_HOOKS_OFF with the observability sidecar retained). Clause-free
+prompt both arms. The only systematic differences in the idle arm are
+the server's tool schemas in context and its process startup.
+
+This is an ESTIMATION experiment with one prediction and one registered
+decision rule:
+  T4-P1 (the tax is visible in context): idle-arm mean input tokens per
+        session exceeds control's — the schema overhead is real and its
+        size is reported per session.
+  T4-D1 (decision rule, two-sided by design): if idle total wall is
+        within ±10% of control AND the resolution gap is <= 1 task, the
+        attachment tax is a context-cost-only effect at this scale and
+        Track 3's Phase-A gap is attributed to variance-or-unknown, NOT
+        to the tax. If idle exceeds +10% wall or drops >= 2 tasks, the
+        tax has behavioral cost and Track 3's reading strengthens.
+        Either outcome is informative; neither is a pass or a fail of
+        the memory system.
