@@ -231,3 +231,46 @@ Registered predictions:
 Scored PASS/FAIL/NOT TRIGGERED in RESULTS.md as usual; a conditional whose
 condition never fires (no session struggles) is NOT TRIGGERED, and would
 itself be the finding.
+
+## Track 6 — synthesis, retargeted (registered 2026-08-23, before any session)
+
+Track 5's capture prediction FAILED, and its diagnostic named two defects,
+both ours. This is the same experiment with both fixed, on the same ten
+pytest tasks, so Track 6 vs Track 5 is a clean A/B on trigger and nudge
+design rather than on workload.
+
+**Defect 1 — no generic-program guard.** One of Track 5's two firings was
+spurious: `command not found` with `program=cd`. The correction miner
+already refuses uninformative programs (`informative_head`); the trigger
+did not. Fixed with an explicit GENERIC set applied to both sides.
+
+**Defect 2 — the nudge asked the wrong question.** It fired on an
+*environment* error class and then asked for "the root cause" in the
+abstract. Both times the model produced a fluent root-cause explanation of
+**the bug it was fixing** — per-bug code knowledge this project measures at
+~6% transfer and does not want stored — and correctly declined to save it.
+The retargeted nudge names the environment class, asks why *this checkout
+or virtualenv* produces it and what made it stop, and states explicitly
+that per-bug lessons are not wanted.
+
+**What Track 5 established that this run inherits:** the trigger reaches
+the model, costs nothing measurable (−6.4% wall), and the no-op line holds
+— zero invented memories across ten sessions under an explicit invitation
+to save. Track 6 changes only what the trigger fires on and what it asks
+for.
+
+Registered predictions:
+  T6-P1 (capture): >= 1 memory whose text is NOT the miner's
+        `In this project, X fails...` template and which names the
+        environment class that triggered its nudge. This is the
+        prediction Track 5 failed; it is re-registered unchanged.
+  T6-P2 (trigger precision): every nudge fires on a non-generic program.
+        Falsifies the guard.
+  T6-P3 (no-op discipline): sessions with no nudge produce zero
+        non-template memories (Track 5: PASS, re-registered).
+  T6-P4 (cost): total wall within +15% of Track 5's 2,988s.
+
+Scored PASS/FAIL/NOT TRIGGERED as usual. If no nudge fires at all, T6-P1
+and T6-P2 are NOT TRIGGERED and the finding is that the guard made an
+already-rare trigger rarer — which would itself argue the threshold, not
+the nudge, is the binding constraint.
