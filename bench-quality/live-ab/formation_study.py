@@ -184,6 +184,37 @@ def view_coverage(cost):
         print()
 
 
+def view_policy(S):
+    """Counterfactual formation policy: promote an error class to a memory
+    once it has recurred across >= N independent sessions.
+
+    Simulates production honestly — memory-arm sessions only, because a
+    live system has no control arm to consult. The question it answers is
+    the one the coverage scorecard raises: would a recurrence gate have
+    captured the expensive knowledge the failed→fixed miner missed?"""
+    print("=== policy simulation: promote a class after N recurring sessions ===")
+    print("(memory-arm sessions only, as production would see them)\n")
+    for run in sorted({r for r, _, _, _ in S}):
+        arm = "idle" if run == "tax" else "rfm"
+        rows = [(t, tp) for r, t, a, tp in S if r == run and a == arm]
+        if not rows:
+            continue
+        seen = collections.Counter()
+        for _task, tp in rows:
+            classes = {m.group(0).lower()
+                       for e in events_of(tp) if e.got
+                       for m in SIGNATURE.finditer(e.body or "")}
+            for c in classes:
+                seen[c] += 1
+        if not seen:
+            continue
+        print(f"-- {run} ({len(rows)} sessions)")
+        for bar in (2, 3):
+            promoted = sorted(c for c, n in seen.items() if n >= bar)
+            print(f"   N>={bar}: {promoted or 'nothing'}")
+        print(f"   recurrence: {dict(seen.most_common(5))}\n")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", default=",".join(RUNS))
@@ -193,6 +224,7 @@ def main():
     print(f"{len(S)} sessions with surviving transcripts\n")
     view_counterfactual(S)
     view_coverage(view_cost(S))
+    view_policy(S)
 
 
 if __name__ == "__main__":
