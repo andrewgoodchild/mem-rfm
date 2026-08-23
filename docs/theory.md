@@ -83,7 +83,7 @@ memory has 20 accesses or 200.
 
 **Caveat, and it is a large one:** ablation could not show that this axis
 earns its place. Removing activation entirely left retrieval unchanged within
-noise on our dev benchmark. See "which half is load-bearing" below before
+noise on our dev benchmark. See "which half does the work" below before
 treating the ACT-R half as the thing that makes this work.
 
 ### Procedural memory → M
@@ -331,7 +331,7 @@ error we measure rather than inherit from the paper, and a conformance
 obligation. On four corpora that cost is earned. On STAR alone it isn't — and
 we published the wrong conclusion from exactly that before replicating.
 
-### Which half is load-bearing
+### Which half does the work
 
 An ablation of every component (Amendment 12) produced an uncomfortable
 result about this design:
@@ -350,7 +350,7 @@ That conclusion did **not** survive contact with other corpora. Repeating the
 ablation at fixed stream length across four datasets (Amendment 12b) found
 that on STAR, removing activation costs exactly as much as removing outcome
 feedback (both −0.0067 hit@1, CIs excluding zero), and removing the prior
-entirely costs more than either. The ACT-R half is load-bearing there. The
+entirely costs more than either. The ACT-R half earns its keep there. The
 result below is therefore specific to BEAM, and the general claim is the
 duller one: **each axis earns its place on some corpora and not others.**
 

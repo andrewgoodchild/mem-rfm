@@ -185,8 +185,8 @@ happened, and the correction favours the activation axis:**
 
 On STAR, **removing activation costs exactly as much as removing outcome
 feedback**, and removing the prior entirely costs more than either — the two
-axes contributing roughly additively. The ACT-R half is load-bearing there on
-equal terms.
+axes contributing roughly additively. The ACT-R half is doing real work there,
+on equal terms.
 
 The shape is a **sweet spot, not a gradient**, and the two nulls at the ends
 have different causes. FloDial has the most recurrence but a 0.984 hit@1
