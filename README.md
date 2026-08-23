@@ -10,24 +10,33 @@ The primitive is a pure-Python SQLite scoring engine (plus an MCP server
 and hooks for Claude Code). The study is ~30 pre-registered experiments
 and a live paired-session program on when memory pays off, when it
 doesn't, and what happens when someone abuses it — failures scored in
-public alongside the wins.
+public alongside the wins. The baseline throughout is what agent memory
+ships today: similarity search over stored text — a retrieval loop in
+which nothing ever notices whether a memory helped.
 
 ## The findings
 
 **Relevance is not value.** The study's most transportable result, and it
-is about retrieval in general, not this implementation: ranking injected
-memories by query similarity was measured and **rejected**, because
-similarity *anti-selects* the memories that transfer. Per-bug content
-surface-matches new bug reports and per-bug lessons don't transfer
-(~6% measured); the operational gotchas that help session after session —
-env workarounds, invocation patterns — are similar to nothing in
-particular. An outcome-ranked prior kept 18 of 19 hits at 43% less
-injected context; similarity ranking dropped a third of the hits.
+is about retrieval in general, not this implementation. One instance
+shows it whole: in our live pilots, a stored lesson about one napoleon
+docstring bug was the closest textual match to the *next* napoleon bug
+report — injected on similarity, useless in practice, zero confirmed
+uses ever. The era-pinned build workaround, similar to no query in
+particular, was confirmed useful in nine sessions of ten. That is the
+general pattern: per-bug content surface-matches new bug reports but
+per-bug lessons don't transfer (~6% measured), while the operational
+knowledge that helps session after session matches nothing. So ranking
+injections by query similarity *anti-selects* the memories that
+transfer — replayed against outcome ground truth, it dropped a third of
+the confirmed-useful retrievals, while the outcome-ranked prior retained
+18 of 19 at 43% less injected context. Similarity ranking was measured
+and **rejected**.
 
 **Recurrence gates value.** Memory pays where work recurs and doesn't
 where it's episodic. On scattered real-bug fixing it was a mild net tax;
 on a maximal-recurrence support workload the same frozen scoring beat
-similarity at rank-1 with CI > 0; a live paired series found the wins
+similarity at rank-1 by +0.012 hit@1 [95% CI +0.005, +0.020], the edge
+growing as feedback accumulated over the stream; a live paired series found the wins
 landing exactly on the tasks where operational knowledge recurs.
 
 **Outcome feedback is the term that earns its keep.** An ablation of
@@ -39,26 +48,47 @@ observations, despite having been designed entirely on oracle labels.
 
 **Memory's cost has three parts, and only one was widely known.** A
 four-pilot live series plus a registered held-out revalidation priced
-them: *machinery turns* (reading injections, saving, feedback — measured,
-and removable: suppressing agent-volunteered saves, 11 of 13 of which
-earned nothing, and inferring routine outcomes from the transcript took
-the memory arm from +45s/session to at-or-below control); *cold-start
-burden* (an empty store costs before it can pay — sometimes near zero,
-and once badly not: a never-seen repo broke its registered cost bound at
-+32% wall, the series' **first registered FAIL**, with a resolution gap
-that no memory-side mechanism explains — three of its four failures ran
-with empty injections); and the ***attachment tax*** — the constant
-context cost of a memory server's tool schemas riding in every session,
-paid before the first memory is saved. That last one is the leading
-suspect for the FAIL, it quietly sits under every MCP-based memory
-product ever benchmarked, and it is unmeasured — the registered next
-experiment isolates it.
+them separately.
 
-The registered revalidation otherwise held: 5 PASS, 2 NOT TRIGGERED
-across a cold-start track and a staleness track, where an era-specific
-memory took honest negatives, slid down the ranking, and had its claim
-scoped by the agent — demotion and content correction working together
-on held-out data (`bench-quality/live-ab/REVALIDATION.md`).
+*Machinery turns* — reading injections, saving, giving feedback. Measured
+and removable: agent-volunteered saves earned nothing in 11 of 13 cases,
+and suppressing them while inferring routine outcomes from the
+transcript took the memory arm from +45 s and +87% output tokens per
+session to at-or-below control.
+
+*Cold-start burden* — an empty store costs before it can pay. Sometimes
+near zero (pytest cold start: −7.6% wall), and once badly not: a
+never-seen repo broke its registered cost bound at +32% wall, the
+series' **first registered FAIL**, with a resolution gap no memory-side
+mechanism explains — three of its four failures ran with *empty*
+injections and 0–2 memory calls.
+
+*The attachment tax* — the constant context cost of a memory server's
+tool schemas riding in every session, paid before the first memory is
+saved. It sits under any MCP-attached memory product, ours included; it
+is the leading suspect for the FAIL above, it is an unmeasured confound
+under our own best positive result, and it was unmeasured everywhere
+until now — the registered ablation below isolates it.
+
+### The register
+
+| experiment | registered prediction | outcome |
+|---|---|---|
+| pytest cold start | machinery cost within +10% wall / +15% tokens | **PASS** — −7.6% / −12.4% |
+| pytest formation | miner stages a candidate when named-cause failures occur | **PASS** — staged and ratified in-run |
+| pytest steady state | a Phase-A-proven memory keeps earning in Phase B | **NOT TRIGGERED** — nothing earned value on pytest, as the registration anticipated |
+| sphinx stale seed | an outdated earned ledger does no harm (within +10% wall) | **PASS** — +3.0%, and the ledger adjusted itself downward |
+| selection discipline | outcome-demoted memories are never re-injected | **PASS** — floor arithmetic verified to three decimals in-run |
+| xarray, never-seen repo | machinery cost within +10% / +15% | **FAIL** — +32.0% / +35.5%, cause not established |
+| xarray steady state | as pytest steady state | **AMBIGUOUS AS REGISTERED** — wording defect disclosed; passes existentially, fails universally |
+| attachment tax | an idle attached server shows measurable context overhead; two-sided decision rule on wall and resolution | **REGISTERED — result pending** |
+
+Full registrations and scoring: `bench-quality/live-ab/REVALIDATION.md`
+and `bench-quality/RESULTS.md`. The staleness row hides the best
+mechanism trace in the study: an era-specific memory took honest
+negatives on a new era, slid down the injection ranking, and had its
+claim scoped down by the agent — demotion and content correction working
+together on held-out data.
 
 What this cost to learn: the live program behind these numbers is 196
 headless Claude Code sessions and ~10 hours of agent wall clock, on the
