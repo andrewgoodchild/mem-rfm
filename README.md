@@ -46,24 +46,36 @@ path and a harness-owned path that does the real work:
 
 Memory pays for procedural things that repeat — build quirks, dependency
 pins, environment workarounds, invocation patterns: the operational
-knowledge that comes back session after session. That is exactly where
-the measured wins landed: in live paired runs, the memory arm's
-advantage sat on the tasks where operational knowledge recurred, and the
-ranking consistently promoted the memories that kept proving out while
-demoting the ones that didn't.
+knowledge that comes back session after session.
 
-Where it didn't pay is measured too: unrelated episodic tasks and
-one-question-over-a-document-pile workloads showed no benefit, and
-scattered bug-fixing was mildly negative. And if your harness already
-ships its own memory — Claude Code, Cursor and Devin all do — the
-overlap is real and measured: in our own pilots the native memory
-captured the same operational lessons our store did.
+### What it buys
 
-The claims are pre-registered and scored. The live program ran paired
-Claude Code sessions on real bugs in three open-source Python repos —
-memory arm against control, resolution scored by each project's own
-tests. Every prediction below was written down and committed before the
-run it governs:
+| measured | result | basis |
+|---|---|---|
+| putting the right memory first, on recurring work | **+0.012 hit@1** [95% CI +0.005, +0.020], rising to +0.020 over the final third as feedback accumulates | 3,000 real support calls; exploratory, oracle-labelled outcomes |
+| retiring facts that a procedure change made wrong | recovers to **0.56 hit@1** where similarity-only is still recommending the dead procedure at **0.20**, 1,500 calls later | same corpus, procedures revised mid-stream |
+| preferring an updated fact over the version it replaced | **0.43 → 0.66**, with no loss of fresh-fact recall | LongMemEval knowledge-update tasks |
+| scoring a memory by how useful it truly was | **Spearman 0.83** against ground truth within 25 observations | 52,104 test-verified Terminal-Bench trials — real rewards, not labels |
+| a live coding run once the ledger has been earned | memory arm beat control: **−8.6% wall**, 9.7k vs 10.9k output tokens | 10 paired Claude Code sessions; exploratory, not pre-registered |
+
+The pattern across those rows is the same one the design predicts:
+memory pays where work recurs, and pays most at the top slot — the
+position that matters when you hand an agent one suggestion.
+
+### What it costs, and where it doesn't pay
+
+Unrelated episodic tasks and one-question-over-a-document-pile workloads
+showed no benefit, and scattered bug-fixing was mildly negative. If your
+harness already ships its own memory — Claude Code, Cursor and Devin all
+do — the overlap is real and measured: in our own pilots the native
+memory captured the same operational lessons our store did.
+
+Those costs are pre-registered and scored. The live coding program ran
+paired Claude Code sessions on real bugs in three open-source Python
+repos — memory arm against control, resolution scored by each project's
+own tests — and it is the hardest case for memory: episodic work, where
+our own measurements put lesson transfer at ~6%. Every prediction below
+was written down and committed before the run it governs:
 
 | what we asked | prediction | outcome |
 |---|---|---|
@@ -76,11 +88,14 @@ run it governs:
 | do demoted memories stay demoted? | outcome-demoted memories are never re-injected | **PASS** — verified in-run |
 | what does an idle memory server cost? (sphinx) | measurable context overhead from tool schemas alone; two-sided decision rule on wall and resolution | **MEASURED** — +189 tokens/session (~0.9% of context), wall +1.0%, resolution identical: context-cost-only |
 
-How to read the table: a large gain was never the claim. This is a
-small, deliberately bounded adjustment to similarity search, and most of
-what it buys is safety and maintenance — keeping a usage prior from
-eating itself, and retiring content that similarity would recommend
-forever. The last row closes the loop on the failure above it: the
+How to read the table: every row in it is a **cost or safety bound**.
+That is deliberate — the program was built to establish that memory does
+no harm on the workload where it helps least, not to demonstrate benefit
+(the benefit evidence is the table above). It also means the register
+cannot say anything good about the system no matter how well it
+performs, which is a gap in the experimental design rather than a
+verdict; a registered benefit prediction is next. The last row closes
+the loop on the failure above it: the
 idle-server ablation was registered while the xarray FAIL stood
 unexplained, and its verdict — context-cost-only — is what attributes
 that failure to variance rather than to the machinery.
