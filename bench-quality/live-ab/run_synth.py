@@ -32,7 +32,11 @@ INTEGRATION = os.path.join(HERE, "..", "..", "integrations", "claude-code")
 sys.path.insert(0, INTEGRATION)
 import install_hooks  # noqa: E402
 
-PILOT_DIR = os.path.join(HERE, "synth")
+# --dir lets a later registered track reuse this runner without confounding
+# its trace with an earlier one's (Track 5 -> synth/, Track 6 -> synth6/).
+_d = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--dir=")), "synth")
+PILOT_DIR = os.path.join(HERE, _d)
+LABEL = _d          # ab-log label prefix; matches the trace directory
 DB = os.path.join(PILOT_DIR, "rfm-memory.db")
 SESSIONS = os.path.join(PILOT_DIR, "sessions")
 RESULTS = os.path.join(PILOT_DIR, "results.jsonl")
@@ -61,7 +65,7 @@ def run_session(task):
            "VIRTUAL_ENV": venv,
            "RFM_MEMORY_DB": DB,
            "RFM_SYNTHESIS": "1"}          # the whole experiment, one flag
-    cmd = [rs.AB, "--arm", "rfm", "--label", f"synth-{task['instance_id']}",
+    cmd = [rs.AB, "--arm", "rfm", "--label", f"{LABEL}-{task['instance_id']}",
            "-p", rv.PROMPT.format(repo="pytest",
                                   problem=task["problem_statement"],
                                   tests_dir=rs.REPO["pytest"]["tests_dir"]),
@@ -113,6 +117,7 @@ def main():
         print("PREFLIGHT: PostToolUse hook not registered — run install_hooks.py")
         sys.exit(1)
     print(f"preflight ok: 10 pytest tasks, synthesis ON, store at {DB}")
+    print(f"    ab-log label prefix: {LABEL}")
     if "--dry-run" in sys.argv:
         return
 
