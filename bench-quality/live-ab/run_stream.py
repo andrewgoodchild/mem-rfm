@@ -15,6 +15,7 @@ Modes:
 """
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -78,6 +79,19 @@ def sh(cmd, **kw):
 def paths(repo, arm):
     return (os.path.join(HERE, "clones", f"{repo}-{arm}"),
             os.path.join(HERE, "clones", f"{repo}-{arm}-venv"))
+
+
+def builtin_memory_dir(repo, arm):
+    """Claude Code's per-project auto-memory directory for a clone.
+
+    Derived, never hardcoded: the harness munges a project's cwd by
+    replacing every non-alphanumeric character with '-' (the same rule
+    ab/ab_stats.py implements). Deriving it keeps the clean-room protocol
+    working for anyone who clones this repo to a different path — a
+    hardcoded munge silently archives nothing on someone else's machine,
+    which reads as 'clean room' while cross-run state survives."""
+    munged = re.sub(r"[^a-zA-Z0-9]", "-", os.path.abspath(paths(repo, arm)[0]))
+    return os.path.expanduser(f"~/.claude/projects/{munged}/memory")
 
 
 def prepare(repo, arm, task):
