@@ -53,25 +53,31 @@ STATE_DIR = os.path.join(os.path.dirname(DB_PATH), "synthesis-state")
 # classes the miner left NOT CAPTURED on pytest averaged 2.0-2.2 failures
 # per affected session. A threshold of 3 would never fire on this workload.
 THRESHOLD = int(os.environ.get("RFM_SYNTHESIS_N", "2"))
+# Track 5 fired one of two nudges on `cd` — a program that cannot carry an
+# environment lesson. The correction miner already refuses these via
+# informative_head(); this is the same discipline at the trigger.
+GENERIC = {"cd", "ls", "cat", "echo", "head", "tail", "pwd", "which",
+           "true", "false", "sleep", "mkdir", "rm", "cp", "mv", "touch"}
 LOG_ENABLED, LOG = log_env.resolve_log(
     os.environ.get("RFM_LOG", "1"), os.path.dirname(DB_PATH))
 
 NUDGE = (
-    "[rfm-memory] You just spent {n} failed attempts on `{cls}` before "
-    "`{prog}` succeeded. That is the kind of environment knowledge this "
-    "project pays to rediscover every session.\n"
-    "If — and only if — you now understand the ROOT CAUSE, record it with "
-    "memory_save: what actually breaks, why it breaks here, and the "
-    "workaround that worked, in enough detail that a future session could "
-    "apply it without re-deriving it. Prefer the general cause over the "
-    "single command.\n"
-    "A no-op is a perfectly good outcome — do not invent a memory to "
-    "justify this prompt. If you do not yet know why it failed, or the fix "
-    "was incidental, save nothing and carry on.\n"
-    "(This one prompt supersedes the standing 'do not volunteer memory_save' "
-    "instruction, for this moment only — the harness detected the struggle, "
-    "so the judgement of WHETHER to capture has already been made. Yours is "
-    "only whether you understand the cause well enough to write it down.)"
+    "[rfm-memory] This environment produced `{cls}` {n} times before "
+    "`{prog}` finally succeeded.\n"
+    "Record the ENVIRONMENT fact, not the bug. Why does *this checkout or "
+    "virtualenv* produce `{cls}`, and what made it stop? Write it so a "
+    "future session in this same environment can skip the rediscovery — "
+    "the general cause and the workaround, not the one command.\n"
+    "Do NOT record anything about the bug you are fixing. Per-bug code "
+    "lessons do not transfer between tasks and are not wanted here; only "
+    "the environment knowledge is.\n"
+    "If the failure was incidental, or you do not know what made it stop, "
+    "save nothing. A no-op is a perfectly good outcome — do not invent a "
+    "memory to justify this prompt.\n"
+    "(This supersedes the standing 'do not volunteer memory_save' "
+    "instruction, for this moment only: the harness already decided that "
+    "something worth capturing happened. Yours is only whether you "
+    "understand the ENVIRONMENT cause well enough to write it down.)"
 )
 
 
@@ -115,7 +121,7 @@ def main():
         return
     cmd = (payload.get("tool_input") or {}).get("command", "")
     prog = se.program(cmd)
-    if not prog:
+    if not prog or prog in GENERIC:
         return
     body = response_text(payload.get("tool_response"))
     session = (payload.get("session_id") or "?")[:8]
