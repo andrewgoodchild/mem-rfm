@@ -4,10 +4,27 @@
 The correction miner reads Bash events. It has never read a word of what the
 agent WROTE. Track 5 showed why that matters: nudged to record a root cause,
 the model produced a precise causal explanation — into its response text,
-and never into memory. Measuring the corpus afterwards, 64% of sessions
-already contain such an explanation, written unprompted, and 34% mention
-environment or tooling. The trigger we spent two registered tracks on fires
-in 3%.
+and never into memory. Measuring the corpus afterwards, 52% of sessions
+already contain such an explanation, written unprompted. The trigger we
+spent two registered tracks on fires in 3%.
+
+THE GATE IS REGEXES, SO ITS BASELINE IS REPORTED. 100% of sessions contain
+some assistant prose block >=200 chars, so "has prose" is a null gate and
+any honest rate must be quoted against it. --strict (the default) requires
+an explicit causal phrase and fires on 52%; --loose adds because/due to and
+reaches 64%, but 21 of those 107 blocks rest on bare "because" alone, which
+is close to vacuous. 52% is the number to register.
+
+What regexes CAN do here is spot a lexical marker the writer deliberately
+emitted: "root cause" appears because the agent chose to announce a causal
+claim. That is a different job from classify() below, which must judge what
+a passage is ABOUT — and which fails. Lexical detection, not semantic
+judgement, is the line this file stays on.
+
+NOT MEASURED: precision. A 52% fire rate says the gate finds announced
+causal claims; it says nothing about whether those claims are correct,
+general, or worth storing. That needs labels, and it is the same missing
+ground truth that blocks scoring classify().
 
 So the synthesis this project has been trying to elicit already exists, for
 free, in most sessions. This tool asks what harvesting it would yield —
@@ -39,7 +56,11 @@ AB = os.path.abspath(os.path.join(HERE, "..", "..",
 
 # A causal explanation announces itself. Deliberately broad — the point is to
 # measure the ceiling of the channel, not to ship this as the final filter.
-CAUSE = re.compile(r"\b(root cause|the cause|caused by|fails because|"
+# An announced causal claim: the agent chose these words to flag a cause.
+STRONG = re.compile(r"\b(root cause|the cause|caused by|fails because)\b", re.I)
+# --loose adds hedges. Measured: buys 12 points of recall, and every block it
+# adds beyond STRONG leans on "because", which nearly all long prose contains.
+LOOSE = re.compile(r"\b(root cause|the cause|caused by|fails because|"
                    r"the problem is|the issue is|due to|because)\b", re.I)
 # Environment/tooling vocabulary: the class our corpus says transfers.
 ENV = re.compile(r"\b(PYTHONPATH|virtualenv|venv|site-packages|pkg_resources|"
@@ -61,8 +82,8 @@ def sessions():
             yield lab, s["arm"], tp
 
 
-def explanations(tp, min_chars):
-    """Assistant prose blocks that read as causal explanation."""
+def explanations(tp, min_chars, gate):
+    """Assistant prose blocks announcing a cause. `gate` is STRONG or LOOSE."""
     out = []
     for line in open(tp, errors="replace"):
         try:
@@ -77,7 +98,7 @@ def explanations(tp, min_chars):
         for b in c:
             if isinstance(b, dict) and b.get("type") == "text":
                 t = (b.get("text") or "").strip()
-                if len(t) >= min_chars and CAUSE.search(t):
+                if len(t) >= min_chars and gate.search(t):
                     out.append(t)
     return out
 
@@ -110,14 +131,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--min-chars", type=int, default=200)
     ap.add_argument("--show", type=int, default=3)
+    ap.add_argument("--loose", action="store_true",
+                    help="hedged phrases too (64%% vs 52%%); see module docstring")
     a = ap.parse_args()
+    gate = LOOSE if a.loose else STRONG
 
     kinds = collections.Counter()
     per_session = collections.Counter()
     env_samples, total = [], 0
     for lab, arm, tp in sessions():
         total += 1
-        ex = explanations(tp, a.min_chars)
+        ex = explanations(tp, a.min_chars, gate)
         if not ex:
             per_session["none"] += 1
             continue
@@ -130,7 +154,10 @@ def main():
         if k == "environment":
             env_samples.append((lab, best))
 
-    print(f"transcripts scanned: {total}")
+    print(f"transcripts scanned: {total}   gate: "
+          f"{'loose' if a.loose else 'strict'}")
+    print(f"  null baseline (any prose >=200 chars): 100% — the gate must "
+          f"be read against this")
     print(f"  would harvest an explanation: {per_session['harvested']} "
           f"({100*per_session['harvested']/max(total,1):.0f}%)")
     print(f"  no qualifying prose:          {per_session['none']}\n")
