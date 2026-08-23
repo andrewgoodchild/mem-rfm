@@ -1,0 +1,10 @@
+{"instance_id": "pytest-dev__pytest-5631", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "rfm", "track": "synth", "resolved": true, "wall_s": 58, "timed_out": false, "detail": "1 passed in 6.68 seconds"}
+{"instance_id": "pytest-dev__pytest-5787", "repo": "pytest", "difficulty": "1-4 hours", "arm": "rfm", "track": "synth", "resolved": true, "wall_s": 195, "timed_out": false, "detail": "2 passed in 0.57s"}
+{"instance_id": "pytest-dev__pytest-5809", "repo": "pytest", "difficulty": "<15 min fix", "arm": "rfm", "track": "synth", "resolved": true, "wall_s": 45, "timed_out": false, "detail": "1 passed in 0.16 seconds"}
+{"instance_id": "pytest-dev__pytest-5840", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "rfm", "track": "synth", "resolved": false, "wall_s": 717, "timed_out": false, "detail": "2 failed in 0.26s"}
+{"instance_id": "pytest-dev__pytest-6197", "repo": "pytest", "difficulty": "1-4 hours", "arm": "rfm", "track": "synth", "resolved": true, "wall_s": 464, "timed_out": false, "detail": "2 passed in 1.55s"}
+{"instance_id": "pytest-dev__pytest-6202", "repo": "pytest", "difficulty": "<15 min fix", "arm": "rfm", "track": "synth", "resolved": true, "wall_s": 96, "timed_out": false, "detail": "1 passed in 0.40s"}
+{"instance_id": "pytest-dev__pytest-8399", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "rfm", "track": "synth", "resolved": true, "wall_s": 124, "timed_out": false, "detail": "1 passed in 0.23s"}
+{"instance_id": "pytest-dev__pytest-10051", "repo": "pytest", "difficulty": "15 min - 1 hour", "arm": "rfm", "track": "synth", "resolved": true, "wall_s": 125, "timed_out": false, "detail": "1 passed in 0.16s"}
+{"instance_id": "pytest-dev__pytest-10081", "repo": "pytest", "difficulty": "<15 min fix", "arm": "rfm", "track": "synth", "resolved": true, "wall_s": 80, "timed_out": false, "detail": "1 passed in 0.19s"}
+{"instance_id": "pytest-dev__pytest-10356", "repo": "pytest", "difficulty": "1-4 hours", "arm": "rfm", "track": "synth", "resolved": false, "wall_s": 562, "timed_out": false, "detail": "1 failed in 0.21s"}

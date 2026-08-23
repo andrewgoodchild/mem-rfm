@@ -1518,3 +1518,59 @@ nudge name the environment class it fired on rather than asking for "the
 root cause" in the abstract. Registered as a new track before running.
 
 Trace committed: synth/{results.jsonl, rfm-log.jsonl, pending-reviewed.md}.
+
+## Track 6 scored: NOT TRIGGERED — the workload, not the mechanism
+
+Run 2026-08-23, registration 2434bca before any session. Same 10 pytest
+tasks as Track 5, both Track 5 defects fixed (generic-program guard at the
+trigger; nudge retargeted at the environment cause and explicitly refusing
+per-bug lessons). Score: 2 NOT TRIGGERED, 2 PASS.
+
+* T6-P1 capture: **NOT TRIGGERED**. No nudge fired in any of 10 sessions.
+* T6-P2 trigger precision: **NOT TRIGGERED**. Same reason.
+* T6-P3 no-op discipline: **PASS**. Zero synthesized memories; all 4 stored
+  memories are miner-mined. Nothing leaked, in 20 sessions across both
+  tracks.
+* T6-P4 cost: **PASS** on the number (2,466s vs Track 5's 2,988s, −17.5%)
+  but **not meaningful** — the whole run was lighter, and the delta is
+  session variance rather than an effect of the change. Reported, not
+  claimed.
+
+**The diagnosis, and it is not the guard.** Counting failures directly
+from the transcripts, excluding generic programs exactly as the trigger
+does:
+
+| run | sessions reaching threshold (>=2 non-generic failures of one class) | failure classes seen |
+|---|---|---|
+| Track 5 | 2 of 10 | importerror 6, command-not-found 2, no-matches 2, modulenotfounderror 1 |
+| Track 6 | **0 of 10** | importerror 3, modulenotfounderror 2 |
+
+Track 6's sessions simply failed less — 5 qualifying failures against
+Track 5's 11 — and none concentrated enough in a single session to reach
+a threshold of two. The guard did not suppress a legitimate trigger;
+there was no legitimate trigger to suppress.
+
+**What this establishes about the experiment, not the hypothesis.** Across
+20 sessions on pytest, the qualifying struggle fired **twice, one of them
+spurious** — an effective n of 1, dominated by run-to-run variance. This
+workload cannot test the capture hypothesis at any sample size we can
+afford. Registering a third pytest run would be spending sessions to
+re-measure variance.
+
+**The fix is the workload, and we already know which one.** The sphinx
+clones carry a genuinely broken environment — the sphinxcontrib/alabaster
+version mismatch requiring the PYTHONPATH stub workaround — where the
+environment cause is both reliably encountered and worth writing down.
+It is where the project's single highest-earning memory (22 outcomes)
+came from, and reval-sphinx's control arm needed 6 events to reach a green
+test where the memory arm needed 1, with 2 of 6 control sessions never
+getting there. pytest was the right venue to isolate Track 6's nudge
+change against Track 5's baseline; it is the wrong venue to observe
+struggle.
+
+**Standing result across both tracks:** an in-session trigger reaches the
+model and costs nothing measurable, and the no-op line holds — zero
+invented memories in 20 sessions under an explicit invitation to save.
+The capture question remains open and untested.
+
+Traces committed: synth6/{results.jsonl, rfm-log.jsonl, pending-reviewed.md}.
