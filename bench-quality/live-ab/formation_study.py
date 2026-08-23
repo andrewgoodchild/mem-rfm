@@ -24,8 +24,15 @@ Three views:
                   view is control-only.)
 
   coverage        The scorecard: for each expensive class, did formation
-                  actually store anything about it? Precision is what
-                  earned; recall is whether the costly knowledge got in.
+                  actually store anything about it? Read the RECALL half —
+                  whether costly knowledge got in. The precision half is
+                  reported but should not drive decisions: an independent
+                  oracle experiment (research/formation-survey-2-2026-08-23.md)
+                  found that deleting every never-contributing memory — a
+                  perfect filter, up to 49.5% of a store — moves accuracy by
+                  ~0 (all CIs cover zero), and our own stores agree: 59% of
+                  pilot 2's injection slots went to never-earners and
+                  displaced nothing. Inert memories are close to free.
 
 Usage: formation_study.py [--runs pilot2,reval-sphinx,...]
 """
