@@ -141,3 +141,34 @@ decision rule:
         tax has behavioral cost and Track 3's reading strengthens.
         Either outcome is informative; neither is a pass or a fail of
         the memory system.
+
+
+## Corrections to this protocol
+
+Registered text above is never edited after its runs — corrections are
+appended here, in the same discipline RESULTS.md uses.
+
+**C1 (2026-08-23) — the steady-state prediction was ambiguous as
+written.** T1-P3 and T3-P3 both say "IF >=1 memory earns value > 0 in
+Phase A, its Phase-B injections earn positive outcomes in >=50% of the
+sessions where it is injected." *Its* never says whether the subject is
+one such memory or all of them, and on Track 3 the two readings
+disagree: the best memory earned in 8 of 8 injected sessions
+(existential PASS) while two others earned in 1 of 7 each (universal
+FAIL). Scored as AMBIGUOUS in RESULTS.md and reported under both
+readings; neither was claimed.
+
+The defect is ours and prospective, so the fix is prospective. Future
+registrations use this wording, which names a single determinate memory
+chosen by a rule fixed in advance:
+
+> **Steady state (conditional).** IF at least one memory ends Phase A
+> with `value_score > 0`, THEN the single memory with the highest
+> end-of-Phase-A `value_score` — ties broken by `outcome_count`, then
+> by lowest `id` — earns a positive outcome in at least 50% of the
+> Phase-B sessions in which it is injected. Per-memory rates for every
+> Phase-A-proven memory are reported alongside as descriptive context,
+> but the prediction is scored on the designated memory alone.
+
+Both readings of the original remain reported for Track 3. This
+correction does not change that score.
