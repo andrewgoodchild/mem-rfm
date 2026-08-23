@@ -1452,3 +1452,69 @@ holds no tables, so not one memory operation occurred; hooks inert).
 Per-arm output tokens at parity (10.9k vs 11.1k). Trace committed:
 tax/{results.jsonl}; transcripts and the never-initialized DB stay
 untracked.
+
+## Track 5 scored: struggle-triggered synthesis — the knowledge was produced, the capture failed
+
+Run 2026-08-23, registration 52686c2 before any session. 10 pytest tasks,
+rfm arm only, synthesis channel on, baseline reval-pytest's own rfm arm.
+Score: 3 PASS, 1 FAIL.
+
+* T5-P1 capture: **FAIL**. The trigger fired in 2 of 10 sessions and
+  produced **zero** synthesized memories. All 6 memories in the store carry
+  the miner's `In this project, X fails (err); use Y instead` template —
+  the synthesis channel contributed nothing. The condition fired, so this
+  is a genuine FAIL, not NOT TRIGGERED.
+* T5-P2 no-op discipline: **PASS**. Zero volunteered saves in any session,
+  nudged or not. (The scorer initially read this as FAIL by counting
+  ratified *miner* candidates as volunteered saves — the miner runs at
+  session end regardless of nudges. Corrected before scoring.)
+* T5-P3 over-extraction bound: **PASS**. Zero volunteered saves per session.
+* T5-P4 cost: **PASS**. 2,988s vs the baseline arm's 3,191s (−6.4%,
+  bound +15%). The channel is affordable; it just did not fire usefully.
+
+**The diagnostic is the finding, and it is not what the score suggests.**
+The nudge reached the model both times, and both times the model went on
+to write exactly the synthesized root-cause explanation the nudge asked
+for — into its user-facing response text, and never into memory:
+
+> "The regression came from `unique_path()` (added in 5.1.2), which ran
+> `os.path.normcase()` over every conftest path — on Windows that
+> lowercases the whole path, and the lowercased path was then used to
+> *import* the module..."
+
+> "**Cause.** The 5.2.3 fix for #5830 added an unconditional
+> `self._mount_obj_if_needed()` at the top of `Package.collect()` — that
+> call imports the package's `__init__.py`, so *every* directory..."
+
+That is the artifact this experiment exists to capture. The synthesis
+capability is not the bottleneck; **the write is.**
+
+Two contributing defects, both ours:
+
+1. **The trigger has no generic-program guard.** Nudge 1 fired on
+   `command not found` with `program=cd` — a spurious trigger. The
+   correction miner already excludes generic programs via
+   `informative_head`; the hook does not, and the research that motivated
+   this design named the guard list (cd/tail/cat/ls/echo) explicitly. One
+   of two triggers was junk.
+2. **The knowledge synthesized was about the BUG, not the ENVIRONMENT.**
+   Both root causes are per-bug code explanations — exactly the class this
+   project measured at ~6% transfer and does not want stored. So the model
+   arguably made the *right* call in declining, and the nudge asked the
+   wrong question: it fires on an environment-error class but then asks
+   for "the root cause" of whatever the session was working on.
+
+**What this rules in and out.** It does not refute synthesis: the channel
+was never given a session where an environment root cause was both
+understood and un-captured. It does establish that (a) an in-session
+trigger reaches the model and costs nothing measurable, (b) the no-op line
+holds — no invented memories, in ten sessions, under an explicit
+invitation to save, and (c) the gap is now narrower and more specific than
+"formation misses expensive knowledge": the model *produces* the
+explanation and does not *store* it.
+
+Next iteration, if run, should add the generic-program guard and make the
+nudge name the environment class it fired on rather than asking for "the
+root cause" in the abstract. Registered as a new track before running.
+
+Trace committed: synth/{results.jsonl, rfm-log.jsonl, pending-reviewed.md}.
