@@ -28,3 +28,14 @@ CREATE TABLE IF NOT EXISTS rfm_accesses (
 -- exact-recompute audit/baseline and rfm_record_outcome's most-recent-access lookup.
 CREATE INDEX IF NOT EXISTS rfm_accesses_mem_time
   ON rfm_accesses(memory_id, accessed_at DESC);
+
+-- The ledger's path-dependent parameters, stamped at the first recorded
+-- outcome. value_score
+-- is an EWMA — a function of the lambda it was built under — so
+-- rfm_record_outcome refuses to extend a ledger under a mismatched lambda.
+-- Re-stamping (UPDATE rfm_meta SET value = ... WHERE key = 'lambda') is the
+-- deliberate override.
+CREATE TABLE IF NOT EXISTS rfm_meta (
+  key   TEXT PRIMARY KEY,
+  value REAL NOT NULL
+);

@@ -26,6 +26,7 @@ migrates older databases by adding columns introduced later.
 | `rfm_recency(id)` / `rfm_frequency(id)` / `rfm_value(id)` | individual components |
 | `rfm_score_w(id, w_a, w_v[, decay])` | parameterised variant, for tuning |
 | `rfm_prunable(id, max_unused_days)` | 1 when a memory is idle past the window AND never proved useful |
+| `rfm_compact(before_ts)` | delete resolved access-log rows older than `before_ts`; each memory's latest row (the outcome slot) and every unresolved row survive, so scoring is unaffected — what you spend is replayability of the pruned span |
 | `rfm_prior_of(access_count, created_at, last_access, bla_cache, value_score, outcome_count)` | same number as `rfm_prior(id)`, without the row lookup |
 | `rfm_config(key[, value])` | read or set a per-connection setting |
 | `rfm_version()` | engine version — `rfm_init()` migrates schemas, so hosts can check what they loaded |
@@ -159,6 +160,16 @@ cannot enforce this for you; this line is the enforcement.)
 
 
 Two guarantees the implementation enforces, neither of them optional:
+
+**The ledger remembers its lambda.** `value_score` is an EWMA — a
+function of the lambda it was built under — so the first recorded outcome
+stamps the active lambda into `rfm_meta`, and `rfm_record_outcome`
+refuses to extend the ledger under a different one (changing lambda
+mid-ledger silently blends two regimes, unrecoverable from the summary
+row; Amendment 14 shows the retuning that makes this a real migration,
+not a hypothetical). Restore the stamped value, or re-stamp deliberately
+with `UPDATE rfm_meta SET value = ... WHERE key = 'lambda'`. A database
+predating `rfm_meta` is stamped on first use.
 
 **One outcome per access.** A second `rfm_record_outcome` without an
 intervening access is refused. This means the access log always reproduces
