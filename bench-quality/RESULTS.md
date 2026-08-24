@@ -1780,3 +1780,55 @@ Limits, stated so the negative is not overclaimed either: 13 tasks in one
 repository; a resolved-rate ceiling; and the store's strongest memory
 partly neutralised by a harness fix that postdates its harvest, which was
 registered as a weakness before the run rather than discovered after it.
+
+### Correction C3 to Track 10 (2026-08-25) — the harm claim was mine, not the data's
+
+The Track 10 entry above says a true memory made the agent worse. Asked to
+explain the mechanism, I checked it and it does not hold. Three claims in
+that entry are wrong or unsupported, and the entry stands uncorrected above
+so the error is legible.
+
+**1. "rfm never reached green in 2 sessions" — false, a metric artifact.**
+`first_green` required the literal string "N passed" in the captured tool
+output. The agent pipes pytest through `| tail -15`; on a broader run the
+warnings section is long enough to push the summary line out of the tail
+window. Both "never green" rfm sessions exited 0 — the tests passed, my
+detector could not see it. Rescored as "first pytest run that exited 0",
+never-green is 0 for both arms.
+
+**2. "+24.9% wall time" — true as a total, meaningless as a finding.** The
+paired sign test is p = 0.774: rfm was faster on 5 tasks and slower on 7.
+The whole gap is one task, xarray-6461 at +438s, which is 134% of the
+total; drop it and rfm is faster in aggregate. Reporting a sum over 13
+paired tasks without checking its distribution is the same mistake as
+quoting a rate without its baseline, which this project already made once
+in August with the 64% harvest number.
+
+**3. "Memory [5] made the agent slower by suppressing -k" — unsupported.**
+The behavioural difference is real but small (control used -k on 7 of 19
+pytest invocations, rfm on 3 of 18; 2.3 vs 2.0 test files per run), and I
+never tested the link from that difference to any cost. Inspecting the
+outlier that carried the entire wall gap: control solved 6461 in 3 events,
+rfm in 16, of which 14 are the agent exploring a hard attrs-propagation
+bug with heredoc repro scripts and 2 are memory-induced. That task is
+variance in approach, not memory.
+
+**What the corrected result is.** Counterfactual rescored: rfm better on
+2, control on 7, 4 tied, sign test p = 0.180. Directionally negative,
+not significant. Wall: no consistent difference (p = 0.774). Resolved:
+13/13 both, a ceiling. Injection landed 13/13. **Track 10 detects no
+effect in either direction on 13 pairs.** That is a weaker and more
+honest statement than the entry above, and it does not rescue the store —
+memories a human would keep, delivered reliably, still bought nothing
+measurable.
+
+**What survives unchanged.** The outcome-loop finding. Memory [3] prompted
+3 bare `import xarray` smoke checks in the rfm arm against 0 in control;
+all 3 succeeded because prepare() already mitigates that failure, and the
+loop recorded all 3 as positive outcomes. That is verified, independent of
+the metric bug and of the wall-time question, and it is the finding worth
+carrying forward: the value axis cannot distinguish work a memory saved
+from work it caused. A second instance sits in the same outlier — the
+agent ran `black --check` and `flake8` even though the injected memory
+says both are not installed, so that memory failed to prevent the very
+work it describes.
