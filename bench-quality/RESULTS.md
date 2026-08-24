@@ -1717,3 +1717,66 @@ recorded here as reasoning, not as a new measurement.
 Cost: 86 calls per arm on haiku, well under a cent per session at
 SessionEnd. Still no downstream benefit measured — the next step is a
 store built from these 43 and a live A/B against it.
+
+## Track 10 — live A/B on a harvest-built store (2026-08-24) — 2/4 PASS
+
+13 held-out xarray tasks, paired arms, store frozen at the 5 consolidated
+memories from Track 9. The first A/B this project has run against a store
+whose contents a human would actually keep.
+
+| | control | rfm |
+|---|---|---|
+| resolved | 13/13 | 13/13 |
+| first green: better on | **7** | 3 (3 tied) |
+| never reached green | 0 | **2** |
+| total wall | 1315s | **1642s (+24.9%)** |
+| injections landed | — | 13/13 |
+
+**T10-P1 counterfactual: FAIL.** The registered claim was that rfm reaches
+its first green test in fewer events more often than not. It lost 3-7. A
+sign test on the 10 non-tied pairs gives two-sided p = 0.344, so this is
+not evidence of harm either — it is an absence of the predicted benefit,
+at the sample size the registration admitted was small.
+
+**T10-P3 utilisation: PASS, and it is what makes P1 meaningful.** All 13
+rfm sessions received an injection. This was not a plumbing failure. The
+store was consulted and did not help.
+
+**T10-P2 resolved-rate: PASS by ceiling.** Every task resolved in both
+arms. Registered as predicted-null in advance precisely so this could not
+be read as "memory did no harm to completion" — the workload cannot
+discriminate on completion at all.
+
+**T10-P4 no harm: FAIL, +24.9% wall.** Mechanism visible in the commands:
+control used `-k` on 7 of 19 pytest invocations, rfm on 3 of 18, and rfm
+ran multi-file invocations. That is memory [5] — *"the full suite runs in
+~5s, no need to use -k filters"* — doing exactly what it says. True when
+harvested, durable, human-keepable, and it made the agent slower.
+
+### The finding that outlives this track: the outcome loop cannot tell saved work from caused work
+
+Memory [3] warns that `import xarray` fails without a pkg_resources shim.
+In the rfm arm the agent ran **3 bare import smoke checks; control ran 0**.
+All three succeeded — the failure never occurred, because
+`run_stream.prepare()` already mitigates it. The outcome loop recorded all
+three as **positive outcomes for memory [3]**.
+
+From the loop's vantage, "the agent ran a command related to this memory
+and it worked" is identical whether the memory prevented a debugging
+detour or merely prompted a redundant check. It cannot separate them, and
+it credits both. That signal is what the entire RFM value axis is built
+on, so a memory that generates busywork accrues value exactly like one
+that saves it. Nothing in this project has previously tested that
+distinction, and no amount of better formation fixes it.
+
+### What this means
+
+Formation was not the binding constraint. Tracks 8-9 produced memories
+worth keeping — that is real and it stands. Track 10 shows that injecting
+them reliably, on held-out tasks, changed nothing for the better and cost
+25% more wall time.
+
+Limits, stated so the negative is not overclaimed either: 13 tasks in one
+repository; a resolved-rate ceiling; and the store's strongest memory
+partly neutralised by a harness fix that postdates its harvest, which was
+registered as a weakness before the run rather than discovered after it.
