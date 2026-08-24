@@ -391,3 +391,48 @@ covered 3 blocks; these concern 86 x 2):
         contains gold-patch identity tokens, against arm B's < 30%. This
         is near-certain and is registered as the baseline the LLM arm has
         to beat, not as a discovery.
+
+## Track 9 — extraction framing (registered 2026-08-24, before any v2 call)
+
+Track 8's arm B produced the first memories this project would want to
+keep, and failed its recall prediction: 39% against blocks that name an
+actual environment condition (48% of the corpus under the tightened truth
+below; 31% against the looser 71% truth — both reported, neither picked
+for flattery).
+
+**Truth, tightened, and why this is not tuning to fit.** Track 8's
+`has_env` counted any environment prose. Inspecting the misses, they are
+dominated by *procedural* language — "pre-existing" (27), "stashed" (18),
+"fails identically" (7), "unrelated to this change" (7) — which narrates a
+verification step rather than stating a fact. "This failure is
+pre-existing" carries nothing durable; "this venv's packages are too new
+for this 2020-era checkout" does. The tightened rule requires the text to
+name an environment CONDITION (venv, PYTHONPATH, site-packages, too
+new/old, era, pinned, setuptools, pkg_resources, editable install, not
+installed) rather than assert a status. It is a linguistic distinction
+decided independently of what either arm did, and moving to it changes
+recall by only 8 points (31% -> 39%), so it does not rescue the arm.
+
+**Diagnosis.** v1 asked for a verdict on the whole block — "store it ONLY
+if it IS durable knowledge". Every block is ~90% fix summary, so that
+framing invites a whole-block judgement and answers no. v2 asks for
+extraction, states that most of the text should be ignored, says a single
+sentence at the end still counts, and requires the memory to stand alone
+without naming the bug, function, or file — which also targets v1's 26%
+identifier leakage.
+
+Only the prompt changes. Same 86 blocks, same models, same gold-patch
+ground truth, neither arm seeing it.
+
+Registered predictions:
+  T9-P1 (recall): haiku recall vs tight truth >= 65%, up from 39%. This is
+        the whole point of the change; below that the framing was not the
+        binding constraint and the problem is elsewhere.
+  T9-P2 (leakage): haiku stored text leaking gold-patch identifiers < 26%
+        (its v1 rate). The stand-alone instruction should help.
+  T9-P3 (specificity): >= 80% vs tight truth. Guards the obvious failure —
+        buying recall by storing everything.
+  T9-P4 (yield): >= 25 clean memories, up from 14.
+  T9-P5 (size): haiku still >= sonnet on leakage. v1 found the cheap model
+        strictly better; if v2 reverses that, the earlier result was an
+        artifact of the prompt rather than a property of the models.
