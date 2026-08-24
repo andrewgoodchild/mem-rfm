@@ -274,3 +274,65 @@ Scored PASS/FAIL/NOT TRIGGERED as usual. If no nudge fires at all, T6-P1
 and T6-P2 are NOT TRIGGERED and the finding is that the guard made an
 already-rare trigger rarer — which would itself argue the threshold, not
 the nudge, is the binding constraint.
+
+## Track 8 — prose harvest: deterministic vs LLM (registered 2026-08-24)
+
+The fourth formation strategy. Attempts 1-3 died: precision filtering (an
+oracle filter buys ~0), cost-scored admission (Spearman +0.146), and
+struggle-triggered synthesis (fires in 3 of 102 sessions). This one asks
+whether the causal prose the agent already writes unprompted — which the
+Bash-event miner has never read — is better raw material.
+
+**Ground truth was built first, and it is external to both arms.** Each
+SWE-bench task ships a `gold_patch`: the real diff naming the files and
+functions that held the bug. So "is this explanation about the task's own
+code?" is a lookup, not a judgement. Neither arm sees the gold patch; both
+classify from the prose alone. This avoids the trap that would otherwise
+sink the comparison — an LLM graded by an LLM scores free points a regex
+cannot.
+
+**The ground-truth result is already in, and it is a hard negative.**
+Across all 88 causal blocks in the corpus (not merely the longest per
+session — that confound was checked and ruled out), **zero** fail to name
+the task's own gold-patch code. 100% of what this channel harvests is
+per-bug knowledge, the class measured at ~6% transfer. The agent narrates
+the deliverable it was asked for, not the environment it fought through.
+Availability was never the problem: 52% of sessions have the prose, and
+all of it is the wrong kind.
+
+That kills the harvest as a *source*. It leaves a sharper and still-useful
+question, which is what the two arms now test: **given a pool ground truth
+says is entirely per-bug, which classifier correctly refuses to store it?**
+A formation strategy that writes nothing is strictly better than one that
+poisons the store, and the arms are scored on rejection, not capture.
+
+Arm A — deterministic: the shipped `classify()` in harvest_replay.py.
+Arm B — LLM: `claude -p` per block, prose only, no gold patch, asked to
+        store only durable environment/tooling knowledge that would help
+        on a DIFFERENT task. Run at two sizes (haiku, sonnet) because
+        "does formation need a big model?" is a live deployment question:
+        this would run at every SessionEnd.
+
+Registered predictions:
+  T8-P1 (arm A precision): the deterministic classifier calls >= 20 blocks
+        "environment". Ground truth says 0 are. Predicted precision 0.00,
+        i.e. every such call is a false positive. FAIL if precision > 0.10.
+  T8-P2 (arm B rejection): the LLM arm refuses to store >= 80% of blocks.
+        This is the prediction I am least sure of and the reason to run:
+        the prose is fluent, confident and genuinely explanatory, and a
+        model asked "is this durable?" may be seduced by its quality
+        rather than judging its scope.
+  T8-P3 (size): haiku and sonnet agree on >= 70% of blocks. If they agree,
+        formation can run on the cheap model; if sonnet is much stricter,
+        the classification is harder than it looks.
+  T8-P4 (no free lunch): among blocks arm B does elect to store, >= 80%
+        are ones ground truth marks `mixed` rather than pure `per-bug` —
+        i.e. if it stores anything, it stores the least-wrong ones. If its
+        stores are indistinguishable from random per-bug blocks, the arm
+        has no discrimination even where it acts.
+
+Scored PASS/FAIL. Note the asymmetry deliberately built in: arm A can only
+lose (its own author already measured it wrong), and arm B can win only by
+declining to act. Neither outcome rescues the harvest as a source. The
+question this track answers is narrower — whether an LLM in formation is
+safe, not whether it is valuable.
