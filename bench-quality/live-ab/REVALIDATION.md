@@ -336,3 +336,58 @@ lose (its own author already measured it wrong), and arm B can win only by
 declining to act. Neither outcome rescues the harvest as a source. The
 question this track answers is narrower — whether an LLM in formation is
 safe, not whether it is valuable.
+
+### Correction C2 to Track 8 (2026-08-24, arms running, before any scoring)
+
+**The ground truth registered above was wrong, and the arm caught it.**
+
+Track 8's registration states that 100% of harvested blocks are per-bug and
+calls this "a hard negative". That number was an artifact of the labeller.
+`label_harvest.py` recognised environment trouble only when it was named as
+an ERROR CLASS (`ModuleNotFoundError`, `VersionRequirementError`). Agents
+rarely write that in prose. They write *"this venv's sphinxcontrib packages
+are too new for this 2020-era checkout"*. Detecting only the former, the
+labeller saw no environment content anywhere and I reported the channel
+dead.
+
+**How it was caught, stated plainly because the sequence matters.** A
+three-block pilot of the haiku arm marked two ground-truth "per-bug" blocks
+as environment. I read those two blocks expecting to find the model
+confabulating. It was not: both carried real environment knowledge in a
+verification tail, and from one of them haiku extracted the era-pin stub
+workaround — the highest-value memory this project has recorded. So this
+correction is *caused by* seeing 3 of 172 arm outputs. That is a peek, and
+pretending otherwise would be worse than declaring it. The alternative was
+to score a run against a ground truth already known to be broken.
+
+Re-measured with prose detection added: **71% of blocks (61/86) carry
+durable environment knowledge; 29% (25/86) are pure fix summary.** Every
+block still names gold-patch code, so the identity signal separates
+nothing — every block is a fix summary — and the real structure is a
+nugget buried in a tail.
+
+**This changes what the arms are testing, and it is the more interesting
+question.** The unit of extraction is a SPAN, not a block. A block-level
+classifier cannot win: storing an env-bearing block stores the whole fix
+summary with it. Extracting the nugget and discarding the rest is a
+semantic operation, which is the case for an LLM in formation that this
+project has been circling for two days.
+
+Predictions T8-P1..P4 above are VOID — P2 in particular predicted the model
+would reject >=80% of blocks, which under corrected truth would be the
+wrong behaviour. Re-registered, on quantities not yet observed (the pilot
+covered 3 blocks; these concern 86 x 2):
+
+  C2-P1 (recall): arm B stores on >= 70% of env-bearing blocks.
+  C2-P2 (specificity): arm B refuses >= 60% of pure-per-bug blocks.
+  C2-P3 (extraction cleanliness): among blocks arm B stores, < 30% of the
+        memory texts contain a gold-patch file or symbol. This is the
+        quality measure and it is fully mechanical — the arm never saw the
+        gold patch, so leaked identity tokens are its own doing.
+  C2-P4 (size): haiku and sonnet agree on store/reject for >= 70% of
+        blocks. Decides whether formation can run on the cheap model.
+  C2-P5 (arm A floor): the deterministic arm cannot extract at all — it
+        classifies whole blocks. If it stores, 100% of its stored text
+        contains gold-patch identity tokens, against arm B's < 30%. This
+        is near-certain and is registered as the baseline the LLM arm has
+        to beat, not as a discovery.

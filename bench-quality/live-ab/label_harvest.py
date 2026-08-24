@@ -21,7 +21,14 @@ Both classify from the prose block alone. The judge is external to both.
 Two independent signals, deliberately not collapsed into one:
 
   IDENTITY  does the block name files/symbols from this task's gold patch?
-            If yes it is explaining the bug under test.
+            If yes it is explaining the bug under test. Every block does —
+            so this signal turned out to separate nothing, and the useful
+            question moved to the one below.
+  ENV       does the block ALSO carry durable environment knowledge, named
+            either as an error class or (far more often) as plain prose?
+            66% do. Those nuggets sit in verification tails inside fix
+            summaries, which is why the unit of extraction is a SPAN and
+            not a block — and why a block-level classifier cannot win.
   RECURRENCE does the failure class the block names appear in sessions
             belonging to OTHER tasks? Per-bug knowledge cannot recur —
             every task is a different bug in a different file — so
@@ -83,6 +90,22 @@ CLASSES = [
     ("cannot-find-module", r"cannot find module"),
 ]
 CLASSES = [(n, re.compile(p, re.I)) for n, p in CLASSES]
+
+# CORRECTION (2026-08-24, mid-Track-8, before scoring). The CLASSES list
+# above only recognises environment trouble when it is named as an ERROR
+# CLASS. Agents mostly do not write "ModuleNotFoundError" in their prose —
+# they write "this venv's packages are too new for this 2020-era checkout".
+# Detecting only the former made this labeller report that 100% of harvested
+# blocks were purely per-bug, which was an artifact of the detector, not a
+# property of the corpus. The haiku arm contradicted it on the first three
+# blocks and was right. 66% of blocks carry environment knowledge in prose.
+ENV_PROSE = re.compile(
+    r"\b(venv|virtualenv|site-packages|pre-?existing|too new|too old|"
+    r"\d{4}-era|era-pin\w*|pinned?|unrelated to (?:the|this) change|"
+    r"environment (?:noise|caveat|issue|problem)|editable install|"
+    r"not installed|already fail\w*|fails? identically|stash(?:ed)?|"
+    r"setuptools|pkg_resources|pip install|PYTHONPATH|stub packages?)\b",
+    re.I)
 
 # Identifiers too common to be evidence that a block is about a task's code.
 STOP = {"test", "tests", "testing", "src", "lib", "init", "main", "setup",
@@ -180,21 +203,20 @@ def main():
         recurring = sorted(c for c in blk_cls
                            if len(tasks_with_class[c] - {task["instance_id"]}) >= 1)
 
-        if id_hits and recurring:
-            label = "mixed"
-        elif id_hits:
-            label = "per-bug"
-        elif recurring:
-            label = "environment"
-        elif blk_cls:
-            label = "environment-once"   # names an env class, never recurs
-        else:
-            label = "unclear"
+        env_prose = sorted({m.group(0).lower()
+                            for m in ENV_PROSE.finditer(block)})
+        # The question a formation strategy actually faces is not "which
+        # bucket is this block in" — every block is a fix summary, so every
+        # block has per-bug content. It is "is there durable environment
+        # knowledge in here worth EXTRACTING?" That is what gets scored.
+        has_env = bool(env_prose or recurring)
+        label = "env-bearing" if has_env else "pure-per-bug"
         counts[label] += 1
         out.append({"label_run": lab, "instance_id": task["instance_id"],
                     "repo": task["repo"], "truth": label,
                     "identity_hits": id_hits, "block_classes": blk_cls,
                     "recurring_classes": recurring,
+                    "env_prose": env_prose, "has_env": has_env,
                     "n_tasks_per_class": {c: len(tasks_with_class[c])
                                           for c in blk_cls},
                     "block": block})
