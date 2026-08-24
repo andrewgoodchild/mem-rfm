@@ -1617,3 +1617,63 @@ before registration: measure on recorded transcripts how often the
 proposed trigger would fire, and refuse to register anything that fires in
 under ~20% of sessions — below that, a 10-session run cannot distinguish
 the mechanism from variance.
+
+## Track 8 — prose harvest: deterministic vs LLM (2026-08-24)
+
+Registered in REVALIDATION.md, then corrected mid-run (C2) when the arm
+disproved the ground truth. Scored 4/8. Both headline numbers below are
+about FORMATION QUALITY ONLY — no session was run against these memories,
+so nothing here claims a task-performance benefit.
+
+**Ground truth, corrected.** Each SWE-bench task ships a `gold_patch`
+naming the files and functions that held the real bug. Neither arm saw it;
+both classified from prose alone. First labelling reported 100% of
+harvested blocks as pure per-bug and called the channel dead — an artifact
+of detecting environment trouble only when named as an error class. Agents
+write "this venv's packages are too new for this 2020-era checkout", not
+"ModuleNotFoundError". Corrected: **71% of blocks (61/86) carry durable
+environment knowledge, always as a nugget inside a fix summary.**
+
+| | Arm A (regex) | Arm B haiku | Arm B sonnet |
+|---|---|---|---|
+| recall on env-bearing | 49% | 31% | 34% |
+| specificity on pure fix summaries | 100% | 100% | 84% |
+| stored | 30 | 19 | 25 |
+| **stored text leaking gold-patch code** | **100%** | **26%** | 40% |
+| clean memories produced | **0** | **14** | 14 |
+
+**The result that matters is the last row.** Arm A classifies whole blocks,
+so when it stores, it stores an entire fix summary — every one of its 30
+memories is polluted with the task's own bug code, by construction and not
+by bad luck. Arm B excises the nugget: haiku produced 14 clean, durable
+environment memories, e.g. *"This 2020-era Sphinx checkout has a venv
+compatibility issue: sphinxcontrib.* and alabaster are too new and cause
+app-based tests to error at startup. Workaround: stub packages on
+PYTHONPATH."* That is the era-pin stub workaround, this project's
+highest-value memory, recovered by a cheap model from prose the miner has
+never read. **A block-level classifier cannot produce that text at all.**
+
+**Where it fails.** Recall was predicted >=70% and came in at 31-34%: both
+models miss two-thirds of the nuggets that are demonstrably present.
+Sonnet is worse than haiku on both leakage (40% vs 26%) and specificity
+(84% vs 100%) — bigger is not better here, and the deployment question
+"can formation run on the cheap model" answers yes for the wrong reason.
+Agreement was 60/86 = 69.8%, a hair under the registered 70%.
+
+**Free finding from a harness accident.** Three runner processes raced and
+re-scored 49 blocks with the identical model and prompt. **3 disagreed with
+themselves — a 6% flip rate**, all on blocks where the environment content
+is real but marginal. LLM formation is not deterministic, and a memory's
+existence depends partly on which sampling it got.
+
+**Yield.** 14/86 sessions (16%) produce a clean memory from haiku, 21/86
+(24%) from the union of both models. Against the struggle trigger's 3%
+firing rate this is a large improvement in raw formation, and 7 of haiku's
+14 clean memories are the same PYTHONPATH/stub fact re-derived — real
+recurrence, and a dedup requirement before any of this ships.
+
+**Verdict.** The first formation strategy in four attempts that produces
+memories worth storing. It is not validated: recall is poor, output is
+nondeterministic, a quarter of stores still leak per-bug text, and no
+downstream benefit has been measured. Traces: track8/{arm-haiku,
+arm-sonnet,nondeterminism-raw}.jsonl, harvest-labelled.jsonl.
