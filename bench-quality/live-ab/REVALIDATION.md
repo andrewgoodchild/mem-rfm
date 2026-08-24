@@ -436,3 +436,57 @@ Registered predictions:
   T9-P5 (size): haiku still >= sonnet on leakage. v1 found the cheap model
         strictly better; if v2 reverses that, the earlier result was an
         artifact of the prompt rather than a property of the models.
+
+## Track 10 — live A/B on a harvest-built store (registered 2026-08-24)
+
+The first formation experiment in this project worth spending sessions on,
+because for the first time the store holds memories a human would keep.
+
+**The store.** Track 9's haiku-v2 arm extracted 11 xarray memories; the
+consolidation step merged them to 5 distinct facts (three "linters not
+installed" became one, two "dask not installed" became one, two
+DeprecationWarning facts became one richer one) and dropped a per-bug leak
+about `_maybe_null_out`. Saved through the real MCP path, scope xarray.
+
+**Held out.** All 13 test tasks contributed nothing to the store. The
+memories came from 9 other xarray tasks.
+
+**Frozen.** No ratify() call, so staged candidates are never saved and the
+store stays at exactly 5 for every session. This is an A/B on the
+harvest's output, not on the miner.
+
+**Preflight finding, recorded because it weakens the test.** The store's
+most valuable memory says `import xarray` fails without a pkg_resources
+shim. `run_stream.prepare()` already mitigates exactly this for xarray
+tasks created before 2022 via UV_BUILD_CONSTRAINT — 8 of the 13 held-out
+tasks. So the single strongest memory is partly neutralised by a harness
+fix that postdates the session it was harvested from. The other four
+(linters absent, dask absent and ~97 skips, the DeprecationWarning /
+-W interaction, suite runs in ~5s) are untouched and remain live. A null
+result therefore has two readings, and this note exists so the weaker one
+cannot be quietly ignored afterwards.
+
+**Metric of record is NOT resolved-rate.** With 13 tasks that is
+underpowered, and this project has already drawn a false lesson from a
+noisy resolved-rate once. The metric is events-before-first-green-test —
+formation_study.py's counterfactual view — which is the instrument that
+discriminated on reval-sphinx (control 6 events, memory arm 1).
+
+Registered predictions:
+  T10-P1 (counterfactual): the rfm arm reaches its first green test in
+        fewer Bash events than control on more tasks than it loses on.
+        This is the claim. Ties are common and count as neither.
+  T10-P2 (resolved-rate): NO significant difference, and none is claimed.
+        Registered so a favourable resolved-rate cannot be retro-fitted
+        into evidence — if rfm wins there, it is noise unless P1 also
+        holds.
+  T10-P3 (utilisation): >= 50% of rfm sessions show the store being
+        consulted — an injection recorded and at least one memory access
+        logged by the outcome loop. If injection never lands, P1 is
+        untestable rather than false.
+  T10-P4 (no harm): rfm total wall within +15% of control.
+
+If P1 fails while P3 holds, the honest conclusion is that memories a human
+would keep still do not change what the agent does — which would be the
+strongest negative result this project has produced, and would mean the
+formation half was never the binding constraint.
