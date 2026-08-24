@@ -3,3 +3,33 @@
 {"t": 1787566767.866, "op": "save", "id": 3, "status": "saved", "chars": 256, "scope": "xarray", "content": "setuptools 82 no longer ships pkg_resources. In this xarray venv, `import xarray` fails immediately without it. Workaround: add a pkg_resources shim to PYTHONPATH (which may generate harmless deprecation warnings during test runs). The venv also lacks pip."}
 {"t": 1787566767.877, "op": "save", "id": 4, "status": "saved", "chars": 360, "scope": "xarray", "content": "Running xarray tests with NumPy \u22651.22 generates a pre-existing DeprecationWarning in Variable.quantile about nanpercentile's interpolation= argument. This is safe to ignore generally, but the test_quantile_interpolation_deprecated test asserts on it\u2014avoid running with `-W ignore::DeprecationWarning` as it will suppress the warning and cause the test to fail."}
 {"t": 1787566767.885, "op": "save", "id": 5, "status": "saved", "chars": 263, "scope": "xarray", "content": "The full test_dataset.py and test_dataarray.py test suite modules run in approximately 5 seconds on the xarray repo. When running tests during development, there is no need to use -k filters to subset tests\u2014the full suite is fast enough to run without subsetting."}
+{"t": 1787567105.566, "op": "injection", "session": "be51acdd", "results": [{"id": 5, "prior": 0.1861}, {"id": 4, "prior": 0.1861}, {"id": 3, "prior": 0.1861}], "injected": [5, 4, 3], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787567164.266, "op": "session_end", "session": "be51acdd", "events": 6, "in_play": 3, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787567270.92, "op": "injection", "session": "59471be0", "results": [{"id": 5, "prior": 0.1799}, {"id": 4, "prior": 0.1799}, {"id": 3, "prior": 0.1799}], "injected": [5, 4, 3], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787567370.148, "op": "outcome_inferred", "id": 3, "outcome": 1.0, "cmd": "python -c \""}
+{"t": 1787567370.149, "op": "session_end", "session": "59471be0", "events": 4, "in_play": 3, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787567409.751, "op": "injection", "session": "167f5e85", "results": [{"id": 3, "prior": 0.2835}, {"id": 5, "prior": 0.1766}, {"id": 4, "prior": 0.1766}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787567465.137, "op": "outcome_inferred", "id": 3, "outcome": 1.0, "cmd": "python -c \"import xarray; print(xarray.__version__)\" 2>&1 | tail -5"}
+{"t": 1787567465.138, "op": "session_end", "session": "167f5e85", "events": 4, "in_play": 3, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787567531.255, "op": "injection", "session": "a513c134", "results": [{"id": 3, "prior": 0.3275}, {"id": 5, "prior": 0.1745}, {"id": 4, "prior": 0.1745}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787567615.688, "op": "session_end", "session": "a513c134", "events": 3, "in_play": 3, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787567703.068, "op": "injection", "session": "7494b241", "results": [{"id": 3, "prior": 0.2848}, {"id": 5, "prior": 0.1722}, {"id": 4, "prior": 0.1722}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787567804.726, "op": "session_end", "session": "7494b241", "events": 4, "in_play": 3, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787567871.715, "op": "injection", "session": "8b24739a", "results": [{"id": 3, "prior": 0.2703}, {"id": 5, "prior": 0.1705}, {"id": 4, "prior": 0.1705}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787567927.914, "op": "session_end", "session": "8b24739a", "events": 5, "in_play": 3, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787568108.955, "op": "injection", "session": "31598285", "results": [{"id": 3, "prior": 0.2596}, {"id": 5, "prior": 0.1686}, {"id": 4, "prior": 0.1686}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787568175.353, "op": "session_end", "session": "31598285", "events": 2, "in_play": 3, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787568334.319, "op": "injection", "session": "cf8866db", "results": [{"id": 3, "prior": 0.2534}, {"id": 5, "prior": 0.1673}, {"id": 4, "prior": 0.1673}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787568492.059, "op": "session_end", "session": "cf8866db", "events": 10, "in_play": 3, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787568535.188, "op": "injection", "session": "53088470", "results": [{"id": 3, "prior": 0.2495}, {"id": 5, "prior": 0.1663}, {"id": 4, "prior": 0.1663}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787569007.457, "op": "session_end", "session": "53088470", "events": 16, "in_play": 3, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787569110.28, "op": "injection", "session": "dbecf4a2", "results": [{"id": 3, "prior": 0.2425}, {"id": 5, "prior": 0.1642}, {"id": 4, "prior": 0.1642}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787569234.792, "op": "outcome_inferred", "id": 3, "outcome": 1.0, "cmd": "python -c \"import xarray; print(xarray.__version__, xarray.__file__)\""}
+{"t": 1787569234.793, "op": "session_end", "session": "dbecf4a2", "events": 12, "in_play": 3, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787569395.751, "op": "injection", "session": "1b258c81", "results": [{"id": 3, "prior": 0.3014}, {"id": 5, "prior": 0.1634}, {"id": 4, "prior": 0.1634}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787569459.397, "op": "session_end", "session": "1b258c81", "events": 2, "in_play": 3, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787569633.971, "op": "injection", "session": "9c29fba5", "results": [{"id": 3, "prior": 0.2837}, {"id": 5, "prior": 0.1628}, {"id": 4, "prior": 0.1628}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787569839.759, "op": "outcome_inferred", "id": 3, "outcome": -1.0, "cmd": "cat > /tmp/repro_swap.py <<'EOF'"}
+{"t": 1787569839.761, "op": "session_end", "session": "9c29fba5", "events": 8, "in_play": 3, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787569948.462, "op": "injection", "session": "b9692e8f", "results": [{"id": 3, "prior": 0.2918}, {"id": 5, "prior": 0.1622}, {"id": 4, "prior": 0.1622}], "injected": [3, 5, 4], "truncated": [], "chars": 900, "staged": 0}
+{"t": 1787570030.927, "op": "session_end", "session": "b9692e8f", "events": 9, "in_play": 3, "staged": 0, "outcomes": 0, "pruned": 0}
