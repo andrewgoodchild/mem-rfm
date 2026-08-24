@@ -107,6 +107,18 @@ ENV_PROSE = re.compile(
     r"setuptools|pkg_resources|pip install|PYTHONPATH|stub packages?)\b",
     re.I)
 
+# Track 9's tightened truth: names an environment CONDITION rather than
+# asserting a STATUS. "This failure is pre-existing" is a verification
+# narration and carries nothing durable; "this venv's packages are too new
+# for this 2020-era checkout" is a fact a later session can act on. The
+# distinction is linguistic and was fixed before scoring either arm; it
+# moves recall only 31% -> 39%, so it rescues nobody.
+STRONG_ENV = re.compile(
+    r"\b(venv|virtualenv|site-packages|PYTHONPATH|stub packages?|"
+    r"too new|too old|\d{4}-era|era-pin\w*|pinned?|setuptools|"
+    r"pkg_resources|pip install|editable install|not installed)\b", re.I)
+
+
 # Identifiers too common to be evidence that a block is about a task's code.
 STOP = {"test", "tests", "testing", "src", "lib", "init", "main", "setup",
         "conftest", "utils", "core", "base", "config", "__init__", "py"}

@@ -1677,3 +1677,43 @@ memories worth storing. It is not validated: recall is poor, output is
 nondeterministic, a quarter of stores still leak per-bug text, and no
 downstream benefit has been measured. Traces: track8/{arm-haiku,
 arm-sonnet,nondeterminism-raw}.jsonl, harvest-labelled.jsonl.
+
+## Track 9 — extraction framing (2026-08-24) — 4/5 PASS
+
+One change from Track 8: the prompt asks the model to EXTRACT a durable
+fact from a block that is mostly about a bug, instead of judging whether
+the block IS durable knowledge. Same 86 blocks, same models, same
+gold-patch truth neither arm sees.
+
+| arm | recall (tight) | specificity | stored | leak | clean memories |
+|---|---|---|---|---|---|
+| haiku v1 | 39% | 93% | 19 | 26% | 14 |
+| **haiku v2** | **88%** | 62% | 53 | **19%** | **43** |
+| sonnet v1 | 39% | 80% | 25 | 40% | 15 |
+| sonnet v2 | 100% | 24% | 75 | 33% | 50 |
+
+**T9-P1 recall >=65%: PASS (88%, from 39%).** The framing was the binding
+constraint, as diagnosed. **T9-P2 leakage <26%: PASS (19%).** The
+stand-alone instruction cut identifier leakage while recall more than
+doubled. **T9-P4 yield >=25: PASS (43 clean, from 14).** **T9-P5: PASS** —
+haiku leaks 19% against sonnet's 33%, so the cheap model stays ahead and
+v1's ordering was not a prompt artifact.
+
+**T9-P3 specificity >=80%: FAIL (62%, down from 93%).** The registered
+guard did its job: part of the recall gain was bought by storing more. Of
+45 blocks that name no environment condition, haiku v2 stored 17. Sonnet
+v2 is the pathological version of the same effect — 100% recall at 24%
+specificity, storing 75 of 86 blocks, which is barely a filter at all.
+
+**Whether 62% is acceptable is not a judgement call here, because this
+project already measured it.** The oracle-subtraction result — perfectly
+removing every memory that never contributes buys ~0 — means false-positive
+memories are close to free in this system: they sit unused and unranked
+rather than crowding anything out. A formation stage facing a cheap-FP,
+expensive-FN asymmetry should prefer recall, which is what v2 does. That
+argument is only as good as the oracle result it rests on, and it is
+recorded here as reasoning, not as a new measurement.
+
+Cost: 86 calls per arm on haiku, well under a cent per session at
+SessionEnd. Still no downstream benefit measured — the next step is a
+store built from these 43 and a live A/B against it.
