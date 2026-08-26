@@ -1,6 +1,6 @@
 # The model: what problem this is, where the math comes from, and how a memory lives
 
-## At heart this is a Belady cache problem
+## At heart this is a Belady cache problem — for half of it
 
 Strip away the language about agents and memory and the problem is one
 computer science has studied since 1966. You have far more items than you can
@@ -33,8 +33,58 @@ be retrieved on every query and waste the agent's time every time. Predicting
 *whether* an item will be used again is not the same as predicting whether
 using it will be *worth anything*.
 
-So mem-rfm is a cache policy with a quality axis: recency and frequency
-predict re-use, and outcome feedback predicts worth.
+### Where the cache analogy breaks
+
+Taking the frame seriously means naming where it stops. Four of its
+assumptions fail for agent memory, and each failure is something this
+project has measured rather than argued:
+
+- **A hit can be worth less than a miss.** Caching's objective counts
+  misses; serving from cache is at worst neutral, and the optimality proof
+  rests on that. An injected memory can be stale, inapplicable, or wrong —
+  a signed cost no miss-count can express. The ledgers already contain it:
+  memories driven to value −1.0 by acted-on-and-failed outcomes (advice
+  taken, and wrong), and Track 10 (RESULTS.md), where five true,
+  human-ratified memories injected in 13/13 sessions left the metric of
+  record unmoved at +24.9% wall.
+- **A miss is not a fetch.** In caching the miss penalty is a known cost
+  from a slower tier — GreedyDual-Size-Frequency weights evictions by
+  exactly that retrieval cost. An agent's alternative to memory is
+  re-derivation, and measured re-derivation cost does not predict realized
+  usefulness (Spearman +0.146, n=19, the two costliest pairs junk
+  artifacts — REVALIDATION.md, Track 5). The cost-weighted eviction
+  literature imports a number that, here, correlates with nothing.
+- **The reference stream is endogenous.** Belady's future references are
+  given in advance; injection changes the agent's behaviour and therefore
+  what gets referenced next. Pilot 2 caught the pathology directly: two
+  demoted memories were re-injected seven more times because each
+  feedback's implied access refreshed their recency — the policy feeding
+  its own inputs. No replacement-theory result covers a cache that
+  manufactures its own hits.
+- **Eviction may not even be binding.** Replacement policy is the entire
+  subject of caching theory, and an oracle experiment made it moot at this
+  scale: deleting every never-contributing memory — a perfect filter,
+  removing up to 49.5% of a store — moved accuracy by ~0 (cited at Track
+  5's registration). When the *optimal* eviction policy buys nothing, the
+  binding constraints are formation (what to write down) and value
+  (whether having it helps) — the two questions the cache frame takes as
+  axioms.
+
+What survives is the R/F half, intact. Recency and frequency as estimators
+of the probability of re-use is genuinely the Belady-approximation story;
+it is what Anderson & Schooler validated against real environments, and it
+is where the frozen-corpus ablations say activation earns its keep. The
+honest form of this section's title is therefore: **Belady is a good
+theory of the R and F axes and no theory at all of M.** The caching
+literature answers "given that something will be needed, which one is it?"
+and never asks "is having it better than not having it?" — the
+counterfactual question the live tracks (REVALIDATION.md) exist to
+measure, and the one on which the field at large is similarly silent: its
+benchmarks score retrieval, not value.
+
+So mem-rfm is a cache policy with a quality axis — recency and frequency
+predict re-use, and outcome feedback predicts worth — with the standing
+caveat that the quality axis is the half no cache theory supplies.
 
 ## RFM: the name
 
