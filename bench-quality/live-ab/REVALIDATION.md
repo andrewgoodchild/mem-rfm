@@ -490,3 +490,110 @@ If P1 fails while P3 holds, the honest conclusion is that memories a human
 would keep still do not change what the agent does — which would be the
 strongest negative result this project has produced, and would mean the
 formation half was never the binding constraint.
+
+## Track 11 — same fact, four forms: a token-matched content ablation (registered 2026-08-27, before any session)
+
+Two threads converge on one experiment. Our corpus's sharpest split —
+memories with a verbatim backtick command average 3.2 outcomes, memories
+without one 0.5 — is confounded: `acted_on()` matches by reproducing a
+backtick span, so a quotable memory is mechanically easier to score than a
+useful one. And a literature sweep (2026-08-27) shows the field now runs
+no-memory controls routinely (AWM 2409.07429, ReasoningBank 2509.25140,
+Memp 2508.06433 — all author-reported gains) while the independent tests
+keep finding nulls once token budgets are matched (2606.15017, already
+cited at Track 5 as the reason benefit claims were deferred; AMA-Bench
+2602.22769: memory systems frequently underperform plain long-context).
+This track is that deferred token-matched benefit test, and it
+de-confounds the form split in the same run: the outcome measure is the
+harness's, not `acted_on()`'s, so quotability cannot reach it.
+
+**One fact, four forms, two controls.** The unit under test is the
+corpus's highest-value memory — pilot 4 store id 2, the sphinx era-pin
+stubs workaround (value 0.998, 17 outcomes there, 22 across sibling
+stores). Every injected arm carries a single memory whose ledger
+(value_score, outcome_count, access statistics) is cloned from that row,
+so R, F, M, injection rank, and the floor are identical across arms —
+only the content string differs. Texts are committed in
+store-track11.json; lengths are registered inside a ±10% band around the
+verbatim reference (1,214 chars) and all inject as one unbroken line:
+
+  none      no MCP server (Track 4 resolved the attachment tax as
+            context-cost-only at this scale; disclosed, not re-measured)
+  placebo   true-but-inapplicable content: Track 10's kept xarray
+            memories (ids 1, 2, 4, 5 joined with " | " — dask/linters/
+            warnings/suite-speed, deliberately NOT the pkg_resources one,
+            whose PYTHONPATH-shim technique is the flagship's own
+            family). 1,098 chars, −9.6%.
+  prose     the same condition and workaround described with no runnable
+            command, no path, no literal invocation. 1,299 chars, +7.0%.
+  verbatim  the stored memory, byte-identical (preflight asserts this
+            against the pilot 4 store). 1,214 chars.
+  abstract  the Memp-style generalization: placeholder commands
+            (`PYTHONPATH=<stubs>`), condition stated as a class, "applies
+            to any era-pinned repo". 1,150 chars, −5.3%.
+
+**Tasks, and why they are knowingly in-sample.** The validated in-era
+sphinx pool is exhausted: every validated 2020–2021 task IS the pilot dev
+set, and the era-band alternates (7440, 7748, 7985, 8035–8721, 9229–9711
+others) all failed validation. So this runs on 8 of the 10 dev tasks —
+excluding sphinx-7454, whose session minted the memory, and sphinx-9658,
+whose checkout (232dbe41c) is named in the memory text because that
+session amended it. This is registered as a CEILING experiment and the
+asymmetry is the design: these are the tasks the flagship's ledger was
+earned on, so a positive here is a best-case ceiling and claims no
+transfer, while a null here generalizes — if the corpus's best memory
+cannot beat no-memory on its home turf, it cannot beat it anywhere.
+
+**Constant treatment.** The store is rebuilt from store-track11.json
+before every injected session; nothing carries between sessions. No
+ratify. Before EVERY session (a disclosed deviation from the reval
+"resumes never re-clean" rule, which protected accumulated state this
+design deliberately has none of): /tmp sphinx artifacts are removed —
+the verbatim text names /tmp/sphinx_type_hint_links/stubs, which a prior
+arm's session may have created, and leaving it would leak the treatment
+across arms — the built-in auto-memory dirs are archived (arms share
+clones; that channel is not under test), and pending-memories.md is
+removed (its count would spend the next session's injection budget).
+rfm-log.jsonl accumulates as the audit trail. Arms run in a fixed order
+per task (none, placebo, prose, verbatim, abstract), so any drift is
+arm-aligned, as control-first was in every prior track.
+
+**Metric of record** is Track 10's: Bash events before the first green
+test run (formation_study counterfactual), compared pairwise between arms
+on the same task; a session that never reaches green loses to one that
+does, both-never ties. Resolution and wall are recorded; resolution is
+not predicted (pilot-era sphinx resolution has already produced one false
+lesson). With 8 tasks per pairwise comparison this has Track 10's power:
+wins-vs-losses is a direction, not a p-value, and is registered as such.
+
+Registered predictions:
+  T11-P1 (necessity, the claim): verbatim beats none — fewer events to
+        first green on more tasks than it loses. The memory's 17-outcome
+        ledger says the control arm should pay the VersionRequirementError
+        storm and the verbatim arm should not.
+  T11-P2 (content vs presence): verbatim beats placebo the same way.
+  T11-P3 (placebo buys nothing): placebo does not beat none. An
+        inapplicable true memory is predicted to be pure cost.
+  T11-P4 (form, the de-confounded split): verbatim beats prose. If this
+        FAILS while P1 passes, the 3.2-vs-0.5 split was quotability
+        artifact and formation should stop privileging commands.
+  T11-P5 (abstraction, least confident): abstract does not beat verbatim
+        — Memp's finding is that verbatim wins when recurrence is
+        near-identical, which in-era same-repo tasks are. Registered as a
+        direction; a reversal would be the more interesting outcome.
+  T11-P6 (utilisation gate): the injection line lands, with the seeded
+        memory in it, in >= 90% of injected-arm sessions. If it does not,
+        P1/P2/P4/P5 are untestable, not false.
+  T11-P7 (no harm): verbatim total wall within +15% of none. Other arms'
+        walls are reported, not predicted.
+
+**Registered interpretation, fixed now so it cannot be softened later.**
+If P1 fails while P6 holds, the finding is not only "the store did not
+help": it is that the outcome ledger itself — M, 17 outcomes of it, the
+strongest signal the instrument has ever produced — was counting
+engagement, not causal value. That reading implicates every M-ranked
+result in this project, and the M-axis follow-up (Track 12, future, not
+registered here: rank-rule comparison — earned-outcome M vs write-time
+importance vs uniform vs per-token M — against a causal panel) is
+conditional on P1 passing, because a value rule cannot be validated
+against a quantity that measurement says is zero.
