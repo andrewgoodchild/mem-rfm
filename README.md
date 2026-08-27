@@ -13,8 +13,12 @@ from ACT-R, the cognitive model of human memory, which prices how likely
 a memory is to be needed again. But mem-rfm goes beyond R and F — where
 marketing puts monetary value, it puts **measured outcomes**: a signed,
 per-memory record of whether acting on the memory helped or hurt, fed
-straight back into the ranking. Retrieved-often is cheap to fake;
-helped-when-used is the signal. **[The full model →](docs/theory.md)**
+straight back into the ranking. Retrieved-often is cheap to fake — and
+our own live program caught helped-when-used being faked too: agents
+copy a suggested command, the copy succeeds, the ledger inflates. So a
+positive outcome now counts only in sessions where the condition the
+memory names actually fired. Helped-when-*needed* is the signal.
+**[The full model →](docs/theory.md)**
 
 ## How it works
 
@@ -37,7 +41,7 @@ path and a harness-owned path that does the real work:
 |---|---|---|
 | **Formation** | `memory_save` on "remember this" | SessionEnd mines failed→fixed command pairs from the transcript; `/memory-review` ratifies |
 | **Retrieval** | `memory_search` | SessionStart injects the top-3 by `rfm_score` |
-| **Outcome** | `memory_feedback` when a memory surprises | inferred from what the session acted on, at session end |
+| **Outcome** | `memory_feedback` when a memory surprises | inferred from what the session acted on, at session end — a `+1` lands only if the memory's named condition fired |
 | **Retention** | `memory_delete` on "forget that" | idle never-useful memories are pruned; proven ones never are |
 
 **[The full lifecycle, and who decides at each stage →](docs/lifecycle.md)**
@@ -56,7 +60,7 @@ knowledge that comes back session after session.
 | retiring facts that a procedure change made wrong | recovers to **0.56 hit@1** where similarity-only is still recommending the dead procedure at **0.20**, 1,500 calls later | same corpus, procedures revised mid-stream; **oracle** outcomes |
 | preferring an updated fact over the version it replaced | **0.43 → 0.66**, with no loss of fresh-fact recall | LongMemEval knowledge-update tasks; **oracle** labels |
 | scoring a memory by how useful it truly was | **Spearman 0.83** against ground truth within 25 observations | 52,104 Terminal-Bench trials — **real** test-verified rewards |
-| a live coding run once the ledger has been earned | memory arm beat control: **−8.6% wall**, 9.7k vs 10.9k output tokens | 10 paired Claude Code sessions; **wild** feedback, exploratory |
+| a live coding run once the ledger has been earned | memory arm beat control: **−8.6% wall**, 9.7k vs 10.9k output tokens | 10 paired Claude Code sessions; **wild** feedback, exploratory — **overtaken**: the registered causal tracks below re-tested this ledger and found no effect; the row stays for the record |
 
 The pattern across those rows is the one the design predicts: memory pays
 where work recurs, and pays most at the top slot — the position that
@@ -74,9 +78,14 @@ What we can say about acquisition: across six live runs the loop closed
 and replaying those transcripts with explicit feedback as ground truth,
 inference recovered 9 of 15 outcomes with **zero sign errors** — it
 misses (the relevance judgments it structurally cannot see) but it does
-not invert. What has never been measured is the head-to-head: whether a
-ledger built entirely from wild feedback ranks as well as one built from
-oracle labels. That experiment is the next registration.
+not invert. Sign accuracy turned out to be the wrong reassurance: the
+causal tracks below found the loop's *credit* was wrong — its positives
+were largely earned in sessions where the memory's condition never
+fired (copied commands, credited successes; 79% of the top ledger).
+Outcomes are now condition-gated — a `+1` requires the named condition
+to have fired — and the ledger that motivated the fix could not have
+been earned under it (theory.md, "the condition side of the
+production").
 
 ### What it costs, and where it doesn't pay
 
@@ -103,18 +112,25 @@ was written down and committed before the run it governs:
 | do stale memories do harm? (sphinx, new era) | an outdated earned ledger stays within +10% wall | **PASS** — +3.0%, and the ledger demoted itself |
 | do demoted memories stay demoted? | outcome-demoted memories are never re-injected | **PASS** — verified in-run |
 | what does an idle memory server cost? (sphinx) | measurable context overhead from tool schemas alone; two-sided decision rule on wall and resolution | **MEASURED** — +189 tokens/session (~0.9% of context), wall +1.0%, resolution identical: context-cost-only |
+| does a human-ratified store help on held-out tasks? (xarray) | fewer events to a first passing test than control | **FAIL** — no effect in either direction, with injection landing 13/13 (Track 10, corrected reading) |
+| does the best earned memory beat no-memory at home? (sphinx) | token-matched, four content forms, on the tasks that earned its ledger | **FAIL** — ties under both detectors; forensics showed 79% of its ledger was earned with its condition silent (Track 11 + C4) |
+| does it at least help a weaker model? (haiku) | condition-liveness gate, then sign consistency | **FAIL** — 0 wins of 5 decided pairs, +27.6% wall: a measured tax (Track 13) |
 
-How to read the table: every row in it is a **cost or safety bound**.
-That is deliberate — the program was built to establish that memory does
-no harm on the workload where it helps least, not to demonstrate benefit
-(the benefit evidence is the table above). It also means the register
-cannot say anything good about the system no matter how well it
-performs, which is a gap in the experimental design rather than a
-verdict; a registered benefit prediction is next. The last row closes
-the loop on the failure above it: the
-idle-server ablation was registered while the xarray FAIL stood
-unexplained, and its verdict — context-cost-only — is what attributes
-that failure to variance rather than to the machinery.
+How to read the table: the first eight rows are **cost or safety
+bounds** — the program's first phase set out to establish that memory
+does no harm on the workload where it helps least. (The idle-server row
+closes the loop on the xarray FAIL above it: registered while that
+failure stood unexplained, its context-cost-only verdict is what
+attributes the gap to variance rather than machinery.) The last three
+rows are the registered benefit predictions that phase promised, and
+all three failed: on this workload class, for these agents, no causal
+benefit was found — and the search located a defect in the instrument
+instead. The outcome ledger was crediting condition-blind copying,
+which is exactly what the condition gate now prevents. One registered
+formation hypothesis remains in flight (memories mined from the weak
+model's own failures, tested on the weak model — Track 17); the
+per-track record is in `bench-quality/RESULTS.md`, and the synthesis in
+[findings.md's "Use is not value"](docs/findings.md).
 
 **[All findings, and everything that died along the way →](docs/findings.md)**
 
