@@ -2057,3 +2057,53 @@ session never executed. Any schema adoption needs a provenance bit on
 the action field — quoted-from-session vs composed — because a
 composed action carries invention risk the outcome loop would then
 score as if it were experience.
+
+## Track 15 — the yardstick (2026-08-27) — deliverables, and the D1 notes to Tracks 10/11/13
+
+20 sessions, complete (a cosmetic exit-1 in the runner's pipe tail;
+every record present): sphinx-7757, control arm, 10 reps each on
+claude-fable-5 and claude-haiku-4-5-20251001, model and CLI (2.1.246)
+stamped per record. All 20 resolved — resolution on this task is
+deterministic across both tiers; the variance lives in the path.
+
+**Deliverables.**
+  fable: corrected events-to-green min 1 / med 1.5 / max 2, SD 0.5,
+         range 1. Wall med 112.5s, SD 21.4s, range 72s. The legacy
+         detector fired in only 8 of 10 sessions and tripled the
+         spread (1–6, SD 2.3) — the legacy instrument is itself a
+         noise source, which is C3 vindicated a third way.
+  haiku: corrected events-to-green min 6 / med 11.5 / max 16, SD 3.5,
+         range 10. Wall med 175.5s, SD 22.6s. The legacy detector
+         fired in 1 of 10 sessions (unusable at this tier). Same task,
+         same resolutions: the capability-tier friction gap is
+         med 11.5 vs 1.5 events.
+
+**T15-D1, applied.** The fable within-condition range (1 event) does
+NOT cover the registered 13-event comparator, so the notes below state
+the measured spread rather than a blanket underpowered qualifier:
+
+- **Track 11 (fable):** on the corrected metric the yardstick is TIGHT
+  (SD 0.5). Track 11's corrected between-arm differences were 0–2
+  events — at noise scale individually, but a real shift of >= 2
+  events would have been visible and was not. The corrected-metric
+  null is a measured null at ~1-event resolution, not noise-blindness.
+  Track 11's LEGACY-scored table inherits the legacy detector's 20%
+  no-fire rate and 5-event spread; conclusions should rest on the
+  corrected numbers, as its entry already does.
+- **Track 13 (haiku):** per-pair differences (3–5 events) sit within
+  haiku's within-condition SD (3.5) — no single pair is evidence. What
+  carries the entry's harm reading is sign consistency: 0 wins in 5
+  decided pairs (one-sided sign test p = 0.031) and wall slower on 7
+  of 8 (p = 0.035). The direction is established; the per-task effect
+  size is not. The entry's claims survive as written.
+- **Track 10 (opus-5, xarray):** the yardstick transfers only
+  qualitatively (different model AND repo). Its C3-corrected reading —
+  2 wins / 7 losses / 4 ties, one-sided sign p = 0.09, "directionally
+  negative, not significant" — is unchanged by these numbers.
+
+**Design consequence for future tracks, stated now:** at n=8 pairs on a
+haiku arm, only effects around one within-condition SD (~3.5 events)
+that shift most pairs will clear wins-vs-losses; smaller claimed
+effects need more pairs or paired reps. On a fable arm the corrected
+metric resolves ~1-event effects at n=8. Registration thresholds
+should be set from these numbers.
