@@ -1,0 +1,82 @@
+{"t": 1787870296.17, "op": "sweep_provenance_drop", "action": "In test builds: remove sphinxcontrib-* extensions from builtin_extensions; use c", "src": "f231f568-4221-416b-bfb7-280a7f55e9e2.jsonl"}
+{"t": 1787870296.17, "op": "sweep_admit", "id": 1, "condition": "versionrequirementerror", "action_provenance": "none", "src": "f231f568-4221-416b-bfb7-280a7f55e9e2.jsonl"}
+{"t": 1787870329.002, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.805, "src": "4c6051cd-80e1-4c1f-9ed9-40d2a9906d49.jsonl"}
+{"t": 1787870329.002, "op": "sweep_provenance_drop", "action": "if sys.version_info >= (3, 8): handle ast.Constant else ast.NameConstant", "src": "4c6051cd-80e1-4c1f-9ed9-40d2a9906d49.jsonl"}
+{"t": 1787870329.016, "op": "sweep_admit", "id": 2, "condition": "versionrequirementerror", "action_provenance": "none", "src": "4c6051cd-80e1-4c1f-9ed9-40d2a9906d49.jsonl"}
+{"t": 1787870380.131, "op": "sweep_admit", "id": 3, "condition": "era-pinned-venv", "action_provenance": "none", "src": "8ea8de89-9967-4128-b0f5-91ad7bebaae2.jsonl"}
+{"t": 1787870380.138, "op": "sweep_admit", "id": 4, "condition": "test-framework-workaround", "action_provenance": "none", "src": "8ea8de89-9967-4128-b0f5-91ad7bebaae2.jsonl"}
+{"t": 1787870407.158, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.732, "src": "abb85d3d-c703-4470-9b2b-c1c5377d825c.jsonl"}
+{"t": 1787870434.856, "op": "sweep_provenance_drop", "action": "str(subscript_key) in mock methods that handle subscripts", "src": "ebc8e491-f916-4c12-8cd5-adde8a57a9a9.jsonl"}
+{"t": 1787870434.887, "op": "sweep_admit", "id": 5, "condition": "mock-subscript-type-handling", "action_provenance": "none", "src": "ebc8e491-f916-4c12-8cd5-adde8a57a9a9.jsonl"}
+{"t": 1787870434.887, "op": "sweep_provenance_drop", "action": "run fixture-free tests with pytest when venv has version drift", "src": "ebc8e491-f916-4c12-8cd5-adde8a57a9a9.jsonl"}
+{"t": 1787870434.896, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.735, "src": "ebc8e491-f916-4c12-8cd5-adde8a57a9a9.jsonl"}
+{"t": 1787870469.067, "op": "sweep_provenance_drop", "action": "str(key) conversion in mock __getitem__ implementation", "src": "afcac41c-3bcd-4634-a1d2-17ed6d8e5d5a.jsonl"}
+{"t": 1787870469.082, "op": "sweep_dedupe_hit", "id": 5, "similarity": 0.826, "src": "afcac41c-3bcd-4634-a1d2-17ed6d8e5d5a.jsonl"}
+{"t": 1787870469.082, "op": "sweep_provenance_drop", "action": "export PYTHONPATH with stubs before running tests/test_ext_autodoc.py", "src": "afcac41c-3bcd-4634-a1d2-17ed6d8e5d5a.jsonl"}
+{"t": 1787870469.092, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.722, "src": "afcac41c-3bcd-4634-a1d2-17ed6d8e5d5a.jsonl"}
+{"t": 1787870489.079, "op": "sweep_admit", "id": 6, "condition": "introspection-decorator-mismatch", "action_provenance": "none", "src": "85d3f163-570f-4759-b0b4-e10a0b9a7290.jsonl"}
+{"t": 1787870489.09, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.783, "src": "85d3f163-570f-4759-b0b4-e10a0b9a7290.jsonl"}
+{"t": 1787870509.659, "op": "sweep_admit", "id": 7, "condition": "zsh-builtin-shadowing", "action_provenance": "none", "src": "dcb3307b-ca4c-46ef-901b-c2f960a05dc6.jsonl"}
+{"t": 1787870584.428, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.83, "src": "08b668a5-2628-478d-9b52-f53a2eee8c1a.jsonl"}
+{"t": 1787870612.026, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.814, "src": "6674feec-8d01-4292-9741-7eb87ad46ea6.jsonl"}
+{"t": 1787870641.538, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.811, "src": "1de33cda-2051-45f2-bd4a-dd02648e5ddc.jsonl"}
+{"t": 1787870671.776, "op": "sweep_admit", "id": 8, "condition": "versionrequirementerror", "action_provenance": "none", "src": "38fd4c29-691b-46b3-928e-023f47471f80.jsonl"}
+{"t": 1787870720.768, "op": "sweep_provenance_drop", "action": "Apply known PYTHONPATH stub when running tests with app fixtures", "src": "6207d9ca-da6c-46fa-b1d8-b853f3ea96a3.jsonl"}
+{"t": 1787870720.777, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.749, "src": "6207d9ca-da6c-46fa-b1d8-b853f3ea96a3.jsonl"}
+{"t": 1787870798.074, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.78, "src": "3ad8be89-ddee-4e8b-b318-cfebff265bca.jsonl"}
+{"t": 1787870798.08, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.772, "src": "3ad8be89-ddee-4e8b-b318-cfebff265bca.jsonl"}
+{"t": 1787870819.874, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.788, "src": "631a8819-b4f5-44fd-8b82-d907f27ed8f0.jsonl"}
+{"t": 1787870853.726, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.821, "src": "ef8812c4-63ca-43ba-8e34-292ad52fa3f5.jsonl"}
+{"t": 1787870869.784, "op": "sweep_provenance_drop", "action": "set PYTHONPATH with stub workaround before running tests", "src": "2443d1e9-a6f7-47f2-a9aa-b2d4a0887f66.jsonl"}
+{"t": 1787870869.795, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.784, "src": "2443d1e9-a6f7-47f2-a9aa-b2d4a0887f66.jsonl"}
+{"t": 1787870869.805, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.765, "src": "2443d1e9-a6f7-47f2-a9aa-b2d4a0887f66.jsonl"}
+{"t": 1787870869.816, "op": "sweep_admit", "id": 9, "condition": "context-pattern", "action_provenance": "none", "src": "2443d1e9-a6f7-47f2-a9aa-b2d4a0887f66.jsonl"}
+{"t": 1787870904.897, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.946, "src": "adaac9f2-247d-4631-837a-97a93d97e664.jsonl"}
+{"t": 1787870904.906, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.774, "src": "adaac9f2-247d-4631-837a-97a93d97e664.jsonl"}
+{"t": 1787870939.72, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.819, "src": "151b09ed-ed98-4fbe-a88a-d291bbbf1097.jsonl"}
+{"t": 1787871001.543, "op": "sweep_provenance_drop", "action": "Save shim setting Sphinx.require_sphinx = lambda *args, **kwargs: None; load via", "src": "32b42362-b039-48dd-be1a-e1c5af31075c.jsonl"}
+{"t": 1787871001.559, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.817, "src": "32b42362-b039-48dd-be1a-e1c5af31075c.jsonl"}
+{"t": 1787871035.243, "op": "sweep_provenance_drop", "action": "import sys; guard unparse cases with sys.version_info checks to handle ast.Const", "src": "0d13e2b5-8696-4223-a142-f73a726717ab.jsonl"}
+{"t": 1787871035.259, "op": "sweep_dedupe_hit", "id": 2, "similarity": 0.908, "src": "0d13e2b5-8696-4223-a142-f73a726717ab.jsonl"}
+{"t": 1787871035.259, "op": "sweep_provenance_drop", "action": "Recreate stubs at /tmp/sphinx_type_hint_links/stubs before running app-based tes", "src": "0d13e2b5-8696-4223-a142-f73a726717ab.jsonl"}
+{"t": 1787871035.27, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.734, "src": "0d13e2b5-8696-4223-a142-f73a726717ab.jsonl"}
+{"t": 1787871035.27, "op": "sweep_provenance_drop", "action": "Use reftype='obj' in make_xref() for None-like constants; ensure signature mode ", "src": "0d13e2b5-8696-4223-a142-f73a726717ab.jsonl"}
+{"t": 1787871035.281, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.723, "src": "0d13e2b5-8696-4223-a142-f73a726717ab.jsonl"}
+{"t": 1787871045.766, "op": "sweep_judge", "id": 1, "condition_present": false, "verdict": "unclear", "outcome": null, "src": "0d13e2b5-8696-4223-a142-f73a726717ab.jsonl"}
+{"t": 1787871057.367, "op": "sweep_judge", "id": 1, "condition_present": true, "verdict": "unclear", "outcome": null, "src": "0d13e2b5-8696-4223-a142-f73a726717ab.jsonl"}
+{"t": 1787871072.494, "op": "sweep_judge_unmatched", "verdict": "unclear", "src": "0d13e2b5-8696-4223-a142-f73a726717ab.jsonl"}
+{"t": 1787871121.128, "op": "sweep_admit", "id": 10, "condition": "versionrequirementerror", "action_provenance": "none", "src": "895f2281-e0e7-478f-b8ab-9ade97df0717.jsonl"}
+{"t": 1787871139.188, "op": "sweep_admit", "id": 11, "condition": "not-installed", "action_provenance": "none", "src": "453144f9-d849-4294-9948-da2f03895ff9.jsonl"}
+{"t": 1787871149.155, "op": "sweep_judge_unmatched", "verdict": "unclear", "src": "453144f9-d849-4294-9948-da2f03895ff9.jsonl"}
+{"t": 1787871214.268, "op": "sweep_provenance_drop", "action": "pip install flake8", "src": "cba5794b-abeb-4e7b-a136-2b323165fd01.jsonl"}
+{"t": 1787871214.278, "op": "sweep_dedupe_hit", "id": 11, "similarity": 0.89, "src": "cba5794b-abeb-4e7b-a136-2b323165fd01.jsonl"}
+{"t": 1787871214.287, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.786, "src": "cba5794b-abeb-4e7b-a136-2b323165fd01.jsonl"}
+{"t": 1787871214.301, "op": "sweep_dedupe_hit", "id": 9, "similarity": 0.959, "src": "cba5794b-abeb-4e7b-a136-2b323165fd01.jsonl"}
+{"t": 1787871238.217, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.788, "src": "4a14bb50-58a0-4307-916d-6a5a12f48cfa.jsonl"}
+{"t": 1787871287.05, "op": "sweep_provenance_drop", "action": "from sphinx.util import inspect; inspect.unwrap(func).__globals__[key]", "src": "416a5cdd-eb5c-4f92-9cb2-0ecd8047d352.jsonl"}
+{"t": 1787871287.064, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.885, "src": "416a5cdd-eb5c-4f92-9cb2-0ecd8047d352.jsonl"}
+{"t": 1787871287.065, "op": "sweep_provenance_drop", "action": "from sphinx.util import inspect", "src": "416a5cdd-eb5c-4f92-9cb2-0ecd8047d352.jsonl"}
+{"t": 1787871287.074, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.773, "src": "416a5cdd-eb5c-4f92-9cb2-0ecd8047d352.jsonl"}
+{"t": 1787871325.918, "op": "sweep_provenance_drop", "action": "pip install flake8", "src": "7891db00-58f4-43a4-91dc-9be5729932d8.jsonl"}
+{"t": 1787871325.929, "op": "sweep_dedupe_hit", "id": 11, "similarity": 0.883, "src": "7891db00-58f4-43a4-91dc-9be5729932d8.jsonl"}
+{"t": 1787871325.941, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.811, "src": "7891db00-58f4-43a4-91dc-9be5729932d8.jsonl"}
+{"t": 1787871355.687, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.704, "src": "fa904a87-2d4b-49ab-9feb-dea01c6c921b.jsonl"}
+{"t": 1787871355.687, "op": "sweep_provenance_drop", "action": "reference require_sphinx shim from memory", "src": "fa904a87-2d4b-49ab-9feb-dea01c6c921b.jsonl"}
+{"t": 1787871355.695, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.712, "src": "fa904a87-2d4b-49ab-9feb-dea01c6c921b.jsonl"}
+{"t": 1787871378.582, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.71, "src": "898d53f4-8504-4c35-94a3-9ce0afdd6ab3.jsonl"}
+{"t": 1787871378.595, "op": "sweep_admit", "id": 12, "condition": "docstring-google-style-escaping-quirk", "action_provenance": "none", "src": "898d53f4-8504-4c35-94a3-9ce0afdd6ab3.jsonl"}
+{"t": 1787871400.987, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.842, "src": "5fa07b09-b0e6-4a73-b1e2-2d9dcb113e6e.jsonl"}
+{"t": 1787871400.994, "op": "sweep_dedupe_hit", "id": 11, "similarity": 0.762, "src": "5fa07b09-b0e6-4a73-b1e2-2d9dcb113e6e.jsonl"}
+{"t": 1787871418.125, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.803, "src": "d2f290a4-cdf6-4fed-a610-cc3e1ef1d416.jsonl"}
+{"t": 1787871418.139, "op": "sweep_admit", "id": 13, "condition": "versionrequirementerror", "action_provenance": "none", "src": "d2f290a4-cdf6-4fed-a610-cc3e1ef1d416.jsonl"}
+{"t": 1787871433.186, "op": "sweep_judge", "id": 1, "condition_present": false, "verdict": "unclear", "outcome": null, "src": "d2f290a4-cdf6-4fed-a610-cc3e1ef1d416.jsonl"}
+{"t": 1787871445.054, "op": "sweep_judge", "id": 1, "condition_present": false, "verdict": "unclear", "outcome": null, "src": "d2f290a4-cdf6-4fed-a610-cc3e1ef1d416.jsonl"}
+{"t": 1787871478.818, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.838, "src": "19c56d03-852e-4c0a-9b6a-2f7d95262df8.jsonl"}
+{"t": 1787871494.18, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.812, "src": "b3ba6b59-ac34-41d5-b44d-77c933edfecf.jsonl"}
+{"t": 1787871516.621, "op": "sweep_provenance_drop", "action": "pip install flake8 mypy pyflakes", "src": "a0a03578-544f-409a-83b2-1b8e295d2eda.jsonl"}
+{"t": 1787871516.631, "op": "sweep_dedupe_hit", "id": 11, "similarity": 0.847, "src": "a0a03578-544f-409a-83b2-1b8e295d2eda.jsonl"}
+{"t": 1787871534.397, "op": "sweep_provenance_drop", "action": "Ensure _MockObject.__init__ sets __qualname__ = self.__name__; add ismock() help", "src": "a4ca4ed1-cb38-4480-ac9b-45e9836854b7.jsonl"}
+{"t": 1787871534.441, "op": "sweep_dedupe_hit", "id": 5, "similarity": 0.721, "src": "a4ca4ed1-cb38-4480-ac9b-45e9836854b7.jsonl"}
+{"t": 1787871534.449, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.763, "src": "a4ca4ed1-cb38-4480-ac9b-45e9836854b7.jsonl"}
+{"t": 1787871534.449, "op": "sweep_provenance_drop", "action": "Use lazy import or move mock checks into function bodies to avoid cycles", "src": "a4ca4ed1-cb38-4480-ac9b-45e9836854b7.jsonl"}
+{"t": 1787871534.459, "op": "sweep_dedupe_hit", "id": 5, "similarity": 0.727, "src": "a4ca4ed1-cb38-4480-ac9b-45e9836854b7.jsonl"}
