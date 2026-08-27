@@ -853,3 +853,29 @@ right things, concentrates recurrence, refuses the fossil, and bounds
 junk and cost — the jobs the manual gate was doing. Whether anything
 formed this way helps an agent remains governed by the pool-closing
 result and needs the rebuilt testbed.
+
+## Track 18b — the replay, both instrument defects fixed (registered 2026-08-28, before any 18b sweep call)
+
+Track 18 scored 4/5 with two numbers that were not what they looked
+like: P2 failed because token Jaccard (a shortcut standing in for the
+specified embedding similarity) cannot see paraphrase, and P3 passed
+vacuously because replay judging rehydrated transcript memory ids
+against the sweep's own store — id collisions, wrong content, dead
+signatures, zero judge operations. The Track 6 pattern: same experiment,
+same five bars re-registered unchanged, both defects fixed —
+similarity is now embedding cosine (fastembed, verified importable in
+the integration venv; Jaccard only as a degraded fallback), threshold
+0.7, and replay judging matches in-play content to this store by
+similarity, never by id (which also recovers the full text injection
+truncation cut — the pilot-2 lesson, honored without cross-store
+rehydration). Runner: run_track18.py b → track18b/, fresh store, same
+50 transcripts in the same order. 18b-vs-18 is an A/B on the
+instrument; the workload is identical.
+
+Predictions T18b-P1..P5: identical to T18-P1..P5, scored against
+track18b/. The two bars actually at stake: P2 (the 22-row flood must
+consolidate) and P3 (the conditioned judge, now actually running over
+~30 rfm-arm sessions, must award <= 4 positives where the
+condition-blind loop awarded 17 — this is the first real execution of
+the fossil-refusal test, and it is the decisive number for the
+open-throttle design).
