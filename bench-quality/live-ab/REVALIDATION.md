@@ -800,3 +800,56 @@ If P1 passes and P3 fails, tier-matched formation joins the negative
 ledger and the within-pool program is closed at four nulls. If P3
 passes, it is the project's first positive causal result and the
 conditioned-outcome instrument scores its first honest ledger.
+
+## Track 18 — the open-throttle replay (registered 2026-08-28, before any sweep call)
+
+The maintainer's redesign (DESIGN_NOTES "the open-throttle design":
+continuous LLM sweep, no manual gate, dedupe-as-frequency, two-sighting
+quarantine, conditioned outcome judge, capped store) is built and
+mechanically audited (test_sweep.py, 10 checks). This track is its
+behavioral test, run where the ground truth is strongest: the sweep
+replayed over the 50 pilot 2/3/4 transcripts — the exact sessions that
+built the 17-outcome condition-blind ledger — into a fresh store.
+Chronological order by transcript mtime (disclosed proxy; the ab log's
+start times were not joined). Runner: run_track18.py, which writes the
+ordered list and the transcript→task mapping the leak check needs, then
+invokes sweep.py --replay against track18/rfm-memory.db. Model: haiku
+per sweep-config.json. No stack change after this registration.
+
+What the corpus is known to contain, which the bars lean on: one
+genuinely recurring operational fact (the sphinxcontrib/alabaster
+era-pin stubs workaround, present in many sessions' prose), a fossil
+ledger earned on it condition-silent (C4: class fired in ~2 of 30
+memory-arm sessions), and per-bug prose everywhere (~90% of block text,
+Track 8).
+
+Registered predictions:
+  T18-P1 (capture, no gate needed): the sweep store contains the
+        era-pin fact — at least one row whose content matches the
+        sphinxcontrib / stubs-on-PYTHONPATH / alabaster family. The
+        one item this corpus is known to carry must survive the
+        removal of human review.
+  T18-P2 (dedupe-as-frequency): the family concentrates instead of
+        flooding — at most 2 rows, with combined sightings >= 5
+        across the 50 sessions. Falsifies: the similarity threshold
+        fragments recurrence into near-duplicate rows.
+  T18-P3 (fossil refusal, the decisive bar): judged POSITIVE outcomes
+        attached to the family across these same transcripts <= 4,
+        against the 17 the condition-blind loop awarded. The
+        conditioned judge must refuse what the old instrument
+        credited; if it rebuilds the ledger, the open-throttle design
+        inherits C4 and the manual gate was never the problem.
+  T18-P4 (junk bound): <= 40% of admitted rows leak their source
+        task's gold-patch identifiers (score_track8.leaks via the
+        committed transcript→task mapping). The gate's quality job,
+        done structurally or not at all.
+  T18-P5 (cost bound): total LLM calls (extractions with material +
+        judge calls, counted from the sweep log) <= 3 per transcript
+        on average.
+
+Scored PASS/FAIL in RESULTS.md. What this track deliberately does NOT
+claim: causal benefit. It tests whether the ungated stack forms the
+right things, concentrates recurrence, refuses the fossil, and bounds
+junk and cost — the jobs the manual gate was doing. Whether anything
+formed this way helps an agent remains governed by the pool-closing
+result and needs the rebuilt testbed.
