@@ -656,3 +656,42 @@ buys nothing — necessity failing where the disease is demonstrably
 present. If P1 and P2 both pass, it is this project's first positive
 causal result, scoped to weak agents, and Track 12 unblocks against
 that panel.
+
+## Track 15 — the yardstick run (registered 2026-08-27, before any session)
+
+(Track 14 — un-mitigated xarray — was probed dead before registration;
+recorded under Track 13.)
+
+Every wins-vs-losses number this project has produced sits on n=1
+session per (task, arm) cell with no measurement of within-condition
+variance. That is the Mem0-vs-Zep criticism our own mapping conceded
+applies to us squarely, and it is the flaw C3 hit twice (one outlier
+task carried 134% of a wall gap; "variance in approach, not memory").
+This is an ESTIMATION run in Track 4's shape: no hypothesis, deliverables
+and one decision rule.
+
+Design: run_track15.py. One task — sphinx-7757, chosen because it
+showed the widest spread across Track 11's five arms (2–22 corrected
+events to green, 133–344s wall; mid difficulty) — CONTROL arm only (no
+MCP server, no memory machinery: pure session-to-session variance), 10
+sessions on claude-fable-5 and 10 on claude-haiku-4-5-20251001, model
+pinned and stamped per record along with the CLI version
+(run_stream.cli_version, added with this registration). Track 11/13
+per-session hygiene. Disclosed limit: a single task lower-bounds
+task-general variance; what this prices is within-task session noise,
+the component paired designs difference away least.
+
+Deliverables, per model: min / median / max / SD of corrected
+events-to-first-green and wall; resolved-rate spread; sessions that
+never reach green.
+
+  T15-D1 (decision rule): from the fable spread, the minimal paired
+        difference plausibly detectable by wins-vs-losses over 8 and 13
+        pairs is computed and appended as a stated limitation note to
+        the Track 10, 11, and 13 entries in RESULTS.md. If the
+        within-condition spread of events-to-green covers the largest
+        between-arm difference Track 11 observed on this task (13
+        events), those entries' null readings gain an explicit
+        "underpowered for small effects" qualifier. Either outcome is
+        recorded; the note can only weaken past claims, never
+        strengthen them.

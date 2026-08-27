@@ -45,14 +45,11 @@ def compare(events, a, b, tasks):
 
 def corrected_first_green(events):
     """RESULTS.md Correction C3: the registered detector requires the
-    literal 'N passed' text, which tail-piped pytest output can lose. The
-    corrected rule — first pytest run that exited 0 — is C3's, and both
-    readings are reported because the registration pointed at the shipped
-    (known-defective) detector."""
-    for i, e in enumerate(events):
-        if e.got and not e.is_err and "pytest" in e.cmd:
-            return i
-    return None
+    literal 'N passed' text, which tail-piped pytest output can lose.
+    Both readings are reported because Track 11's registration pointed
+    at the shipped (known-defective) detector. Canonical implementation
+    now lives in formation_study.first_green_corrected; this delegates."""
+    return F.first_green_corrected(events)
 
 
 def main():

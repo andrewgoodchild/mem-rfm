@@ -101,8 +101,22 @@ def events_of(tp):
 
 
 def first_green(events):
+    """LEGACY detector — kept verbatim so committed entries reproduce.
+    RESULTS.md Correction C3: the 'N passed' text match loses summaries
+    piped through tail. New registrations MUST use first_green_corrected;
+    this stays only for re-running historical scorers and views."""
     for i, e in enumerate(events):
         if e.got and not e.is_err and "pytest" in e.cmd and GREEN.search(e.body or ""):
+            return i
+    return None
+
+
+def first_green_corrected(events):
+    """The C3-corrected detector of record: first pytest run that exited
+    0. Canonical home for what score_track11/13 previously carried
+    locally; every future registration points here."""
+    for i, e in enumerate(events):
+        if e.got and not e.is_err and "pytest" in e.cmd:
             return i
     return None
 
