@@ -148,6 +148,13 @@ def _embed(text):
             _EMB["model"] = TextEmbedding()
         except Exception:
             _EMB["model"] = None
+            # Loud, once: token Jaccard is keyword matching, and Track 18
+            # measured it failing on paraphrase (22 rewordings, 0 merges).
+            # Degraded mode merges only near-verbatim duplicates.
+            print("sweep: WARNING — fastembed unavailable, similarity "
+                  "degraded to token overlap; run under the integration "
+                  "venv for real dedupe", file=sys.stderr)
+            _log({"op": "sweep_degraded_similarity"})
     if _EMB["model"] is None:
         return None
     key = text[:1000]
