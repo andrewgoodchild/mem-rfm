@@ -75,10 +75,17 @@ everything an outcome needs, in three deterministic steps:
    command, or a command whose tokens are drawn from the memory (program
    match plus overlap threshold — the correction-miner's own discipline).
 3. **How that went** — the harness recorded the command's result. Acted on
-   and succeeded → `+1`. Acted on and failed → `−1` (which also catches the
-   session's own failed→fixed pair overturning a memory's advice). In play
-   but never used → **no outcome**: absence of use is what `rfm_prunable`
-   measures, not negative evidence.
+   and failed → `−1` (which also catches the session's own failed→fixed
+   pair overturning a memory's advice). Acted on and succeeded → `+1`,
+   **but only if the memory's condition fired this session**: each memory
+   carries the condition class its own text names, the hook observes which
+   classes appeared in command output, and a successful copy in a session
+   where the condition never occurred records nothing (logged as a skip).
+   Without that gate, the loop credits imitation — the top memory in the
+   corpus earned 79% of its ledger condition-silent before this rule
+   existed (RESULTS.md, Track 11 Correction C4; theory.md "the condition
+   side of the production"). In play but never used → **no outcome**:
+   absence of use is what `rfm_prunable` measures, not negative evidence.
 
 Three rules keep it honest. **Explicit feedback wins** — if the latest
 access already carries a model-recorded outcome, inference defers to it.
