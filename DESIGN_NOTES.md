@@ -321,3 +321,60 @@ hooks/test_conditions.py, 9 checks, including the C4 case verbatim —
 silent-condition +1 records nothing. Fire-rate decay and any
 ranking-visible use of t_fired remain unimplemented behind the
 registered-track gate.
+
+## The open-throttle design (2026-08-28): continuous sweep, no manual gate
+
+Origin: the maintainer's critique, which the record largely supports —
+formation starves behind the review gate (Track 5: "recall is what is
+left"; the miner stages mostly noise and misses the expensive classes),
+the deterministic channel gates on keywords (C2 caught the labeller
+blind; every measured formation improvement came from adding a cheap
+LLM), and long sessions mean the context window covers what a
+same-session memory would. The redesign replaces gated mining with a
+continuously running sweep:
+
+1. **Sweep** (cron- or hook-driven, `sweep.py`): scan new session
+   transcripts; one configurable LLM extraction call per transcript
+   ("is anything here worth remembering", instruction and condition
+   ontology in `sweep-config.json`), emitting 0–3 structured memories
+   {content, condition_class, action, scope, era}.
+2. **Provenance at admission**: an extracted action is kept only if the
+   transcript actually ran it (token overlap); otherwise the action is
+   dropped and the condition kept (Track 16's composed-action risk).
+3. **Dedupe as frequency**: a candidate near-duplicating an existing
+   memory (similarity threshold, config) is not inserted — it records
+   an access on the existing row and bumps `sightings`. Re-encountering
+   a lesson IS the environmental recurrence statistic R/F exist to
+   capture; today that signal dies at review.
+4. **Quarantine replaces the human gate**: sweep-created rows start at
+   `sightings = 1` and are not injectable until `sightings >= 2` (two
+   independent sessions). One poisoned transcript is insufficient by
+   construction; explicit `memory_save` rows (human-initiated) carry
+   NULL sightings and stay injectable. This is the security answer to
+   removing review — transcripts contain untrusted content and the
+   poisoning literature puts ~80% attack success at 0.1% poison rates.
+5. **Conditioned LLM outcome judgment**: when a sweep sees a previous
+   memory in play, an LLM judges it — but asked the CONDITIONED
+   question, not "did it help": (a) did the session exhibit the problem
+   this memory addresses, and (b) did acting on it change what
+   happened? A +1 requires both; harm records −1 regardless. An
+   unconditioned judge would faithfully rebuild the C4 fossil
+   (copying + success reads as "helped"); the conditioned frame also
+   replaces the keyword condition vocabulary with a generalizing judge,
+   which answers the keyword-gating critique at the outcome end too.
+6. **Capped store, cache-style**: `max_entries` (default 1000);
+   over-cap, the lowest-`rfm_score` rows past a creation grace period
+   are evicted — a documented deviation from "earned memories are
+   unprunable", which a hard cap cannot honor.
+
+Standing caveats, so this proposal cannot overclaim: the pool-closing
+result is untouched — Tracks 10/11 delivered well-fed stores perfectly
+and measured nothing, so a better pipe needs a workload with real
+recurring friction (short-session, high-boundary work per the
+maintainer's own long-session point). And the oracle-deletion result
+says eviction is for cost and exposure, not quality.
+
+Acceptance: unit tests in `test_sweep.py`, and the registered replay
+evaluation (REVALIDATION.md Track 18) — the sweep run over the very
+pilot transcripts that built the 17-outcome condition-blind ledger,
+with the fossil-refusal bar registered in advance.

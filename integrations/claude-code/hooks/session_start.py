@@ -138,9 +138,22 @@ def main():
         # their recency and the activation term outvoted the value term in
         # a small store. Signed negative outcomes exist to say "stop
         # showing me this"; honor them at the injection gate.
+        # Quarantine gate (DESIGN_NOTES, the open-throttle design): rows
+        # created by the transcript sweep carry a sightings count and are
+        # not injectable until a second independent session has produced
+        # the same lesson — one poisoned transcript is insufficient by
+        # construction. Rows without the column or with NULL sightings
+        # (explicit saves, miner-ratified) are unaffected.
+        has_sightings = any(
+            r[1] == "sightings"
+            for r in db.execute("PRAGMA table_info(rfm_memories)"))
+        quarantine = ("AND (sightings IS NULL OR sightings >= "
+                      f"{int(os.environ.get('RFM_QUARANTINE', 2))}) "
+                      if has_sightings else "")
         rows = db.execute(
             "SELECT id, content, rfm_score(id) AS s FROM rfm_memories "
             "WHERE NOT (outcome_count > 0 AND value_score < 0) "
+            f"{quarantine}"
             "ORDER BY s DESC LIMIT ?", (TOP_K,)).fetchall()
     lines, used, truncated = [], 0, []
     budget = CHAR_BUDGET - len(note)  # the note spends injection budget too
