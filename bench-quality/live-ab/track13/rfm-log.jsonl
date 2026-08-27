@@ -1,0 +1,19 @@
+{"t": 1787817801.013, "op": "injection", "session": "d5712be6", "results": [{"id": 1, "prior": 0.2947}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787817884.585, "op": "session_end", "session": "d5712be6", "events": 12, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787818002.411, "op": "injection", "session": "d22520f0", "results": [{"id": 1, "prior": 0.2946}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787818196.17, "op": "outcome_inferred", "id": 1, "outcome": 1.0, "cmd": "PYTHONPATH=/tmp/sphinx_type_hint_links/stubs python3 -m pytest tests/test_domain_py.py::test_pyfunction_signature_full_py38 -xvs 2>&1 | head -150"}
+{"t": 1787818196.171, "op": "session_end", "session": "d22520f0", "events": 32, "in_play": 1, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787818282.695, "op": "injection", "session": "03bb0565", "results": [{"id": 1, "prior": 0.2946}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787818382.117, "op": "outcome_inferred", "id": 1, "outcome": 1.0, "cmd": "PYTHONPATH=/tmp/sphinx_type_hint_links/stubs python -m pytest tests/test_ext_autodoc.py::test_autodoc_TypeVar -xvs 2>&1 | head -100"}
+{"t": 1787818382.118, "op": "session_end", "session": "03bb0565", "events": 19, "in_play": 1, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787818467.834, "op": "injection", "session": "b00a1c78", "results": [{"id": 1, "prior": 0.2946}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787818570.555, "op": "session_end", "session": "b00a1c78", "events": 11, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787818786.855, "op": "injection", "session": "d2a802bf", "results": [{"id": 1, "prior": 0.2946}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787819011.193, "op": "session_end", "session": "d2a802bf", "events": 37, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787819157.175, "op": "injection", "session": "d516cf74", "results": [{"id": 1, "prior": 0.2946}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787819332.417, "op": "outcome_inferred", "id": 1, "outcome": 1.0, "cmd": "PYTHONPATH=/tmp/sphinx_type_hint_links/stubs python -m pytest tests/test_ext_autodoc.py::test_enum_class -xvs 2>&1 | head -100"}
+{"t": 1787819332.418, "op": "session_end", "session": "d516cf74", "events": 37, "in_play": 1, "staged": 1, "outcomes": 1, "pruned": 0}
+{"t": 1787819415.831, "op": "injection", "session": "86002013", "results": [{"id": 1, "prior": 0.2946}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787819510.409, "op": "session_end", "session": "86002013", "events": 10, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787819558.555, "op": "injection", "session": "fd2b490a", "results": [{"id": 1, "prior": 0.2946}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787819598.896, "op": "session_end", "session": "fd2b490a", "events": 4, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
