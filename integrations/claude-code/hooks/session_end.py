@@ -100,6 +100,65 @@ FAILURE = re.compile(
     r"extensionerror|versionrequirementerror|distributionnotfound|"
     r"pkg_resources", re.I)
 
+# Named condition classes for condition-conditioned outcomes (DESIGN_NOTES
+# "config-driven extraction and value, and the three clocks"; motivated by
+# RESULTS.md Track 11 Correction C4: the top memory's 17-outcome ledger was
+# earned 79% condition-silent — agents copying a suggested command that was
+# never at risk, the loop crediting every success). Aligned with FAILURE's
+# environment alternations; a memory whose content names one of these
+# classes only earns POSITIVE outcomes in sessions where the class actually
+# appeared in command output. Negative outcomes are never gated: advice
+# that broke something is evidence against it whether or not its condition
+# fired. RFM_CONDITIONED_OUTCOMES=0 disables the gate.
+CONDITION_CLASSES = (
+    "command not found", "no such file or directory", "permission denied",
+    "bad interpreter", "modulenotfounderror", "importerror",
+    "extensionerror", "versionrequirementerror", "distributionnotfound",
+    "pkg_resources")
+CONDITIONED = os.environ.get("RFM_CONDITIONED_OUTCOMES", "1") != "0"
+
+
+def fired_classes(events):
+    """Condition classes exhibited THIS session: the class text appeared in
+    the output of a command whose result arrived (t_fired's observation
+    side). Matching mirrors the cost view's counting — got-events, output
+    text, case-insensitive."""
+    fired = set()
+    for e in events:
+        if not e.got:
+            continue
+        body = (e.body or "").lower()
+        fired.update(c for c in CONDITION_CLASSES if c in body)
+    return fired
+
+
+def derive_condition(content):
+    """A memory's condition classes, derived from its own text: the classes
+    it names. Empty string = unconditioned (a memory naming no class keeps
+    the old semantics). Comma-joined; the gate passes on ANY named class
+    firing."""
+    text = str(content).lower()
+    return ",".join(c for c in CONDITION_CLASSES if c in text)
+
+
+def ensure_conditions(db):
+    """Host-owned column (rfm_schema.sql: tables are host-owned; the
+    extension maintains only its marked columns): add condition_class if
+    absent, then stamp any unstamped row by derivation from its content.
+    Only NULL rows are stamped, so an explicit stamp is never overwritten;
+    '' is a deliberate 'unconditioned' stamp, distinct from NULL."""
+    try:
+        db.execute("ALTER TABLE rfm_memories ADD COLUMN condition_class TEXT")
+    except sqlite3.OperationalError:
+        pass                                   # column already exists
+    for mid, content in db.execute(
+            "SELECT id, content FROM rfm_memories "
+            "WHERE condition_class IS NULL").fetchall():
+        cond = derive_condition(content)
+        db.execute("UPDATE rfm_memories SET condition_class = ? WHERE id = ?",
+                   (cond, mid))
+        _log({"op": "condition_stamp", "id": mid, "condition": cond})
+
 # One Bash-call event, in order. `is_err` is the harness's own verdict, kept
 # separate from the FAILURE regex (which runs over OUTPUT text, so a
 # successful `grep -rn ModuleNotFoundError` must not read as a failure just
@@ -422,7 +481,7 @@ def infer_outcomes(mems, events):
     return out
 
 
-def record_outcomes(inferred, session_start):
+def record_outcomes(inferred, session_start, fired=frozenset()):
     """Write outcomes, deferring to any loop the model already closed THIS
     session: an outstanding access gets the outcome attached; a memory with
     no access — or whose latest access carries an outcome from a PREVIOUS
@@ -441,8 +500,23 @@ def record_outcomes(inferred, session_start):
     done = 0
     try:
         rfm.register(db)
+        ensure_conditions(db)
         for o in inferred:
             try:
+                if CONDITIONED and o["outcome"] > 0:
+                    cond = db.execute(
+                        "SELECT condition_class FROM rfm_memories "
+                        "WHERE id = ?", (o["id"],)).fetchone()
+                    classes = [c for c in (cond[0] or "").split(",")
+                               if c] if cond else []
+                    if classes and not (set(classes) & fired):
+                        # The memory's condition never fired this session:
+                        # a successful copy proves nothing (C4). Skipped,
+                        # and the skip is auditable.
+                        _log({"op": "outcome_skipped_condition_silent",
+                              "id": o["id"], "condition": classes,
+                              "fired": sorted(fired)})
+                        continue
                 row = db.execute(
                     "SELECT accessed_at, outcome FROM rfm_accesses "
                     "WHERE memory_id = ? "
@@ -546,8 +620,9 @@ def main():
         notes.append(f"staged {staged} memory candidate(s) in {OUT}")
 
     mems = rehydrate(in_play_memories(records))
+    fired = fired_classes(events)
     recorded = record_outcomes(infer_outcomes(mems, events),
-                               session_start_time(records))
+                               session_start_time(records), fired)
     if recorded:
         notes.append(f"recorded {recorded} inferred outcome(s)")
     pruned = prune(PRUNE_DAYS)
@@ -559,7 +634,7 @@ def main():
     # firing, and the formation loop cannot be audited.
     _log({"op": "session_end", "session": session, "events": len(events),
           "in_play": len(mems), "staged": staged, "outcomes": recorded,
-          "pruned": pruned})
+          "conditions": sorted(fired), "pruned": pruned})
     if notes:
         print("rfm: " + "; ".join(notes), file=sys.stderr)
 
