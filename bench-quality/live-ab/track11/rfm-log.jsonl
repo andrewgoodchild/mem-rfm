@@ -1,0 +1,76 @@
+{"t": 1787781579.505, "op": "injection", "session": "23c7eb55", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1105, "staged": 0}
+{"t": 1787781675.581, "op": "session_end", "session": "23c7eb55", "events": 12, "in_play": 1, "staged": 1, "outcomes": 0, "pruned": 0}
+{"t": 1787781678.934, "op": "injection", "session": "1b95bbc1", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1306, "staged": 0}
+{"t": 1787781868.836, "op": "session_end", "session": "1b95bbc1", "events": 14, "in_play": 1, "staged": 2, "outcomes": 0, "pruned": 0}
+{"t": 1787781872.179, "op": "injection", "session": "c1e0b0ec", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787781957.04, "op": "feedback", "id": 1, "helped": true, "outcome": 0.8, "note": "Stub workaround was needed again (VersionRequirementError 5.0) and worked. One correction: the alabaster stub's get_path() must return the PARENT of the real alabaster dir (site-packages), since sphinx theming looks for <get_path()>/alabaster; returning the alabaster dir itself gives FileNotFoundError '.../alabaster/alabaster'.", "access_recorded": true, "value": 0.9386, "outcomes": 18}
+{"t": 1787781966.191, "op": "session_end", "session": "c1e0b0ec", "events": 9, "in_play": 1, "staged": 1, "outcomes": 0, "pruned": 0}
+{"t": 1787781969.499, "op": "injection", "session": "176d74c2", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1157, "staged": 0}
+{"t": 1787782225.113, "op": "feedback", "id": 1, "helped": true, "outcome": 1.0, "note": "Recipe directly guided shadowing sphinxcontrib.* and alabaster for a Sphinx 3.0.x checkout on a newer venv; tests went from 25 errors to 28 passed. One gap: a `sphinxcontrib_jsmath-*-nspkg.pth` in site-packages pre-registers `sphinxcontrib` in sys.modules as a namespace package at startup, so a regular stub package on PYTHONPATH is never consulted. Fix was a `sitecustomize.py` in the stubs dir doing `sys.modules.pop('sphinxcontrib', None)`. Also: alabaster stub needs `__path__.append(<real dir>)` because theme.conf references `alabaster.support`.", "access_recorded": true, "value": 0.9986, "outcomes": 18}
+{"t": 1787782238.407, "op": "session_end", "session": "176d74c2", "events": 18, "in_play": 1, "staged": 3, "outcomes": 0, "pruned": 0}
+{"t": 1787782378.219, "op": "injection", "session": "712aafa9", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1105, "staged": 0}
+{"t": 1787782517.476, "op": "session_end", "session": "712aafa9", "events": 14, "in_play": 1, "staged": 1, "outcomes": 0, "pruned": 0}
+{"t": 1787782520.771, "op": "injection", "session": "1579aec0", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1306, "staged": 0}
+{"t": 1787782606.143, "op": "session_end", "session": "1579aec0", "events": 10, "in_play": 1, "staged": 1, "outcomes": 0, "pruned": 0}
+{"t": 1787782609.404, "op": "injection", "session": "7d974ed9", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787782746.353, "op": "outcome_inferred", "id": 1, "outcome": 1.0, "cmd": "PYTHONPATH=/tmp/sphinx_type_hint_links/stubs python -m pytest tests/test_util_inspect.py tests/test_domain_py.py -q -x 2>&1 | tail -15"}
+{"t": 1787782746.354, "op": "session_end", "session": "7d974ed9", "events": 15, "in_play": 1, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787782749.929, "op": "injection", "session": "d6e57b11", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1157, "staged": 0}
+{"t": 1787783065.736, "op": "feedback", "id": 1, "helped": true, "outcome": 0.7, "note": "Recipe was the right direction and step (4) (extend stub __path__ to real pkg dir) was exactly needed for alabaster.support. Gap: a sphinxcontrib_*-nspkg.pth pre-seeds sys.modules['sphinxcontrib'] with a site-packages-only __path__, so a stub sphinxcontrib/ package on PYTHONPATH is silently bypassed; needed a stubs/sitecustomize.py that prepends the stubs dir to the pre-seeded __path__. Also alabaster (top-level, not sphinxcontrib) is loaded unconditionally by sphinx 3.x application.py and needs a stub with get_path() proxy.", "access_recorded": true, "value": 0.9086, "outcomes": 18}
+{"t": 1787783093.407, "op": "session_end", "session": "d6e57b11", "events": 31, "in_play": 1, "staged": 5, "outcomes": 0, "pruned": 0}
+{"t": 1787783182.894, "op": "injection", "session": "7fefad5a", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1105, "staged": 0}
+{"t": 1787783222.978, "op": "session_end", "session": "7fefad5a", "events": 3, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787783226.099, "op": "injection", "session": "c1503200", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1306, "staged": 0}
+{"t": 1787783272.482, "op": "session_end", "session": "c1503200", "events": 6, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787783275.569, "op": "injection", "session": "715d6371", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787783322.547, "op": "outcome_inferred", "id": 1, "outcome": 1.0, "cmd": "PYTHONPATH=/tmp/sphinx_type_hint_links/stubs python -m pytest tests/test_ext_autodoc_mock.py -q 2>&1 | tail -15"}
+{"t": 1787783322.548, "op": "session_end", "session": "715d6371", "events": 5, "in_play": 1, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787783325.734, "op": "injection", "session": "78fcb53d", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1157, "staged": 0}
+{"t": 1787783359.298, "op": "session_end", "session": "78fcb53d", "events": 3, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787783440.708, "op": "injection", "session": "be120c8c", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1105, "staged": 0}
+{"t": 1787783505.872, "op": "session_end", "session": "be120c8c", "events": 4, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787783509.002, "op": "injection", "session": "cb6dbf16", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1306, "staged": 0}
+{"t": 1787783570.901, "op": "session_end", "session": "cb6dbf16", "events": 5, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787783574.093, "op": "injection", "session": "7b176c7b", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787783653.117, "op": "session_end", "session": "7b176c7b", "events": 6, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787783656.352, "op": "injection", "session": "d478c0b1", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1157, "staged": 0}
+{"t": 1787783744.772, "op": "outcome_inferred", "id": 1, "outcome": 1.0, "cmd": "mkdir -p /tmp/napoleon_orig/orig_napoleon && git show HEAD:sphinx/ext/napoleon/__init__.py > /tmp/napoleon_orig/orig_napoleon/__init__.py && cd /tmp/napoleon_orig && sed 's/from sphinx.ext.napoleon im"}
+{"t": 1787783744.773, "op": "session_end", "session": "d478c0b1", "events": 9, "in_play": 1, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787783927.262, "op": "injection", "session": "159e4fb8", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1105, "staged": 0}
+{"t": 1787784064.327, "op": "session_end", "session": "159e4fb8", "events": 9, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787784067.435, "op": "injection", "session": "fa707506", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1306, "staged": 0}
+{"t": 1787784214.141, "op": "session_end", "session": "fa707506", "events": 10, "in_play": 1, "staged": 1, "outcomes": 0, "pruned": 0}
+{"t": 1787784217.153, "op": "injection", "session": "ef31f4ea", "results": [{"id": 1, "prior": 0.2952}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787784366.675, "op": "outcome_inferred", "id": 1, "outcome": 1.0, "cmd": "ls /tmp/sphinx_type_hint_links/stubs >/dev/null 2>&1 && PYTHONPATH=/tmp/sphinx_type_hint_links/stubs python -m pytest \"tests/test_ext_napoleon_docstring.py::TestNumpyDocstring::test_token_type_invalid"}
+{"t": 1787784366.675, "op": "session_end", "session": "ef31f4ea", "events": 11, "in_play": 1, "staged": 1, "outcomes": 1, "pruned": 0}
+{"t": 1787784370.061, "op": "injection", "session": "e9de4ee2", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1157, "staged": 0}
+{"t": 1787784598.805, "op": "feedback", "id": 1, "helped": true, "outcome": 1.0, "note": "Applied verbatim in sphinx 3.2-era checkout: stubbed sphinxcontrib.{applehelp,devhelp,htmlhelp,serializinghtml,qthelp,jsmath} plus an alabaster stub that re-exports get_path() and calls add_html_theme with the real theme dir; unblocked the fixture-based napoleon test (VersionRequirementError 5.0 / 3.4).", "access_recorded": true, "value": 0.9986, "outcomes": 18}
+{"t": 1787784610.274, "op": "session_end", "session": "e9de4ee2", "events": 12, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787784742.945, "op": "injection", "session": "47261e84", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1105, "staged": 0}
+{"t": 1787784851.594, "op": "session_end", "session": "47261e84", "events": 11, "in_play": 1, "staged": 1, "outcomes": 0, "pruned": 0}
+{"t": 1787784854.849, "op": "injection", "session": "248c1038", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1306, "staged": 0}
+{"t": 1787784921.217, "op": "feedback", "id": 1, "helped": true, "outcome": 1.0, "note": "Predicted exactly the VersionRequirementError (sphinxcontrib.applehelp needs Sphinx 5.0) that caused 10 app-fixture errors in tests/test_util_inspect.py, letting me classify them as pre-existing without investigation.", "access_recorded": true, "value": 0.9986, "outcomes": 18}
+{"t": 1787784931.76, "op": "session_end", "session": "248c1038", "events": 7, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787784934.823, "op": "injection", "session": "f40fa2dd", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787785031.345, "op": "outcome_inferred", "id": 1, "outcome": 1.0, "cmd": "PYTHONPATH=/tmp/sphinx_type_hint_links/stubs python -m pytest tests/test_util_inspect.py -q -p no:cacheprovider 2>&1 | tail -5"}
+{"t": 1787785031.346, "op": "session_end", "session": "f40fa2dd", "events": 11, "in_play": 1, "staged": 2, "outcomes": 1, "pruned": 0}
+{"t": 1787785034.871, "op": "injection", "session": "70e05e3f", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1157, "staged": 0}
+{"t": 1787785121.477, "op": "session_end", "session": "70e05e3f", "events": 8, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787785188.931, "op": "injection", "session": "f088a785", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1105, "staged": 0}
+{"t": 1787785253.248, "op": "session_end", "session": "f088a785", "events": 5, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787785256.486, "op": "injection", "session": "b788a921", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1306, "staged": 0}
+{"t": 1787785318.487, "op": "session_end", "session": "b788a921", "events": 6, "in_play": 1, "staged": 1, "outcomes": 0, "pruned": 0}
+{"t": 1787785321.534, "op": "injection", "session": "de60f16b", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787785409.481, "op": "outcome_inferred", "id": 1, "outcome": -1.0, "cmd": "ls /tmp/sphinx_type_hint_links/stubs 2>&1"}
+{"t": 1787785409.482, "op": "session_end", "session": "de60f16b", "events": 13, "in_play": 1, "staged": 0, "outcomes": 1, "pruned": 0}
+{"t": 1787785412.596, "op": "injection", "session": "ff458e37", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1157, "staged": 0}
+{"t": 1787785485.756, "op": "feedback", "id": 1, "helped": true, "outcome": 1.0, "note": "Sphinx 4.1 checkout: test_quickstart_and_build failed with VersionRequirementError from sphinxcontrib.applehelp (needs Sphinx 5.0). Followed the recipe verbatim \u2014 stubbed applehelp/devhelp/htmlhelp/qthelp/serializinghtml under a PYTHONPATH tree \u2014 and the test passed without touching the venv.", "access_recorded": true, "value": 0.9986, "outcomes": 18}
+{"t": 1787785496.651, "op": "session_end", "session": "ff458e37", "events": 7, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787785554.012, "op": "injection", "session": "4cfe27e3", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1105, "staged": 0}
+{"t": 1787785637.111, "op": "session_end", "session": "4cfe27e3", "events": 9, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787785640.539, "op": "injection", "session": "98e39eef", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1306, "staged": 0}
+{"t": 1787785663.267, "op": "session_end", "session": "98e39eef", "events": 2, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787785666.417, "op": "injection", "session": "fe1a020e", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1221, "staged": 0}
+{"t": 1787785704.815, "op": "session_end", "session": "fe1a020e", "events": 4, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}
+{"t": 1787785707.971, "op": "injection", "session": "bd9cbbf8", "results": [{"id": 1, "prior": 0.2951}], "injected": [1], "truncated": [], "chars": 1157, "staged": 0}
+{"t": 1787785770.438, "op": "session_end", "session": "bd9cbbf8", "events": 7, "in_play": 1, "staged": 0, "outcomes": 0, "pruned": 0}

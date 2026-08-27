@@ -43,6 +43,18 @@ def compare(events, a, b, tasks):
     return wins, losses, ties
 
 
+def corrected_first_green(events):
+    """RESULTS.md Correction C3: the registered detector requires the
+    literal 'N passed' text, which tail-piped pytest output can lose. The
+    corrected rule — first pytest run that exited 0 — is C3's, and both
+    readings are reported because the registration pointed at the shipped
+    (known-defective) detector."""
+    for i, e in enumerate(events):
+        if e.got and not e.is_err and "pytest" in e.cmd:
+            return i
+    return None
+
+
 def main():
     res = [json.loads(l) for l in open(os.path.join(DIR, "results.jsonl"))]
     by = collections.defaultdict(dict)
@@ -81,6 +93,22 @@ def main():
     for a in ARM_NAMES:
         print(f"  {a:>9}: resolved {resolved.get(a, 0)}/{len(complete)}, "
               f"wall {wall.get(a, 0)}s")
+
+    # --- C3-corrected counterfactual, reported alongside the registered ---
+    cev = {}
+    for _run, label_task, _ab_arm, tp in F.sessions(["track11"]):
+        iid, arm_name = label_task.rsplit("-", 1)
+        if arm_name in ARM_NAMES:
+            cev[(iid, arm_name)] = corrected_first_green(F.events_of(tp))
+    print("\nC3-corrected (first pytest exit 0):")
+    for iid in tasks:
+        print(f"{iid:<26}" + "".join(
+            f"{fmt(cev.get((iid, a), 'absent')):>10}" for a in ARM_NAMES))
+    for tag, a, b in [("P1", "verbatim", "none"), ("P2", "verbatim", "placebo"),
+                      ("P3", "placebo", "none"), ("P4", "verbatim", "prose"),
+                      ("P5", "abstract", "verbatim")]:
+        w, l, t = compare(cev, a, b, tasks)
+        print(f"  {tag} {a} vs {b}: {w}/{l}/{t}")
 
     # --- utilisation: injections that actually landed ---
     injected_sessions = sum(1 for r in res if r["ab_arm"] == "rfm")
