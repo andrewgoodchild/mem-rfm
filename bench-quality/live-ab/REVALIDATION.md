@@ -695,3 +695,48 @@ never reach green.
         "underpowered for small effects" qualifier. Either outcome is
         recorded; the note can only weaken past claims, never
         strengthen them.
+
+## Track 16 — structured extraction (registered 2026-08-27, before any call)
+
+The formation half of the DESIGN_NOTES proposal ("config-driven
+extraction and value, and the three clocks"), tested by replay before
+any live adoption: the Track 9 extractor re-run on the same 86 harvested
+blocks against the same gold-patch ground truth neither arm sees, with
+the output changed from freeform memory text to the schema
+{condition_class, scope, era, action, evidence}. Haiku only — Track 9's
+P5 settled the size question (haiku beat sonnet on leakage, and
+formation runs at every SessionEnd, so it must be affordable).
+
+What the structure is FOR (Track 11 + Correction C4): condition_class
+makes condition-conditioned M mechanical instead of regex-crafted;
+action gives acted_on() a declared match target in place of the
+convicted backtick heuristic; era/scope houses validity metadata. This
+track tests only whether the extractor can EMIT that structure without
+losing what v2's extraction framing bought, and whether requiring a
+nameable condition suppresses per-bug stores structurally.
+
+Runner: run_track16.py (v3 prompt committed in it), jobs capped at 4 —
+Track 15's sessions are running concurrently and share the API budget,
+disclosed. Output track16/arm-haiku-v3.jsonl, resumable, sandbox cwd,
+hooks off, block truncation and JSON parsing identical to Tracks 8/9.
+
+Bars anchored to Track 9's ACHIEVED haiku-v2 numbers (recall 88%,
+leakage 19%, specificity 62%, stored 53):
+  T16-P1 (recall preserved): recall vs tight truth >= 80%. The known
+        risk of a schema is refusal-by-formality; below 80% the
+        structure costs more than it pays and the freeform v2 stands.
+  T16-P2 (leakage): gold-identifier leakage across each stored row's
+        condition_class+action+evidence text < 19% (v2's achieved).
+  T16-P3 (condition validity): among stored rows whose source block
+        names at least one error class (20 of 86 do), the emitted
+        condition_class matches a named class >= 70% of the time
+        (normalized substring match; mechanical).
+  T16-P4 (completeness): condition_class AND action both non-empty in
+        >= 80% of stored rows — fields the downstream mechanisms
+        consume cannot be optional in practice.
+  T16-P5 (structure as filter, the interesting one): specificity vs
+        tight truth >= 70%, up from v2's 62% — the claim is that a
+        store which must NAME a condition refuses per-bug blocks more
+        reliably than one asked to write prose. If specificity does not
+        rise, schema does not substitute for judgment, and the
+        design proposal's extraction half loses its cheapest argument.
