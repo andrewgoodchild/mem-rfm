@@ -1,0 +1,82 @@
+{"t": 1787870296.17, "op": "sweep_provenance_drop", "action": "In test builds: remove sphinxcontrib-* extensions from builtin_extensions; use c", "src": "session-44433866e79b.jsonl"}
+{"t": 1787870296.17, "op": "sweep_admit", "id": 1, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-44433866e79b.jsonl"}
+{"t": 1787870329.002, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.805, "src": "session-5ec844ed25ac.jsonl"}
+{"t": 1787870329.002, "op": "sweep_provenance_drop", "action": "if sys.version_info >= (3, 8): handle ast.Constant else ast.NameConstant", "src": "session-5ec844ed25ac.jsonl"}
+{"t": 1787870329.016, "op": "sweep_admit", "id": 2, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-5ec844ed25ac.jsonl"}
+{"t": 1787870380.131, "op": "sweep_admit", "id": 3, "condition": "era-pinned-venv", "action_provenance": "none", "src": "session-078ca6b63720.jsonl"}
+{"t": 1787870380.138, "op": "sweep_admit", "id": 4, "condition": "test-framework-workaround", "action_provenance": "none", "src": "session-078ca6b63720.jsonl"}
+{"t": 1787870407.158, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.732, "src": "session-9fe517dd1cc4.jsonl"}
+{"t": 1787870434.856, "op": "sweep_provenance_drop", "action": "str(subscript_key) in mock methods that handle subscripts", "src": "session-f5f133219460.jsonl"}
+{"t": 1787870434.887, "op": "sweep_admit", "id": 5, "condition": "mock-subscript-type-handling", "action_provenance": "none", "src": "session-f5f133219460.jsonl"}
+{"t": 1787870434.887, "op": "sweep_provenance_drop", "action": "run fixture-free tests with pytest when venv has version drift", "src": "session-f5f133219460.jsonl"}
+{"t": 1787870434.896, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.735, "src": "session-f5f133219460.jsonl"}
+{"t": 1787870469.067, "op": "sweep_provenance_drop", "action": "str(key) conversion in mock __getitem__ implementation", "src": "session-fd806eeb531e.jsonl"}
+{"t": 1787870469.082, "op": "sweep_dedupe_hit", "id": 5, "similarity": 0.826, "src": "session-fd806eeb531e.jsonl"}
+{"t": 1787870469.082, "op": "sweep_provenance_drop", "action": "export PYTHONPATH with stubs before running tests/test_ext_autodoc.py", "src": "session-fd806eeb531e.jsonl"}
+{"t": 1787870469.092, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.722, "src": "session-fd806eeb531e.jsonl"}
+{"t": 1787870489.079, "op": "sweep_admit", "id": 6, "condition": "introspection-decorator-mismatch", "action_provenance": "none", "src": "session-9013e491bac5.jsonl"}
+{"t": 1787870489.09, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.783, "src": "session-9013e491bac5.jsonl"}
+{"t": 1787870509.659, "op": "sweep_admit", "id": 7, "condition": "zsh-builtin-shadowing", "action_provenance": "none", "src": "session-338afcc11906.jsonl"}
+{"t": 1787870584.428, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.83, "src": "session-580b0968203c.jsonl"}
+{"t": 1787870612.026, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.814, "src": "session-f221bb918b72.jsonl"}
+{"t": 1787870641.538, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.811, "src": "session-0d8d3a4641e5.jsonl"}
+{"t": 1787870671.776, "op": "sweep_admit", "id": 8, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-bc62a051a608.jsonl"}
+{"t": 1787870720.768, "op": "sweep_provenance_drop", "action": "Apply known PYTHONPATH stub when running tests with app fixtures", "src": "session-8d150daac1a1.jsonl"}
+{"t": 1787870720.777, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.749, "src": "session-8d150daac1a1.jsonl"}
+{"t": 1787870798.074, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.78, "src": "session-6190e6386256.jsonl"}
+{"t": 1787870798.08, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.772, "src": "session-6190e6386256.jsonl"}
+{"t": 1787870819.874, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.788, "src": "session-c916615d5753.jsonl"}
+{"t": 1787870853.726, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.821, "src": "session-cde5629cda84.jsonl"}
+{"t": 1787870869.784, "op": "sweep_provenance_drop", "action": "set PYTHONPATH with stub workaround before running tests", "src": "session-ccc75d3f7478.jsonl"}
+{"t": 1787870869.795, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.784, "src": "session-ccc75d3f7478.jsonl"}
+{"t": 1787870869.805, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.765, "src": "session-ccc75d3f7478.jsonl"}
+{"t": 1787870869.816, "op": "sweep_admit", "id": 9, "condition": "context-pattern", "action_provenance": "none", "src": "session-ccc75d3f7478.jsonl"}
+{"t": 1787870904.897, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.946, "src": "session-235469a6178a.jsonl"}
+{"t": 1787870904.906, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.774, "src": "session-235469a6178a.jsonl"}
+{"t": 1787870939.72, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.819, "src": "session-aa84d3751576.jsonl"}
+{"t": 1787871001.543, "op": "sweep_provenance_drop", "action": "Save shim setting Sphinx.require_sphinx = lambda *args, **kwargs: None; load via", "src": "session-0212e36847e7.jsonl"}
+{"t": 1787871001.559, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.817, "src": "session-0212e36847e7.jsonl"}
+{"t": 1787871035.243, "op": "sweep_provenance_drop", "action": "import sys; guard unparse cases with sys.version_info checks to handle ast.Const", "src": "session-b7df1803a275.jsonl"}
+{"t": 1787871035.259, "op": "sweep_dedupe_hit", "id": 2, "similarity": 0.908, "src": "session-b7df1803a275.jsonl"}
+{"t": 1787871035.259, "op": "sweep_provenance_drop", "action": "Recreate stubs at /tmp/sphinx_type_hint_links/stubs before running app-based tes", "src": "session-b7df1803a275.jsonl"}
+{"t": 1787871035.27, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.734, "src": "session-b7df1803a275.jsonl"}
+{"t": 1787871035.27, "op": "sweep_provenance_drop", "action": "Use reftype='obj' in make_xref() for None-like constants; ensure signature mode ", "src": "session-b7df1803a275.jsonl"}
+{"t": 1787871035.281, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.723, "src": "session-b7df1803a275.jsonl"}
+{"t": 1787871045.766, "op": "sweep_judge", "id": 1, "condition_present": false, "verdict": "unclear", "outcome": null, "src": "session-b7df1803a275.jsonl"}
+{"t": 1787871057.367, "op": "sweep_judge", "id": 1, "condition_present": true, "verdict": "unclear", "outcome": null, "src": "session-b7df1803a275.jsonl"}
+{"t": 1787871072.494, "op": "sweep_judge_unmatched", "verdict": "unclear", "src": "session-b7df1803a275.jsonl"}
+{"t": 1787871121.128, "op": "sweep_admit", "id": 10, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-2d9340895be7.jsonl"}
+{"t": 1787871139.188, "op": "sweep_admit", "id": 11, "condition": "not-installed", "action_provenance": "none", "src": "session-6242171ba6fd.jsonl"}
+{"t": 1787871149.155, "op": "sweep_judge_unmatched", "verdict": "unclear", "src": "session-6242171ba6fd.jsonl"}
+{"t": 1787871214.268, "op": "sweep_provenance_drop", "action": "pip install flake8", "src": "session-21048f8daa7b.jsonl"}
+{"t": 1787871214.278, "op": "sweep_dedupe_hit", "id": 11, "similarity": 0.89, "src": "session-21048f8daa7b.jsonl"}
+{"t": 1787871214.287, "op": "sweep_dedupe_hit", "id": 3, "similarity": 0.786, "src": "session-21048f8daa7b.jsonl"}
+{"t": 1787871214.301, "op": "sweep_dedupe_hit", "id": 9, "similarity": 0.959, "src": "session-21048f8daa7b.jsonl"}
+{"t": 1787871238.217, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.788, "src": "session-4afe55d81d58.jsonl"}
+{"t": 1787871287.05, "op": "sweep_provenance_drop", "action": "from sphinx.util import inspect; inspect.unwrap(func).__globals__[key]", "src": "session-2cecbf764933.jsonl"}
+{"t": 1787871287.064, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.885, "src": "session-2cecbf764933.jsonl"}
+{"t": 1787871287.065, "op": "sweep_provenance_drop", "action": "from sphinx.util import inspect", "src": "session-2cecbf764933.jsonl"}
+{"t": 1787871287.074, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.773, "src": "session-2cecbf764933.jsonl"}
+{"t": 1787871325.918, "op": "sweep_provenance_drop", "action": "pip install flake8", "src": "session-193e7ed6ea38.jsonl"}
+{"t": 1787871325.929, "op": "sweep_dedupe_hit", "id": 11, "similarity": 0.883, "src": "session-193e7ed6ea38.jsonl"}
+{"t": 1787871325.941, "op": "sweep_dedupe_hit", "id": 6, "similarity": 0.811, "src": "session-193e7ed6ea38.jsonl"}
+{"t": 1787871355.687, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.704, "src": "session-1a270152a840.jsonl"}
+{"t": 1787871355.687, "op": "sweep_provenance_drop", "action": "reference require_sphinx shim from memory", "src": "session-1a270152a840.jsonl"}
+{"t": 1787871355.695, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.712, "src": "session-1a270152a840.jsonl"}
+{"t": 1787871378.582, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.71, "src": "session-4a9a4317e3df.jsonl"}
+{"t": 1787871378.595, "op": "sweep_admit", "id": 12, "condition": "docstring-google-style-escaping-quirk", "action_provenance": "none", "src": "session-4a9a4317e3df.jsonl"}
+{"t": 1787871400.987, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.842, "src": "session-7d2e2e4fffe7.jsonl"}
+{"t": 1787871400.994, "op": "sweep_dedupe_hit", "id": 11, "similarity": 0.762, "src": "session-7d2e2e4fffe7.jsonl"}
+{"t": 1787871418.125, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.803, "src": "session-2d5b956d0879.jsonl"}
+{"t": 1787871418.139, "op": "sweep_admit", "id": 13, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-2d5b956d0879.jsonl"}
+{"t": 1787871433.186, "op": "sweep_judge", "id": 1, "condition_present": false, "verdict": "unclear", "outcome": null, "src": "session-2d5b956d0879.jsonl"}
+{"t": 1787871445.054, "op": "sweep_judge", "id": 1, "condition_present": false, "verdict": "unclear", "outcome": null, "src": "session-2d5b956d0879.jsonl"}
+{"t": 1787871478.818, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.838, "src": "session-ae7882b3b3e6.jsonl"}
+{"t": 1787871494.18, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.812, "src": "session-feefc14e27ac.jsonl"}
+{"t": 1787871516.621, "op": "sweep_provenance_drop", "action": "pip install flake8 mypy pyflakes", "src": "session-8c244d1a3df0.jsonl"}
+{"t": 1787871516.631, "op": "sweep_dedupe_hit", "id": 11, "similarity": 0.847, "src": "session-8c244d1a3df0.jsonl"}
+{"t": 1787871534.397, "op": "sweep_provenance_drop", "action": "Ensure _MockObject.__init__ sets __qualname__ = self.__name__; add ismock() help", "src": "session-37de9e98914f.jsonl"}
+{"t": 1787871534.441, "op": "sweep_dedupe_hit", "id": 5, "similarity": 0.721, "src": "session-37de9e98914f.jsonl"}
+{"t": 1787871534.449, "op": "sweep_dedupe_hit", "id": 8, "similarity": 0.763, "src": "session-37de9e98914f.jsonl"}
+{"t": 1787871534.449, "op": "sweep_provenance_drop", "action": "Use lazy import or move mock checks into function bodies to avoid cycles", "src": "session-37de9e98914f.jsonl"}
+{"t": 1787871534.459, "op": "sweep_dedupe_hit", "id": 5, "similarity": 0.727, "src": "session-37de9e98914f.jsonl"}

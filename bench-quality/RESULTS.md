@@ -2125,6 +2125,42 @@ instead of by id. Track 18b re-registers the same five bars on the
 repaired stack (the Track 6 pattern — same experiment, defects fixed,
 so 18b-vs-18 is an A/B on the instrument, not the workload).
 
+## Track 18b — the repaired replay (2026-08-28) — 5/5, and the ledger the fossil cannot re-form
+
+Same 50 transcripts, same order, both instrument defects fixed. The
+18b-vs-18 A/B isolates the instrument, and the differences are the
+design working:
+
+**The flood consolidated exactly as the dedupe-as-frequency idea
+predicted.** 13 rows where Track 18 had 65; 43 dedupe-hits where it had
+zero. The era-pin family is now 2 rows — the general fact at
+**17 sightings / 16 accesses** and a test-specific variant at 8 — 25
+combined sightings across 50 sessions (T18b-P1, P2 PASS). Recurrence is
+captured as frequency instead of being discarded at review or smeared
+across 22 paraphrases. Leakage fell to 0% of 13 admitted rows
+(T18b-P4), cost held at 0.8 calls/transcript (T18b-P5).
+
+**The fossil refusal is real this time, and thinner than the bar
+suggests — both facts reported.** The judge executed 6 times (4 matched
+to the era-pin row, 2 unmatched); every matched verdict was "unclear",
+zero positives (T18b-P3 PASS, 0 vs the 17 the condition-blind loop
+awarded on these same sessions). One judgment had condition_present =
+true and still declined "helped" — which is correct calibration: a
+transcript excerpt rarely proves counterfactual benefit, and that
+epistemic humility is consistent with every causal measurement this
+project has made. Coverage is the honest caveat: 6 judge executions
+where the old loop closed ~17 outcomes, bounded by signature matching
+between the store's consolidated text and session commands — the seam
+the Track 16 schema's first-class action field exists to close.
+
+**The state the store ends in is the design's thesis in one row:** the
+era-pin fact, sightings 17, value 0.00, outcomes 0. Under the
+conditioned regime the fact is *held* and *ranked by its recurrence*
+(R and F carry the need-probability), while M stays silent until real
+evidence arrives — the fossil structurally cannot re-form by being
+copied. That is what "helped-when-needed is the signal" looks like in
+a database.
+
 ## LongMemEval retrieval-stage port (2026-08-27) — NOT RUN, measured impossible
 
 The planned generalization of the LoCoMo sequential-feedback result
