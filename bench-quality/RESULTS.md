@@ -1832,3 +1832,79 @@ from work it caused. A second instance sits in the same outlier — the
 agent ran `black --check` and `flake8` even though the injected memory
 says both are not installed, so that memory failed to prevent the very
 work it describes.
+
+## Track 11 — same fact, four forms (2026-08-27) — 5/7 PASS, and the pass count is not the finding
+
+40 sessions, complete: 8 in-era sphinx tasks × 5 arms (none / placebo /
+prose / verbatim / abstract), the flagship era-pin memory delivered under
+a cloned 17-outcome ledger, texts token-matched within ±10%
+(REVALIDATION.md Track 11; store-track11.json). Injection landed 32/32
+(T11-P6 PASS). Resolution 7/8 in every arm — a near-ceiling, again.
+Scored by score_track11.py, which reports the registered detector AND
+the C3-corrected one, because the registration pointed at the shipped
+`first_green` after C3 had already recorded its defect. That was a
+registration error and it is owned here rather than discovered later.
+
+**T11-P1 necessity: FAIL under both detectors.** Registered instrument
+(events to first "N passed"): verbatim 3 / none 3 / tied 2. C3-corrected
+(first pytest exit 0): verbatim 1 / none 3 / tied 4. The corpus's
+highest-value memory, delivered reliably on the very tasks its ledger
+was earned on, does not beat no-memory under any available reading.
+
+**Why, mechanically: the condition no longer fires.** The registration
+predicted the control arm would pay the VersionRequirementError storm.
+It never came: the class appears in 3 of 8 control sessions, roughly one
+mention each, and under the corrected detector 30 of 40 sessions across
+ALL arms reach a passing pytest run by event 2 — the instrument has
+almost no dynamic range left on these tasks. The storm that was
+ubiquitous in the mid-August pilots on these same tasks is absent ten
+days later under a frozen harness and frozen pins. Candidate causes,
+unresolved: drift in how current sessions verify (targeted tests first,
+app-fixture tests avoided), or pilot-era approach variance. What it
+means for M is not ambiguous: value_score has no term for a condition's
+fire rate. A ledger decays on acted-and-failed; on
+inapplicable-and-ignored it sits at 0.998 forever. lifecycle.md's
+"absence of use is not negative evidence" is the right retention rule
+and the wrong value rule.
+
+**T11-P4 form: the finding of the track.** Registered: verbatim 1 /
+prose 2 / tied 5 (FAIL). Corrected: 3 / 1 / 4 (would pass). Either way,
+noise around ties — but the transcripts say what form actually does. The
+stubs/PYTHONPATH workaround was ACTED ON in 4 of 8 verbatim sessions,
+4 of 8 abstract sessions, and 0 of 8 prose sessions, and the acting
+bought nothing measurable in events or wall (verbatim wall −10.4% vs
+none, faster on 5 of 8, all deltas small). The backtick form determines
+whether a memory gets USED, not whether it HELPS. That is the corpus's
+3.2-vs-0.5 backtick split measured causally: quotability. The command
+form drives copying, copying drives `acted_on()` outcomes, outcomes
+drive M — and none of that chain touches task performance.
+
+**The controls behaved (P2, P3, P5, P7).** Verbatim over placebo 4/3/1:
+registered PASS, direction only — 4-3 on 8 tasks claims nothing.
+Placebo under none 1/4/3: true-but-inapplicable content costs a little
+in events and nothing in wall (741s vs 821s). Abstract did not beat
+verbatim (1/4/3) and was the only expensive arm: +47.9% wall vs none,
+slower on 6 of 8 tasks (not an outlier artifact), 22 events on 7757 —
+Memp's within-repo prediction (verbatim over abstraction on
+near-identical recurrence) holds, and the generalized recipe reads as an
+invitation to explore. T11-P7 no-harm: PASS at −10.4%.
+
+**One anomaly, recorded not explained.** On 7889 the three informative
+arms show "never" under the registered detector yet all resolved, and
+none of the three acted on the memory there; the corrected detector has
+them green by event 2–3. The detector artifact C3 documented, recurring
+exactly as documented.
+
+**What Track 11 establishes.** (1) Track 10's shape, reproduced at the
+ceiling: a true memory, reliably delivered, on its home tasks, causally
+inert — and this time it was the best memory the project has ever
+produced. (2) The executable-form advantage in the corpus is causally
+quotability, not value. Formation should stop reading a quotable command
+as evidence of worth; it is evidence the `acted_on()` matcher will fire.
+(3) M as constituted cannot distinguish "helped" from "was copied while
+the task succeeded anyway", and cannot see a condition that stopped
+firing. Per the registration, Track 12's M-rule comparison is blocked:
+it was conditioned on P1 passing. The productive next instrument is
+condition-conditioned value — outcomes counted only in sessions where
+the memory's trigger class actually fired — computable retroactively
+from every committed transcript.
