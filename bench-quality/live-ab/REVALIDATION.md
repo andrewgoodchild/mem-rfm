@@ -740,3 +740,63 @@ leakage 19%, specificity 62%, stored 53):
         reliably than one asked to write prose. If specificity does not
         rise, schema does not substitute for judgment, and the
         design proposal's extraction half loses its cheapest argument.
+
+## Track 17 — formation-tier matching (registered 2026-08-27, before any session)
+
+Track 13's residue, promoted: every memory ever tested on a weak agent
+was formed from a STRONG agent's struggles, and it taxed the weak agent
+(0 wins, +27.6% wall). The last unforeclosed causal design in reach:
+memories mined from haiku's OWN failure classes, tested on haiku, on a
+repo no haiku session has touched. Thresholds are set from Track 15's
+yardstick, not guessed.
+
+**Phase A (struggle collection): 11 sessions.** xarray chronological
+first half (2905, 3095, 3151, 3305, 3677, 3993, 4075, 4094, 4356, 4629,
+4687 — Track 3's phase-A list, all validated), haiku pinned, CONTROL
+arm, no memory machinery. Per-session hygiene as Track 11 (xarray tmp
+globs, auto-memory archive per session).
+
+**Formation (committed before any Phase B session).** From Phase A
+transcripts only: (1) the deterministic correction miner
+(session_end.corrections) plus per-class fired counts; (2) the Track 16
+v3 structured extractor (haiku) over session prose, under the Track 16
+amendments — condition_class MANDATORY, action optional, provenance
+recorded (quoted-from-session vs composed; a composed action is kept
+only if a Phase A transcript ran it); (3) consolidation to at most 6
+distinct facts, human-reviewed, committed as store-track17.json with
+cold ledgers (no cloned outcome history — this store must earn its own,
+under the now-live conditioned-outcome gate). Phase B tasks are the
+disjoint second half, so mined-from/tested-on leakage is structurally
+excluded.
+
+**Phase B (paired test): 22 sessions.** xarray second half (4695, 4966,
+6461, 6599, 6721, 6744, 6938, 6992, 7229, 7233, 7393), haiku pinned,
+arms none and mined, store rebuilt per session (constant treatment),
+no ratify. Metric of record: the corrected counterfactual
+(formation_study.first_green_corrected). Model and CLI stamped per
+record.
+
+Registered predictions:
+  T17-P1 (friction exists, the gate): >= 1 named condition class fires
+        in >= 4 of 11 Phase A control sessions. If not, formation has
+        nothing tier-specific to mine and the track reports NOT
+        TRIGGERED for P3 rather than a false null.
+  T17-P2 (formation yield): the pipeline produces >= 3 distinct
+        condition-stamped facts from Phase A. Falsifies: haiku's
+        struggles do not condense into nameable conditions.
+  T17-P3 (necessity, the claim): mined beats none on the corrected
+        counterfactual with one-sided sign p <= 0.05 over the decided
+        pairs (at 11 decided that is >= 9 wins; ties shrink the
+        denominator and the bar adjusts per the binomial). Track 15:
+        haiku's within-condition SD is 3.5 events, so no single pair is
+        evidence and only sign consistency counts.
+  T17-P4 (utilisation): injection lands in >= 90% of mined-arm
+        sessions.
+  T17-P5 (no harm): mined total wall within +15% of none, per-task
+        distribution reported before the total (C3 lesson; single-pair
+        wall gaps under ~45s are noise at haiku's SD 22.6s).
+
+If P1 passes and P3 fails, tier-matched formation joins the negative
+ledger and the within-pool program is closed at four nulls. If P3
+passes, it is the project's first positive causal result and the
+conditioned-outcome instrument scores its first honest ledger.
