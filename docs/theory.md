@@ -178,7 +178,11 @@ so we quote our own measured error rather than a figure from the paper.
 The usual agentic-AI taxonomy has five entries: **short-term/working** memory,
 and **long-term** memory split into **semantic** (facts), **episodic** (events
 tied to a time), and **procedural** (skills). That is Tulving's and Squire's
-psychology, and it is a reasonable map of the territory.
+psychology, and it is a reasonable map of the territory. (For the same
+taxonomy mapped onto what a ChatGPT user actually experiences — and why
+consumer memory and agent memory occupy nearly disjoint rows of it — see
+[memory-types.md](memory-types.md); this section stays concerned with
+scoring.)
 
 mem-rfm models **neither distinction in its scoring**, and that is a measured
 decision rather than an omission.
