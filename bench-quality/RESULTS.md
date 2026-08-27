@@ -1959,3 +1959,55 @@ form split (acted on in 4 of 8 verbatim sessions, 0 of 8 prose, no
 benefit) and the ledger audit (79% silent) are the same mechanism seen
 twice. What falls: the "condition-fire drift" framing. The condition
 never drifted; it was never load-bearing.
+
+## Track 13 — the weak-agent arm (2026-08-27) — 1/4 PASS, and the first clean harm signal
+
+16 sessions, complete, no timeouts: the 8 Track 11 tasks, arms none and
+verbatim, model pinned to claude-haiku-4-5-20251001 in both arms and —
+for the first time in this project — stamped into every results record.
+Injection landed 8/8 (T13-P3 PASS). Metric of record was registered as
+the C3-corrected detector; the legacy detector agrees directionally
+where it fires at all.
+
+**T13-P1 condition liveness: FAIL — 2 of 8 control sessions.** The gate
+did not open: haiku sidesteps the era class almost exactly as fable-5
+does. Per the registration, the reading is now closed: **the condition
+is dead at both capability tiers, the flagship is a fossil of one
+August session, and no workload in this project's task pool can make it
+pay.** That retires the last within-pool causal hypothesis.
+
+**T13-P2 necessity: FAIL, at zero.** Verbatim 0 wins / none 5 / tied 3
+— the memory arm was never faster to green, on any task. This is not a
+tie-dominated null like Track 11; it is directional harm on the metric
+of record.
+
+**T13-P4 no harm: FAIL, +27.6% wall, slower on 7 of 8 tasks.** Reported
+with its distribution per the C3 lesson: this is not an outlier — the
+cost is spread across nearly every task. For a weak model, carrying a
+true-but-unneeded 1,214-char memory is a measurable distraction tax,
+which is the token-budget result (arXiv 2606.15017) reproduced at n=8
+in our own harness.
+
+**Resolution: none 4/8, verbatim 5/8 — noise range, recorded not
+claimed.** Two things worth separating: the +1 does not survive the
+counterfactual or wall evidence (verbatim resolved one more task while
+being slower to green everywhere it can be measured), and — the useful
+observation — haiku restores the pool's dynamic range (fable-5 sat at
+7/8 with green-by-event-2; haiku genuinely struggles). The testbed is
+not ceiling-bound for weak agents.
+
+**What Track 13 establishes.** (1) The fossil verdict, registered in
+advance, now measured: both remaining causal hypotheses from the
+2026-08-27 sweep — "the condition must fire" and "memory helps weaker
+agents" — are dead in this pool. (2) Memp's strong-to-weak transfer
+claim is refuted in our setting: the weak agent paid for the strong
+agent's memory, it did not profit from it. (3) Third independent
+measurement of the engagement/value split: perfect delivery (8/8), zero
+wins. (4) The constructive residue: a weak-agent testbed discriminates,
+but the memory tested here was formed from a *strong* agent's struggle
+with an environment class the weak agent never meets. Haiku's friction
+is somewhere else (2 era events in 16 sessions; its failures were
+capability-shaped, not environment-shaped). If a future formation track
+mines memories from haiku's OWN failure classes and tests them on
+haiku, that is the one within-reach design this result does not
+foreclose — formation-tier matching, noted in next-work.
