@@ -218,3 +218,87 @@ symmetric caps.
   x86_64 build running under Rosetta 2 (the only `.load`-capable sqlite3 CLI
   on the dev machine was Intel Homebrew). Native arm64 numbers will be
   faster; the *shape* (O(1) vs O(history)) is architecture-independent.
+
+## Proposed design update (2026-08-27): config-driven extraction and value, and the three clocks
+
+Status: **PROPOSAL, unmeasured** — written down before any implementation,
+per house discipline. Motivated by the Zep architecture review
+(fact-extraction ontologies, write-time ratings, bi-temporal edges) read
+against what Tracks 10/11/13 and Correction C4 measured. The Zep ideas
+are adopted where our data supports the shape and inverted where it
+convicts them.
+
+### 1. Configuration-driven extraction (a formation ontology)
+
+Formation currently mines free prose and stores free prose. The update:
+the extractor emits **structured rows against a per-deployment ontology
+config** — default schema `{condition_class, scope, action, evidence,
+era}`. This is Zep's custom-entity-types idea with our measured default
+ontology: recurring operational conditions in, per-bug episodic content
+excluded *by schema* rather than by judgment. The
+harness-proposes/human-ratifies contract is untouched — config governs
+what the extractor is asked for, never who admits the result.
+
+Why structure pays three times (Track 11 + C4): the `condition_class`
+field makes condition-conditioned value mechanical instead of
+regex-crafted; `acted_on()` can match the `action` field instead of the
+backtick heuristic that Track 11 convicted of measuring quotability; and
+`era`/`scope` gives validity metadata a declared home (the Track 2
+instinct, honored structurally).
+
+### 2. Configuration-driven value: config sets priors, evidence stays sovereign
+
+M becomes explicitly two-layered:
+
+- **Posterior (unchanged, the core):** the signed outcome EWMA with
+  confidence shrink. No configuration touches it.
+- **Priors (config):** a cold-start initial value per type/class — the
+  one place write-time judgment has measured support (+42.6 points,
+  MultiDoc2Dial authored manual) — eroded by the existing `n/(n+k)`
+  shrink. Priors decay; they never gate. Zep's `minRating`-style
+  permanent relevance filter is explicitly rejected: it is write-time
+  importance (Track 8's dispute, causally unvalidated anywhere) made
+  load-bearing forever.
+- **Conditioning (new, the C4 fix):** an outcome counts toward the
+  posterior only when the session exhibited the memory's
+  `condition_class`. The flagship earned 79% of its ledger
+  condition-silent (C4); Track 13 delivered it 8/8 and lost 0/5/3 at
+  +27.6% wall. An M that cannot tell "helped" from "was copied while
+  nothing was at risk" is the instrument all three live tracks indicted.
+
+### 3. The three clocks, named
+
+The engine runs on wall-clock time (`time.time()`, freezable via
+`rfm_config('now')`), and today every R/F quantity derives from one
+event stream. The update names what is actually three:
+
+- **t_formed** (`created_at`) — ingestion time. Exists.
+- **t_used** (access events; acted-on only, injection is not access —
+  lifecycle.md) — today's R/F substrate, feeding ACT-R activation via
+  Petrov k=2. Exists.
+- **t_fired** — when the world last exhibited the memory's
+  `condition_class`. **Does not exist, and it is the theoretically
+  correct clock.** Anderson & Schooler ground retention in the
+  statistics of environmental *need*; access history is our proxy for
+  need, and C4 measured the proxy diverging in both directions (use
+  without need: the copied flagship; need without use: the prose arm).
+  For operational memories, activation computed over condition-fire
+  history is the A&S-faithful R/F, and fire-rate decay is the staleness
+  mechanism the silent fossil needs — contradiction-invalidation
+  (Zep's) only catches facts that get *denied*, not conditions that
+  stop *occurring*. For preference/procedural-about-you memories
+  (CLAUDE.md-shaped), use IS need and t_used remains the right clock —
+  the clock choice itself belongs in the ontology config.
+- Plus one non-clock axis: **validity scope** (`era`, checkout ranges)
+  — repo-time, not wall-time; declarative, from the schema.
+
+### Cost and gates
+
+t_fired needs a condition-event log — the PostToolUse hook already
+classifies exactly these error-class events (Track 5/6 machinery), so
+the observation side exists; storage is one event kind, and the
+conditioned-outcome rule lands in `rfm_record_outcome`. The extractor
+upgrade is next-work 6.5. Adoption gates, fixed now: the
+condition_value audit re-run as acceptance on the new fields, and any
+ranking-visible change ships only behind a registered track. Nothing
+here alters the two-table scalar-function shape beyond the event kind.
