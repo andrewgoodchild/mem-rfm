@@ -2011,3 +2011,49 @@ capability-shaped, not environment-shaped). If a future formation track
 mines memories from haiku's OWN failure classes and tests them on
 haiku, that is the one within-reach design this result does not
 foreclose — formation-tier matching, noted in next-work.
+
+## Track 16 — structured extraction (2026-08-27) — 3/5: structure is free, and it is not a filter
+
+86 blocks replayed through the v3 schema prompt
+({condition_class, scope, era, action, evidence}), haiku, zero parse
+failures, 54 stored (v2: 53). Bars were anchored to Track 9's achieved
+haiku-v2 numbers.
+
+**What passed — emitting structure costs nothing and cleans the
+output.** Recall vs tight truth 85% (bar 80, v2 achieved 88): the
+schema did not induce refusal-by-formality. Leakage fell to 13% from
+v2's 19%: fields enforce stand-alone-ness better than prose
+instructions did. Condition validity 89% (16 of 18 stored blocks that
+name an error class got a matching condition_class): where the
+condition is checkable, the model names it correctly. The mechanical
+benefits the design proposal wanted — a declared condition for
+condition-conditioned M, a declared action for acted_on() matching —
+are available at no recall cost.
+
+**T16-P4 completeness: FAIL at 52%, and the bar was wrong, not the
+model.** The prompt permitted an empty action when the block gives no
+runnable step; the bar then demanded both fields anyway. Half the
+corpus's durable conditions simply carry no executable action
+("dask-not-installed" does: `pip install dask`; a pre-existing
+warning-assertion interaction doesn't). Design consequence, recorded
+prospectively: **condition_class is the mandatory field; action is
+optional** — which also matches Track 11's finding that the action's
+executable form drives copying, not value.
+
+**T16-P5 structure-as-filter: FAIL at 58% (v2: 62%), the hypothesis is
+refuted.** Requiring a nameable condition does not suppress per-bug
+stores — the model obligingly names pseudo-conditions for per-bug
+blocks. Schema does not substitute for judgment; per the registration,
+the extraction half of the design proposal loses its cheapest argument
+and keeps its mechanical ones.
+
+**Observation recorded for the design, not scored: actions are
+composed, not quoted.** Sample stores include
+`pip install 'sphinxcontrib-applehelp<5.0' 'alabaster<3.4'` (a
+downgrade fix the transcripts never ran — plausible, unverified) and
+"ensure Sphinx >= 5.0 is installed" (for an era-pinned checkout,
+plausibly the WRONG direction). The extractor invents actions the
+session never executed. Any schema adoption needs a provenance bit on
+the action field — quoted-from-session vs composed — because a
+composed action carries invention risk the outcome loop would then
+score as if it were experience.
