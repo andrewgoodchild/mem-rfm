@@ -1908,3 +1908,54 @@ it was conditioned on P1 passing. The productive next instrument is
 condition-conditioned value — outcomes counted only in sessions where
 the memory's trigger class actually fired — computable retroactively
 from every committed transcript.
+
+### Correction C4 to Track 11 (2026-08-27) — the storm was never there, and the ledger was manufactured
+
+The entry above explains P1's failure as a condition that "was
+ubiquitous in the mid-August pilots" and later stopped firing. Measured,
+that claim is false in both halves. The entry stands uncorrected above
+so the error is legible.
+
+**1. Pilot control arms never paid the storm.** On the same 8 tasks,
+control sessions hit the VersionRequirementError/ExtensionError class
+once in all of pilot 2 and three times in pilot 4. There was no storm to
+save anyone from; the class bit hard exactly once, in the mint session
+(7454 — excluded from Track 11 by provenance).
+
+**2. The 17-outcome ledger was earned condition-silent.**
+condition_value.py, committed with this correction: across the 30
+pilot-era memory-arm sessions on these tasks, the class fired in 2, and
+79% of all acted-on stub/PYTHONPATH commands (61 of 77) ran in sessions
+where it never fired. Agents prepended the suggested PYTHONPATH
+ritually to commands that were never at risk, and the outcome loop
+credited every success. This is Track 10's outcome-loop finding — the
+value axis cannot distinguish work a memory saved from work it caused —
+measured at scale, on the corpus's top memory.
+
+**3. Track 11's own firing pattern is endogenous.** The class fired in
+13 of 24 delivery-arm sessions against 2 of 30 in the pilots, because
+Track 11's registered per-session /tmp clean removed the stubs directory
+the pilots built once and amortized ever after. Acting on the memory
+forced its recreation, which is when the class surfaces: 64 of 76 acted
+commands sit in fired sessions because acting causes firing, not the
+reverse. condition_value.py carries this as an explicit caveat — it
+audits where a ledger was earned and is not a causal estimator.
+
+**4. The reval-sphinx lore is also wrong.** Track 10's registration
+called the counterfactual "the instrument that discriminated on
+reval-sphinx: control 6 events, memory arm 1". Audited: zero era-class
+events in any reval-sphinx session, either arm. The memory arm was
+genuinely faster to green there (5 of 6 tasks under the corrected
+detector), but whatever produced that, it was not the era-pin mechanism.
+
+**5. One heterogeneity disclosed late.** Model ids read from
+transcripts: pilots 2–4, reval-sphinx, and Track 11 all ran
+claude-fable-5; Track 10 ran claude-opus-5. No cross-model confound
+inside Track 11, but Track 10's null and Track 11's null come from
+different models and neither entry said so until now.
+
+What stands, stronger: P1's FAIL, and the quotability finding — the
+form split (acted on in 4 of 8 verbatim sessions, 0 of 8 prose, no
+benefit) and the ledger audit (79% silent) are the same mechanism seen
+twice. What falls: the "condition-fire drift" framing. The condition
+never drifted; it was never load-bearing.

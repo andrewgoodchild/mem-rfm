@@ -597,3 +597,62 @@ registered here: rank-rule comparison — earned-outcome M vs write-time
 importance vs uniform vs per-token M — against a causal panel) is
 conditional on P1 passing, because a value rule cannot be validated
 against a quantity that measurement says is zero.
+
+## Track 13 — the weak-agent arm (registered 2026-08-27, before any session)
+
+Track 11 and its Correction C4 leave exactly one mechanism standing
+under which the flagship memory could ever show causal value: the era
+class bit hard once (the mint session) and never again for a frontier
+agent — fable-5 sidesteps app-based tests unprompted, in every arm, in
+every run audited (C4 points 1 and 4). The last live hypothesis from the
+2026-08-27 literature sweep is Memp's: memory built by a strong model
+retains value for a weaker one, i.e. memory's headroom lives where the
+agent struggles. A weaker agent may actually meet the condition, and the
+memory may save it.
+
+Design: run_track13.py. The 8 Track 11 tasks, two arms only — none and
+verbatim — with the model pinned to claude-haiku-4-5-20251001 in BOTH
+arms (the pin is the treatment; everything else is Track 11's protocol
+verbatim: fresh single-memory store per session from store-track11.json
+under the cloned 17-outcome ledger, per-session /tmp and auto-memory
+hygiene, clause-free prompt, no ratify, fixed arm order). 16 sessions.
+
+Metric of record: the C3-CORRECTED counterfactual — Bash events before
+the first pytest run that exits 0 — registered as primary this time, as
+C3 requires of future registrations. The legacy text-match detector is
+reported alongside, not scored.
+
+Also recorded here, so the decision is legible: the other candidate
+live test — Track 14, un-mitigated xarray pkg_resources — was probed
+dead before registration. On the prepared pre-2022 checkout
+(xarray-3095), `import xarray` succeeds with pkg_resources blocked
+outright (sys.modules['pkg_resources'] = None), so the track10 memory's
+runtime condition cannot fire under the frozen harness at any
+setuptools version: the pkg_resources need was build-time only, already
+absorbed by UV_BUILD_CONSTRAINT. Track 14 is NOT RUN, and the probe is
+the finding.
+
+Registered predictions:
+  T13-P1 (condition liveness, the gate): the era class
+        (VersionRequirementError/ExtensionError) appears in command
+        output in >= 3 of 8 CONTROL sessions. This claims a weak agent
+        actually meets the condition a strong one sidesteps.
+  T13-P2 (necessity, the claim): verbatim beats none on the corrected
+        counterfactual — fewer events to first green on more tasks than
+        it loses, ties counting for neither. Scored regardless of P1,
+        but if P1 fails the registered reading is that the condition is
+        dead at both capability tiers: the memory is a fossil of one
+        August session, and no workload in this project's task pool can
+        make it pay.
+  T13-P3 (utilisation): the injection line, with the seeded memory in
+        it, lands in >= 90% of verbatim sessions.
+  T13-P4 (no harm): verbatim total wall within +15% of none, with the
+        per-task distribution reported before any total is quoted (the
+        C3 lesson).
+
+If P1 passes and P2 still fails, that is the strongest negative this
+line can produce: the condition fires, the cure is in context, and it
+buys nothing — necessity failing where the disease is demonstrably
+present. If P1 and P2 both pass, it is this project's first positive
+causal result, scoped to weak agents, and Track 12 unblocks against
+that panel.
