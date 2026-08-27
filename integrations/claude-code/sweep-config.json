@@ -1,0 +1,14 @@
+{
+  "model": "haiku",
+  "instruction": "You decide what enters the long-term memory of a coding agent that will face DIFFERENT tasks in this environment later. Store only durable operational knowledge: environment conditions, tooling quirks, version pins, workarounds, conventions — things that recur and cannot be re-derived from the repository in seconds.",
+  "ontology": ["modulenotfounderror", "importerror", "extensionerror",
+               "versionrequirementerror", "pkg_resources",
+               "command not found", "no such file or directory",
+               "permission denied", "not-installed", "era-pinned-venv",
+               "too-new-packages"],
+  "max_per_session": 3,
+  "dedupe_threshold": 0.5,
+  "quarantine_sightings": 2,
+  "max_entries": 1000,
+  "evict_grace_hours": 24
+}
