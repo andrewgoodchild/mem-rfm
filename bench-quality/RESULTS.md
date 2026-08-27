@@ -2058,6 +2058,27 @@ the action field — quoted-from-session vs composed — because a
 composed action carries invention risk the outcome loop would then
 score as if it were experience.
 
+## LongMemEval retrieval-stage port (2026-08-27) — NOT RUN, measured impossible
+
+The planned generalization of the LoCoMo sequential-feedback result
+(adaptivity +0.02..0.08, RESULTS above) to LongMemEval was probed
+against the data before any code was written, and the probe closes it:
+LoCoMo shares one store per conversation across ~200 questions, with
+~49% of questions revisiting evidence that served an earlier one —
+recurrence is what outcome feedback learns from. LongMemEval gives
+every question a PRIVATE haystack: 500 questions, 500 disjoint stores,
+so cross-question feedback transfer is impossible by construction (and
+only 8 of 940 evidence sessions appear in more than one question even
+across stores — 0.9%, in different haystacks besides). The value axis
+is structurally inert there except within a single haystack, which is
+precisely the slot ku_eval.py already occupies with the oracle
+contradiction protocol (knowledge-update preference 0.43 → 0.66,
+committed under results-ku/). LongMemEval's testable contribution to
+this project is therefore already complete; the adaptivity claim keeps
+LoCoMo as its only conversational corpus, disclosed as such wherever it
+is quoted. No run spent — the probe is the finding, the Track 14
+pattern applied to a bench eval.
+
 ## Track 15 — the yardstick (2026-08-27) — deliverables, and the D1 notes to Tracks 10/11/13
 
 20 sessions, complete (a cosmetic exit-1 in the runner's pipe tail;
