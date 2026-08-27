@@ -1,0 +1,20 @@
+{
+  "fired_by_session": {
+    "pydata__xarray-2905": [],
+    "pydata__xarray-3095": [],
+    "pydata__xarray-3151": [],
+    "pydata__xarray-3305": [
+      "command not found",
+      "modulenotfounderror"
+    ],
+    "pydata__xarray-3677": [],
+    "pydata__xarray-3993": [],
+    "pydata__xarray-4075": [],
+    "pydata__xarray-4094": [],
+    "pydata__xarray-4356": [],
+    "pydata__xarray-4629": [],
+    "pydata__xarray-4687": []
+  },
+  "deterministic": {},
+  "extracted": []
+}

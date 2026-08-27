@@ -2058,6 +2058,43 @@ the action field — quoted-from-session vs composed — because a
 composed action carries invention risk the outcome loop would then
 score as if it were experience.
 
+## Track 17 — formation-tier matching (2026-08-28) — dead at the gate, and the pool is closed
+
+Phase A ran complete: 11 haiku control sessions on xarray's first half,
+9/11 resolved, walls 40–298s, model and CLI stamped. The formation pass
+(mine_track17.py, committed with its output) then terminated the track
+exactly where the registration said a quiet Phase A would:
+
+**T17-P1 (friction exists): FAIL — condition classes fired in 1 of 11
+sessions** (gate: >= 4; the one firing was a command-not-found +
+modulenotfounderror pair in 3305). **T17-P2 (yield): zero.** The
+deterministic miner staged nothing — no named-cause failed→fixed pair in
+eleven transcripts — and the v3 extractor, over the 7 causal prose
+blocks Phase A produced, stored nothing that named a condition. **T17-P3
+(necessity): NOT TRIGGERED**, and per the registration Phase B does not
+run: there is no store to test, and seeding one from nothing would
+manufacture the experiment it was meant to be.
+
+What this establishes, and it is the pool's closing entry: Track 13
+showed haiku's sphinx friction was capability-shaped rather than
+environment-shaped; Phase A shows the same on xarray — the weak agent
+mostly just solves these tasks (9/11), and where it struggles, the
+struggle does not condense into nameable recurring conditions. It is
+per-task difficulty, the ~6%-transfer class, exactly what this project's
+own capture policy says not to store. Formation-tier matching had
+nothing tier-specific to mine.
+
+**The within-pool causal program is now closed at four terminals:**
+Track 10 (ratified store, no effect), Track 11 (best memory,
+token-matched, no effect; ledger 79% condition-silent), Track 13 (weak
+agent, measured harm), Track 17 (weak agent's own struggles,
+unmineable). Every further causal question this project wants to ask
+requires a workload with measured, recurring, condition-shaped friction
+— the testbed rebuild — and the honest summary of the pool is: for
+frontier and near-frontier agents on era-pinned SWE-bench-class Python
+repos, operational memory had nothing to pay for, because the agents do
+not pay the costs the memories describe.
+
 ## LongMemEval retrieval-stage port (2026-08-27) — NOT RUN, measured impossible
 
 The planned generalization of the LoCoMo sequential-feedback result
