@@ -302,3 +302,22 @@ upgrade is next-work 6.5. Adoption gates, fixed now: the
 condition_value audit re-run as acceptance on the new fields, and any
 ranking-visible change ships only behind a registered track. Nothing
 here alters the two-table scalar-function shape beyond the event kind.
+
+### Implemented (2026-08-27): the conditioning layer, hook-side
+
+The condition-conditioned value piece of the proposal above shipped in
+the integration layer, not the engine — the two-table scalar-function
+shape is untouched. `condition_class` is a host-owned column added and
+lazily stamped by session_end.py (derivation: the classes the memory's
+own text names; explicit stamps are never overwritten). t_fired's
+observation side is `fired_classes()` over the session's arrived command
+output, logged per session. The gate, with one refinement the proposal
+left open and the implementation fixed: **only positive outcomes are
+conditioned.** A copied command that fails is evidence against the
+memory whether or not its condition fired; a copied command that
+succeeds proves nothing unless the condition was live (C4's exact
+failure mode). `RFM_CONDITIONED_OUTCOMES=0` disables. Acceptance audit:
+hooks/test_conditions.py, 9 checks, including the C4 case verbatim —
+silent-condition +1 records nothing. Fire-rate decay and any
+ranking-visible use of t_fired remain unimplemented behind the
+registered-track gate.
