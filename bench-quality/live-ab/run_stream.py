@@ -76,6 +76,19 @@ def sh(cmd, **kw):
     return subprocess.run(cmd, capture_output=True, text=True, **kw)
 
 
+def cli_version():
+    """One-line `claude --version` for stamping into results records.
+    The CLI updates silently under long-running experiment programs;
+    Track 10's opus-5/fable-5 heterogeneity (RESULTS.md C4 point 5) was
+    only recoverable from transcripts. Future runners stamp this plus
+    the model id per record."""
+    try:
+        r = sh(["claude", "--version"], timeout=30)
+        return (r.stdout or r.stderr).strip().splitlines()[0][:120]
+    except Exception:
+        return "unknown"
+
+
 def paths(repo, arm):
     return (os.path.join(HERE, "clones", f"{repo}-{arm}"),
             os.path.join(HERE, "clones", f"{repo}-{arm}-venv"))

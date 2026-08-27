@@ -1,0 +1,10 @@
+{"run": "pilot2", "sessions_with_transcripts": 20, "models": {"claude-fable-5": 20}}
+{"run": "pilot3", "sessions_with_transcripts": 10, "models": {"claude-fable-5": 10}}
+{"run": "pilot4", "sessions_with_transcripts": 20, "models": {"claude-fable-5": 20}}
+{"run": "reval-pytest", "sessions_with_transcripts": 20, "models": {"claude-fable-5": 20}}
+{"run": "reval-sphinx", "sessions_with_transcripts": 12, "models": {"claude-fable-5": 12}}
+{"run": "reval-xarray", "sessions_with_transcripts": 44, "models": {"claude-fable-5": 44}}
+{"run": "tax", "sessions_with_transcripts": 20, "models": {"claude-fable-5": 20}}
+{"run": "track10", "sessions_with_transcripts": 26, "models": {"claude-opus-5": 26}}
+{"run": "track11", "sessions_with_transcripts": 40, "models": {"claude-fable-5": 40}}
+{"run": "track13", "sessions_with_transcripts": 16, "models": {"claude-haiku-4-5-20251001": 16}}
