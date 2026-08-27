@@ -2095,6 +2095,36 @@ frontier and near-frontier agents on era-pinned SWE-bench-class Python
 repos, operational memory had nothing to pay for, because the agents do
 not pay the costs the memories describe.
 
+## Track 18 — the open-throttle replay (2026-08-28) — 4/5 as registered, and two of those numbers are not what they look like
+
+50 pilot transcripts swept into a fresh store: 65 admits, leakage 15%
+(T18-P4 PASS with room), 0.8 LLM calls per transcript (T18-P5 PASS),
+and the era-pin fact captured without any human gate (T18-P1 PASS —
+emphatically: 22 rows of it). The two headline bars need honest
+reading:
+
+**T18-P2 dedupe-as-frequency: FAIL, and the diagnosis is the
+instrument.** Twenty-two paraphrases of the same fact, zero merges. The
+shipped similarity was token Jaccard at 0.5 — a shortcut standing in
+for the embedding similarity the design specified — and paraphrase
+rarely clears 0.5 Jaccard. The maintainer's spec was right as written;
+the approximation was the failure. (The flood also shows the extractor
+finding the era-pin fact in nearly half the sessions — the recurrence
+signal is strong; it just wasn't being consolidated.)
+
+**T18-P3 fossil refusal: PASS BY VACUITY, not scored as evidence.**
+Zero judged positives because zero judge operations ran: judge_in_play
+rehydrated the transcripts' in-play memory ids against the sweep's OWN
+store, where those ids collide with unrelated rows — wrong content,
+dead signatures, silent skips. The conditioned judge was never tested.
+
+Both defects are mechanical and fixed in the same commit as this entry:
+similarity upgraded to embeddings (fastembed when available, Jaccard
+fallback), and replay judging matched to the sweep store by similarity
+instead of by id. Track 18b re-registers the same five bars on the
+repaired stack (the Track 6 pattern — same experiment, defects fixed,
+so 18b-vs-18 is an A/B on the instrument, not the workload).
+
 ## LongMemEval retrieval-stage port (2026-08-27) — NOT RUN, measured impossible
 
 The planned generalization of the LoCoMo sequential-feedback result

@@ -17,11 +17,16 @@ sys.path.insert(0, HERE)
 import formation_study as F  # noqa: E402
 
 INTEGRATION = os.path.join(HERE, "..", "..", "integrations", "claude-code")
-DIR = os.path.join(HERE, "track18")
+VARIANT = "b" if "b" in sys.argv[1:] else ""
+DIR = os.path.join(HERE, "track18" + VARIANT)
 DB = os.path.join(DIR, "rfm-memory.db")
 LIST = os.path.join(DIR, "transcripts.txt")
 MAPPING = os.path.join(DIR, "mapping.json")
 RUNS = ["pilot2", "pilot3", "pilot4"]
+# The integration venv carries fastembed; the sweep degrades to token
+# Jaccard without it, which is exactly the defect 18b exists to fix.
+VENV_PY = os.path.join(INTEGRATION, ".venv", "bin", "python")
+PY = VENV_PY if os.path.exists(VENV_PY) else sys.executable
 
 
 def main():
@@ -47,7 +52,7 @@ def main():
                  "mid-store)")
     env = {**os.environ, "RFM_MEMORY_DB": DB, "RFM_LOG": "1"}
     r = subprocess.run(
-        [sys.executable, os.path.join(INTEGRATION, "sweep.py"),
+        [PY, os.path.join(INTEGRATION, "sweep.py"),
          "--replay", LIST], env=env)
     sys.exit(r.returncode)
 

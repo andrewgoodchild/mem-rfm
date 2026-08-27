@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import score_track8 as S8  # noqa: E402  (leaks)
 
-DIR = os.path.join(HERE, "track18")
+DIR = os.path.join(HERE, "track18" + ("b" if "b" in sys.argv[1:] else ""))
 DB = os.path.join(DIR, "rfm-memory.db")
 LOG = os.path.join(DIR, "rfm-log.jsonl")
 FAMILY = re.compile(r"sphinxcontrib|alabaster|stubs?.{0,40}pythonpath|"

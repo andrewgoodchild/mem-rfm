@@ -7,7 +7,7 @@
                "permission denied", "not-installed", "era-pinned-venv",
                "too-new-packages"],
   "max_per_session": 3,
-  "dedupe_threshold": 0.5,
+  "dedupe_threshold": 0.7,
   "quarantine_sightings": 2,
   "max_entries": 1000,
   "evict_grace_hours": 24

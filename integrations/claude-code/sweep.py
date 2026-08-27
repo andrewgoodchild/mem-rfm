@@ -132,7 +132,36 @@ def tokens(s):
     return set(re.findall(r"[a-z0-9_./-]{3,}", (s or "").lower()))
 
 
+# Embedding similarity, as the design specified (Track 18 measured the
+# token-Jaccard shortcut failing on paraphrase: 22 rewordings of one
+# fact, zero merges). fastembed when importable (the integration venv
+# has it); Jaccard as the degraded fallback, which near-verbatim pairs
+# still clear.
+_EMB = {"model": None, "tried": False, "cache": {}}
+
+
+def _embed(text):
+    if not _EMB["tried"]:
+        _EMB["tried"] = True
+        try:
+            from fastembed import TextEmbedding
+            _EMB["model"] = TextEmbedding()
+        except Exception:
+            _EMB["model"] = None
+    if _EMB["model"] is None:
+        return None
+    key = text[:1000]
+    if key not in _EMB["cache"]:
+        _EMB["cache"][key] = list(_EMB["model"].embed([key]))[0]
+    return _EMB["cache"][key]
+
+
 def similarity(a, b):
+    ea, eb = _embed(a), _embed(b)
+    if ea is not None and eb is not None:
+        num = float((ea * eb).sum())
+        den = float((ea * ea).sum()) ** 0.5 * float((eb * eb).sum()) ** 0.5
+        return max(0.0, num / den) if den else 0.0
     ta, tb = tokens(a), tokens(b)
     if not ta or not tb:
         return 0.0
@@ -208,8 +237,25 @@ def outcome_of(v):
 
 
 def judge_in_play(db, records, events, fired, src):
-    mems = se.rehydrate(se.in_play_memories(records))
-    for _mid, (content, first_idx) in mems.items():
+    # Transcript-parsed in-play content, matched to this store's rows by
+    # SIMILARITY, never by id: transcript ids belong to whatever store
+    # ran that session, and rehydrating them against this one collides
+    # (Track 18's vacuous P3 — wrong content, dead signatures, silent
+    # skips). A similarity match also recovers the full text that
+    # injection truncation cut from the transcript line.
+    mems = se.in_play_memories(records)
+    rows = db.execute("SELECT id, content FROM rfm_memories").fetchall()
+    for _tid, (tcontent, first_idx) in mems.items():
+        target, best_sim = None, 0.0
+        for mid, existing in rows:
+            s = similarity(tcontent, existing)
+            if s > best_sim:
+                target, best_sim = mid, s
+        content = tcontent
+        if target is not None and best_sim >= CONFIG["dedupe_threshold"]:
+            content = next(c for m, c in rows if m == target)
+        else:
+            target = None
         sig = se._signature(content)
         acted = []
         for e in events[first_idx:]:
@@ -226,17 +272,11 @@ def judge_in_play(db, records, events, fired, src):
                                         fired=sorted(fired) or "none")))
         if not v:
             continue
-        target, best_sim = None, 0.0
-        for mid, existing in db.execute(
-                "SELECT id, content FROM rfm_memories").fetchall():
-            s = similarity(content, existing)
-            if s > best_sim:
-                target, best_sim = mid, s
-        if target is None or best_sim < CONFIG["dedupe_threshold"]:
+        outcome = outcome_of(v)
+        if target is None:
             _log({"op": "sweep_judge_unmatched", "verdict": v.get("verdict"),
                   "src": src})
             continue
-        outcome = outcome_of(v)
         _log({"op": "sweep_judge", "id": target,
               "condition_present": bool(v.get("condition_present")),
               "verdict": v.get("verdict"), "outcome": outcome, "src": src})
