@@ -161,6 +161,36 @@ One thing we have that ACT-R doesn't: a **confidence shrink**
 uses noise instead; the shrink is the better choice for a deterministic
 ranker.
 
+### The condition side of the production (added 2026-08-27)
+
+The analogy above was incomplete in a way that took a failed experiment
+to see. An ACT-R production is a **condition→action pair**, and its
+utility updates only when the production *fires* — which, by
+construction, can only happen when its condition matches the current
+state. Our outcome loop had no condition side: it updated `v` whenever a
+memory's action was *imitated*, whether or not the state the memory
+describes was present. The live tracks measured what that permits — the
+corpus's highest-value memory earned 79% of its 17-outcome ledger in
+sessions where the failure it guards against never occurred; agents
+copied the suggested command, every copy succeeded (nothing was at
+risk), and the loop credited each one. An EWMA over
+condition-blind rewards converges on *imitation frequency*, not utility
+(RESULTS.md, Track 11 and Correction C4).
+
+The fix restores the production structure rather than adding machinery:
+each memory carries the **condition class** its own text names
+(`condition_class`, a host-owned column, stamped by derivation); the
+session-end loop observes which classes actually fired in command
+output; and a **positive** reward is recorded only when the memory's
+condition was live — the analog of "the production fired". Negative
+rewards are never gated, because an action that failed is evidence
+against the memory in any state. Under this rule the ledger above could
+not have been earned. Acceptance audit:
+`integrations/claude-code/hooks/test_conditions.py`; the observation
+side is the `t_fired` clock of DESIGN_NOTES' three-clock proposal,
+whose ranking-visible uses (fire-rate decay) remain behind a
+registered-track gate.
+
 ### Conformance
 
 The equations are checked against reference implementations rather than
@@ -220,7 +250,11 @@ the obvious next candidate rather than a closed question. Our clearest
 empirical result is exactly episodic-versus-procedural: per-bug lessons tied
 to a single event transferred at **~6%** (15 of 16 outcomes negative), while
 the one memory that earned sustained positive value across 70 sessions was an
-operational procedure. Type predicts worth.
+operational procedure. Type predicts worth — with the caveat the
+condition-side section above adds: that memory's ledger was later shown
+to be largely condition-blind credit (C4), so "predicts worth" here
+means predicts *which content recurs*, the capture-policy claim, not a
+proven causal benefit.
 
 ### Why types are a prior, not a permanent weight
 

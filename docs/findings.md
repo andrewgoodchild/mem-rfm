@@ -29,7 +29,9 @@ closest textual match to a new bug report in Sphinx's napoleon extension
 was a stored lesson about a previous napoleon bug — injected on
 similarity, never once confirmed useful. The era-pinned build
 workaround, similar to no query in particular, earned its keep in nine
-sessions of ten. That is the general pattern: per-bug content
+sessions of ten. (That sentence reports the outcome ledger. What those
+credits were worth is the subject of "Use is not value" below — the
+ledger turned out to measure something else.) That is the general pattern: per-bug content
 surface-matches new bug reports but per-bug lessons don't transfer
 (~6% measured), while the operational knowledge that helps session
 after session matches nothing. So ranking injections by query
@@ -57,7 +59,14 @@ environment gotcha recording which pinned dependencies a checkout needs.
 
 Not a code lesson. Not an algorithm insight. A build quirk.
 
-That is the most practically useful finding in this repo. Facts about *how to
+A caution, added 2026-08-27 after the causal tracks: "earned value" is
+the outcome ledger's claim, and the "Use is not value" section below
+shows what that ledger was actually counting — the workaround was
+copied far more often than it was needed. What survives here is the
+finding about *what recurs* (operational conditions, not per-task
+lessons), not a proof of benefit.
+
+Facts about *how to
 work here* — build quirks, dependency pins, project conventions, user
 preferences — recur by their nature, and are exactly what an agent otherwise
 rediscovers every session.
@@ -395,7 +404,57 @@ staleness demotion, a store that travels across harnesses.
 196 headless Claude Code sessions and ~10 hours of agent wall clock, on
 the order of a few million tokens end to end. Phase sizes of n=10–11
 are a budget bound, not a choice — treat the live results as mechanism
-evidence, not effect-size estimates.
+evidence, not effect-size estimates. The causal-turn continuation
+(Tracks 10–17, per-track counts in RESULTS.md) added roughly another
+135 registered sessions under the same discipline.
+
+## Use is not value: the causal turn (August 2026)
+
+The pilot series established that the ranking *behaves*. The registered
+tracks that followed asked the harder question — does having the store
+change what the agent achieves? — and the answers reshaped this
+document. Full entries in `bench-quality/RESULTS.md` (Tracks 10–17).
+
+- **A store worth keeping did nothing.** Five human-ratified memories,
+  injected in 13 of 13 held-out sessions: no effect in either
+  direction (Track 10, corrected reading).
+- **The best memory in the corpus did nothing, at home.** The era-pin
+  workaround — value 0.998, 17 outcomes, the top earner ever — was
+  delivered token-matched in four content forms on the very tasks that
+  earned its ledger (40 sessions). It never beat the no-memory arm.
+  Forensics explained why the ledger existed at all: the failure it
+  guards against fired in 2 of 30 pilot memory-arm sessions, and 79% of
+  the commands that "earned" its outcomes ran when nothing was at risk.
+  Agents copied the suggested command; the loop credited every success.
+  **Use is not value** — the sequel to "relevance is not value", and
+  measured the same way.
+- **Form drives copying, not results.** The corpus split (memories with
+  a verbatim command average 3.2 outcomes, prose 0.5) reproduced
+  causally as pure quotability: the command arm acted on its memory in
+  4 of 8 sessions, the prose arm in 0 of 8 — with no difference in
+  events-to-green or wall between them.
+- **A weak model paid for a strong model's memory.** On haiku the same
+  memory lost every decided pair (0 of 5, one-sided sign p = 0.031) at
+  +27.6% wall — the token-tax result from the 2026 literature
+  reproduced in our own harness, and the strong-to-weak transfer claim
+  refuted in our setting.
+- **The nulls are measured, not noise-blind.** A 20-repetition
+  yardstick put within-condition spread at SD 0.5 events for the
+  frontier model — the observed ties are real ties at ~1-event
+  resolution — and SD 3.5 for haiku, which is why only sign
+  consistency counts at that tier.
+
+What changed because of this, beyond the record: **outcomes are now
+condition-conditioned.** Every memory carries the condition class its
+own text names; the session-end loop observes which classes actually
+fired; a positive outcome only lands when the memory's condition was
+live, while negatives always land (bad advice is bad advice
+regardless). Under that rule, the 17-outcome ledger above could not
+have been earned. Structured extraction was separately validated as
+mechanically free — recall held, leakage fell — and as no substitute
+for storage judgment. One formation hypothesis remains in flight:
+memories mined from the weak model's own failures, tested on the weak
+model.
 
 ## The cost of memory, itemized
 
