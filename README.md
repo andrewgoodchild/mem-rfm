@@ -150,6 +150,7 @@ whether it is working for you. **[Full API and configuration →](docs/api.md)**
 | | |
 |---|---|
 | [theory.md](docs/theory.md) | the model: Belady, ACT-R, and the outcome axis |
+| [memory-types.md](docs/memory-types.md) | the taxonomy, what ChatGPT users actually meet, and what an agent needs |
 | [lifecycle.md](docs/lifecycle.md) | formation to retention: who decides at each stage, and why |
 | [findings.md](docs/findings.md) | when memory helps and when it doesn't, in full |
 | [landscape.md](docs/landscape.md) | how this compares to the other memory systems, dated |
