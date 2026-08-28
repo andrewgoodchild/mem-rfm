@@ -11,15 +11,21 @@ Reading the numbers: **hit@1** means the top-ranked result was correct,
 
 ## The short version
 
-Memory pays where **work recurs**, and the effect is largest when a *team*
-shares one store. It does not pay where work is episodic — and on scattered
-bug-fixing our own system measured itself as mildly counterproductive.
+Memory pays where **work recurs AND the environment forgets**. On
+retrieval benchmarks with recurring evidence, outcome feedback reliably
+helps. On live repository work with a frontier agent, the live program
+ended (see "the terminal result" below) with the sharper finding: the
+knowledge that recurs there is exactly the knowledge the agent never
+needs to pay for — it re-derives or routes around it — while carrying
+that knowledge costs measurable wall-clock. The repo is the memory.
 
-The scoring prior's reliable jobs turned out to be **safety and maintenance**
-rather than raw ranking quality: keeping a usage prior from eating itself,
-retiring stale content, and making shared stores resistant to abuse. Which of
-its two axes — recency/frequency, or outcome value — is doing the work varies
-by corpus; ablating both is the one part of this nobody else has published.
+The scoring prior's reliable jobs turned out to be **safety and
+maintenance** rather than raw ranking quality: keeping a usage prior
+from eating itself, retiring stale content, refusing unearned credit
+(the condition gate), and making shared stores resistant to abuse.
+Which of its two axes — recency/frequency, or outcome value — is doing
+the work varies by corpus; ablating both is the one part of this nobody
+else has published.
 
 ## Relevance is not value
 
@@ -452,9 +458,57 @@ live, while negatives always land (bad advice is bad advice
 regardless). Under that rule, the 17-outcome ledger above could not
 have been earned. Structured extraction was separately validated as
 mechanically free — recall held, leakage fell — and as no substitute
-for storage judgment. One formation hypothesis remains in flight:
-memories mined from the weak model's own failures, tested on the weak
-model.
+for storage judgment.
+
+### The terminal result (late August 2026)
+
+The remaining hypotheses were then run to ground, and the program
+closed with its clearest experiment.
+
+**Formation-tier matching died at its gate** (Track 17): even the weak
+model's own struggles do not condense into nameable recurring
+conditions — its friction is per-task difficulty, the class that
+doesn't transfer. **The manual formation gate was then removed
+entirely** and replaced with a continuously running sweep — LLM
+extraction per transcript, near-duplicates merged into a sightings
+count instead of new rows, a two-sighting quarantine instead of human
+review, an LLM outcome judge asked the conditioned question, a capped
+store (Tracks 18/18b). Replayed over the very transcripts that built
+the fossil ledger, the ungated stack captured the right fact,
+consolidated 22 paraphrases into 2 rows, kept junk at 0%, and awarded
+the fossil zero of the 17 credits the old loop had given it.
+
+**Then the decisive test** (Track 19): a pool rebuilt from our own
+validation exclusions so that the environment condition provably
+blocks verification — the friction cannot be optional — with the full
+ungated lifecycle live in one arm. Every mechanical stage worked: the
+workaround memory formed itself, consolidated to one row with 26
+sightings, promoted past quarantine, and was delivered in 19 of 20
+sessions, ending at value 0.00 because nothing ever proved it helped.
+It didn't help: the agent saw the blocking condition in **one control
+session out of twenty** — it verified around it with repro scripts and
+non-app tests, the fifth consecutive experiment in which a frontier
+agent routed around friction rather than paying it, this time on a
+workload engineered to prevent exactly that. Necessity was a coin flip
+(8 wins, 9 losses); and carrying the memory cost **+25% wall-clock,
+slower on 14 of 20 pairs (p = 0.03)** — a delivered memory about a
+condition the session never meets is not neutral, it is an invitation
+to investigate a problem you don't have.
+
+**The finding this program ends on:** for a frontier agent doing
+repository work, the knowledge that recurs is precisely the knowledge
+it never needs to pay for — re-derived cheaply, routed around, or
+never encountered — while carrying it has measurable cost. The failure
+was never formation, gating, similarity, delivery, or the value
+instrument; each was fixed or ruled out in turn, and the last
+experiment ran with all of them working. What failed is the premise
+that this workload class leaves anything for memory to save. Memory
+pays where the environment forgets. A repository, read by an agent
+strong enough to read it, never forgets — and the venues where the
+environment does forget (user preferences and working style,
+cross-repo and organizational knowledge, weak agents on high-friction
+work, short sessions with real boundaries) are where everything built
+here — the honest ledger above all — still waits to be tested.
 
 ## The cost of memory, itemized
 
