@@ -879,3 +879,67 @@ consolidate) and P3 (the conditioned judge, now actually running over
 condition-blind loop awarded 17 — this is the first real execution of
 the fossil-refusal test, and it is the decisive number for the
 open-throttle design).
+
+## Track 19 — the rebuilt testbed: era-locked verification (registered 2026-08-28, before any session)
+
+Every causal track so far tested memory on workloads where the agents
+never paid the costs the memories describe (the pool epitaph, Track 17).
+This track rebuilds the testbed so the condition fires BY CONSTRUCTION:
+the pool is the sphinx tasks the original validation EXCLUDED because
+their fail-to-pass tests are app-based — on these checkouts every
+verification attempt dies with VersionRequirementError until the
+sphinxcontrib/alabaster stubs workaround exists. The agent cannot
+sidestep the friction, because judging its own fix requires facing it.
+
+**Pool, probed then validated, both committed.** The LLM-free triple
+(bare F2P shows the era class; stubs F2P pre-fix genuinely fails; stubs
+F2P with the gold patch passes) ran over all 27 excluded candidates:
+**21 pass** (validation-track19.jsonl; era fired bare in 23 of 27; the
+six exclusions carry second, unrelated failure layers). 21 pairs is the
+largest pool any track has had. Sessions run BARE — the workaround is
+the recurring knowledge under test — while scoring applies the
+committed stubs builder (run_track19.build_stubs), so the harness can
+judge fixes the agent could not verify unaided.
+
+**Arms: control vs the open-throttle stack, live.** This is the first
+whole-lifecycle causal test: after every sweep-arm session, sweep.py
+runs on that session's transcript against the accumulating track19
+store — extraction forms candidates, dedupe-as-frequency counts
+recurrence, the two-sighting quarantine gates injection, SessionStart
+injects survivors, and outcomes arrive through BOTH channels
+(session_end's conditioned inference and the sweep's conditioned
+judge), disclosed here because their agreement is itself worth
+reporting. Chronological, control first per pair, per-session hygiene
+including removal of the gated miner's staging file (the sweep is the
+formation channel under test). Model pinned claude-fable-5, CLI
+stamped per record. Metric of record: the corrected counterfactual.
+Track 15's yardstick applies: fable within-condition SD is 0.5 events,
+so effects >= 2 events are detectable, and the friction here (an error
+storm at every unaided verification) is plausibly far larger.
+
+Registered predictions:
+  T19-P1 (condition liveness, the gate): the era class appears in
+        command output in >= 60% of CONTROL sessions. Registered as a
+        gate because an agent may verify through repro scripts and
+        never touch the app fixture — if that happens, the pool is
+        weaker than the probe suggests and P3 is read accordingly.
+  T19-P2 (lifecycle forms and promotes): by end of run the sweep store
+        contains an era-condition memory with sightings >= 2 — the
+        quarantine promoted it without any human review.
+  T19-P3 (necessity, the claim): the sweep arm beats control on
+        corrected events-to-first-green, wins > losses with one-sided
+        sign p <= 0.05 over decided pairs (>= 15 of 21 if none tie).
+  T19-P4 (no harm): sweep-arm total wall within +15% of control,
+        per-task distribution reported before the total.
+  T19-P5 (delivery): injection lands in >= 50% of sweep-arm sessions
+        from the third sweep-arm session onward (the quarantine's
+        two-sighting delay means the first sessions cannot inject, by
+        design — disclosed, not a defect).
+
+Interpretation fixed in advance: P1 PASS + P3 FAIL is the strongest
+negative this program can produce — the condition fires, the lifecycle
+forms, promotes, and delivers the cure, and it still buys nothing —
+and would close the operational-memory question for frontier agents on
+this workload class entirely. P3 PASS is the project's first positive
+causal result, scoped to workloads with forced recurring friction, and
+Track 12 (the M-rule comparison) unblocks against this panel.
