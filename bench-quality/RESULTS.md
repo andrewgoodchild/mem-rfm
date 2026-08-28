@@ -2125,6 +2125,64 @@ instead of by id. Track 18b re-registers the same five bars on the
 repaired stack (the Track 6 pattern — same experiment, defects fixed,
 so 18b-vs-18 is an A/B on the instrument, not the workload).
 
+## Track 19 — the rebuilt testbed (2026-08-29) — 2/5, and the agent routes around the friction a fifth time
+
+Scored at 20 of 21 registered pairs (the run was externally stopped
+three times; the shortfall is one pair, disclosed). Model fable-5, CLI
+stamped, no timeouts, resolution near ceiling in both arms.
+
+**T19-P1, the gate: FAIL at 5% — one control session in twenty ever
+saw the era class.** The pool was engineered so that verification
+through the fail-to-pass tests dies on VersionRequirementError, and the
+probe triple proved it at scoring time on all 21 tasks. It did not
+matter: the agents fixed the bugs by reading code and verified through
+repro scripts and non-app tests, reaching a passing pytest run in 0–6
+events, and almost never touched the app fixture bare. The friction is
+real for the HARNESS — scoring needs the stubs — and absent from the
+AGENT'S path. This is the fifth time a frontier agent has routed
+around the condition (pilots, Tracks 11, 13, 17, 19), and this time it
+was against a workload built specifically to prevent it.
+
+**The lifecycle itself worked end to end — the first full live
+validation of the open-throttle stack.** T19-P2 PASS: the era memory
+formed from session prose, consolidated to ONE row that ended at
+26 sightings / 25 accesses, and the quarantine promoted it without any
+human review. T19-P5 PASS: injection delivered in 19 of 18 eligible
+sweep sessions. And the conditioned ledger held: **value 0.00,
+outcomes 0** — twenty-six sightings of engagement, zero unearned
+credit. The instrument that would have minted a 0.998 fossil from this
+exact trace now records the honest number.
+
+**T19-P3 necessity: FAIL as a coin flip** — sweep 8 / control 9 /
+tied 3, one-sided sign p = 0.69. Per the interpretation fixed at
+registration, a P3 null under a P1 gate failure reads as
+condition-absent-from-path, NOT as the
+condition-fires-cure-delivered-no-benefit terminal negative.
+
+**T19-P4 no harm: FAIL at +25.2%, and this one is significant.**
+Sweep slower on 14 of 20 pairs (one wall tie; one-sided sign
+p = 0.032 over 19 decided) — distributed, not an outlier, surviving
+the C3 distribution check. With delivery at 19/18, the mechanism is
+visible in pairs like 7748 (228s vs 450s) and 9230 (54s vs 197s): the
+injected memory about the venv problem invites investigation of a
+problem the session was never going to hit. This is Track 13's
+weak-model tax reproduced on the frontier model at n=20: **delivered
+memory about unencountered conditions is not neutral — it costs.**
+
+**What Track 19 settles.** The rebuilt testbed was the program's last
+design for making the condition bind, and the agent declined to be
+bound. The final shape of the finding, now measured six ways: the
+knowledge that recurs on this workload class is knowledge a frontier
+agent never needs to pay for — it re-derives cheaply, routes around,
+or never encounters it — while carrying that knowledge costs real
+wall-clock. The open-throttle formation stack is validated as
+machinery (forms, consolidates, quarantines, delivers, and keeps an
+honest ledger, with no human in the loop) and remains without a
+workload, in this class, where what it carries can matter. The
+substrate thesis ends the program as its one standing positive claim:
+memory pays where the environment forgets, and a repository never
+forgets.
+
 ## Track 18b — the repaired replay (2026-08-28) — 5/5, and the ledger the fossil cannot re-form
 
 Same 50 transcripts, same order, both instrument defects fixed. The

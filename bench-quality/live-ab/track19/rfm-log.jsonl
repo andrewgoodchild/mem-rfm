@@ -1,0 +1,79 @@
+{"t": 1787903238.164, "op": "injection", "session": "c3316085", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1787903498.083, "op": "session_end", "session": "c3316085", "events": 16, "in_play": 0, "staged": 1, "outcomes": 0, "conditions": ["modulenotfounderror", "no such file or directory"], "pruned": 0}
+{"t": 1787903527.654, "op": "sweep_admit", "id": 1, "condition": "versionrequirementerror", "action_provenance": "quoted", "src": "c3316085-f917-4c0a-b73b-78d8527ddb48.jsonl"}
+{"t": 1787903761.976, "op": "injection", "session": "8595c2b9", "results": [], "injected": [], "truncated": [], "chars": 0, "staged": 0}
+{"t": 1787904211.307, "op": "session_end", "session": "8595c2b9", "events": 20, "in_play": 0, "staged": 1, "outcomes": 0, "conditions": ["modulenotfounderror"], "pruned": 0}
+{"t": 1787904229.632, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.853, "src": "8595c2b9-705b-431e-a29d-b5fc1c431f9f.jsonl"}
+{"t": 1787904229.641, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.817, "src": "8595c2b9-705b-431e-a29d-b5fc1c431f9f.jsonl"}
+{"t": 1787904229.65, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.775, "src": "8595c2b9-705b-431e-a29d-b5fc1c431f9f.jsonl"}
+{"t": 1787904365.338, "op": "injection", "session": "88b147f4", "results": [{"id": 1, "prior": 0.2767}], "injected": [1], "truncated": [], "chars": 366, "staged": 0}
+{"t": 1787904508.676, "op": "session_end", "session": "88b147f4", "events": 9, "in_play": 1, "staged": 1, "outcomes": 0, "conditions": ["no such file or directory"], "pruned": 0}
+{"t": 1787904535.069, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.814, "src": "88b147f4-80ac-47cf-85b6-1fad00959c37.jsonl"}
+{"t": 1787904535.077, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.766, "src": "88b147f4-80ac-47cf-85b6-1fad00959c37.jsonl"}
+{"t": 1787904763.145, "op": "injection", "session": "70f417b3", "results": [{"id": 1, "prior": 0.2908}], "injected": [1], "truncated": [], "chars": 366, "staged": 0}
+{"t": 1787904931.947, "op": "session_end", "session": "70f417b3", "events": 6, "in_play": 1, "staged": 1, "outcomes": 0, "conditions": ["versionrequirementerror"], "pruned": 0}
+{"t": 1787908753.116, "op": "injection", "session": "464e67c5", "results": [{"id": 1, "prior": 0.1985}], "injected": [1], "truncated": [], "chars": 366, "staged": 0}
+{"t": 1787909056.85, "op": "session_end", "session": "464e67c5", "events": 18, "in_play": 1, "staged": 0, "outcomes": 0, "conditions": ["versionrequirementerror"], "pruned": 0}
+{"t": 1787909088.069, "op": "sweep_provenance_drop", "action": "export PYTHONPATH=/path/to/sitecustomize.py:$PYTHONPATH", "src": "464e67c5-929d-4a34-88b4-e901d831b16b.jsonl"}
+{"t": 1787909088.654, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.908, "src": "464e67c5-929d-4a34-88b4-e901d831b16b.jsonl"}
+{"t": 1787909088.655, "op": "sweep_provenance_drop", "action": "grep and manual validation for syntax and line-length checks", "src": "464e67c5-929d-4a34-88b4-e901d831b16b.jsonl"}
+{"t": 1787909088.66, "op": "sweep_admit", "id": 2, "condition": "not-installed", "action_provenance": "none", "src": "464e67c5-929d-4a34-88b4-e901d831b16b.jsonl"}
+{"t": 1787909233.086, "op": "injection", "session": "4e7cfcd2", "results": [{"id": 1, "prior": 0.2431}], "injected": [1], "truncated": [], "chars": 366, "staged": 0}
+{"t": 1787909318.282, "op": "session_end", "session": "4e7cfcd2", "events": 4, "in_play": 1, "staged": 0, "outcomes": 0, "conditions": ["no such file or directory"], "pruned": 0}
+{"t": 1787909362.624, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.843, "src": "4e7cfcd2-cb0d-43e4-8fd8-53dce9a64c37.jsonl"}
+{"t": 1787909362.637, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.763, "src": "4e7cfcd2-cb0d-43e4-8fd8-53dce9a64c37.jsonl"}
+{"t": 1787909421.365, "op": "injection", "session": "4b7aafe6", "results": [{"id": 1, "prior": 0.3511}], "injected": [1], "truncated": [], "chars": 366, "staged": 0}
+{"t": 1787909491.987, "op": "session_end", "session": "4b7aafe6", "events": 7, "in_play": 1, "staged": 0, "outcomes": 0, "conditions": ["no such file or directory"], "pruned": 0}
+{"t": 1787909518.805, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.882, "src": "4b7aafe6-8caf-4131-bffd-42cd330ec8e9.jsonl"}
+{"t": 1787909660.987, "op": "injection", "session": "727d03e3", "results": [{"id": 1, "prior": 0.3066}], "injected": [1], "truncated": [], "chars": 366, "staged": 0}
+{"t": 1787909805.232, "op": "session_end", "session": "727d03e3", "events": 10, "in_play": 1, "staged": 0, "outcomes": 0, "conditions": ["extensionerror", "importerror"], "pruned": 0}
+{"t": 1787909827.854, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.924, "src": "727d03e3-1c4e-436a-95d3-f65024b1e613.jsonl"}
+{"t": 1787909907.96, "op": "injection", "session": "13d3006f", "results": [{"id": 1, "prior": 0.3209}], "injected": [1], "truncated": [], "chars": 366, "staged": 0}
+{"t": 1787909976.127, "op": "session_end", "session": "13d3006f", "events": 6, "in_play": 1, "staged": 1, "outcomes": 0, "conditions": ["extensionerror", "importerror", "versionrequirementerror"], "pruned": 0}
+{"t": 1787909998.283, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.904, "src": "13d3006f-9074-4ef3-85aa-6cae75858621.jsonl"}
+{"t": 1787910421.211, "op": "injection", "session": "a2b57381", "results": [{"id": 1, "prior": 0.2933}], "injected": [1], "truncated": [], "chars": 366, "staged": 0}
+{"t": 1787910852.446, "op": "session_end", "session": "a2b57381", "events": 11, "in_play": 1, "staged": 0, "outcomes": 0, "conditions": ["no such file or directory"], "pruned": 0}
+{"t": 1787910877.01, "op": "sweep_provenance_drop", "action": "PYTHONPATH=/path/with/sitecustomize python -m pytest (where sitecustomize.py rem", "src": "a2b57381-d141-40b8-a33b-2b322904e4d4.jsonl"}
+{"t": 1787910877.562, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.844, "src": "a2b57381-d141-40b8-a33b-2b322904e4d4.jsonl"}
+{"t": 1787910877.571, "op": "sweep_dedupe_hit", "id": 2, "similarity": 0.807, "src": "a2b57381-d141-40b8-a33b-2b322904e4d4.jsonl"}
+{"t": 1787910877.577, "op": "sweep_admit", "id": 3, "condition": "convention", "action_provenance": "none", "src": "a2b57381-d141-40b8-a33b-2b322904e4d4.jsonl"}
+{"t": 1787911006.555, "op": "injection", "session": "fcfbb9f9", "results": [{"id": 1, "prior": 0.3068}, {"id": 2, "prior": 0.2066}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787911115.492, "op": "session_end", "session": "fcfbb9f9", "events": 7, "in_play": 2, "staged": 1, "outcomes": 0, "conditions": ["no such file or directory"], "pruned": 0}
+{"t": 1787911140.196, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.886, "src": "fcfbb9f9-195b-44d7-856e-166c9cd8c3f9.jsonl"}
+{"t": 1787911233.326, "op": "injection", "session": "5f18ab5b", "results": [{"id": 1, "prior": 0.3364}, {"id": 2, "prior": 0.1852}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787911450.794, "op": "session_end", "session": "5f18ab5b", "events": 10, "in_play": 2, "staged": 0, "outcomes": 0, "conditions": ["no such file or directory"], "pruned": 0}
+{"t": 1787911463.878, "op": "sweep_provenance_drop", "action": "export PYTHONPATH=/path/to/sitecustomize:$PYTHONPATH before sphinx-build or pyte", "src": "5f18ab5b-2356-4b5b-9503-0ebb27c2b227.jsonl"}
+{"t": 1787911464.416, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.858, "src": "5f18ab5b-2356-4b5b-9503-0ebb27c2b227.jsonl"}
+{"t": 1787911534.372, "op": "injection", "session": "06bedcc1", "results": [{"id": 1, "prior": 0.3462}, {"id": 2, "prior": 0.1763}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787911623.726, "op": "session_end", "session": "06bedcc1", "events": 6, "in_play": 2, "staged": 0, "outcomes": 0, "conditions": [], "pruned": 0}
+{"t": 1787911659.287, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.839, "src": "06bedcc1-32a0-4674-8f4b-86555ef2dda3.jsonl"}
+{"t": 1787911886.886, "op": "injection", "session": "98d905be", "results": [{"id": 1, "prior": 0.3304}, {"id": 2, "prior": 0.1714}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787912073.475, "op": "session_end", "session": "98d905be", "events": 6, "in_play": 2, "staged": 0, "outcomes": 0, "conditions": ["no such file or directory"], "pruned": 0}
+{"t": 1787912088.785, "op": "sweep_provenance_drop", "action": "Create sitecustomize.py with version-check patch, then export PYTHONPATH=/path/t", "src": "98d905be-d3d6-4285-94e8-c370f4556c30.jsonl"}
+{"t": 1787912089.266, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.875, "src": "98d905be-d3d6-4285-94e8-c370f4556c30.jsonl"}
+{"t": 1787913407.065, "op": "injection", "session": "a9ab2d04", "results": [{"id": 1, "prior": 0.2899}, {"id": 2, "prior": 0.1636}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787913603.591, "op": "session_end", "session": "a9ab2d04", "events": 16, "in_play": 2, "staged": 0, "outcomes": 0, "conditions": [], "pruned": 0}
+{"t": 1787913630.635, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.888, "src": "a9ab2d04-9b27-4cc9-ae4e-c6b18044b796.jsonl"}
+{"t": 1787913706.089, "op": "injection", "session": "73b095ec", "results": [{"id": 1, "prior": 0.3325}, {"id": 2, "prior": 0.1629}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787913863.401, "op": "session_end", "session": "73b095ec", "events": 8, "in_play": 2, "staged": 0, "outcomes": 0, "conditions": ["versionrequirementerror"], "pruned": 0}
+{"t": 1787913882.283, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.838, "src": "73b095ec-1f61-4494-8962-10e716f39a54.jsonl"}
+{"t": 1787914237.169, "op": "injection", "session": "79756f69", "results": [{"id": 1, "prior": 0.329}, {"id": 2, "prior": 0.1619}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787914623.579, "op": "session_end", "session": "79756f69", "events": 13, "in_play": 2, "staged": 0, "outcomes": 0, "conditions": ["versionrequirementerror"], "pruned": 0}
+{"t": 1787914644.628, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.909, "src": "79756f69-7de5-42b1-b1dd-19bc4d536b52.jsonl"}
+{"t": 1787914783.68, "op": "injection", "session": "f02bff21", "results": [{"id": 1, "prior": 0.3383}, {"id": 2, "prior": 0.161}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787914915.404, "op": "session_end", "session": "f02bff21", "events": 7, "in_play": 2, "staged": 0, "outcomes": 0, "conditions": [], "pruned": 0}
+{"t": 1787914935.884, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.845, "src": "f02bff21-e95c-485f-b770-6b159c941f09.jsonl"}
+{"t": 1787914935.884, "op": "sweep_provenance_drop", "action": "mkdir /tmp/sphinx-shim && echo 'import sphinx; sphinx.require_sphinx = lambda *a", "src": "f02bff21-e95c-485f-b770-6b159c941f09.jsonl"}
+{"t": 1787914935.893, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.801, "src": "f02bff21-e95c-485f-b770-6b159c941f09.jsonl"}
+{"t": 1787915086.726, "op": "injection", "session": "ad5a8876", "results": [{"id": 1, "prior": 0.377}, {"id": 2, "prior": 0.1606}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787915338.207, "op": "session_end", "session": "ad5a8876", "events": 16, "in_play": 2, "staged": 1, "outcomes": 0, "conditions": ["versionrequirementerror"], "pruned": 0}
+{"t": 1787915364.956, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.856, "src": "ad5a8876-bd34-4022-8394-c250e67afa39.jsonl"}
+{"t": 1787915364.956, "op": "sweep_provenance_drop", "action": "PYTHONPATH=/tmp/<shim_dir> python ...", "src": "ad5a8876-bd34-4022-8394-c250e67afa39.jsonl"}
+{"t": 1787915364.966, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.736, "src": "ad5a8876-bd34-4022-8394-c250e67afa39.jsonl"}
+{"t": 1787915364.977, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.793, "src": "ad5a8876-bd34-4022-8394-c250e67afa39.jsonl"}
+{"t": 1787915425.645, "op": "injection", "session": "3008989b", "results": [{"id": 1, "prior": 0.4214}, {"id": 2, "prior": 0.1602}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787915557.547, "op": "session_end", "session": "3008989b", "events": 6, "in_play": 2, "staged": 0, "outcomes": 0, "conditions": ["no such file or directory"], "pruned": 0}
+{"t": 1787915579.295, "op": "sweep_dedupe_hit", "id": 1, "similarity": 0.905, "src": "3008989b-2bc7-45c1-8402-f14d75c29a9d.jsonl"}
+{"t": 1787915647.846, "op": "injection", "session": "ff3c1ec5", "results": [{"id": 1, "prior": 0.3962}, {"id": 2, "prior": 0.16}], "injected": [1, 2], "truncated": [], "chars": 458, "staged": 0}
+{"t": 1787915713.997, "op": "session_end", "session": "ff3c1ec5", "events": 5, "in_play": 2, "staged": 0, "outcomes": 0, "conditions": [], "pruned": 0}
+{"t": 1787915732.013, "op": "sweep_provenance_drop", "action": "mkdir -p /tmp/sphinx-shim && cat > /tmp/sphinx-shim/sitecustomize.py <<'EOF'\nimp", "src": "ff3c1ec5-b4ba-4102-8d39-f0181cf0bb9b.jsonl"}
