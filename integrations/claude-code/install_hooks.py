@@ -71,7 +71,12 @@ HOOKS = {
 }
 MATCHERS = {"PostToolUse": "Bash"}
 # Per-tool-call hooks need a short leash; session hooks can take longer.
-TIMEOUTS = {"PostToolUse": 10}
+# UserPromptSubmit runs an optional applicability judge (RFM_PERTURN_JUDGE),
+# a nested LLM call that overruns the 30s default; 150s lets it complete.
+# That a per-turn hook needs 150s is itself the finding that live
+# judge-in-hook retrieval is impractical in production — measured, not
+# hidden (REVALIDATION.md Track 21b).
+TIMEOUTS = {"PostToolUse": 10, "UserPromptSubmit": 150}
 
 # Sentinel-fenced so re-runs replace rather than append, and --remove can
 # strip it cleanly. Everything outside the fence is never touched.
