@@ -943,3 +943,57 @@ and would close the operational-memory question for frontier agents on
 this workload class entirely. P3 PASS is the project's first positive
 causal result, scoped to workloads with forced recurring friction, and
 Track 12 (the M-rule comparison) unblocks against this panel.
+
+## Track 20 — MEMTRACK replay (registered 2026-08-29, before any store build or session)
+
+The tribal-knowledge venue, run on the one public benchmark built for
+it: MEMTRACK (Patronus AI, arXiv 2510.01353) — 46 instances of
+interleaved Slack/Linear/Git organizational timelines with sequential
+short-answer questions. Their harness (dockerized live platforms) is
+unreleased, so this is a REPLAY harness — events exposed as per-platform
+jsonl exports in a workspace, reachable repos shallow-cloned — and any
+comparison to their published numbers is directional only, disclosed.
+Triage before registration (committed in run_track20.py): 43 of 46
+instances usable (134 questions); three excluded because their code
+questions reference repositories that no longer exist (testrldd/*).
+Deviations disclosed: questions are presented together in one session
+with in-order answering (their strict sequential injection needs their
+monitor); scoring is their case-insensitive exact match, with judge
+adjudication reserved for scoring time.
+
+Why this benchmark matters to this program: the authors' own finding is
+that memory backends made their agents WORSE — "LLMs cannot use memory
+tools effectively and using such tools increases redundancy in planning
+and overall tool use." That is the memory-tool tax this project measured
+independently (Tracks 13, 19). The open-throttle design delivers by
+injection rather than tools precisely to avoid it. That is the
+registered claim.
+
+Arms: control (workspace only) vs rfm (workspace + per-instance store
+built by the open-throttle extraction over the event timeline — sweep
+admission, dedupe-as-frequency, quarantine ACTIVE so only twice-sighted
+facts inject — delivered via SessionStart injection). Model pinned
+claude-fable-5, CLI stamped. Store formation is part of the registered
+run: chunked timeline extraction, at most 3 memories per chunk,
+committed prompt in the runner.
+
+Registered predictions:
+  T20-P1 (formation): >= 50% of instance stores end with at least one
+        PROMOTED memory (sightings >= 2) — organizational timelines
+        must contain facts that recur, or the venue premise fails.
+  T20-P2 (delivery): injection with content lands in >= 60% of rfm
+        sessions (quarantine's cost disclosed and absorbed here).
+  T20-P3 (correctness parity): rfm total exact-correct >= control − 7
+        of 134 — memory must not buy its cheapness with wrong answers.
+  T20-P4 (the claim — no tax): rfm total wall within +10% of control,
+        per-instance distribution reported before the total (C3), with
+        Bash-event and repeated-command redundancy reported alongside.
+        Mem0/Zep failed this in the authors' hands; injection must not.
+  T20-P5 (cost): store build averages <= 6 LLM calls per instance.
+
+If P4 fails, the open-throttle design inherits the tax it was built to
+avoid, on the venue closest to its intended home — the strongest
+possible internal negative. If P3 and P4 both pass with P1/P2, the
+design has its first externally-grounded result in the tribal-knowledge
+venue, and the follow-up (correctness LIFT, not parity) becomes the
+registered question for a Track 21.
