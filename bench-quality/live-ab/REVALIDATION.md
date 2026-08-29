@@ -1007,3 +1007,34 @@ across 13 part-built stores, and with every sighting stuck at 1 the
 quarantine would have delivered nothing. Build killed at 13 of 43,
 stores discarded, rebuilt under the integration venv (fastembed
 verified importable). No session had run; predictions unchanged.
+
+## Track 21a — judge adjudication of Track 20 (registered 2026-08-29, before any judge call)
+
+Track 20's correctness was strict exact-match (control 31, rfm 31 of
+134) — parity, but the paper scores exact_match OR llm_judge, and
+exact-match can hide a right answer phrased differently. This rescored
+pass adjudicates the ALREADY-COMMITTED Track 20 answers (no new
+sessions): a haiku judge marks each (question, expected, given) answer
+correct/incorrect, per arm, blind to which arm produced it. Tests
+whether adjudication reveals a correctness difference exact-match
+masked — the first benefit signal on the tribal-knowledge venue, or
+its absence.
+
+Registered predictions:
+  T21a-P1 (adjudication lifts both arms): judged-correct > exact-correct
+        for each arm (exact-match undercounts; sanity that the judge
+        works).
+  T21a-P2 (the benefit question): rfm judged-correct − control
+        judged-correct, with sign over the per-instance deltas. A
+        positive with sign p <= 0.10 is the first correctness benefit;
+        parity (CI/again ties) confirms Track 20's fits-in-context
+        reading and motivates 21b (retrieval-restricted, beyond-context).
+  T21a-P3 (judge reliability): on the subset where exact-match already
+        said correct, the judge agrees >= 90% — a judge that overturns
+        exact hits is miscalibrated and voids P2.
+
+Deviations: the stored answers are truncated to 120 chars (Track 20's
+record format); questions whose answer was cut are flagged and reported
+separately, not silently scored. 21b (new sessions behind a capped
+query tool, so the control cannot hold the whole timeline) is registered
+separately only if 21a is parity.
