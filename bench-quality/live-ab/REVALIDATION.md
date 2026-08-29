@@ -1119,3 +1119,30 @@ at this gap, which the applicability JUDGE (not a cosine floor) is the
 real fix for. P1's band is relaxed to 40-100% delivery accordingly; P2
 (the benefit) and P4 (targeting audit) are unchanged and remain primary.
 No scored session ran before this correction.
+
+### Track 21b architecture correction (2026-08-29, before any scored session): hooks are for fast lookups, not LLM calls
+
+Repeated smokes established a real architectural finding, recorded as its
+own result: **an applicability judge cannot run inside a per-turn hook.**
+The judge logic is correct (in isolation it returns the answering facts),
+but live it fails — a nested `claude -p` judge call (10-30s, plus embedder
+cold-load) overruns Claude Code's hook timeout (30s default; even at 150s
+the nested-claude-under-outer-claude path returns empty/errors), so the
+hook is killed before it can inject. Hooks are for fast deterministic
+lookups (one SQL row); expensive work (model load, LLM judging) belongs
+in a warm persistent service or an offline precompute, never the hook
+body. This is the deployment answer for judge-based per-turn retrieval:
+impractical as a hook; it needs a warm retrieval service.
+
+The science question — does judged per-turn retrieval HELP — does not
+need the hook. Track 21b is therefore run with PRECOMPUTED judged
+retrieval: for each (instance, question) the cosine-prefilter + judge is
+run ONCE offline and the applicable memory ids cached; the runner then
+delivers those facts with each question. The retrieval DECISION is
+identical to the live hook's; only the timing differs, and the live
+timing is already characterized above. Arms unchanged (control vs the
+per-question judged facts); scoring judge-adjudicated; P3 is re-scoped
+from "live wall tax" (answered: impractical) to "delivery + benefit at
+the precomputed decision". The UserPromptSubmit hook and its
+cosine/judge modes remain committed as the delivery mechanism a warm
+service would use; they are not on Track 21b's scored path.
