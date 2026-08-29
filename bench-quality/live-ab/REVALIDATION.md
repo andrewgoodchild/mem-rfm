@@ -1093,3 +1093,29 @@ finally unblocks against a positive panel. If P2 fails while 21a passed,
 the honest reading is that 21a's marginal signal was retrospective-judge
 noise, and per-turn delivery does not convert it — which bounds the
 benefit claim hard.
+
+### Track 21b calibration (2026-08-29, before the full run): the floor was a doc-to-doc value, the gap is question-to-fact
+
+A 1-instance smoke (both arms ran, multi-turn --resume works, the hook
+fires per question) revealed the per-turn hook injecting NOTHING: every
+memory fell below the 0.35 relevance floor. Measured cause, disclosed:
+the MEMTRACK question "status of the oldest ticket that was once
+reassigned?" scores cosine 0.180 to the memory that answers it ("Charlie
+now leads the legacy migration, reassigned from Alice"), highest of any
+0.206 — the PrefEval applicability finding (Amendment 15) reproduced
+live: a question and the fact that answers it share little surface, so
+question-to-fact cosine runs 0.1-0.2 where the 0.35 default assumes
+doc-to-doc. The RANKING is correct (the three legacy-migration facts are
+the top three sims); only the floor was wrong.
+
+Correction, before any scored session: RFM_PERTURN_FLOOR = 0.12 for this
+track (set in run_track21b.py env), which admits the relevant facts and
+blocks the near-zero noise (0.08 and below). This shifts the floor's job
+from relevance-gate to noise-gate and means P1's discrimination is
+weaker than registered — retrieval will fire on most org-question turns
+because org questions broadly match org facts. That is itself the
+finding cosine cannot cleanly separate applicable from merely on-topic
+at this gap, which the applicability JUDGE (not a cosine floor) is the
+real fix for. P1's band is relaxed to 40-100% delivery accordingly; P2
+(the benefit) and P4 (targeting audit) are unchanged and remain primary.
+No scored session ran before this correction.

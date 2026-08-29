@@ -94,6 +94,9 @@ def run_instance(inst, arm_name, ab_arm):
            "RFM_AB_SESSION": f"21b-{inst['id']}-{arm_name}"}
     if ab_arm == "rfm":
         env["RFM_PERTURN"] = "1"
+        # Calibration note in REVALIDATION.md: question->fact cosine runs
+        # 0.1-0.2 (applicability gap), not the 0.35 doc-to-doc default.
+        env["RFM_PERTURN_FLOOR"] = "0.12"
     else:
         env.pop("RFM_PERTURN", None)
     t0 = time.time()
