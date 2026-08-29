@@ -63,6 +63,11 @@ HOOKS = {
     # spawn on every Read/Edit/Grep would add latency to the very sessions
     # whose cost the experiment measures.
     "PostToolUse": os.path.join(HERE, "hooks", "post_tool_use.py"),
+    # Per-turn query-conditioned retrieval (RFM_PERTURN=1). Registered
+    # always, INERT unless the flag is set — a registered experiment
+    # (Track 21b), not a default, on the same footing as the PostToolUse
+    # synthesis/JIT capabilities.
+    "UserPromptSubmit": os.path.join(HERE, "hooks", "user_prompt_submit.py"),
 }
 MATCHERS = {"PostToolUse": "Bash"}
 # Per-tool-call hooks need a short leash; session hooks can take longer.
