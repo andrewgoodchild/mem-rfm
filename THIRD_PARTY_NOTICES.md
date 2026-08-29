@@ -49,3 +49,10 @@ Downloaded at runtime from github.com/amazon-science/PrefEval
 the repository, treated as evaluation-only. Dataset content is never
 redistributed: `data/prefeval/` stays untracked, and the committed
 per-question records carry only ids, topics, and hit flags.
+
+## MEMTRACK
+
+Downloaded from the Google Drive link published in arXiv 2510.01353
+(Patronus AI) into `bench-quality/data/memtrack/` (untracked, never
+redistributed). Committed artifacts carry only instance ids, per-question
+correctness flags, and truncated agent answers — no timeline content.
