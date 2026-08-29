@@ -378,3 +378,43 @@ Acceptance: unit tests in `test_sweep.py`, and the registered replay
 evaluation (REVALIDATION.md Track 18) — the sweep run over the very
 pilot transcripts that built the 17-outcome condition-blind ledger,
 with the fossil-refusal bar registered in advance.
+
+### Quarantine red-team (2026-08-29): what the two-sighting gate does and does not defend
+
+The adversarial pass owed before the sweep can be recommended as
+default (redteam_quarantine.py, mechanical over the real admit path and
+the shipped injection query). Three scenarios:
+
+- **A — single poisoned transcript: BLOCKED**, by construction. One
+  sighting never clears the quarantine.
+- **B — persistent poison source** (a malicious README/issue/page read
+  across many sessions): **promotes at sighting 2 and injects.** The
+  quarantine is a one-session delay against recurrence, not a filter.
+  This is expected and is why the floor matters.
+- **C — recovery under harm: the real defense holds.** A promoted
+  poison that is ever acted-on-and-harmful earns a −1, which drives
+  value_score negative, and the injection floor
+  (`NOT (outcome_count>0 AND value_score<0)`) excludes it immediately —
+  on the FIRST −1, at any judge catch-rate > 0 (1, 2, 3 harmful
+  injections before exclusion at catch-rates 100/50/34%).
+
+Verdict: **the compromise case is defended** — a harmful memory sinks
+the first time the conditioned judge catches it. The **residual
+exposure** is a poison that injects but is never acted on (pure context
+cost, no bad action) or one the judge never recognizes as harm.
+
+Hardening owed before default-on ingestion, in priority order:
+ 1. **Source-distinct sightings** — count DISTINCT ORIGINS, not distinct
+    sessions. A persistent single source should accrue ONE sighting,
+    which alone defeats scenario B. Requires the extractor to attribute
+    each memory to the artifact it came from (file/issue/url), which the
+    sweep does not yet track — a real design item, not a config flag.
+ 2. **Origin-tagged provenance** — extend the composed-action drop to
+    refuse imperative actions extracted from untrusted-origin text.
+ 3. Keep `RFM_QUARANTINE >= 2` and never let injection ignore
+    value_score (both shipped).
+
+Conclusion for the default question: the sweep's poisoning posture is
+adequate for a TRUSTED-origin deployment (a team's own Slack/Linear/Git,
+the intended venue) but item 1 should land before sweep is default-on
+over UNTRUSTED-origin text (arbitrary repo files, web content).
