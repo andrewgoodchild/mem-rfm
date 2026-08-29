@@ -997,3 +997,13 @@ possible internal negative. If P3 and P4 both pass with P1/P2, the
 design has its first externally-grounded result in the tribal-knowledge
 venue, and the follow-up (correctness LIFT, not parity) becomes the
 registered question for a Track 21.
+
+### Track 20 note (2026-08-29, before any session): store build restarted under the right interpreter
+
+The first store build ran under the system interpreter, where fastembed
+is unavailable — the sweep's degraded-similarity warning (the loud mode
+added at commit 8b92567) fired in the log, zero dedupe merges occurred
+across 13 part-built stores, and with every sighting stuck at 1 the
+quarantine would have delivered nothing. Build killed at 13 of 43,
+stores discarded, rebuilt under the integration venv (fastembed
+verified importable). No session had run; predictions unchanged.

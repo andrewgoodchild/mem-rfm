@@ -44,11 +44,22 @@ path and a harness-owned path that does the real work:
 | **Outcome** | `memory_feedback` when a memory surprises | inferred from what the session acted on, at session end — a `+1` lands only if the memory's named condition fired |
 | **Retention** | `memory_delete` on "forget that" | idle never-useful memories are pruned; proven ones never are |
 
+There is also an **ungated alternative** to the review step: `sweep.py`
+runs continuously (cron or hook) — one cheap LLM extraction per
+transcript against a configurable ontology, near-duplicates merged into
+a sightings count instead of new rows, a **two-sighting quarantine** in
+place of human review (one poisoned transcript is insufficient by
+construction), a conditioned LLM outcome judge, and a capped store.
+Replayed over the transcripts that once built a fake 17-outcome ledger,
+it captured the right facts, consolidated 22 paraphrases into 2 rows,
+and awarded that ledger zero credits (RESULTS.md, Tracks 18b–19).
+
 **[The full lifecycle, and who decides at each stage →](docs/lifecycle.md)**
 
 ## What it's for, and what it costs
 
-Memory pays for procedural things that repeat — build quirks, dependency
+Memory pays for procedural things that repeat **and that the
+environment does not already persist** — build quirks, dependency
 pins, environment workarounds, invocation patterns: the operational
 knowledge that comes back session after session.
 
@@ -115,22 +126,27 @@ was written down and committed before the run it governs:
 | does a human-ratified store help on held-out tasks? (xarray) | fewer events to a first passing test than control | **FAIL** — no effect in either direction, with injection landing 13/13 (Track 10, corrected reading) |
 | does the best earned memory beat no-memory at home? (sphinx) | token-matched, four content forms, on the tasks that earned its ledger | **FAIL** — ties under both detectors; forensics showed 79% of its ledger was earned with its condition silent (Track 11 + C4) |
 | does it at least help a weaker model? (haiku) | condition-liveness gate, then sign consistency | **FAIL** — 0 wins of 5 decided pairs, +27.6% wall: a measured tax (Track 13) |
+| does the full ungated lifecycle help where friction is forced? | a pool engineered so verification dies without the workaround | **FAIL at the gate** — the agent met the condition in 1 of 20 control sessions and verified around it; every lifecycle stage worked, delivery 19/20, and carrying the memory cost +25% wall (Track 19) |
 
 How to read the table: the first eight rows are **cost or safety
 bounds** — the program's first phase set out to establish that memory
 does no harm on the workload where it helps least. (The idle-server row
 closes the loop on the xarray FAIL above it: registered while that
 failure stood unexplained, its context-cost-only verdict is what
-attributes the gap to variance rather than machinery.) The last three
-rows are the registered benefit predictions that phase promised, and
-all three failed: on this workload class, for these agents, no causal
-benefit was found — and the search located a defect in the instrument
-instead. The outcome ledger was crediting condition-blind copying,
-which is exactly what the condition gate now prevents. One registered
-formation hypothesis remains in flight (memories mined from the weak
-model's own failures, tested on the weak model — Track 17); the
-per-track record is in `bench-quality/RESULTS.md`, and the synthesis in
-[findings.md's "Use is not value"](docs/findings.md).
+attributes the gap to variance rather than machinery.) The rows after
+it are the registered benefit predictions that phase promised, and all
+of them failed — the last one terminally: on this workload class the
+agents do not pay the costs the memories describe, so there is nothing
+for memory to save, while carrying it costs real time. The search also
+located a defect in the instrument (the ledger credited condition-blind
+copying — fixed by the condition gate) and ended with the machinery
+fully validated and the premise refuted. The program has since moved to
+the venues where the environment genuinely forgets: on PrefEval the
+composition bound transferred at exactly +0.0000 and the retrieval
+problem was measured as *applicability, not similarity*; a MEMTRACK
+replay (organizational/tribal knowledge) is registered as Track 20.
+Per-track record in `bench-quality/RESULTS.md`; synthesis in
+[findings.md](docs/findings.md).
 
 **[All findings, and everything that died along the way →](docs/findings.md)**
 
