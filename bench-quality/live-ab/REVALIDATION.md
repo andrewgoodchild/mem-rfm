@@ -1038,3 +1038,58 @@ record format); questions whose answer was cut are flagged and reported
 separately, not silently scored. 21b (new sessions behind a capped
 query tool, so the control cannot hold the whole timeline) is registered
 separately only if 21a is parity.
+
+## Track 21b — per-turn retrieval, the fresh causal test (registered 2026-08-29, before any session)
+
+Track 21a found the program's first benefit — memory helped on MEMTRACK
+under adjudication (rfm 108 vs control 101, sign p=0.055) — but it was a
+RETROSPECTIVE judge rescoring of Track 20's answers, marginal, and Track
+20 delivered memory by one blind SessionStart injection of the whole
+digested store. 21b is the fresh causal test with the mechanism the
+benefit points to: per-turn query-conditioned retrieval (the
+UserPromptSubmit channel, RFM_PERTURN), which surfaces the memory
+relevant to EACH question rather than dumping the store once.
+
+Design changes from Track 20, each with a reason:
+ - **Questions one per turn.** Track 20 asked all questions in one
+   prompt; 21b presents them sequentially via `claude -p --resume`, so
+   UserPromptSubmit fires per question and retrieval is conditioned on
+   the actual question. Closer to real use, and the only way to test a
+   per-turn channel.
+ - **Stores carry embeddings.** The sweep does not embed; a committed
+   backfill (embed_stores in run_track21b.py) adds the MiniLM embedding
+   BLOB to each Track 20 store, content unchanged. Same stores, same
+   promoted memories.
+ - **Scoring is judge-adjudicated** (the 21a judge, arm-blind), because
+   exact-match undercounts by ~3x on this data.
+ - **Arms: control** (per-turn, no memory) vs **perturn** (RFM_PERTURN=1).
+   Model fable-5, CLI stamped.
+
+Registered predictions:
+  T21b-P1 (delivery with discipline): per-turn retrieval injects on
+        30-90% of question-turns — above 30% shows it fires, below 90%
+        shows the relevance floor withholds on off-topic turns (a
+        channel that injects on every turn is the blind tax, not
+        retrieval). Falsifies at either extreme.
+  T21b-P2 (the benefit, fresh and causal): perturn judged-correct >
+        control, sign over per-instance deltas, one-sided p <= 0.05.
+        This is the confirm-or-dissolve of 21a's p=0.055 retrospective
+        signal — registered at the stricter 0.05 because it is now the
+        primary test, not a rescoring.
+  T21b-P3 (no tax): perturn wall within +15% of control. The per-turn
+        embedding load has a real cost (a model load per turn unless
+        warm); it is measured, and if it blows the bound that is a
+        deployment finding, not a benefit refutation.
+  T21b-P4 (targeting): among question-turns where perturn injected AND
+        answered correctly where control answered wrong, the injected
+        memory is topically relevant to the question in >= 70% (spot
+        audit) — guards against a win by accident rather than by
+        surfacing the right fact.
+
+If P2 passes, it is the program's first FRESH causal benefit, on the
+venue the substrate thesis chose, via the retrieval mechanism the
+digestion finding pointed to — and Track 12 (the M-rule comparison)
+finally unblocks against a positive panel. If P2 fails while 21a passed,
+the honest reading is that 21a's marginal signal was retrospective-judge
+noise, and per-turn delivery does not convert it — which bounds the
+benefit claim hard.
