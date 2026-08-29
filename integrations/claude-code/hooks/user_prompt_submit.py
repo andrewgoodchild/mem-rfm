@@ -96,6 +96,53 @@ def sanitize(content):
     return " ".join(flat.replace("</memories>", "(/memories)").split())
 
 
+# Applicability judge (RFM_PERTURN_JUDGE=1). Cosine cannot bridge the
+# question->fact gap (a question scores ~0.18 to the fact that answers it,
+# PrefEval Amendment 15 / Track 21b calibration). The judge picks which
+# cosine-prefiltered candidates actually answer the turn — the mechanism
+# the program's evidence points to. Off by default; degrades to cosine on
+# any failure.
+JUDGE_PREFILTER = 8
+JUDGE_MODEL = os.environ.get("RFM_PERTURN_JUDGE_MODEL", "haiku")
+JUDGE_PROMPT = """A user asked a software team's assistant:
+
+REQUEST: {prompt}
+
+The assistant has these stored facts about the team's work. Which are
+NEEDED to answer the request correctly? A fact is needed if using it
+changes or completes the answer — topical relation alone does not count.
+
+{candidates}
+
+Reply JSON only: {{"needed": [numbers, most useful first]}} — at most 3,
+empty list if none apply."""
+
+
+def judge_applicable(prompt, cands):
+    """cands: list of (mid, content). Returns the applicable subset,
+    judge order preserved. On any failure returns None (caller falls
+    back to cosine)."""
+    import subprocess
+    numbered = "\n".join(f"{i+1}. {sanitize(c)[:220]}"
+                         for i, (_m, c) in enumerate(cands))
+    try:
+        r = subprocess.run(
+            ["claude", "-p", JUDGE_PROMPT.format(prompt=prompt[:400],
+                                                 candidates=numbered),
+             "--model", JUDGE_MODEL],
+            env={**os.environ, "RFM_HOOKS_OFF": "1", "RFM_PERTURN": "0"},
+            capture_output=True, text=True, timeout=60)
+        import re as _re
+        mm = _re.search(r"\{.*\}", r.stdout or "", _re.S)
+        nums = json.loads(mm.group(0)).get("needed", []) if mm else None
+    except Exception:
+        return None
+    if nums is None:
+        return None
+    return [cands[k - 1] for k in nums if isinstance(k, int)
+            and 1 <= k <= len(cands)]
+
+
 def retrieve(prompt):
     import sqlite3
     import rfm
@@ -123,10 +170,24 @@ def retrieve(prompt):
     scored = []
     for mid, content, blob, prior in rows:
         sim = cosine(qvec, blob)
-        if sim >= FLOOR:
-            scored.append((sim * prior, sim, mid, content))
+        scored.append((sim * prior, sim, mid, content))
     scored.sort(reverse=True)
-    top = scored[:K]
+
+    if os.environ.get("RFM_PERTURN_JUDGE") == "1":
+        # Cosine prefilters (no floor — the gap is too small); the judge
+        # selects which prefiltered facts answer the turn.
+        cands = [(mid, content) for _s, _sim, mid, content
+                 in scored[:JUDGE_PREFILTER]]
+        picked = judge_applicable(prompt, cands) if cands else []
+        if picked is not None:
+            simof = {mid: sim for _s, sim, mid, _c in scored}
+            top = [(simof.get(mid, 0.0) or 0.0, simof.get(mid, 0.0), mid, c)
+                   for mid, c in picked[:K]]
+        else:                       # judge failed: fall back to cosine floor
+            top = [t for t in scored if t[1] >= FLOOR][:K]
+    else:
+        top = [t for t in scored if t[1] >= FLOOR][:K]
+
     for _score, _sim, mid, _c in top:
         db.execute("SELECT rfm_record_access(?)", (mid,))
     db.commit()
