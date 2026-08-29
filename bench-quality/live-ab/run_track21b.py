@@ -72,6 +72,78 @@ def embed_stores():
     print(f"embedded {n_stores} stores")
 
 
+JUDGE_MAP = os.path.join(DIR, "judged_map.json")
+JUDGE_PROMPT = """A user asked a software team's assistant:
+
+REQUEST: {q}
+
+These stored facts about the team's work may be relevant. Which are
+NEEDED to answer correctly? Topical relation alone does not count.
+
+{cands}
+
+Reply JSON only: {{"needed": [numbers]}} — at most 3, empty if none."""
+
+
+def precompute_judged():
+    """Offline: per (instance, question), cosine-prefilter the store and
+    judge which facts are applicable. Cached to judged_map.json. This is
+    the retrieval DECISION the live hook makes; run here because an LLM
+    judge cannot run inside a per-turn hook (REVALIDATION Track 21b)."""
+    import math
+    import re as _re
+    import struct as _struct
+    from fastembed import TextEmbedding
+    model = TextEmbedding(model_name=EMBEDDER_ID)
+    model.model.tokenizer.enable_truncation(max_length=256)
+
+    def enc(t):
+        v = next(iter(model.embed([t[:2000]])))
+        n = math.sqrt(sum(x * x for x in v)) or 1.0
+        return [x / n for x in v]
+
+    def cos(qv, blob):
+        m = _struct.unpack(f"{len(blob)//4}f", blob)
+        return sum(a * b for a, b in zip(qv, m))
+
+    os.makedirs(DIR, exist_ok=True)
+    cache = {}
+    if os.path.exists(JUDGE_MAP):
+        cache = json.load(open(JUDGE_MAP))
+    inst = t20.usable(t20.instances())
+    for i in inst:
+        db = sqlite3.connect(t20.store_path(i))
+        mems = db.execute("SELECT id, content, embedding FROM rfm_memories "
+                          "WHERE embedding IS NOT NULL").fetchall()
+        db.close()
+        for qi, q in enumerate(i["questions"]):
+            key = f"{i['id']}#{qi}"
+            if key in cache:
+                continue
+            qv = enc(q)
+            ranked = sorted(mems, key=lambda r: -cos(qv, r[2]))[:8]
+            numbered = "\n".join(f"{k+1}. {c[:220]}"
+                                 for k, (_m, c, _b) in enumerate(ranked))
+            try:
+                r = subprocess.run(
+                    ["claude", "-p",
+                     JUDGE_PROMPT.format(q=q[:400], cands=numbered),
+                     "--model", "haiku"],
+                    env={**os.environ, "RFM_HOOKS_OFF": "1"},
+                    capture_output=True, text=True, timeout=90)
+                mm = _re.search(r"\{.*\}", r.stdout or "", _re.S)
+                nums = json.loads(mm.group(0)).get("needed", []) if mm else []
+            except Exception:
+                nums = []
+            applic = [ranked[n - 1][1] for n in nums
+                      if isinstance(n, int) and 1 <= n <= len(ranked)][:3]
+            cache[key] = applic
+            with open(JUDGE_MAP, "w") as f:
+                json.dump(cache, f, indent=1)
+        print(f"  judged {i['id']} ({len(i['questions'])}q)", flush=True)
+    print(f"precompute done: {len(cache)} question-keys")
+
+
 def turn(question, cwd, env, resume_sid):
     cmd = ["claude", "-p", question, "--model", MODEL,
            "--output-format", "json",
@@ -87,22 +159,27 @@ def turn(question, cwd, env, resume_sid):
         return "", resume_sid
 
 
-def run_instance(inst, arm_name, ab_arm):
+def run_instance(inst, arm_name, judged):
+    """Precomputed judged retrieval: the perturn arm prepends the
+    judge-selected facts to each question; control gets the bare
+    question. No hook — delivery is in the prompt (REVALIDATION Track
+    21b architecture correction)."""
     wd, has_repo = t20.build_workspace(inst)
-    env = {**os.environ, "RFM_AB_ARM": ab_arm,
-           "RFM_MEMORY_DB": t20.store_path(inst),
-           "RFM_AB_SESSION": f"21b-{inst['id']}-{arm_name}"}
-    if ab_arm == "rfm":
-        env["RFM_PERTURN"] = "1"
-        # Calibration note in REVALIDATION.md: question->fact cosine runs
-        # 0.1-0.2 (applicability gap), not the 0.35 doc-to-doc default.
-        env["RFM_PERTURN_FLOOR"] = "0.12"
-    else:
-        env.pop("RFM_PERTURN", None)
+    env = {**os.environ, "RFM_HOOKS_OFF": "1",
+           "RFM_MEMORY_DB": t20.store_path(inst)}
     t0 = time.time()
-    given, sid = [], None
-    for q in inst["questions"]:
-        ans, sid = turn(q, wd, env, sid)
+    given, sid, delivered = [], None, 0
+    for qi, q in enumerate(inst["questions"]):
+        facts = (judged.get(f"{inst['id']}#{qi}", [])
+                 if arm_name == "perturn" else [])
+        if facts:
+            delivered += 1
+            prompt = ("Relevant notes from the team's memory (use if "
+                      "helpful):\n" + "\n".join(f"- {f}" for f in facts)
+                      + f"\n\n{q}")
+        else:
+            prompt = q
+        ans, sid = turn(prompt, wd, env, sid)
         m = re.search(r"\[ANSWER[^\]]*\]\s*(.+)", ans) if ans else None
         given.append((m.group(1).strip() if m else ans.strip()[:200]))
     wall = time.time() - t0
@@ -111,7 +188,7 @@ def run_instance(inst, arm_name, ab_arm):
               "w") as f:
         json.dump({"given": given}, f, indent=1)
     shutil.rmtree(wd, ignore_errors=True)
-    return given, wall
+    return given, wall, delivered
 
 
 def inj_count(iid, arm):
@@ -130,26 +207,18 @@ def main():
     if "--embed-stores" in sys.argv:
         embed_stores()
         return
+    if "--precompute" in sys.argv:
+        precompute_judged()
+        return
     inst = t20.usable(t20.instances())
     print(f"usable instances {len(inst)}, cli {rs.cli_version()}")
-    # ensure the per-turn hook is registered
-    for ev, sc in install_hooks.HOOKS.items():
-        pass
     if "--dry-run" in sys.argv:
         return
     if "--smoke" in sys.argv:
         inst = inst[:int(sys.argv[sys.argv.index("--smoke") + 1])]
-    missing = [i["id"] for i in inst
-               if not os.path.exists(t20.store_path(i))]
-    if missing:
-        sys.exit(f"PREFLIGHT: stores missing {missing[:3]}")
-    # verify embeddings present
-    s0 = sqlite3.connect(t20.store_path(inst[0]))
-    if "embedding" not in [r[1] for r in
-                           s0.execute("PRAGMA table_info(rfm_memories)")]:
-        s0.close()
-        sys.exit("PREFLIGHT: stores lack embeddings — run --embed-stores")
-    s0.close()
+    if not os.path.exists(JUDGE_MAP):
+        sys.exit("PREFLIGHT: judged_map.json missing — run --precompute first")
+    judged = json.load(open(JUDGE_MAP))
 
     os.makedirs(DIR, exist_ok=True)
     done = set()
@@ -163,23 +232,24 @@ def main():
     try:
         with open(RESULTS, "a") as sink:
             for i in inst:
-                for arm_name, ab_arm in (("control", "control"),
-                                         ("perturn", "rfm")):
+                for arm_name in ("control", "perturn"):
                     if (i["id"], arm_name) in done:
                         continue
                     print(f"=== {i['id']} [{arm_name}] "
                           f"({len(i['questions'])}q) ===", flush=True)
-                    given, wall = run_instance(i, arm_name, ab_arm)
+                    given, wall, delivered = run_instance(i, arm_name, judged)
                     rec = {"id": i["id"], "arm": arm_name, "track": "track21b",
                            "model": MODEL, "cli": cli,
                            "nq": len(i["questions"]),
                            "answered": sum(1 for g in given if g),
+                           "delivered": delivered,
                            "given": [g[:120] for g in given],
                            "wall_s": round(wall)}
                     sink.write(json.dumps(rec) + "\n")
                     sink.flush()
                     print(f"    answered {rec['answered']}/{rec['nq']} "
-                          f"wall={round(wall)}s", flush=True)
+                          f"delivered {delivered} wall={round(wall)}s",
+                          flush=True)
     finally:
         for change in install_hooks.sync_claude_md():
             print(f"CLAUDE.md: {change} (restored)")
