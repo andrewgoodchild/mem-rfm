@@ -50,6 +50,29 @@ what this system exists to keep. Retention is also formation's safety net:
 prolific harness capture is only tolerable because evidence-based pruning
 sits downstream.
 
+**The ungated alternative: the sweep.** The review step above is a
+choice, not a law, and the shipped alternative removes it
+(`integrations/claude-code/sweep.py`, DESIGN_NOTES "the open-throttle
+design"): a cron- or hook-driven pass over new transcripts, one
+configurable LLM extraction per session against an ontology
+(`sweep-config.json`), and the gate's jobs reassigned to structure —
+near-duplicates merge into an existing row's `sightings` count instead
+of flooding (recurrence captured as frequency, which review used to
+throw away); a **two-sighting quarantine** replaces human judgment as
+the poisoning defense (sweep-created rows are not injectable until a
+second independent session produces the same lesson, so one poisoned
+transcript is insufficient by construction); composed actions are
+dropped unless the transcript actually ran them; and a hard cap with
+grace-period eviction bounds the store. Outcomes in sweep deployments
+can additionally come from a conditioned LLM judge — asked whether the
+session exhibited the memory's condition AND whether acting changed the
+outcome, never "was it used". Validated end to end: mechanically
+(test_sweep.py), on replay over the transcripts that built the fossil
+ledger (Track 18b: 22 paraphrases → 2 rows, zero of 17 false credits
+re-awarded), and live (Track 19: formed, consolidated to 26 sightings,
+quarantine-promoted, delivered 19/20 — with the honest ledger reading
+value 0.00 because nothing ever proved it helped).
+
 ## Getting the M
 
 Without outcomes, `rfm_prior` degenerates to recency + frequency — and we

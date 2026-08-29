@@ -131,6 +131,15 @@ rfm_accesses(memory_id, accessed_at, outcome)
 You own `content` and any columns you add — an `embedding BLOB` for
 sqlite-vec, tags, scopes, whatever. The engine only touches its own.
 
+The Claude Code integration adds two host-owned columns of its own:
+`condition_class` (the condition classes a memory's text names, stamped
+by derivation at session end — a positive inferred outcome only lands
+when one of them actually fired that session; `RFM_CONDITIONED_OUTCOMES=0`
+disables the gate) and `sightings` (maintained by `sweep.py`: how many
+independent sessions produced this lesson; injection requires
+`>= RFM_QUARANTINE`, default 2, with NULL — explicit saves — always
+injectable).
+
 ## Retention
 
 `rfm_prunable(id, days)` encodes a retention policy borrowed from Codex,
@@ -323,5 +332,7 @@ rfm_schema.sql            standalone schema
 tests/                    engine unit + SQL-surface tests (python3 tests/test_rfm.py)
 bench-quality/            all evidence: retrieval evals, live A/B, throughput, RESULTS.md
 integrations/claude-code/ MCP server, hooks, A/B kit — the live measurement harness
+  sweep.py                the ungated formation sweep (config: sweep-config.json;
+                          acceptance audit: test_sweep.py; see lifecycle.md)
 docs/                     the writeups
 ```
