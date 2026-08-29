@@ -446,3 +446,35 @@ tax-reducing form of delivery. Caveat unchanged: better-targeted
 retrieval does not make memory useful where the agent routes around the
 condition (Track 19); its venue is where the condition is a request
 shape, via a per-turn trigger (UserPromptSubmit), not a repo error.
+
+### Live judged-retrieval delivery in Claude Code: no clean path (verified 2026-08-29)
+
+The Track 21b hook failure prompted a full check of Claude Code's MCP
+client capabilities (docs + MCP spec, verified via claude-code-guide).
+The applicability judge is the retrieval mechanism the evidence points
+to (PrefEval, Track 21a), but delivering it LIVE has no clean path:
+
+ - **Hooks** deliver context fast but are fast-only — an LLM judge
+   overruns the 30s (even 150s is unreliable for nested claude) timeout.
+ - **MCP tools** can run longer (server timeout, background after 2m) but
+   are MODEL-INITIATED, and our data measures the model under-firing on
+   memory tools (0-2 calls/session).
+ - **Sampling** (server delegates the judge to the client's model — the
+   elegant fix) is DEPRECATED in MCP 2026-07-28 and never implemented by
+   Claude Code.
+ - **Elicitation** is supported but requests input from the USER, not the
+   model — wrong shape for memory delivery.
+ - **Async server-push / resource subscriptions** — Claude Code handles
+   only tools/list_changed; there is NO mechanism for a server to inject
+   context into the model's view mid-conversation. "Late delivery" of
+   memories is unsupported.
+
+Verdict: judged retrieval is deployable live only as (a) a FAST hook over
+PRECOMPUTED decisions (viable only when the query distribution is known
+ahead, e.g. a bounded support workload — not open-ended coding), or (b) a
+warm external retrieval service the client queries, which Claude Code's
+MCP surface cannot currently drive proactively. For open-ended use the
+honest status is: the right retrieval mechanism has no live home in this
+harness yet. Track 21b answers the SCIENCE question (does it help) via
+precomputed judging; the DEPLOYMENT question is blocked on platform
+capabilities (sampling or async context injection) that do not exist.
