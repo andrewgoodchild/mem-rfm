@@ -41,3 +41,11 @@ The scoring math implements published equations, cited in code comments:
 ACT-R base-level learning (Anderson & Lebiere 1998), the Petrov (2006)
 incremental approximation, and standard EWMA. The Generative Agents
 comparison condition implements the scoring formula of Park et al. (2023).
+
+## PrefEval
+
+Downloaded at runtime from github.com/amazon-science/PrefEval
+(arXiv 2502.09597) by `prefeval_eval.py`; no SPDX license assertion in
+the repository, treated as evaluation-only. Dataset content is never
+redistributed: `data/prefeval/` stays untracked, and the committed
+per-question records carry only ids, topics, and hit flags.
