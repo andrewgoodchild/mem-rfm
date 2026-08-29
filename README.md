@@ -160,8 +160,14 @@ copying — fixed by the condition gate) and ended with the machinery
 fully validated and the premise refuted. The program has since moved to
 the venues where the environment genuinely forgets: on PrefEval the
 composition bound transferred at exactly +0.0000 and the retrieval
-problem was measured as *applicability, not similarity*; a MEMTRACK
-replay (organizational/tribal knowledge) is registered as Track 20.
+problem was measured as *applicability, not similarity*; and on a
+MEMTRACK replay (organizational/tribal knowledge) the ungated formation
+stack cleared every registered bar (Track 20, 5/5) — forming and
+delivering organizational memory with no human in the loop, at a small
+fraction of the redundancy tax the benchmark's own authors measured for
+memory-as-tools, and without harming correctness. First venue where
+mem-rfm is not a net negative; whether it is a net *positive* needs
+timelines that exceed the context window, the registered next question.
 Per-track record in `bench-quality/RESULTS.md`; synthesis in
 [findings.md](docs/findings.md).
 
