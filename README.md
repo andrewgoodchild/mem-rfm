@@ -2,9 +2,11 @@
 
 mem-rfm is long-term memory for coding agents that ranks what it
 remembers by whether it actually *helped*. The whole thing is one SQLite
-file and a pure-Python scoring engine; an MCP server and a pair of hooks
+file and a pure-Python scoring engine; an MCP server and three hooks
 make it drop-in for Claude Code. There is no service, no API key, and no
 LLM anywhere in the ranking path — scoring is one indexed row read.
+(Formation may optionally use a cheap LLM — the sweep — but ranking
+never does.)
 
 The name is borrowed from marketing's RFM analysis, which segments
 customers by the recency, frequency, and monetary value of their
@@ -59,9 +61,15 @@ and awarded that ledger zero credits (RESULTS.md, Tracks 18b–19).
 ## What it's for, and what it costs
 
 Memory pays for procedural things that repeat **and that the
-environment does not already persist** — build quirks, dependency
-pins, environment workarounds, invocation patterns: the operational
-knowledge that comes back session after session.
+environment does not already persist** — organizational procedures
+and the moments they change, decisions and ownership, user preferences
+and working style, cross-repo tribal knowledge. Our own live program
+proved the second clause the hard way: the operational knowledge we
+originally built this for — build quirks, dependency pins, environment
+workarounds — recurs, but a repository persists it and a frontier
+agent re-derives or routes around it, so there is nothing left for
+memory to save (the registered table below, and
+[findings](docs/findings.md)).
 
 ### What it buys
 
