@@ -2289,3 +2289,37 @@ that shift most pairs will clear wins-vs-losses; smaller claimed
 effects need more pairs or paired reps. On a fable arm the corrected
 metric resolves ~1-event effects at n=8. Registration thresholds
 should be set from these numbers.
+
+## PrefEval profile-scale eval (2026-08-29) — 3/3, and the successor venue's real problem has a familiar shape
+
+The first successor-venue measurement (PROTOCOL.md Amendment 15,
+registered before the run): all 1,000 explicit PrefEval preferences as
+one user's profile store, 1,000 questions streamed against it, oracle
+outcomes from the gold mapping. Structure probed first: gold evidence
+never recurs (one preference, one question — LongMemEval's verdict
+again), so the only learnable channel is DISTRACTOR recurrence, and
+that is what was registered and measured.
+
+**PE-P1 rank-safety: PASS at exactly +0.0000** [−0.007, +0.007] — the
+composition bound holds untouched in a domain it was never tuned on.
+**PE-P3: PASS** — the usage prior alone is harmless at profile scale
+(−0.002). **PE-P2 distractor demotion: PASS on the registered sign
+bar, honestly small** — late-third hit@1 rfm − rfm_wv0 = +0.0060
+[+0.0000, +0.0150]: positive, direction-consistent, CI touching zero.
+The demotion channel exists; at this corpus size it is a whisper.
+
+**The descriptive finding that matters more than the bars:** profile-
+scale preference retrieval is HARD — similarity-only hit@5 is 24.6%,
+hit@1 8.8%, because "restaurants in Rome" and "I strictly avoid
+gluten" share almost no surface. The retrieval problem in the
+substrate-less venue is APPLICABILITY, not similarity — which
+preference constrains this request — and that is the same shape as the
+condition-matching problem the live program ended on (a memory is a
+condition→consequence pair; text similarity cannot see the condition).
+Whatever retrieves memories in this venue needs an applicability
+judgment where the live program needed a condition gate. The two
+programs converge on one lesson from opposite ends.
+
+MEMTRACK (the org/tribal-knowledge agentic benchmark) needs its own
+feasibility pass — it is a live multi-platform environment, not a
+frozen corpus — and is queued, not started.

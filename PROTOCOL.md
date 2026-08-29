@@ -892,3 +892,35 @@ noise of the quintile form, the complexity is not earned and we simplify —
 and the honest headline is that a marketer's formula does the job. If fitted
 ACT-R wins, that is the first evidence anyone has that the
 cognitive-science formulation earns its keep in retrieval ranking.
+
+## Amendment 15 (2026-08-29): PrefEval profile-scale eval — registered before the run
+
+The first successor-venue eval (user preferences: substrate-less by
+construction — a preference not carried is simply unknown). Structure
+probed before any code: PrefEval's ~1,000 explicit pairs are one
+preference to one question, so gold evidence never recurs and the
+LoCoMo adaptivity protocol cannot port (same verdict as LongMemEval,
+RESULTS.md). The learnable channel that DOES exist: distractor
+recurrence — one shared profile store means a preference that
+surface-matches many foreign questions is retrieved wrongly again and
+again, and signed negatives can sink it. Protocol and conditions in
+prefeval_eval.py (sim / rfm_wv0 / rfm; oracle outcomes from the gold
+mapping; metrics before feedback, per the LoCoMo discipline).
+
+Registered predictions:
+  PE-P1 (rank-safety, primary): rfm − sim hit@5 overall >= −0.005.
+        The composition bound must hold in a domain it was never
+        tuned on.
+  PE-P2 (distractor demotion, the novel claim): rfm − rfm_wv0 hit@1
+        on the final third of the stream > 0. Demotion is the only
+        value channel this corpus permits; if it shows nowhere, the
+        value axis has no purchase on singleton-evidence profile
+        retrieval.
+  PE-P3 (usage prior alone is harmless at this scale):
+        |rfm_wv0 − sim| hit@5 overall <= 0.01. Guards the
+        engagement-collapse failure mode at profile scale.
+
+Provenance: dataset downloaded at runtime from amazon-science/PrefEval
+(arXiv 2502.09597), never redistributed; license carries no SPDX
+assertion — treated as eval-only, no content committed beyond derived
+per-question hit records.
