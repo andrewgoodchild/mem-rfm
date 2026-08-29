@@ -1,0 +1,268 @@
+{"id": "1", "arm": "control", "q": 1, "judged": true, "given": "done"}
+{"id": "1", "arm": "control", "q": 2, "judged": true, "given": "charlie"}
+{"id": "1", "arm": "control", "q": 3, "judged": true, "given": "5"}
+{"id": "1", "arm": "rfm", "q": 1, "judged": true, "given": "done"}
+{"id": "1", "arm": "rfm", "q": 2, "judged": true, "given": "charlie"}
+{"id": "1", "arm": "rfm", "q": 3, "judged": true, "given": "5"}
+{"id": "2", "arm": "control", "q": 1, "judged": true, "given": "done"}
+{"id": "2", "arm": "control", "q": 2, "judged": true, "given": "charlie"}
+{"id": "2", "arm": "control", "q": 3, "judged": true, "given": "5"}
+{"id": "2", "arm": "rfm", "q": 1, "judged": true, "given": "done"}
+{"id": "2", "arm": "rfm", "q": 2, "judged": true, "given": "charlie"}
+{"id": "2", "arm": "rfm", "q": 3, "judged": true, "given": "5"}
+{"id": "3", "arm": "control", "q": 1, "judged": false, "given": "[FINAL ANSWER] Social login integration (OAuth with Google/Facebook/GitHub), can"}
+{"id": "3", "arm": "rfm", "q": 1, "judged": false, "given": "[FINAL ANSWER] Social login integration via OAuth (Google, Facebook, GitHub), ca"}
+{"id": "4", "arm": "control", "q": 1, "judged": false, "given": "[FINAL ANSWER] Social login integration (OAuth with Google/Facebook/GitHub), can"}
+{"id": "4", "arm": "rfm", "q": 1, "judged": true, "given": "[FINAL ANSWER] OAuth social login (Google, Facebook, GitHub), critical security "}
+{"id": "5", "arm": "control", "q": 1, "judged": true, "given": "[FINAL ANSWER] The intelligent auto-scaling project (60% complete) was blocked a"}
+{"id": "5", "arm": "control", "q": 2, "judged": true, "given": "[FINAL ANSWER] The advanced monitoring system's comprehensive metrics collection"}
+{"id": "5", "arm": "control", "q": 3, "judged": false, "given": "[FINAL ANSWER] The alerts dashboard (70% complete) was cancelled outright and re"}
+{"id": "5", "arm": "rfm", "q": 1, "judged": true, "given": "[FINAL ANSWER] Auto-scaling (60% complete) was blocked and split into two effort"}
+{"id": "5", "arm": "rfm", "q": 2, "judged": true, "given": "[FINAL ANSWER] The advanced monitoring system's metrics collection generated 50x"}
+{"id": "5", "arm": "rfm", "q": 3, "judged": true, "given": "[FINAL ANSWER] Alerts dashboard (70% done) was cancelled outright and replaced b"}
+{"id": "bootstrap_darkmode_crisis", "arm": "control", "q": 1, "judged": false, "given": "data-bs-theme"}
+{"id": "bootstrap_darkmode_crisis", "arm": "control", "q": 2, "judged": true, "given": "fc3f4b67d65c575daa661ecf31cf59b4ff3cced5"}
+{"id": "bootstrap_darkmode_crisis", "arm": "control", "q": 3, "judged": true, "given": "--bs-secondary-bg"}
+{"id": "bootstrap_darkmode_crisis", "arm": "control", "q": 4, "judged": true, "given": "Eleven (11) issues"}
+{"id": "bootstrap_darkmode_crisis", "arm": "control", "q": 5, "judged": true, "given": "Mark Otto (@mdo)"}
+{"id": "bootstrap_darkmode_crisis", "arm": "rfm", "q": 1, "judged": false, "given": "data-bs-theme"}
+{"id": "bootstrap_darkmode_crisis", "arm": "rfm", "q": 2, "judged": true, "given": "fc3f4b67d65c575daa661ecf31cf59b4ff3cced5"}
+{"id": "bootstrap_darkmode_crisis", "arm": "rfm", "q": 3, "judged": true, "given": "--bs-secondary-bg"}
+{"id": "bootstrap_darkmode_crisis", "arm": "rfm", "q": 4, "judged": true, "given": "Eleven (11)"}
+{"id": "bootstrap_darkmode_crisis", "arm": "rfm", "q": 5, "judged": true, "given": "Mark Otto (mdo)"}
+{"id": "browser_use_timeout_crisis", "arm": "control", "q": 1, "judged": true, "given": "scrollIntoViewIfNeeded"}
+{"id": "browser_use_timeout_crisis", "arm": "control", "q": 2, "judged": true, "given": "39"}
+{"id": "browser_use_timeout_crisis", "arm": "control", "q": 3, "judged": true, "given": "4"}
+{"id": "browser_use_timeout_crisis", "arm": "control", "q": 4, "judged": true, "given": "20250826"}
+{"id": "browser_use_timeout_crisis", "arm": "control", "q": 5, "judged": true, "given": "640"}
+{"id": "browser_use_timeout_crisis", "arm": "rfm", "q": 1, "judged": true, "given": "scrollIntoViewIfNeeded"}
+{"id": "browser_use_timeout_crisis", "arm": "rfm", "q": 2, "judged": true, "given": "39"}
+{"id": "browser_use_timeout_crisis", "arm": "rfm", "q": 3, "judged": true, "given": "4"}
+{"id": "browser_use_timeout_crisis", "arm": "rfm", "q": 4, "judged": true, "given": "20250826"}
+{"id": "browser_use_timeout_crisis", "arm": "rfm", "q": 5, "judged": true, "given": "640"}
+{"id": "kaggle_sdk_crisis", "arm": "control", "q": 1, "judged": false, "given": "2"}
+{"id": "kaggle_sdk_crisis", "arm": "control", "q": 2, "judged": true, "given": "prepare.py"}
+{"id": "kaggle_sdk_crisis", "arm": "control", "q": 3, "judged": false, "given": "15"}
+{"id": "kaggle_sdk_crisis", "arm": "control", "q": 4, "judged": true, "given": "3"}
+{"id": "kaggle_sdk_crisis", "arm": "control", "q": 5, "judged": true, "given": "194"}
+{"id": "kaggle_sdk_crisis", "arm": "rfm", "q": 1, "judged": false, "given": "2"}
+{"id": "kaggle_sdk_crisis", "arm": "rfm", "q": 2, "judged": true, "given": "prepare.py"}
+{"id": "kaggle_sdk_crisis", "arm": "rfm", "q": 3, "judged": false, "given": "15"}
+{"id": "kaggle_sdk_crisis", "arm": "rfm", "q": 4, "judged": true, "given": "3"}
+{"id": "kaggle_sdk_crisis", "arm": "rfm", "q": 5, "judged": true, "given": "194"}
+{"id": "langflow_composio_crisis", "arm": "control", "q": 1, "judged": true, "given": "The lock file (uv.lock \u2014 the main-branch dependency snapshot)"}
+{"id": "langflow_composio_crisis", "arm": "control", "q": 2, "judged": true, "given": "\"Dependency snapshot drift\""}
+{"id": "langflow_composio_crisis", "arm": "control", "q": 3, "judged": true, "given": "2025-08-22"}
+{"id": "langflow_composio_crisis", "arm": "rfm", "q": 1, "judged": true, "given": "The lock file (`uv.lock` \u2014 the main branch's dependency snapshot)"}
+{"id": "langflow_composio_crisis", "arm": "rfm", "q": 2, "judged": true, "given": "\"Dependency snapshot drift\""}
+{"id": "langflow_composio_crisis", "arm": "rfm", "q": 3, "judged": true, "given": "2025-08-22"}
+{"id": "nemo_run_cli_crisis", "arm": "control", "q": 1, "judged": false, "given": "4857.00101"}
+{"id": "nemo_run_cli_crisis", "arm": "control", "q": 2, "judged": true, "given": "54"}
+{"id": "nemo_run_cli_crisis", "arm": "control", "q": 3, "judged": false, "given": "3"}
+{"id": "nemo_run_cli_crisis", "arm": "control", "q": 4, "judged": true, "given": "2025-05-15"}
+{"id": "nemo_run_cli_crisis", "arm": "control", "q": 5, "judged": true, "given": "142"}
+{"id": "nemo_run_cli_crisis", "arm": "rfm", "q": 1, "judged": false, "given": "4857.00101"}
+{"id": "nemo_run_cli_crisis", "arm": "rfm", "q": 2, "judged": true, "given": "54"}
+{"id": "nemo_run_cli_crisis", "arm": "rfm", "q": 3, "judged": false, "given": "3"}
+{"id": "nemo_run_cli_crisis", "arm": "rfm", "q": 4, "judged": true, "given": "2025-05-15"}
+{"id": "nemo_run_cli_crisis", "arm": "rfm", "q": 5, "judged": true, "given": "142"}
+{"id": "plexe_autoscroll_crisis", "arm": "control", "q": 1, "judged": true, "given": "sarah_kim"}
+{"id": "plexe_autoscroll_crisis", "arm": "control", "q": 2, "judged": false, "given": "Implemented smart auto-scroll in chat (#143)"}
+{"id": "plexe_autoscroll_crisis", "arm": "control", "q": 3, "judged": true, "given": "50%; handleScroll"}
+{"id": "plexe_autoscroll_crisis", "arm": "control", "q": 4, "judged": true, "given": "medium"}
+{"id": "plexe_autoscroll_crisis", "arm": "rfm", "q": 1, "judged": true, "given": "sarah_kim"}
+{"id": "plexe_autoscroll_crisis", "arm": "rfm", "q": 2, "judged": false, "given": "Implemented smart auto-scroll in chat (#143)"}
+{"id": "plexe_autoscroll_crisis", "arm": "rfm", "q": 3, "judged": true, "given": "50% milestone completion; function is handleScroll (in plexe/ui/index.html)"}
+{"id": "plexe_autoscroll_crisis", "arm": "rfm", "q": 4, "judged": true, "given": "medium"}
+{"id": "pw_1", "arm": "control", "q": 1, "judged": false, "given": "[Cause] closed, closed, done \u2014 the \"Add Evaluation button\" ticket (closed) and t"}
+{"id": "pw_1", "arm": "rfm", "q": 1, "judged": false, "given": "[Cause] closed, closed, done \u2014 the evaluation button (ticket \"Add Evaluation but"}
+{"id": "pw_2", "arm": "control", "q": 1, "judged": false, "given": "[Events] Slack:20250301T0900, Linear:20250301T0930, Slack:20250301T1000, Slack:2"}
+{"id": "pw_2", "arm": "control", "q": 2, "judged": false, "given": "[Latency] P50 ~400 ms, P99 ~1.5 s (1500 ms) for the semantic/embeddings search"}
+{"id": "pw_2", "arm": "control", "q": 3, "judged": true, "given": "[Search Product Description Source] Free-text user input \u2014 users' own descriptio"}
+{"id": "pw_2", "arm": "control", "q": 4, "judged": true, "given": "[Indexed Product Description Source] The product catalog \u2014 catalog description f"}
+{"id": "pw_2", "arm": "rfm", "q": 1, "judged": false, "given": "[Events] Linear:20250301T0930, Slack:20250301T1000, Slack:20250301T1015, Slack:2"}
+{"id": "pw_2", "arm": "rfm", "q": 2, "judged": true, "given": "[Latency] P99 ~1.5s (P50 ~400ms)"}
+{"id": "pw_2", "arm": "rfm", "q": 3, "judged": true, "given": "[Search Product Description Source] free-text user-provided descriptions (what u"}
+{"id": "pw_2", "arm": "rfm", "q": 4, "judged": true, "given": "[Indexed Product Description Source] product catalog descriptions (catalog metad"}
+{"id": "pydantic_typeddict_crisis", "arm": "control", "q": 1, "judged": true, "given": "alex_chen"}
+{"id": "pydantic_typeddict_crisis", "arm": "control", "q": 2, "judged": true, "given": "9b52422"}
+{"id": "pydantic_typeddict_crisis", "arm": "control", "q": 3, "judged": true, "given": "JsonSchemaGenerator.typed_dict_schema"}
+{"id": "pydantic_typeddict_crisis", "arm": "control", "q": 4, "judged": false, "given": "high"}
+{"id": "pydantic_typeddict_crisis", "arm": "rfm", "q": 1, "judged": true, "given": "alex_chen"}
+{"id": "pydantic_typeddict_crisis", "arm": "rfm", "q": 2, "judged": true, "given": "9b52422"}
+{"id": "pydantic_typeddict_crisis", "arm": "rfm", "q": 3, "judged": true, "given": "JsonSchemaGenerator.typed_dict_schema"}
+{"id": "pydantic_typeddict_crisis", "arm": "rfm", "q": 4, "judged": false, "given": "high"}
+{"id": "vg_1", "arm": "control", "q": 1, "judged": true, "given": "The Redis caching layer for dashboard aggregated metrics (PR #156, commit a7f8b2"}
+{"id": "vg_1", "arm": "control", "q": 2, "judged": true, "given": "A mandatory \"real-time use case review\" / use-case analysis step in the design p"}
+{"id": "vg_1", "arm": "control", "q": 3, "judged": true, "given": "Charlie \u2014 his analysis of churned-customer exit interviews (Jan 7 2025): 67% cit"}
+{"id": "vg_1", "arm": "rfm", "q": 1, "judged": true, "given": "The Redis caching layer for dashboard metrics (Bob's PR #156, commit a7f8b23) wi"}
+{"id": "vg_1", "arm": "rfm", "q": 2, "judged": true, "given": "A mandatory \"real-time use case review\" step (use-case/data-freshness analysis) "}
+{"id": "vg_1", "arm": "rfm", "q": 3, "judged": true, "given": "Charlie \u2014 churned-customer exit interview analysis showing 67% cited \"unreliable"}
+{"id": "vg_10", "arm": "control", "q": 1, "judged": false, "given": "A GDPR compliance audit requiring audit trails for all customer data access by M"}
+{"id": "vg_10", "arm": "control", "q": 2, "judged": true, "given": "Storing full request payloads in the audit logs (which contained customer PII \u2014 "}
+{"id": "vg_10", "arm": "control", "q": 3, "judged": true, "given": "The concurrent MySQL\u2192PostgreSQL migration caused its own slowdowns, so the loggi"}
+{"id": "vg_10", "arm": "rfm", "q": 1, "judged": true, "given": "A GDPR compliance audit requiring audit trails for all customer-data access by M"}
+{"id": "vg_10", "arm": "rfm", "q": 2, "judged": true, "given": "Logging full request payloads (which contained customer PII \u2014 names, emails, add"}
+{"id": "vg_10", "arm": "rfm", "q": 3, "judged": false, "given": "The concurrent MySQL\u2192PostgreSQL migration caused its own slowdowns, so performan"}
+{"id": "vg_11", "arm": "control", "q": 1, "judged": true, "given": "The Nov 5 CRM sync performance optimization (Linear \"Optimize CRM sync performan"}
+{"id": "vg_11", "arm": "control", "q": 2, "judged": true, "given": "Bob's billing team \u2014 they deployed emergency ASCII name normalization (strip all"}
+{"id": "vg_11", "arm": "control", "q": 3, "judged": true, "given": "The timing correlation (corruption began right after the Nov 5 sync optimization"}
+{"id": "vg_11", "arm": "rfm", "q": 1, "judged": true, "given": "CodeAgent's Nov 5 CRM sync performance optimization changed the sync config enco"}
+{"id": "vg_11", "arm": "rfm", "q": 2, "judged": false, "given": "The billing team (bob) \u2014 emergency name normalization that stripped all non-ASCI"}
+{"id": "vg_11", "arm": "rfm", "q": 3, "judged": true, "given": "Timing correlation (corruption began right after the Nov 5 sync deploy) plus the"}
+{"id": "vg_12", "arm": "control", "q": 1, "judged": true, "given": "numpy upgraded from 1.23.5 to 1.24.0 (in the security dependency update), which "}
+{"id": "vg_12", "arm": "control", "q": 2, "judged": true, "given": "charlie, by reproducing the tensor errors in a local CUDA 11.7 environment on hi"}
+{"id": "vg_12", "arm": "control", "q": 3, "judged": true, "given": "alice's `requirements-stable.txt`: pin numpy==1.23.5 and upgrade torch to >=1.13"}
+{"id": "vg_12", "arm": "rfm", "q": 1, "judged": true, "given": "numpy upgraded from 1.23.5 to 1.24.0 (broke CUDA tensor memory layout / non-cont"}
+{"id": "vg_12", "arm": "rfm", "q": 2, "judged": true, "given": "charlie, by reproducing locally in a CUDA 11.7 environment on his `cuda-debug` b"}
+{"id": "vg_12", "arm": "rfm", "q": 3, "judged": true, "given": "requirements-stable.txt pinning numpy==1.23.5 with torch>=1.13.0 (security patch"}
+{"id": "vg_13", "arm": "control", "q": 1, "judged": true, "given": "Session invalidation logic that bypasses standard logout for concurrent enterpri"}
+{"id": "vg_13", "arm": "control", "q": 2, "judged": true, "given": "The assumption that all enterprise tokens have a 24-hour max lifetime, which bro"}
+{"id": "vg_13", "arm": "control", "q": 3, "judged": true, "given": "Commit history / code archaeology plus adding debug logging to token_manager.py "}
+{"id": "vg_13", "arm": "rfm", "q": 1, "judged": true, "given": "Charlie's session invalidation logic that bypasses standard logout for concurren"}
+{"id": "vg_13", "arm": "rfm", "q": 2, "judged": true, "given": "The token refresh logic assumed all enterprise tokens have a 24-hour max lifetim"}
+{"id": "vg_13", "arm": "rfm", "q": 3, "judged": true, "given": "Code archaeology via commit history plus adding debug logging to token_manager.p"}
+{"id": "vg_15", "arm": "control", "q": 1, "judged": true, "given": "Disabled input validation on patient forms (Jan 20), hardcoded HealthSystem Corp"}
+{"id": "vg_15", "arm": "control", "q": 2, "judged": true, "given": "\"Ship or die\""}
+{"id": "vg_15", "arm": "control", "q": 3, "judged": true, "given": "Duplicate patient records merged incorrectly (mixed medical histories) due to mi"}
+{"id": "vg_15", "arm": "rfm", "q": 1, "judged": true, "given": "Disabled input validation on patient forms (Jan 20), hardcoded HealthSystem Corp"}
+{"id": "vg_15", "arm": "rfm", "q": 2, "judged": true, "given": "\"Ship or die\""}
+{"id": "vg_15", "arm": "rfm", "q": 3, "judged": true, "given": "Duplicate patient records merged incorrectly (mixed medical histories) due to mi"}
+{"id": "vg_16", "arm": "control", "q": 1, "judged": true, "given": "Leaked access to TechCorp's internal Slack \u2014 the #project-neural-competitor chan"}
+{"id": "vg_16", "arm": "control", "q": 2, "judged": true, "given": "alice, in the #engineering Slack channel (Nov 8: \"I'm going to push back on this"}
+{"id": "vg_16", "arm": "control", "q": 3, "judged": true, "given": "NeuralCore Analytics (\"Project NeuralCore Analytics\")"}
+{"id": "vg_16", "arm": "rfm", "q": 1, "judged": true, "given": "Leaked access to TechCorp's internal Slack \u2014 the #project-neural-competitor chan"}
+{"id": "vg_16", "arm": "rfm", "q": 2, "judged": true, "given": "Alice, in the #engineering Slack channel (Nov 8, 2024: \"I'm going to push back o"}
+{"id": "vg_16", "arm": "rfm", "q": 3, "judged": true, "given": "NeuralCore Analytics (\"Project NeuralCore Analytics\")"}
+{"id": "vg_17", "arm": "control", "q": 1, "judged": true, "given": "v2.4.2, CVE-2024-8847"}
+{"id": "vg_17", "arm": "control", "q": 2, "judged": false, "given": "#customer-success, 20241211T1445 (Dec 11, 2024 14:45)"}
+{"id": "vg_17", "arm": "control", "q": 3, "judged": true, "given": "The deployment system auto-applied v2.4.2's database connection pooling changes "}
+{"id": "vg_17", "arm": "rfm", "q": 1, "judged": true, "given": "v2.4.2 \u2014 CVE-2024-8847"}
+{"id": "vg_17", "arm": "rfm", "q": 2, "judged": true, "given": "#customer-success, 20241211T1445 (2024-12-11 14:45)"}
+{"id": "vg_17", "arm": "rfm", "q": 3, "judged": true, "given": "The v2.4.2 database connection pooling changes auto-applied (via the deployment "}
+{"id": "vg_18", "arm": "control", "q": 1, "judged": false, "given": "Diana's third paper finding (\"Multi-Head Attention Variants for LLMs\") that trad"}
+{"id": "vg_18", "arm": "control", "q": 2, "judged": true, "given": "GPU-kernel-level memory allocation conflicts: each mechanism optimizes tensor sh"}
+{"id": "vg_18", "arm": "control", "q": 3, "judged": true, "given": "Alice's \"architectural decomposition\" \u2014 instead of picking one, they pipelined a"}
+{"id": "vg_18", "arm": "rfm", "q": 1, "judged": false, "given": "Diana's third paper, \"Multi-Head Attention Variants for LLMs\" (Jan 16), showing "}
+{"id": "vg_18", "arm": "rfm", "q": 2, "judged": true, "given": "GPU kernel-level memory allocation conflicts: each approach optimizes tensor sha"}
+{"id": "vg_18", "arm": "rfm", "q": 3, "judged": true, "given": "They didn't pick one \u2014 Alice proposed architectural decomposition and the team b"}
+{"id": "vg_19", "arm": "control", "q": 1, "judged": true, "given": "Bob's systematic layer-norm study and Diana's parallel attention-head experiment"}
+{"id": "vg_19", "arm": "control", "q": 2, "judged": true, "given": "23 overlapping experiments with inconsistent baselines: Bob tested layer normali"}
+{"id": "vg_19", "arm": "control", "q": 3, "judged": false, "given": "A tiered framework with dedicated compute for core work and shared compute for t"}
+{"id": "vg_19", "arm": "rfm", "q": 1, "judged": true, "given": "Bob's systematic layer-norm baselines and Diana's 12 parallel attention-head exp"}
+{"id": "vg_19", "arm": "rfm", "q": 2, "judged": true, "given": "23 overlapping experiments with inconsistent baseline conditions: Bob tested lay"}
+{"id": "vg_19", "arm": "rfm", "q": 3, "judged": false, "given": "A three-tier experimentation framework (Linear, done Jan 19): Tier 1 core ablati"}
+{"id": "vg_2", "arm": "control", "q": 1, "judged": false, "given": "The utils-common v2.1.3\u2192v2.2.0 security update, which transitively pulled in fas"}
+{"id": "vg_2", "arm": "control", "q": 2, "judged": false, "given": "Alice"}
+{"id": "vg_2", "arm": "control", "q": 3, "judged": false, "given": "fast-json-parse v3.0 changed null-handling to return `undefined` instead of `nul"}
+{"id": "vg_2", "arm": "rfm", "q": 1, "judged": false, "given": "Charlie's utils-common v2.1.3\u2192v2.2.0 security update, which transitively upgrade"}
+{"id": "vg_2", "arm": "rfm", "q": 2, "judged": false, "given": "Alice"}
+{"id": "vg_2", "arm": "rfm", "q": 3, "judged": false, "given": "fast-json-parse v3.0 changed null-handling to return `undefined` instead of `nul"}
+{"id": "vg_20", "arm": "control", "q": 1, "judged": false, "given": "\"Efficient Distributed Training with Gradient Compression\" by Chen et al. (share"}
+{"id": "vg_20", "arm": "control", "q": 2, "judged": true, "given": "Charlie misread the compliance requirements specification \u2014 SOC2 Appendix B requ"}
+{"id": "vg_20", "arm": "control", "q": 3, "judged": false, "given": "The \"real-time model retraining dashboard\"; alice first mentioned the threat on "}
+{"id": "vg_20", "arm": "rfm", "q": 1, "judged": true, "given": "'Efficient Distributed Training with Gradient Compression' by Chen et al. (share"}
+{"id": "vg_20", "arm": "rfm", "q": 2, "judged": true, "given": "Alice said Charlie misread the compliance requirements specification \u2014 SOC2 Appe"}
+{"id": "vg_20", "arm": "rfm", "q": 3, "judged": false, "given": "The \"real-time model retraining dashboard\" ($2.1M contract); Alice first mention"}
+{"id": "vg_21", "arm": "control", "q": 1, "judged": true, "given": "Charlie (Mar 8, #infrastructure) \u2014 cited `max_connections` set to 150 as the bot"}
+{"id": "vg_21", "arm": "control", "q": 2, "judged": false, "given": "Consensus partition scenarios make the system unavailable during network splits "}
+{"id": "vg_21", "arm": "control", "q": 3, "judged": true, "given": "Bob said connection multiplexing eliminated the thread contention, giving 5x bet"}
+{"id": "vg_21", "arm": "rfm", "q": 1, "judged": true, "given": "charlie \u2014 max_connections set to 150 \u2014 the Feb 12 \"Database security hardening -"}
+{"id": "vg_21", "arm": "rfm", "q": 2, "judged": true, "given": "Consensus partition scenarios make the system unavailable during network splits "}
+{"id": "vg_21", "arm": "rfm", "q": 3, "judged": true, "given": "Connection multiplexing eliminated the thread contention (5x better utilization "}
+{"id": "vg_22", "arm": "control", "q": 1, "judged": true, "given": "AnalyticsFlow was A/B testing new data centers; geographic routing changes cause"}
+{"id": "vg_22", "arm": "control", "q": 2, "judged": false, "given": "The DataVault data transformation layer (alice's PR #241) \u2014 its intermediate obj"}
+{"id": "vg_22", "arm": "control", "q": 3, "judged": true, "given": "The \"failures\" were just routing delays \u2014 a simple timeout increase to 30 second"}
+{"id": "vg_22", "arm": "rfm", "q": 1, "judged": true, "given": "AnalyticsFlow was A/B testing new data centers since early January; geographic r"}
+{"id": "vg_22", "arm": "rfm", "q": 2, "judged": false, "given": "The DataVault data transformation layer (alice's PR #241), which created excessi"}
+{"id": "vg_22", "arm": "rfm", "q": 3, "judged": true, "given": "The \"failures\" were just routing delays, so a simple 30-second timeout adjustmen"}
+{"id": "vg_23", "arm": "control", "q": 1, "judged": false, "given": "Implementing conditional (nested) flag dependencies \u2014 flags referencing other fl"}
+{"id": "vg_23", "arm": "control", "q": 2, "judged": true, "given": "TechCorp's compliance_mode + enterprise_dashboard + custom_reporting combination"}
+{"id": "vg_23", "arm": "control", "q": 3, "judged": true, "given": "The flags had become a distributed state machine: business logic was implicit/em"}
+{"id": "vg_23", "arm": "rfm", "q": 1, "judged": true, "given": "Implementing conditional/nested flag dependencies \u2014 flags that reference other f"}
+{"id": "vg_23", "arm": "rfm", "q": 2, "judged": true, "given": "TechCorp's compliance_mode + enterprise_dashboard + custom_reporting combination"}
+{"id": "vg_23", "arm": "rfm", "q": 3, "judged": true, "given": "The flag system had become a distributed state machine \u2014 business logic was enco"}
+{"id": "vg_24", "arm": "control", "q": 1, "judged": true, "given": "LLM classifier inference was ~100x slower than training, revealed by GPU utiliza"}
+{"id": "vg_24", "arm": "control", "q": 2, "judged": true, "given": "Kubernetes persistent volume storage capacity \u2014 exhausted in 4 days of concurren"}
+{"id": "vg_24", "arm": "control", "q": 3, "judged": true, "given": "PyTorch DataLoader shuffling bug with filtered datasets \u2014 wrong dataset length c"}
+{"id": "vg_24", "arm": "rfm", "q": 1, "judged": true, "given": "LLM classifier inference was ~100x slower than training, revealed by GPU utiliza"}
+{"id": "vg_24", "arm": "rfm", "q": 2, "judged": true, "given": "Kubernetes persistent volume storage capacity (89%\u219294%\u219297%, exhausted) \u2014 reached"}
+{"id": "vg_24", "arm": "rfm", "q": 3, "judged": true, "given": "A PyTorch DataLoader shuffling bug with filtered datasets: wrong dataset length "}
+{"id": "vg_25", "arm": "control", "q": 1, "judged": true, "given": "Redis conversation state persistence failed when dialogue context exceeded 8k to"}
+{"id": "vg_25", "arm": "control", "q": 2, "judged": true, "given": "Weather API timeouts \u2014 partial responses marked as successful completions; 23% o"}
+{"id": "vg_25", "arm": "control", "q": 3, "judged": false, "given": "Complex reasoning chains (SWE-bench/GPQA, ~50k tokens) exceeded the 32k context "}
+{"id": "vg_25", "arm": "rfm", "q": 1, "judged": true, "given": "Redis conversation state persistence failed when dialogue context exceeded 8k to"}
+{"id": "vg_25", "arm": "rfm", "q": 2, "judged": true, "given": "Weather API timeouts \u2014 partial responses marked as \"successful completions\" when"}
+{"id": "vg_25", "arm": "rfm", "q": 3, "judged": false, "given": "Complex reasoning chains (SWE-bench/GPQA, ~50k tokens) exceeded the 32k context "}
+{"id": "vg_26", "arm": "control", "q": 1, "judged": true, "given": "The dockerized evaluation system (Docker containers orchestrated by Kubernetes, "}
+{"id": "vg_26", "arm": "control", "q": 2, "judged": true, "given": "Charlie (infrastructure) identified the root cause in the Jan 30 post-mortem: CP"}
+{"id": "vg_26", "arm": "control", "q": 3, "judged": true, "given": "Memory went from 2GB total to 32GB per evaluation batch (a 16x explosion, vs. a "}
+{"id": "vg_26", "arm": "rfm", "q": 1, "judged": true, "given": "Dockerizing the multi-turn evaluations (Kubernetes spawning 50\u2013200+ containers p"}
+{"id": "vg_26", "arm": "rfm", "q": 2, "judged": true, "given": "Charlie (Jan 30 post-mortem): CPU-scheduling contention between container instan"}
+{"id": "vg_26", "arm": "rfm", "q": 3, "judged": true, "given": "Memory went from ~2GB total to 32GB RAM per evaluation batch (a 16x explosion; o"}
+{"id": "vg_27", "arm": "control", "q": 1, "judged": true, "given": "The multi-agent adversarial search (5 competing agents with different heuristics"}
+{"id": "vg_27", "arm": "control", "q": 2, "judged": false, "given": "Charlie (confirming Diana's \"recursive search within search\" suspicion) \u2014 the pr"}
+{"id": "vg_27", "arm": "control", "q": 3, "judged": false, "given": "8^50 (over 10^45 possible paths, 8 branches per node) \u2014 triggered by raising the"}
+{"id": "vg_27", "arm": "rfm", "q": 1, "judged": true, "given": "Multi-agent adversarial search (5 independent competing agents, deployed 2025-01"}
+{"id": "vg_27", "arm": "rfm", "q": 2, "judged": true, "given": "Diana (2025-01-21, with Charlie confirming) \u2014 the ML pruning classifiers need th"}
+{"id": "vg_27", "arm": "rfm", "q": 3, "judged": true, "given": "8^50 branching explosion (8 branches per node over 50+ steps \u2014 over 10^45 possib"}
+{"id": "vg_28", "arm": "control", "q": 1, "judged": true, "given": "Customers reported incorrect citations and fact-check failures but could not tru"}
+{"id": "vg_28", "arm": "control", "q": 2, "judged": true, "given": "The Anthropic Constitutional AI paper charlie shared on February 1, 2025, whose "}
+{"id": "vg_28", "arm": "control", "q": 3, "judged": true, "given": "A conversation state serialization bug: when conversations exceeded the 32k toke"}
+{"id": "vg_28", "arm": "rfm", "q": 1, "judged": true, "given": "Customers reported incorrect citations and fact-check failures that neither they"}
+{"id": "vg_28", "arm": "rfm", "q": 2, "judged": true, "given": "The Anthropic Constitutional AI paper charlie shared on Feb 1, whose conversatio"}
+{"id": "vg_28", "arm": "rfm", "q": 3, "judged": true, "given": "A conversation state serialization bug: when conversations exceeded the 32k toke"}
+{"id": "vg_29", "arm": "control", "q": 1, "judged": true, "given": "Dense embeddings failed at exact entity/keyword matching \u2014 semantic similarity r"}
+{"id": "vg_29", "arm": "control", "q": 2, "judged": true, "given": "Matryoshka is intelligent resource allocation, not just memory optimization: dyn"}
+{"id": "vg_29", "arm": "control", "q": 3, "judged": true, "given": "38% recall on technical queries (below the 40% SLA minimum), revealed by DataCor"}
+{"id": "vg_29", "arm": "rfm", "q": 1, "judged": true, "given": "Dense embeddings lost exact entity-match precision \u2014 semantic similarity ranked "}
+{"id": "vg_29", "arm": "rfm", "q": 2, "judged": true, "given": "Intelligent resource allocation via dynamic/variable dimensionality (512/1024/20"}
+{"id": "vg_29", "arm": "rfm", "q": 3, "judged": true, "given": "38% recall on technical queries (below the 40% SLA minimum), revealed by DataCor"}
+{"id": "vg_3", "arm": "control", "q": 1, "judged": true, "given": "Not a bug \u2014 the 30/70 feature-flag rollout of the new ML search algorithm split "}
+{"id": "vg_3", "arm": "control", "q": 2, "judged": true, "given": "All internal team members must be explicitly assigned to specific test groups in"}
+{"id": "vg_3", "arm": "control", "q": 3, "judged": false, "given": "bob \u2014 he noted diana's 30/70 engagement-metric split (30% with higher CTR, 70% u"}
+{"id": "vg_3", "arm": "rfm", "q": 1, "judged": true, "given": "Not a bug \u2014 the feature flag A/B test was serving two different search algorithm"}
+{"id": "vg_3", "arm": "rfm", "q": 2, "judged": true, "given": "All internal team members must be explicitly assigned to specific test groups ra"}
+{"id": "vg_3", "arm": "rfm", "q": 3, "judged": false, "given": "Bob \u2014 he pointed out that Diana's analytics showing a 30/70 split in engagement/"}
+{"id": "vg_32", "arm": "control", "q": 1, "judged": true, "given": "MegaCorp's locked-down environment capped external systems at 10 requests/minute"}
+{"id": "vg_32", "arm": "control", "q": 2, "judged": true, "given": "Diana proposed a customer environment analysis phase before any prototype develo"}
+{"id": "vg_32", "arm": "control", "q": 3, "judged": true, "given": "A mandatory technical environment compatibility assessment before any prototype "}
+{"id": "vg_32", "arm": "rfm", "q": 1, "judged": true, "given": "MegaCorp's locked-down environment capped external systems at 10 req/min API rat"}
+{"id": "vg_32", "arm": "rfm", "q": 2, "judged": true, "given": "A customer environment analysis phase before any prototype development, followed"}
+{"id": "vg_32", "arm": "rfm", "q": 3, "judged": true, "given": "A mandatory technical environment compatibility assessment before any prototype "}
+{"id": "vg_4", "arm": "control", "q": 1, "judged": true, "given": "The connection-pool optimization's aggressive timeout settings, tuned for sub-se"}
+{"id": "vg_4", "arm": "control", "q": 2, "judged": false, "given": "Diana's Apr 20 post-mortem named three systemic gaps that let it hide for weeks:"}
+{"id": "vg_4", "arm": "control", "q": 3, "judged": true, "given": "Bob \u2014 on Apr 18, after diving into customer workflows (payment flows, notificati"}
+{"id": "vg_4", "arm": "rfm", "q": 1, "judged": false, "given": "Diana's 2025-03-11 connection-pool optimization applied aggressive sub-second ti"}
+{"id": "vg_4", "arm": "rfm", "q": 2, "judged": false, "given": "In the 2025-04-20 post-mortem Diana named three systemic issues, which Bob and C"}
+{"id": "vg_4", "arm": "rfm", "q": 3, "judged": true, "given": "Bob \u2014 on 2025-04-18 he dove into customer workflows (payment flows, notification"}
+{"id": "vg_5", "arm": "control", "q": 1, "judged": false, "given": "Alice wrote the \"user activity tracking\" spec too quickly and deliberately high-"}
+{"id": "vg_5", "arm": "control", "q": 2, "judged": true, "given": "(1) Bob's database audit trail \u2014 SQL event logging of every user action; (2) Dia"}
+{"id": "vg_5", "arm": "control", "q": 3, "judged": true, "given": "From Apr 7\u201318 all three posted parallel \"going smoothly\"/\"DONE\"/\"complete\" celeb"}
+{"id": "vg_5", "arm": "rfm", "q": 1, "judged": false, "given": "Alice (the lead) wrote the \"user activity tracking\" spec too quickly under TechC"}
+{"id": "vg_5", "arm": "rfm", "q": 2, "judged": true, "given": "(1) Bob/backend: database audit trail \u2014 SQL event logging of every user action; "}
+{"id": "vg_5", "arm": "rfm", "q": 3, "judged": true, "given": "From Apr 7\u201318 each team posted parallel, confident status updates and completion"}
+{"id": "vg_6", "arm": "control", "q": 1, "judged": true, "given": "Race condition in the distributed transaction: per-system optimistic locking (as"}
+{"id": "vg_6", "arm": "control", "q": 2, "judged": true, "given": "Mandatory \"distributed transaction analysis\" for any cross-system integrations"}
+{"id": "vg_6", "arm": "control", "q": 3, "judged": false, "given": "alice"}
+{"id": "vg_6", "arm": "rfm", "q": 1, "judged": true, "given": "Race condition in the distributed transaction: payment processing and inventory "}
+{"id": "vg_6", "arm": "rfm", "q": 2, "judged": true, "given": "Mandatory \"distributed transaction analysis\" for any cross-system integration (n"}
+{"id": "vg_6", "arm": "rfm", "q": 3, "judged": false, "given": "alice"}
+{"id": "vg_7", "arm": "control", "q": 1, "judged": true, "given": "Bob assumed \"slow API = database problem\": he saw the same complex aggregation q"}
+{"id": "vg_7", "arm": "control", "q": 2, "judged": true, "given": "Alice believed the stale-data edge cases were normal cache behavior: cache inval"}
+{"id": "vg_7", "arm": "control", "q": 3, "judged": true, "given": "Diana believed the workarounds were needed because of legitimate but complex use"}
+{"id": "vg_7", "arm": "rfm", "q": 1, "judged": true, "given": "Bob assumed \"slow API = database problem\": he saw repeated identical expensive a"}
+{"id": "vg_7", "arm": "rfm", "q": 2, "judged": true, "given": "Alice believed the stale-data edge cases were normal side-effects of aggressive "}
+{"id": "vg_7", "arm": "rfm", "q": 3, "judged": true, "given": "Diana took the workarounds' necessity as given: she believed the invalidation tr"}
+{"id": "vg_8", "arm": "control", "q": 1, "judged": true, "given": "CodeFlow's \"CodeFlow AI\" (announced 13 Jan 2025) \u2014 autonomous code generation at"}
+{"id": "vg_8", "arm": "control", "q": 2, "judged": true, "given": "Enterprise customers migrating to AI-first solutions, leaving DevStudio to becom"}
+{"id": "vg_8", "arm": "control", "q": 3, "judged": false, "given": "Enterprise development teams (MegaCorp, TechGiant, StartupUnicorn) \u2014 AI-assisted"}
+{"id": "vg_8", "arm": "rfm", "q": 1, "judged": true, "given": "CodeFlow's \"CodeFlow AI\" (announced Jan 13, 2025) \u2014 autonomous code generation a"}
+{"id": "vg_8", "arm": "rfm", "q": 2, "judged": true, "given": "DevStudio becoming a \"legacy tool\" in a rapidly evolving market \u2014 specifically t"}
+{"id": "vg_8", "arm": "rfm", "q": 3, "judged": false, "given": "Enterprise development teams \u2014 AI-assisted code review workflows (85% of enterpr"}
+{"id": "vg_9", "arm": "control", "q": 1, "judged": true, "given": "Apache StreamFlow (Apache Foundation's open-source, Apache 2.0\u2013licensed data pip"}
+{"id": "vg_9", "arm": "control", "q": 2, "judged": true, "given": "An open core model (Option 3): release an MIT-licensed Community Edition (visual"}
+{"id": "vg_9", "arm": "control", "q": 3, "judged": true, "given": "Existing enterprise customers \u2014 alice's Jan 18 calls with the top 5 accounts (Me"}
+{"id": "vg_9", "arm": "rfm", "q": 1, "judged": true, "given": "Apache Foundation's \"StreamFlow\" open-source data pipeline platform (Apache 2.0 "}
+{"id": "vg_9", "arm": "rfm", "q": 2, "judged": true, "given": "Open core model: an MIT-licensed Community Edition (visual pipeline builder, bas"}
+{"id": "vg_9", "arm": "rfm", "q": 3, "judged": true, "given": "Existing enterprise customers \u2014 alice's Jan 18 calls with the top 5 accounts (Me"}

@@ -2183,6 +2183,47 @@ substrate thesis ends the program as its one standing positive claim:
 memory pays where the environment forgets, and a repository never
 forgets.
 
+## Track 21a — judge adjudication of Track 20 (2026-08-29) — the first time memory HELPED, stated at its true size
+
+Track 20's exact-match parity (31 = 31) was a scoring artifact: strict
+exact-match caught only ~31 of the ~100 answers that were actually
+correct. A haiku judge, arm-blind, adjudicating the committed answers
+from the session logs (no new sessions) resolves it:
+
+- **judged correct: control 101, rfm 108 of 134** (P1 PASS — both arms
+  lift far above exact-match, confirming exact-match undercounted).
+- **per-instance: rfm higher on 8, control higher on 2, tied on 33;
+  sign p = 0.055** (P2 PASS against the registered <= 0.10 bar).
+- **judge reliability: 100% agreement on the 62 exact-match hits**
+  (P3 PASS — the judge never overturned a known-correct answer, so the
+  lift is not a miscalibrated judge inventing credit).
+
+**This is the first positive result for memory in the entire program**,
+and every qualifier matters:
+- It is **modest**: +7 of 134 (~80% vs ~75%).
+- It is **marginally significant**: sign p = 0.055, over the 0.05 line
+  most would want, under the 0.10 bar registered in advance. A signal,
+  not a settled win.
+- It is a **retrospective judge rescoring**, not a fresh causal A/B —
+  the answers were already produced; adjudication only re-graded them.
+  An LLM judge graded them, mitigated by arm-blindness and the perfect
+  exact-hit agreement, but it is not test-verified ground truth.
+
+**What it changes.** Track 20's entry argued parity was expected
+because the timeline fits in context, so the control already has
+everything. 21a partially refutes that: memory helped **even though the
+control held the raw timeline** — because having 36 raw events is not
+the same as extracting the right decision, owner, or superseded status
+from them, and the pre-digested memory surfaced facts the control
+sometimes failed to derive. So the benefit is real and does not require
+a beyond-context timeline; it comes from *digestion*, not *capacity*.
+That is a better result than the Track 20 entry anticipated, and it is
+the first evidence that ranked-by-helpfulness memory earns its keep in
+the organizational venue — evidence at the strength of one marginal,
+retrospective, judge-scored signal, which is what a Track 21b (fresh
+paired A/B, adjudicated, ideally beyond-context) exists to confirm or
+dissolve. Nothing here is claimed beyond that.
+
 ## Track 20 — MEMTRACK replay (2026-08-29) — 5/5, the tool-tax avoided, and honestly what that is and isn't
 
 43 of 46 usable MEMTRACK instances, 86 sessions complete, all on CLI
