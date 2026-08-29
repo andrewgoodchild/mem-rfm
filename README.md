@@ -3,10 +3,14 @@
 mem-rfm is long-term memory for coding agents that ranks what it
 remembers by whether it actually *helped*. The whole thing is one SQLite
 file and a pure-Python scoring engine; an MCP server and three hooks
-make it drop-in for Claude Code. There is no service, no API key, and no
-LLM anywhere in the ranking path — scoring is one indexed row read.
-(Formation may optionally use a cheap LLM — the sweep — but ranking
-never does.)
+make it drop-in for Claude Code. There is no service and no API key.
+Nothing calls a model at ranking time: the prior is one indexed row
+read, and session-start injection ranks on it alone. Search multiplies
+that prior by similarity from a small local embedding model — the one
+neural inference anywhere near retrieval. (Formation and outcome
+judging may optionally use a cheap LLM — the sweep — whose judgments
+become signals the prior learns from; retrieval itself never calls
+one.)
 
 The name is borrowed from marketing's RFM analysis, which segments
 customers by the recency, frequency, and monetary value of their
