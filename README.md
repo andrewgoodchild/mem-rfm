@@ -85,9 +85,12 @@ memory to save (the registered table below, and
 | scoring a memory by how useful it truly was | **Spearman 0.83** against ground truth within 25 observations | 52,104 Terminal-Bench trials — **real** test-verified rewards |
 | a live coding run once the ledger has been earned | memory arm beat control: **−8.6% wall**, 9.7k vs 10.9k output tokens | 10 paired Claude Code sessions; **wild** feedback, exploratory — **overtaken**: the registered causal tracks below re-tested this ledger and found no effect; the row stays for the record |
 
-The pattern across those rows is the one the design predicts: memory pays
-where work recurs, and pays most at the top slot — the position that
-matters when you hand an agent one suggestion.
+The pattern across those rows: *ranking* pays where work recurs and
+feedback is correct, and pays most at the top slot — the position that
+matters when you hand an agent one suggestion. These are retrieval-layer
+results; whether having the store causally helps an agent is the
+question the registered table below answers, and the two layers came
+apart.
 
 **The assumption underneath them, stated plainly.** Three of those rows
 use oracle outcomes. They establish what ranking does *given* correct
@@ -113,7 +116,9 @@ production").
 ### What it costs, and where it doesn't pay
 
 Unrelated episodic tasks and one-question-over-a-document-pile workloads
-showed no benefit, and scattered bug-fixing was mildly negative. If your
+showed no benefit, and on repository bug-fixing the terminal tracks
+measured carrying memories as a real cost — +25 to +27% wall where
+delivery worked and the knowledge went unneeded. If your
 harness already ships its own memory — Claude Code, Cursor and Devin all
 do — the overlap is real and measured: in our own pilots the native
 memory captured the same operational lessons our store did.
@@ -183,6 +188,8 @@ uv pip install --python .venv/bin/python mcp sqlite-vec fastembed numpy
 claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py"
 .venv/bin/python install_hooks.py  # injection, transcript mining,
                                    # inferred outcomes, /memory-review
+# optional, ungated formation instead of /memory-review:
+#   .venv/bin/python sweep.py      # cron/hook; see docs/lifecycle.md
 ```
 
 Every save, search, and outcome is logged to `rfm-log.jsonl` beside the
@@ -202,7 +209,7 @@ whether it is working for you. **[Full API and configuration →](docs/api.md)**
 | [methodology.md](docs/methodology.md) | pre-registration, corrections, known limits |
 | [team-memory.md](docs/team-memory.md) | the team exploration, and why we stopped |
 
-Also: `PROTOCOL.md` (pre-registrations, amendments 1–14),
+Also: `PROTOCOL.md` (pre-registrations, amendments 1–16c),
 `bench-quality/live-ab/REVALIDATION.md` (the registered live tracks), and
 `bench-quality/RESULTS.md` (the complete ledger).
 
