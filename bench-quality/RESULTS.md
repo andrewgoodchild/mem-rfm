@@ -2183,6 +2183,60 @@ substrate thesis ends the program as its one standing positive claim:
 memory pays where the environment forgets, and a repository never
 forgets.
 
+## Track 20 — MEMTRACK replay (2026-08-29) — 5/5, the tool-tax avoided, and honestly what that is and isn't
+
+43 of 46 usable MEMTRACK instances, 86 sessions complete, all on CLI
+2.1.251 (the update landed between the smoke on 2.1.246 and the full
+run; no within-run heterogeneity — stamping confirmed). This is the
+first externally-grounded result on a benchmark this project did not
+build, in the tribal-knowledge venue, and every registered bar passed.
+
+**The formation lifecycle worked on non-coding material** (the coding
+pool never gave it this): 42 of 43 stores hold a promoted memory
+(P1), extraction cost 4.3 LLM calls per instance (P5), delivery landed
+in 44 of 43 rfm sessions (P2 — organizational timelines recur, so
+dedupe-as-frequency promotes). The venue premise the coding pool
+lacked is real here: teams repeat themselves.
+
+**T20-P4, the claim — the tool tax is avoided, stated precisely.**
+Registered bar: rfm wall within +10% of control, because the authors'
+own Mem0/Zep backends made agents WORSE. Result: **+3.7%, PASS.** That
+is the differentiated finding — injection-based delivery does not incur
+the large redundancy tax that memory-as-tools did in Patronus's harness.
+But the honest reading, reported because the C3 lesson demands the
+distribution before the total: rfm was slower on 26 of 43 pairs (sign
+p = 0.017), so injection is **not free** — there is a small,
+statistically real per-pair slowdown, far under the bound and far under
+the tool tax, but present. "No tax" is wrong; "a small tax, an order
+below memory-as-tools" is right.
+
+**T20-P3 correctness parity: PASS, exactly — control 31, rfm 31 of
+134.** Two things this is NOT: it is not a correctness comparable to
+the paper's 60% (that used GPT-5 in their live harness with LLM-judge
+adjudication; ours is fable-5 in a replay under strict exact-match, so
+23% absolute is a different, stricter measurement — the number to read
+is parity, not the level), and it is not a benefit. Parity means memory
+did not HURT correctness and cost little to carry; it does not show
+memory HELPED. On MEMTRACK, the timeline fits in context, so the
+control arm already has everything — exactly the condition under which
+a repository "already persists it" and memory cannot lift.
+
+**What Track 20 establishes, and the line it draws.** The open-throttle
+stack is validated end to end on organizational data with no human in
+the loop, and it clears the bar the benchmark's authors set as the
+memory-tool failure mode. That is a real, external, positive result —
+about the DELIVERY MECHANISM. It is not yet a causal-benefit result:
+correctness parity on a fits-in-context benchmark shows the stack is
+cheap and harmless, not helpful. The benefit question needs a venue
+where the timeline does NOT fit in context (so the control arm cannot
+hold everything) and adjudicated scoring — registered as the Track 21
+question: MEMTRACK-scale timelines beyond the context window, correctness
+LIFT rather than parity, judge-adjudicated. Until then the honest
+summary is: on the tribal-knowledge venue, mem-rfm's ungated stack
+delivers organizational memory at a small fraction of the tool tax and
+without harming correctness — the first venue where it is not a net
+negative, and not yet the venue where it is a net positive.
+
 ## Track 18b — the repaired replay (2026-08-28) — 5/5, and the ledger the fossil cannot re-form
 
 Same 50 transcripts, same order, both instrument defects fixed. The
