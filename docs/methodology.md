@@ -7,10 +7,11 @@ been decided after the fact.
 
 ## Pre-registration
 
-`PROTOCOL.md` holds the original protocol plus Amendments 1–14, and
+`PROTOCOL.md` holds the original protocol plus Amendments 1–16c (the
+frozen retrieval evals and the successor-venue evals), and
 `bench-quality/live-ab/REVALIDATION.md` registers the held-out live
-revalidation. Each states,
-**before the runs it governs**:
+program — Tracks 1–20, each committed before its sessions ran. Each
+states, **before the runs it governs**:
 
 - the candidate mechanisms, and that no others will be reported as primary
 - the development set, and which data is held back as test
@@ -47,22 +48,40 @@ detail. A redacted audit of what those memory stores actually contained is
 committed at `bench-quality/live-ab/memory-audit.md`, so the numbers derived from
 them remain checkable.
 
-## The correction
+## The corrections
 
-One published number was wrong.
+The audit trail is the point, so the corrections are reported as
+prominently as the results — appended, never edited over, so the error
+stays legible next to its fix.
 
-An early version of the manual-versus-experience experiment claimed a
-42-point gap. It rested on a title-mapping bug that silently dropped 22 of 55
-manual entries, leaving 52.7% of calls with no manual coverage at all — which
-made the manual baseline look far weaker than it was.
+- **The 42-point manual gap was wrong.** An early manual-versus-experience
+  experiment rested on a title-mapping bug that silently dropped 22 of 55
+  manual entries, leaving 52.7% of calls with no manual coverage — which
+  made the manual look far weaker than it was. Pre-publication review
+  caught it from the committed logs; re-run with full coverage the gap is
+  12 points, the number reported everywhere now.
+- **A registered ground truth was wrong, and the model being evaluated
+  caught it** (Track 8, Correction C2). The registration declared 100% of
+  harvested prose was per-bug knowledge — an artifact of a labeller that
+  recognised environment trouble only when named as an error class. A
+  three-block pilot of the arm marked two "per-bug" blocks as
+  environment; reading them showed the arm was right and the ground truth
+  wrong. Disclosed as a peek, because scoring against a ground truth
+  already known broken would have been worse.
+- **A harm claim was the author's, not the data's** (Track 10, C3). A
+  scored entry said a true memory made the agent slower; asked for the
+  mechanism, it did not hold — a metric artifact (a green-test detector
+  blind to tail-piped output) plus a wall-time sum dominated by one
+  outlier task. Rescored, Track 10 detects no effect in either direction.
+  The wrong entry stands above the correction.
+- **The strongest ledger was manufactured** (Track 11, C4). The corpus's
+  top memory (17 outcomes, value 0.998) earned 79% of its ledger in
+  sessions where its condition never fired — copied commands, credited
+  successes. This correction changed the engine's outcome rule (the
+  condition gate) rather than just a number.
 
-Pre-publication review caught it from the committed logs. The experiment was
-re-run with full coverage; the corrected gap is 12 points, and that is the
-number reported everywhere in this repo. The full disclosure is under
-"Corrections" in `bench-quality/RESULTS.md`.
-
-It is included here because a project claiming auditability should show what
-its own audit caught.
+A project claiming auditability should show what its own audit caught,
+and twice here the audit was performed by the thing under test.
 
 ## What died
 
@@ -169,10 +188,22 @@ Stated plainly, because they bound every number above:
 
 - **Outcome signals in the benchmark experiments come from dataset
   annotations**, not real task success. They are cleaner than production
-  feedback would be. The one place outcomes were scored directly is the live
-  coding A/B, where gold tests decided them — and that is also the experiment
-  where memory did *not* help.
-- **The live A/B is n=27 with a single executor model.**
+  feedback would be. Outcomes were scored directly (gold tests, agent
+  behaviour) only in the live coding program — which is also where memory
+  did not causally help: on repository work the terminal tracks found no
+  benefit and a measured wall-clock cost, because the agents do not pay
+  the costs the memories describe (findings.md).
+- **The live program is ~230 sessions across Tracks 1–20, mostly on one
+  executor model per track** (claude-fable-5; Track 10 ran opus-5, Tracks
+  13/17/19 pinned haiku — stamped per record since Track 13, recovered
+  from transcripts before that in `model-audit.jsonl`). Per-track n is a
+  budget bound of 8–21 pairs; a 20-session yardstick (Track 15) measured
+  the within-condition noise these are read against, and claims rest on
+  sign consistency, not per-pair effect sizes.
+- **Causal benefit was tested only on coding workloads.** The successor
+  venues where the environment does not already persist the knowledge
+  (preferences — PrefEval; organizational/tribal — MEMTRACK, Track 20)
+  are measured at the retrieval layer, not yet with a live causal A/B.
 - **Two of the four dialog datasets lack natural agent identities and
   ordering**, so agent assignment and stream order were simulated
   (round-robin and a seeded shuffle). Disclosed in the protocol. STAR has
