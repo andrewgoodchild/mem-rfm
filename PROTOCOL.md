@@ -924,3 +924,66 @@ Provenance: dataset downloaded at runtime from amazon-science/PrefEval
 (arXiv 2502.09597), never redistributed; license carries no SPDX
 assertion — treated as eval-only, no content committed beyond derived
 per-question hit records.
+
+## Amendment 16 (2026-08-29): the applicability judge — registered before the run
+
+PrefEval measured the substrate venue's retrieval problem as
+APPLICABILITY (Amendment 15: sim hit@5 = 24.6%, because a request and
+the preference that constrains it share almost no surface). This
+amendment tests the retrieval twin of the live program's condition
+gate: a cheap LLM judge over the similarity candidate window, asked
+"which of these stored preferences constrain the answer to this
+request?" Ceiling measured first, no LLM: gold sits in the sim top-50
+for 77.5% of questions (median gold rank 18), so judgment has ~3x
+headroom over similarity and window-widening alone buys nothing at
+the top ranks.
+
+Protocol: prefeval_judge.py — per question, one haiku call over the
+sim top-50 (numbered, preference text only), returning the applicable
+indices; rerank = judged-applicable (sim order) then remainder (sim
+order); metrics against the Amendment 15 sim baseline on identical
+questions.
+
+Registered predictions:
+  PJ-P1 (the lift): reranked hit@5 >= 0.40, from 0.246 — under half
+        the oracle ceiling, so an imperfect judge can still pass.
+  PJ-P2: reranked hit@1 >= 0.20, from 0.088.
+  PJ-P3 (judge recall): where gold is among the 50 candidates, the
+        judge's applicable set contains it >= 70% of the time.
+        Falsifies: the judge cannot recognize applicability either,
+        and the problem is harder than a cheap-model rerank.
+  PJ-P4 (cost): exactly one LLM call per question.
+
+### Amendment 16b (2026-08-29, before the full run): the judge was over-inclusive, prompt v2 caps it
+
+Disclosed peek: a 6-question smoke test (kept as
+results-prefeval/judge-v1-smoke.jsonl) showed the v1 judge marking a
+mean 28.7 of 50 candidates applicable — perfect recall of gold,
+drowned in topical over-inclusion, hit@5 = 0. The corpus structure is
+~one truly constraining preference per question; v2 says so: "at most
+3, most constraining first, usually exactly one." Bars unchanged from
+Amendment 16; PJ-P3's judge-recall bar is now the demanding one (gold
+must survive a 3-pick cap). No full-run data existed before this fix.
+
+### Amendment 16c (2026-08-29, before the full run): equivalence-aware scoring
+
+The v2 smoke test's "failure" diagnosed to the corpus, not the judge:
+PrefEval's 20 independently generated topic files contain semantic
+twins of each other's preferences (33% have one at cosine >= 0.85;
+band inspected — four phrasings of the same gamified-learning aversion
+— and the diagnostic case's "wrong" pick was gold restated from
+another topic). A twin satisfies the user identically, so exact-id
+scoring is the wrong instrument. Scoring is now equivalence-aware:
+EQ(gold) = preferences at cosine >= 0.85 to gold, plus gold; a hit is
+any member ranked. The mechanical re-anchor, computed before the run:
+equivalence-scored sim baseline hit@1 0.102 / hit@5 0.279, window@50
+0.802. Amendment 15's headline survives the correction (applicability
+is hard for similarity with or without twins). Re-anchored bars:
+  PJ-P1' judge hit@5 >= 0.40 (equiv-scored; sim 0.279, ceiling 0.802)
+  PJ-P2' judge hit@1 >= 0.20 (sim 0.102)
+  PJ-P3' judge recall (gold-or-twin among its picks, where any is in
+         window) >= 0.70
+  PJ-P4  one call per question, unchanged.
+No full-run data existed before this correction; both smokes are kept
+in results-prefeval/ (judge-v1-smoke.jsonl; the v2 rows regenerate
+under the corrected scorer on the full run).
