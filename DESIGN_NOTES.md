@@ -418,3 +418,31 @@ Conclusion for the default question: the sweep's poisoning posture is
 adequate for a TRUSTED-origin deployment (a team's own Slack/Linear/Git,
 the intended venue) but item 1 should land before sweep is default-on
 over UNTRUSTED-origin text (arbitrary repo files, web content).
+
+### Condition-triggered JIT retrieval (2026-08-29): the retrieval side of the condition gate
+
+From the maintainer's observation that in-session memory participation
+is thin — SessionStart injects top-3 once, blindly, and the agent
+rarely calls memory_search (discretionary retrieval under-fires, Track
+3), so memory is effectively one shot per session. Codex has the same
+shape (session-start summary injection) plus a citation counter — which
+is engagement-without-valence, the exact signal this project's fossil
+disproved, so not adopted.
+
+The fix is not more retrieval but retrieval AT THE MOMENT OF NEED. The
+condition_class already gates outcomes (a +1 needs the class to have
+fired); the same signal is a retrieval trigger. RFM_JIT=1 adds it to the
+PostToolUse hook (hooks/post_tool_use.py::jit_inject): when a condition
+class appears in command output, surface the highest-scoring stored
+memory whose condition_class matches — subject to the SessionStart
+query's own gates (negative floor, quarantine), once per class per
+session, with the surfacing logged as an access so the outcome loop
+scores an acted-on JIT memory as a genuine conditioned outcome.
+Off by default, A/B-gated, inert under RFM_HOOKS_OFF; acceptance audit
+test_jit.py (8 checks). Economics: pays context only in the sessions
+where the condition fires (rare, per our data), where blind
+SessionStart injection pays every session — so it is also the
+tax-reducing form of delivery. Caveat unchanged: better-targeted
+retrieval does not make memory useful where the agent routes around the
+condition (Track 19); its venue is where the condition is a request
+shape, via a per-turn trigger (UserPromptSubmit), not a repo error.
