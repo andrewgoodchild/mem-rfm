@@ -2588,3 +2588,41 @@ inside `locomo_eval.py` itself — reusing the validated protocol, NDCG@10,
 and the overlap=True restriction — rather than scoring them in a parallel
 harness. The importance scores are cached (results-track12/), so that
 run is cheap. Registered as the open form of Track 12.
+
+### Track 12 resolved (2026-08-30): earned-M beats write-time importance, decisively
+
+The fix was to stop running a parallel harness and put the rules inside
+the committed `locomo_eval.py` (`--m-rules`, off by default), reusing its
+protocol, NDCG@10, and overlap split. Regression checked first: with the
+flag off the committed conditions are bit-identical to the pre-change run
+(rfm vs rfm_wv0 +0.2692 [+0.2352, +0.3035]; rfm vs sim -0.0559).
+
+The comparison is apples-to-apples by construction. `rfm_score_w` is
+`w_a*P(B) + w_v*value01`, so every rule holds the activation term at
+(0.7, 0) and substitutes only the third axis: earned outcome value, a
+WRITE-TIME importance score (haiku 1-10, Generative Agents poignancy /
+Zep fact-rating style, 1,451 cached), or earned value divided by length.
+
+NDCG@10, 3 conversations, 382 questions:
+
+| third axis | NDCG@10 | vs earned-M (paired, 95% CI) |
+|---|---|---|
+| **earned outcomes (`rfm`)** | **0.277** | — |
+| write-time importance | 0.120 | **-0.1561** [-0.1936, -0.1194] |
+| per-token value density | 0.067 | **-0.2092** [-0.2429, -0.1770] |
+| no third axis (`rfm_wv0`) | 0.007 | -0.2692 |
+
+**T12-P1 PASS: earned-M beats write-time importance by +0.156 NDCG**
+(+0.131 [+0.073, +0.191] on the recurrence subset where M can act).
+**T12-P2 PASS: earned-M beats per-token by +0.209.** Measuring what
+helped beats judging importance at write time, on the corpus where the
+measurement is genuinely earned. This is the project's namesake claim
+tested directly, and it is the answer the broken harness got backwards
+(0.078 vs 0.023 hit@1 the other way) — the reason that number was
+withheld rather than published.
+
+Scope: 3 conversations of LoCoMo, one embedder, oracle evidence labels
+for the metric; all four prior-based rules still sit below plain
+similarity here (-0.056 for the best of them), which is the separate
+composition finding already documented — this result ranks the third
+axes against each other, it does not claim the prior beats similarity.

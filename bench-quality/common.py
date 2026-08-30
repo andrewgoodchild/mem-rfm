@@ -183,7 +183,8 @@ class MemoryStore:
             self.db.execute("SELECT rfm_record_outcome(?, ?)", (m, o))
 
 
-def rank(store: MemoryStore, condition: str, query_emb, candidate_ids, now: float, k: int):
+def rank(store: MemoryStore, condition: str, query_emb, candidate_ids,
+         now: float, k: int, aux=None):
     """Order candidates under a named ranking condition; return top-k ids.
 
     sim          cosine similarity only
@@ -212,6 +213,22 @@ def rank(store: MemoryStore, condition: str, query_emb, candidate_ids, now: floa
         scores = np.maximum(sims, 0.0) * store.rfm_scores(ids)
     elif condition == "rfm_wv0":
         scores = np.maximum(sims, 0.0) * store.rfm_scores(ids, w=(0.7, 0.0))
+    elif condition in ("importance", "pertoken"):
+        # Track 12 (PROTOCOL.md Amendment 17). Apples-to-apples with `rfm`:
+        # rfm_score_w is w_a*P(B) + w_v*value01, so holding the activation
+        # term at (0.7, 0) and substituting the third axis isolates the
+        # ranking signal. `importance` replaces earned value with a
+        # WRITE-TIME score (Generative Agents poignancy / Zep fact ratings);
+        # `pertoken` divides earned value by length (value density).
+        act = store.rfm_scores(ids, w=(0.7, 0.0))
+        if condition == "importance":
+            third = np.array([aux["imp"].get(i, 0.5) for i in ids])
+        else:
+            v01 = store.rfm_scores(ids, w=(0.0, 1.0))
+            lens = np.array([max(aux["toklen"].get(i, 1), 1) for i in ids],
+                            dtype=float)
+            third = v01 * (aux["median_len"] / lens)
+        scores = np.maximum(sims, 0.0) * (act + 0.3 * third)
     elif condition.startswith("rfm_beta"):
         # Bounded blend (PROTOCOL.md frozen composition): sim × ((1−β) + β·rfm).
         b = float(condition[len("rfm_beta"):])

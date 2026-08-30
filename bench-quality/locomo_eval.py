@@ -75,6 +75,11 @@ def main():
     ap.add_argument("--k", type=int, default=10)
     ap.add_argument("--conversations", type=int, default=10)
     ap.add_argument("--out", default="results-locomo")
+    ap.add_argument("--m-rules", action="store_true",
+                    help="Track 12 (Amendment 17): additionally score the "
+                         "`importance` (write-time prior) and `pertoken` "
+                         "(value density) rules. Off by default so the "
+                         "committed conditions stay bit-identical.")
     ap.add_argument("--feedback-batch", type=int, default=1,
                     help="record outcomes every G questions (session-level "
                          "credit: one outcome per memory per batch, +1 if it "
@@ -83,6 +88,16 @@ def main():
     args = ap.parse_args()
 
     data = json.load(open(DATA))[: args.conversations]
+    conditions = list(CONDITIONS)
+    imp_by_text = {}
+    if args.m_rules:
+        conditions += ["importance", "pertoken"]
+        cache_path = os.path.join(common.HERE, "results-track12",
+                                  "importance.jsonl")
+        for line in open(cache_path):
+            r = json.loads(line)
+            imp_by_text[r["t"]] = r["imp"]
+        print(f"m-rules: {len(imp_by_text)} cached write-time scores")
     embedder = common.get_embedder()
     os.makedirs(args.out, exist_ok=True)
     os.makedirs(CACHE, exist_ok=True)
@@ -108,7 +123,15 @@ def main():
             np.savez_compressed(cache, turns=turn_embs, questions=q_embs)
 
         all_ids = [m for m, _t, _ts in rows]
-        stores = {c: common.MemoryStore(rows, turn_embs) for c in CONDITIONS}
+        stores = {c: common.MemoryStore(rows, turn_embs) for c in conditions}
+        aux = None
+        if args.m_rules:
+            toklen = {m: len(t.split()) for m, t, _ts in rows}
+            import statistics as _st
+            aux = {"imp": {m: imp_by_text.get(t, 0.5)
+                           for m, t, _ts in rows},
+                   "toklen": toklen,
+                   "median_len": _st.median(toklen.values()) or 1}
         seen_evidence = set()
         per_q = defaultdict(dict)  # question idx -> condition -> metrics
         batch_pos, batch_all = set(), set()  # coarse-feedback accumulators
@@ -119,10 +142,11 @@ def main():
                 continue
             overlap = bool(evidence_mems & seen_evidence)
             now = last_ts + 3600.0 + qi * QUESTION_SPACING
-            for cond in CONDITIONS:
+            for cond in conditions:
                 store = stores[cond]
                 store.freeze(now)
-                retrieved = common.rank(store, cond, q_embs[qi], all_ids, now, args.k)
+                retrieved = common.rank(store, cond, q_embs[qi], all_ids,
+                                        now, args.k, aux)
                 m = common.recall_ndcg(retrieved, evidence_mems, args.k)
                 m["overlap"] = overlap
                 per_q[qi][cond] = m
@@ -143,7 +167,7 @@ def main():
                 # retrieved for.
                 if cond != "sim":
                     store.record_accesses(retrieved)
-                    if cond == "rfm":
+                    if cond in ("rfm", "pertoken"):
                         if args.feedback_batch <= 1:
                             store.record_outcomes(
                                 [(m_, 1.0 if m_ in evidence_mems else -1.0)
@@ -171,7 +195,7 @@ def main():
     print(f"\n=== LoCoMo sequential feedback, k={args.k} ===")
     print("| condition | split | recall | hit | NDCG | n |")
     print("|---|---|---|---|---|---|")
-    for cond in CONDITIONS:
+    for cond in conditions:
         for split in ("all", "overlap=True", "overlap=False"):
             a = agg[(cond, split)]
             if a["ndcg"]:
