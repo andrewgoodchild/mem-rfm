@@ -6,19 +6,28 @@ file and a pure-Python scoring engine; an MCP server and three hooks
 make it drop-in for Claude Code.
 
 Recency and frequency come from **ACT-R**, the cognitive model of human
-memory: its base-level activation `ln(Σ tᵢ^−d)` treats them as one
-quantity and prices how likely a memory is to be needed again, using a
-power-law derived from how information actually recurs in real
-environments. The name is borrowed from marketing's RFM analysis, which
-segments customers by recency, frequency and **m**onetary value, because
-the third axis is the same idea: where marketing puts money, mem-rfm puts
-**measured outcomes**, a signed per-memory record of whether acting on
-the memory helped or hurt, fed straight back into the ranking.
+memory. Its base-level activation is `ln(Σ tᵢ^−d)`, a sum over every
+past use, decaying with age. That treats recency and frequency as one
+quantity rather than two knobs, and the power law is not chosen for
+convenience: it was derived by fitting how often information actually
+recurs in real environments, so it prices how likely a memory is to be
+needed again.
+
+Two axes are not enough, though, and direct marketing found that out
+first. Its RFM model scores customers on recency, frequency and
+**m**onetary value, because recency and frequency alone measure only
+engagement: someone who orders constantly and returns everything looks
+like a good customer until you price the returns. Memories have the same
+blind spot, so mem-rfm gives the third axis the same job. In place of
+money it puts **measured outcomes**, a signed per-memory record of
+whether acting on the memory helped or hurt, fed straight back into the
+ranking.
+
 Retrieved-often is cheap to fake, and this project's live program caught
 helped-when-used being faked too: an agent copies a suggested command,
-the copy succeeds, and the ledger inflates. So a
-positive outcome now counts only in sessions where the condition the
-memory names actually fired. Helped-when-*needed* is the signal.
+the copy succeeds, and the ledger inflates. So a positive outcome now
+counts only in sessions where the condition the memory names actually
+fired. Helped-when-*needed* is the signal.
 **[The full model →](docs/theory.md)**
 
 ## How it works
@@ -111,9 +120,9 @@ to 0.56 hit@1 while plain similarity search is still recommending them
 at 0.20. That result depends on getting honest feedback about what
 helped, which is harder than it sounds. This project's own scoring was
 fooled for weeks: an agent that copies a suggested command and succeeds
-looks like proof the memory helped, even when the
-problem the memory warns about never came up. A memory now earns credit
-only in sessions where the situation it describes actually occurred.
+looks like proof the memory helped, even when the problem the memory
+warns about never came up. A memory now earns credit only in sessions
+where the situation it describes actually occurred.
 
 **Does having the store make the agent better at its job?** Only when
 the agent could not have found the answer by itself. In about twenty
@@ -142,16 +151,35 @@ is `bench-quality/RESULTS.md`.
 
 **[All findings, and everything that died along the way →](docs/findings.md)**
 
+## Status
+
+A research artefact with a working integration. The engine, schema and
+Claude Code hooks are tested and stable, and the experimental record is
+the point of the project as much as the code is. Treat it as something
+to read, measure against, and borrow from rather than a supported
+product.
+
+**What leaves your machine:** nothing, by default. No service, no API
+key; the store is a local file and the embedding model runs locally. The
+one exception is opt-in: the continuous formation sweep and its outcome
+judge call a cheap LLM, which means transcript excerpts go wherever that
+model runs. Ranking never calls a model at all.
+
 ## Installation
 
 Python 3.10+ with its bundled sqlite3 (≥ 3.35), nothing to compile:
 
 ```python
-import sqlite3, rfm            # rfm.py, repo root, stdlib-only
+import sqlite3, time, rfm      # rfm.py, repo root, stdlib-only
 db = sqlite3.connect("memories.db")
 rfm.register(db)
 db.execute("SELECT rfm_init()")
-db.execute("SELECT rfm_record_access(1)")   # the scoring API works here
+
+db.execute("INSERT INTO rfm_memories (content, created_at) VALUES (?, ?)",
+           ("pytest needs `-p no:randomly` in this repo", time.time()))
+db.execute("SELECT rfm_record_access(1)")        # we retrieved it
+db.execute("SELECT rfm_record_outcome(1, 1.0)")  # it helped
+print(db.execute("SELECT rfm_score(1)").fetchone()[0])   # 0.866...
 ```
 
 That gives you the engine and the `rfm_*` functions. The similarity half
@@ -177,20 +205,6 @@ claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py
 Every save, search, and outcome is logged to `rfm-log.jsonl` beside the
 database; `log_stats.py` turns the log into the numbers that decide
 whether it is working for you. **[Full API and configuration →](docs/api.md)**
-
-## Status
-
-A research artefact with a working integration. The engine, schema and
-Claude Code hooks are tested and stable, and the experimental record is
-the point of the project as much as the code is. Treat it as something
-to read, measure against, and borrow from rather than a supported
-product.
-
-**What leaves your machine:** nothing, by default. No service, no API
-key; the store is a local file and the embedding model runs locally. The
-one exception is opt-in: the continuous formation sweep and its outcome
-judge call a cheap LLM, which means transcript excerpts go wherever that
-model runs. Ranking never calls a model at all.
 
 ## Documentation
 
