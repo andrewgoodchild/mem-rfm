@@ -2183,6 +2183,62 @@ substrate thesis ends the program as its one standing positive claim:
 memory pays where the environment forgets, and a repository never
 forgets.
 
+## Track 22 — substrate removal (2026-08-30) — the boundary found: memory helps when the source is unreachable (33/38 pairs)
+
+The experiment every prior causal track lacked: a venue where the control
+genuinely CANNOT read the source. Enforced (T22-P1, adversarial probe) by
+giving both arms NO code execution — one budgeted `query_events` MCP tool
+(5 results/query, 6 queries/session) and nothing else, so the timeline
+cannot be read or enumerated. The rfm arm additionally holds the
+instance's digested store. Scored at 33 of 38 pairs (run stopped near
+completion; disclosed), judge-adjudicated arm-blind.
+
+**T22-P2: PASS, and it is the program's first causal benefit.**
+- judged correct: control 68, rfm **82** of 98 (~69% -> ~84%).
+- per-instance: rfm higher on **12**, control higher on **1**, tied 20;
+  one-sided sign **p = 0.002**.
+- mechanism (T22-P3 confirmed descriptively): rfm spent **13% fewer
+  query turns** (296 vs 342) — the digest supplied facts the 6-query
+  budget could not cheaply reach, and saved retrievals doing it.
+
+**What this establishes, and its exact scope.** Every prior causal track
+returned null or a small tax (Tracks 10-21), and all of them shared one
+feature: the control could reach the source (the repo on disk, the raw
+events as files). Track 22 removes that, and the null becomes a large,
+significant benefit. So the finding that organizes the entire program is
+now measured on BOTH signs:
+
+  **Memory helps a frontier agent when, and only when, the environment
+  does not already hand it the answer.** Substrate present (repo, readable
+  timeline) -> no benefit, memory is a shortcut the agent doesn't need.
+  Substrate removed (source unreachable within budget) -> clear benefit,
+  memory supplies what the agent cannot otherwise get.
+
+**Honest scope, stated so this is not over-read.**
+- The substrate removal is ENGINEERED: the 6-query budget is a design
+  parameter, not a natural constant. A looser budget would shrink the
+  benefit (the control could query its way to more); a tighter one would
+  grow it. What is robust is the DIRECTION and its significance at this
+  operating point, not a universal effect size. The honest claim is
+  conditional: "when retrieval from the source is budget-limited below
+  the enumeration threshold, the digest helps."
+- Judge-adjudicated (haiku, arm-blind); the same judge was calibrated at
+  100% agreement with exact-match hits in Track 21a, but it is an LLM
+  judge, not test-verified ground truth.
+- 33 of 38 pairs; the remaining 5 cannot plausibly overturn p = 0.002 at
+  12-vs-1, but the run can be completed for the record.
+- This is the venue (organizational knowledge) and the condition
+  (source withheld) the substrate thesis predicted. It confirms the
+  thesis; it does not rescue operational memory for open repository
+  coding, where the substrate is always present (Tracks 10-19 stand).
+
+Track 12 (the M-rule comparison) unblocks against this panel — the first
+positive causal panel the project has produced. The productization
+reading also sharpens: memory's value is real and bounded — it is for
+work where the source is expensive, rate-limited, or withheld (tool-gated
+APIs, large corpora, cross-session context the agent cannot re-fetch),
+not for work where a capable agent can simply read the environment.
+
 ## Track 21b — per-turn judged retrieval (2026-08-30) — PRELIMINARY at 13/43 pairs: 21a's benefit does not replicate
 
 Scored at 13 of 43 pairs (the run was stopped repeatedly; this is a
