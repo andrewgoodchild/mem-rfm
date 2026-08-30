@@ -2183,7 +2183,7 @@ substrate thesis ends the program as its one standing positive claim:
 memory pays where the environment forgets, and a repository never
 forgets.
 
-## Track 22 — substrate removal (2026-08-30) — the boundary found: memory helps when the source is unreachable (33/38 pairs)
+## Track 22 — substrate removal (2026-08-30) — the boundary found: memory helps when the source is unreachable (38/38 pairs, FINAL)
 
 The experiment every prior causal track lacked: a venue where the control
 genuinely CANNOT read the source. Enforced (T22-P1, adversarial probe) by
@@ -2194,11 +2194,13 @@ instance's digested store. Scored at 33 of 38 pairs (run stopped near
 completion; disclosed), judge-adjudicated arm-blind.
 
 **T22-P2: PASS, and it is the program's first causal benefit.**
-- judged correct: control 68, rfm **82** of 98 (~69% -> ~84%).
-- per-instance: rfm higher on **12**, control higher on **1**, tied 20;
-  one-sided sign **p = 0.002**.
+(Final, all 38 pairs; the 33-pair preliminary read p=0.002 at 12/1,
+strengthened on completion.)
+- judged correct: control 80, rfm **95** of ~130 (~62% -> ~73%).
+- per-instance: rfm higher on **13**, control higher on **1**, tied 24;
+  one-sided sign **p = 0.001**.
 - mechanism (T22-P3 confirmed descriptively): rfm spent **13% fewer
-  query turns** (296 vs 342) — the digest supplied facts the 6-query
+  query turns** (338 vs 387) — the digest supplied facts the 6-query
   budget could not cheaply reach, and saved retrievals doing it.
 
 **What this establishes, and its exact scope.** Every prior causal track
@@ -2224,7 +2226,13 @@ now measured on BOTH signs:
   the enumeration threshold, the digest helps."
 - Judge-adjudicated (haiku, arm-blind); the same judge was calibrated at
   100% agreement with exact-match hits in Track 21a, but it is an LLM
-  judge, not test-verified ground truth.
+  judge, not test-verified ground truth. **Non-LLM check (hardening):**
+  under exact/substring match the DIRECTION holds (rfm 18 > control 15)
+  but exact-match catches only ~17 of 98 answers (most correct answers
+  are paraphrased), so it is too sparse to confirm significance (per
+  instance 1/0/32 tied, p=0.5). The benefit's direction is judge-
+  independent; its significance rests on the judge recognizing
+  paraphrase. Stated, not hidden.
 - 33 of 38 pairs; the remaining 5 cannot plausibly overturn p = 0.002 at
   12-vs-1, but the run can be completed for the record.
 - This is the venue (organizational knowledge) and the condition
