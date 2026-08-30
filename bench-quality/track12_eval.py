@@ -86,7 +86,7 @@ def rank12(store, cond, qemb, ids, now, k, imp, toklen):
         scores = sims * (m / np.array([max(toklen.get(i, 20), 1)
                                        for i in ids]))
     else:
-        return L.rank(store, cond, qemb, ids, now, k)
+        return common.rank(store, cond, qemb, ids, now, k)
     top = np.argsort(-scores, kind="stable")[:k]
     return [ids[i] for i in top]
 
@@ -111,7 +111,7 @@ def main():
 
     hits = {c: {"early": [], "late": []} for c in CONDITIONS}
     for conv in data:
-        rows, dia_to_mem, _ = L.load_conversation(conv)
+        rows, dia_to_mem, last_ts = L.load_conversation(conv)
         texts = [t for _i, t, _ts in rows]
         embs = common.encode(emb, texts, "doc")
         stores = {c: common.MemoryStore(rows, embs) for c in CONDITIONS}
@@ -128,7 +128,12 @@ def main():
             if not ev:
                 continue
             qemb = common.encode(emb, [q["question"]], "query")[0]
-            t = 1e9 + 60.0 * step
+            # Clock must be AFTER the conversation's last message: memories
+            # are created at 2023-era timestamps, so an arbitrary earlier
+            # "now" gives negative ages and a dead activation channel (the
+            # first run of this eval hit exactly that, and sim/genagents
+            # returning identical numbers is what exposed it).
+            t = last_ts + L.QUESTION_SPACING * (step + 1)
             third = "late" if step >= 2 * len(qa) // 3 else \
                 ("early" if step < len(qa) // 3 else None)
             for c in CONDITIONS:
