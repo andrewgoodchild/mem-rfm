@@ -2247,7 +2247,25 @@ work where the source is expensive, rate-limited, or withheld (tool-gated
 APIs, large corpora, cross-session context the agent cannot re-fetch),
 not for work where a capable agent can simply read the environment.
 
-## Track 21b — per-turn judged retrieval (2026-08-30) — PRELIMINARY at 13/43 pairs: 21a's benefit does not replicate
+## Track 21b — per-turn judged retrieval (2026-08-30) — FINAL 43/43: null, and half of the boundary's cleanest demonstration
+
+Completed: perturn 29 vs control 33 judged-correct, per-instance 4 up /
+6 down, sign p = 0.83, delivery 63%, wall −3.1%. The preliminary null
+(13 pairs) holds at full n — per-turn judged retrieval does not help.
+
+**But read together with Track 22, 21b is the control half of the
+cleanest boundary demonstration the program produced.** Same benchmark
+(MEMTRACK organizational questions), same digested stores, same
+judge-adjudicated scoring. The ONLY difference: in 21b the control has
+the raw event timeline as readable files in its workspace; in Track 22
+the timeline is behind a budgeted query tool with no code execution.
+That single change — whether the control can read the source — flips the
+result from null (21b: 29 vs 33, p=0.83) to significant benefit (Track
+22: 95 vs 80, p=0.001) on otherwise identical material. It is the
+substrate thesis isolated to one variable: memory helps iff the source
+is unreachable, and nothing else about the setup changed.
+
+
 
 Scored at 13 of 43 pairs (the run was stopped repeatedly; this is a
 disclosed partial, judge-adjudicated with the 21a arm-blind judge). It
