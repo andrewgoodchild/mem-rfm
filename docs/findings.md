@@ -33,6 +33,64 @@ Which of its two axes — recency/frequency, or outcome value — is doing
 the work varies by corpus; ablating both is the one part of this nobody
 else has published.
 
+## The evidence, two layers
+
+The program measured two different things, and they came apart.
+
+**Retrieval layer — what ranking buys, given correct feedback:**
+
+| measured | result | basis |
+|---|---|---|
+| putting the right memory first, on recurring work | **+0.012 hit@1** [95% CI +0.005, +0.020], rising to +0.020 over the final third as feedback accumulates | 3,000 real support calls; exploratory, **oracle** outcomes |
+| retiring facts that a procedure change made wrong | recovers to **0.56 hit@1** where similarity-only still recommends the dead procedure at **0.20**, 1,500 calls later | same corpus, procedures revised mid-stream; **oracle** outcomes |
+| preferring an updated fact over the version it replaced | **0.43 → 0.66**, with no loss of fresh-fact recall | LongMemEval knowledge-update tasks; **oracle** labels |
+| scoring a memory by how useful it truly was | **Spearman 0.83** against ground truth within 25 observations | 52,104 Terminal-Bench trials — **real** test-verified rewards |
+| a live coding run once the ledger has been earned | memory arm beat control: **−8.6% wall** | 10 paired Claude Code sessions; **wild** feedback — **overtaken**: the causal tracks re-tested this ledger and found no effect; kept for the record |
+
+These are retrieval-layer results: ranking pays where work recurs and
+feedback is correct, most at the top slot. **The load-bearing assumption
+is acquisition** — obtaining correct feedback in the wild. Three rows use
+oracle outcomes; if the thesis fails it fails there, not at +0.012 hit@1.
+What we can say: across six live runs the inference loop closed 67 times
+against 23 explicit calls and recovered outcomes with **zero sign
+errors** — but sign accuracy was the wrong reassurance. The causal tracks
+found the loop's *credit* was wrong: its positives were largely earned in
+sessions where the memory's condition never fired (79% of the top
+ledger). Outcomes are now condition-gated — a `+1` requires the named
+condition to have fired — and the fossil ledger could not have been
+earned under it (theory.md, "the condition side of the production").
+
+**Causal layer — does having the store change what the agent achieves.**
+Every prediction below was committed before its run; the first phase set
+cost/safety bounds, the rest tested benefit.
+
+| what we asked | prediction | outcome |
+|---|---|---|
+| cold start, familiar repo (pytest) | machinery cost within +10% wall / +15% tokens | **PASS** — −7.6% / −12.4% |
+| cold start, never-seen repo (xarray) | same bound | **FAIL** — +32.0% / +35.5%, unexplained at n=11 ([forensics](#the-registered-fail-in-detail)) |
+| does the miner catch what sessions pay for? | stages a candidate on a named-cause failure | **PASS** — staged and ratified in-run |
+| does a proven memory keep earning? (pytest) | phase-one earner earns again in phase two | **NOT TRIGGERED** — nothing earned value there, as registered |
+| same question, never-seen repo (xarray) | as above | **AMBIGUOUS** — registered wording was defective; disclosed and [corrected](../bench-quality/live-ab/REVALIDATION.md) |
+| do stale memories do harm? (sphinx, new era) | outdated earned ledger stays within +10% wall | **PASS** — +3.0%, and the ledger demoted itself |
+| do demoted memories stay demoted? | outcome-demoted memories never re-injected | **PASS** — verified in-run |
+| what does an idle memory server cost? (sphinx) | context overhead from tool schemas alone | **MEASURED** — +189 tokens/session (~0.9%), wall +1.0%, resolution identical: context-cost-only |
+| does a human-ratified store help on held-out tasks? (xarray) | fewer events to a first passing test | **FAIL** — no effect either way, injection landing 13/13 (Track 10) |
+| does the best earned memory beat no-memory at home? (sphinx) | token-matched, four content forms, on its home tasks | **FAIL** — ties; 79% of its ledger earned condition-silent (Track 11 + C4) |
+| does it at least help a weaker model? (haiku) | condition gate, then sign consistency | **FAIL** — 0 wins of 5 pairs, +27.6% wall: a measured tax (Track 13) |
+| does the full ungated lifecycle help where friction is forced? | a pool where verification dies without the workaround | **FAIL at the gate** — agent met the condition in 1/20 control sessions and worked around it; +25% wall (Track 19) |
+| **does memory help when the control CANNOT read the source?** | organizational questions, both arms no code execution and only a budget-limited query tool | **PASS** — control 80, memory **95** of ~130, up on 13 / down on 1, **sign p = 0.001**, 13% fewer queries (Track 22) — the one condition under which memory helped |
+
+The table reads as a boundary, not a verdict. The benefit predictions on
+repository coding all failed — the agents do not pay the costs the
+memories describe, because a frontier agent reads or re-derives from the
+repo. **The last row flips because it removes the feature every negative
+shared — the control could reach the source.** With the timeline behind a
+budgeted query tool and no code execution, the digest helped, cleanly and
+significantly. Its control twin (Track 21b, same data and digest but the
+events readable as files) is null, isolating the boundary to one
+variable. Scope: engineered budget, LLM-adjudicated, organizational
+venue; the repository negatives stand.
+
 ## Relevance is not value
 
 The most transportable result in this repository, and it is about
