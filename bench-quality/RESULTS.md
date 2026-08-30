@@ -2542,3 +2542,49 @@ programs converge on one lesson from opposite ends.
 MEMTRACK (the org/tribal-knowledge agentic benchmark) needs its own
 feasibility pass — it is a live multi-platform environment, not a
 frozen corpus — and is queued, not started.
+
+## Track 12 — the M-rule comparison (2026-08-30) — NOT VALIDATED: harness fails its own baseline check
+
+Registered as Amendment 17 and run: earned-outcome M vs write-time
+importance (Generative Agents poignancy / Zep fact-rating style, haiku
+1-10 per memory, 1,451 cached) vs per-token value, on LoCoMo.
+
+**The result is withheld because the harness does not reproduce the
+committed baseline.** Two bugs and one design flaw, in order of
+discovery:
+
+1. **Dead activation channel** (fixed): the eval clock was hardcoded to
+   1e9 (2001) while LoCoMo memories carry 2023 timestamps, so "now"
+   preceded every memory's creation and ages went negative. Caught by
+   the dead-signal rule this project already carries (methodology.md):
+   `sim` and `genagents` returned byte-identical numbers, which two
+   genuinely different rules cannot.
+2. **Metric/protocol mismatch** (not fixed): with the clock corrected,
+   the shipped `rfm` rule scores 0.0234 late hit@1 in this harness while
+   the committed `locomo_eval.py` scores it 0.455 NDCG@10 on the same
+   three conversations. The cause is the interaction of hit@1 with the
+   outcome protocol: at k=10 roughly nine of every ten retrieved
+   memories earn a -1, so frequently-retrieved (and therefore often
+   relevant) memories are driven negative while never-retrieved ones
+   keep a neutral score and float into the top-1 slot. NDCG@10 absorbs
+   this; hit@1 is maximally exposed to it. The metric was my choice, not
+   the registered protocol's.
+
+As measured, write-time importance ranked above earned-M in this harness
+(0.0781 vs 0.0234 late hit@1) — **and that number is not reportable as a
+finding**, because the same harness places our own validated rule an
+order of magnitude below its committed behaviour. Publishing it would be
+the single-corpus mistake this project has already made twice, with a
+broken instrument added.
+
+**What the committed runner does say, on the same subset:** `rfm` beats
+`rfm_wv0` (identical system, value axis switched off) by **+0.269 NDCG
+[+0.235, +0.304]**. The earned-M axis contributes enormously against its
+own ablation. That is evidence about M earning its place; it is not the
+head-to-head against write-time importance, which remains unanswered.
+
+**What would answer it:** add `importance` and `pertoken` as conditions
+inside `locomo_eval.py` itself — reusing the validated protocol, NDCG@10,
+and the overlap=True restriction — rather than scoring them in a parallel
+harness. The importance scores are cached (results-track12/), so that
+run is cheap. Registered as the open form of Track 12.
