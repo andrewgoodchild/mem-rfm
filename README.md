@@ -100,9 +100,7 @@ information somewhere the agent cannot read (behind a rate-limited
 search tool rather than files on disk) and the same memories produce a
 large improvement: 95 correct answers against 80, p = 0.001. So the
 question to ask before adopting this is not "is my agent smart enough"
-but "can my agent already reach this information?" Skip it, too, if your
-harness ships its own memory, since Claude Code, Cursor and Devin
-capture the same operational lessons.
+but "can my agent already reach this information?"
 
 Every number, every pre-registered prediction, the buys table, the
 acquisition measurement, and the full 13-row registered results table
