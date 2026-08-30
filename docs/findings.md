@@ -11,13 +11,19 @@ Reading the numbers: **hit@1** means the top-ranked result was correct,
 
 ## The short version
 
-Memory pays where **work recurs AND the environment forgets**. On
-retrieval benchmarks with recurring evidence, outcome feedback reliably
-helps. On live repository work with a frontier agent, the live program
-ended (see "the terminal result" below) with the sharper finding: the
-knowledge that recurs there is exactly the knowledge the agent never
-needs to pay for — it re-derives or routes around it — while carrying
-that knowledge costs measurable wall-clock. The repo is the memory.
+Memory pays where **work recurs AND the environment forgets** — and the
+program measured that boundary on both sides. On live repository work
+with a frontier agent, memory does not pay: the knowledge that recurs
+there is exactly the knowledge the agent never needs, because it
+re-derives or reads it from the repo, while carrying it costs
+wall-clock. But in a venue where the source is genuinely **unreachable**
+— the agent given no code execution and only a budget-limited query tool
+— the same digested memory produced a large, significant benefit
+(control 68, memory 82 of 98 correct, p = 0.002; "the boundary" below).
+So the one-line rule is exact: **memory helps a frontier agent when, and
+only when, the environment does not already hand it the answer.** The
+repo is the memory where the repo is readable; where it isn't, the
+memory is.
 
 The scoring prior's reliable jobs turned out to be **safety and
 maintenance** rather than raw ranking quality: keeping a usage prior
@@ -509,6 +515,39 @@ environment does forget (user preferences and working style,
 cross-repo and organizational knowledge, weak agents on high-friction
 work, short sessions with real boundaries) are where everything built
 here — the honest ledger above all — still waits to be tested.
+
+### The boundary, measured (Track 22)
+
+That last sentence got its test. The confound running through every
+negative above is that the control could always reach the source — the
+repo on disk, the timeline as readable files — so memory only ever
+competed as a shortcut to information a capable agent could get itself.
+Track 22 removes the confound: both arms answer organizational questions
+with **no code execution**, their only tool a query interface capped at a
+few results and a small per-session budget, so the source cannot be read
+or enumerated. Getting there took three adversarial probes and produced a
+finding of its own — *a capable agent with any code execution cannot be
+walled off from local data; it reads the file, or enumerates a capped
+query* — which is why the enforced version grants no code execution at
+all and a hard query budget.
+
+With the source genuinely unreachable, the digested memory **helped**:
+control answered 68 of 98 questions correctly, the memory arm 82; up on
+12 instances, down on 1; sign p = 0.002; and the memory arm spent 13%
+fewer queries getting there, because the digest supplied what the budget
+could not reach. This is the program's one demonstrated causal benefit,
+and it lands exactly where the thesis said it would.
+
+So the finding is complete on both signs. **Memory helps a frontier
+agent when, and only when, the environment does not already hand it the
+answer.** The honest scope: the query budget is an engineered parameter
+(a looser one shrinks the effect, a tighter one grows it), the scoring is
+LLM-adjudicated, and this is organizational knowledge behind a limited
+retrieval interface — not repository coding, where the substrate is
+always present and the negatives above stand unchanged. What it buys the
+project is a boundary rather than a verdict: not "memory does not help,"
+but "memory helps precisely where the source is expensive, rate-limited,
+or withheld — and nowhere a capable agent can just read the environment."
 
 ## The cost of memory, itemized
 
