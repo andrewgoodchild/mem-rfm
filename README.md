@@ -124,9 +124,16 @@ wall-clock. Change one thing, though, and the picture inverts. Put the
 information somewhere the agent cannot read (behind a rate-limited
 search tool rather than files on disk) and the same memories produce a
 large improvement: 95 of 113 questions answered correctly against 80,
-across 38 paired sessions, p = 0.001. So the question to ask before
-adopting this is not "is my agent smart enough"
-but "can my agent already reach this information?"
+across 38 paired sessions, p = 0.001.
+
+That result is model-dependent, and the way it fails to replicate is
+the most useful part of it. Repeat the same experiment with a stronger
+model and the control arm answers 89 of 113 by itself, so the same
+memories add 5 questions instead of 15 and the advantage stops being
+significant. Memory buys the most where the agent has the least room to
+help itself, whether that room is closed by better access or by a more
+capable agent. So the question to ask before adopting this is not "is my
+agent smart enough" but "can my agent already reach this information?"
 
 Every number, every pre-registered prediction, the buys table, the
 acquisition measurement, and the full 13-row registered results table
