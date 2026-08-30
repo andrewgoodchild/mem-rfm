@@ -69,7 +69,11 @@ def sign_p(w, n):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--jobs", type=int, default=8)
+    # Read at import to pick DIR; declared here so argparse accepts them.
+    ap.add_argument("--budget", default="6")
+    ap.add_argument("--model", default="claude-fable-5")
     a = ap.parse_args()
+    print(f"scoring {DIR}")
     inst = instances()
     by = {}
     for l in open(os.path.join(DIR, "results.jsonl")):
