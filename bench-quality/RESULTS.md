@@ -2626,3 +2626,43 @@ for the metric; all four prior-based rules still sit below plain
 similarity here (-0.056 for the best of them), which is the separate
 composition finding already documented — this result ranks the third
 axes against each other, it does not claim the prior beats similarity.
+
+### Track 22 budget sweep, anchor point (2026-08-30): the benefit is model-dependent
+
+The sweep's budget=6 anchor on claude-opus-5 (38 pairs, same pool,
+same stores, same judge; run on opus because fable hit an account usage
+limit) is a PARTIAL replication of the headline:
+
+| model at budget=6 | control | rfm | per-instance | sign p | query turns |
+|---|---|---|---|---|---|
+| claude-fable-5 (registered) | 80 | **95** | 13 up / 1 down | **0.001** | -13% |
+| claude-opus-5 (anchor) | 89 | 94 | 8 up / 3 down | 0.113 | -15% |
+
+**T22S-P1 (model robustness): FAIL at the registered p <= 0.05 bar.**
+The direction replicates and the mechanism replicates cleanly (memory
+saves 15% of scarce queries on opus against 13% on fable), but the
+correctness advantage does not reach significance.
+
+**The reason is in the control column, and it matters more than the
+p-value.** Opus's control answered 89 of 113 where fable's answered 80.
+The stronger model spends a 6-query budget better, so there is less left
+for memory to supply: the same store, delivering the same facts, adds
++15 for fable and +5 for opus. That is the substrate thesis reappearing
+along the capability axis rather than the access axis. Memory's value
+shrinks as the agent gets better at reaching the source, whether the
+improvement comes from looser access or from a more capable agent.
+
+**What this does to the headline.** Track 22's result stands exactly as
+measured (fable, budget 6, p = 0.001) and is not withdrawn, but it is
+now known to be model-dependent: it is not safe to read "memory helps
+when the source is unreachable" as model-invariant. The honest form is
+that the benefit exists where the agent cannot cheaply reach the source
+AND has headroom to be helped, and both terms move.
+
+**Consequence for the sweep.** T22S-P2 (advantage at budget=12 smaller
+than at budget=6) is now underpowered on opus by construction: with a
++5 anchor advantage there is almost nothing left to shrink. Running
+budget=12 would measure noise. The sweep is therefore reported at its
+anchor and the budget-12 point is NOT RUN, disclosed rather than run to
+produce an uninterpretable number. Re-testing the curve properly needs
+the model with headroom (fable) once its usage limit clears.
