@@ -148,23 +148,30 @@ was written down and committed before the run it governs:
 | does the best earned memory beat no-memory at home? (sphinx) | token-matched, four content forms, on the tasks that earned its ledger | **FAIL** — ties under both detectors; forensics showed 79% of its ledger was earned with its condition silent (Track 11 + C4) |
 | does it at least help a weaker model? (haiku) | condition-liveness gate, then sign consistency | **FAIL** — 0 wins of 5 decided pairs, +27.6% wall: a measured tax (Track 13) |
 | does the full ungated lifecycle help where friction is forced? | a pool engineered so verification dies without the workaround | **FAIL at the gate** — the agent met the condition in 1 of 20 control sessions and verified around it; every lifecycle stage worked, delivery 19/20, and carrying the memory cost +25% wall (Track 19) |
+| does memory help when the control CANNOT read the source? | organizational questions, both arms given no code execution and only a budget-limited query tool | **PASS** — control 68, memory **82** of 98 correct, up on 12 instances / down on 1, **sign p = 0.002**, with 13% fewer queries (Track 22) — the one condition under which memory helped |
 
 How to read the table: the first eight rows are **cost or safety
 bounds** — the program's first phase set out to establish that memory
 does no harm on the workload where it helps least. (The idle-server row
 closes the loop on the xarray FAIL above it: registered while that
 failure stood unexplained, its context-cost-only verdict is what
-attributes the gap to variance rather than machinery.) The rows after
-it are the registered benefit predictions that phase promised, and all
-of them failed — the last one terminally: on this workload class the
-agents do not pay the costs the memories describe, so there is nothing
-for memory to save, while carrying it costs real time. The search also
-located a defect in the instrument (the ledger credited condition-blind
-copying — fixed by the condition gate) and ended with the machinery
-fully validated and the premise refuted. The program has since moved to
-the venues where the environment genuinely forgets: on PrefEval the
-composition bound transferred at exactly +0.0000 and the retrieval
-problem was measured as *applicability, not similarity*; and on a
+attributes the gap to variance rather than machinery.) The next four are
+the registered benefit predictions on repository coding, and all failed —
+the fourth terminally: on that workload the agents do not pay the costs
+the memories describe, because a frontier agent reads or re-derives from
+the repo, so there is nothing for memory to save while carrying it costs
+real time. **The last row is the one that flips.** Every negative above
+shares a hidden feature — the control could reach the source — and Track
+22 removes it: with the timeline behind a budget-limited query tool and
+no code execution, the digested memory produced a large, significant
+benefit. So the table reads as a boundary, not a verdict: **memory helps
+a frontier agent when, and only when, the environment does not already
+hand it the answer** — engineered budget, LLM-adjudicated, organizational
+venue; the repository negatives stand. The search also located a defect
+in the instrument along the way (the ledger credited condition-blind
+copying — fixed by the condition gate). Related retrieval-layer results:
+on PrefEval the composition bound transferred at exactly +0.0000 and the
+retrieval problem was measured as *applicability, not similarity*; and on a
 MEMTRACK replay (organizational/tribal knowledge) the ungated formation
 stack cleared every registered bar (Track 20, 5/5) — forming and
 delivering organizational memory with no human in the loop, at a small
