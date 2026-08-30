@@ -5,23 +5,20 @@ remembers by whether it actually *helped*. The whole thing is one SQLite
 file and a pure-Python scoring engine; an MCP server and three hooks
 make it drop-in for Claude Code.
 
-Recency and frequency come from **ACT-R**, the cognitive model of human
-memory. Its base-level activation is `ln(Σ tᵢ^−d)`, a sum over every
-past use, decaying with age. That treats recency and frequency as one
-quantity rather than two knobs, and the power law is not chosen for
-convenience: it was derived by fitting how often information actually
-recurs in real environments, so it prices how likely a memory is to be
-needed again.
+The name comes from marketing's **RFM** analysis, which scores customers
+on recency, frequency and **m**onetary value. Marketers keep the third
+axis because the first two come free from any transaction log but
+measure only engagement: someone who orders constantly and returns
+everything looks like a good customer until you price the returns.
+Memories have exactly that blind spot, and mem-rfm answers it the same
+way.
 
-Two axes are not enough, though, and direct marketing found that out
-first. Its RFM model scores customers on recency, frequency and
-**m**onetary value, because recency and frequency alone measure only
-engagement: someone who orders constantly and returns everything looks
-like a good customer until you price the returns. Memories have the same
-blind spot, so mem-rfm gives the third axis the same job. In place of
-money it puts **measured outcomes**, a signed per-memory record of
-whether acting on the memory helped or hurt, fed straight back into the
-ranking.
+Recency and frequency come from **ACT-R**, the cognitive model of human
+memory. Its base-level activation is `ln(Σ tᵢ^−d)`, a sum over every past
+use decaying with age, which makes the two one quantity rather than two
+knobs to tune. And in place of monetary value, mem-rfm puts **measured
+outcomes**: a signed per-memory record of whether acting on the memory
+helped or hurt, fed straight back into the ranking.
 
 Retrieved-often is cheap to fake, and this project's live program caught
 helped-when-used being faked too: an agent copies a suggested command,
