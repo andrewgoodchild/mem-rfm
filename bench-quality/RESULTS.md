@@ -2183,6 +2183,48 @@ substrate thesis ends the program as its one standing positive claim:
 memory pays where the environment forgets, and a repository never
 forgets.
 
+## Track 21b — per-turn judged retrieval (2026-08-30) — PRELIMINARY at 13/43 pairs: 21a's benefit does not replicate
+
+Scored at 13 of 43 pairs (the run was stopped repeatedly; this is a
+disclosed partial, judge-adjudicated with the 21a arm-blind judge). It
+is the fresh causal test of the mechanism 21a's retrospective signal
+pointed to — per-question applicability-judged retrieval, precomputed
+and delivered in-prompt (the live hook path being architecturally dead,
+DESIGN_NOTES). The preliminary answer is a null that walks 21a back.
+
+- **Aggregate: parity.** Judged-correct control 25, perturn 24 of 43;
+  per-instance perturn up on 2, control up on 2, tied on 9; sign
+  p = 0.69. No tax (wall −0.8%). Delivery 39% (17 of 43 turns got a
+  fact; P1's 40% floor just missed).
+- **The decisive cut — restricted to turns where a fact was actually
+  delivered** (removing the 61% of turns where perturn = control by
+  construction): of 17 delivered turns, memory **helped on 0, hurt on
+  2**, both-correct on 5, both-wrong on 10. Where the applicability
+  judge picked the right fact and it was placed in front of the model,
+  it produced no correct answer the control missed, and cost two.
+
+**What this means, stated carefully at partial n.** Track 21a found
+memory helped under retrospective adjudication (rfm 108 vs 101,
+p=0.055), delivered as one whole-store SessionStart injection. 21b
+delivers the *judge-selected* fact *per question* in a fresh run — the
+mechanism the applicability finding endorsed — and the benefit does not
+appear: not in aggregate, and not even on the delivered turns where it
+had every chance. The most likely reading is that 21a's marginal signal
+was retrospective-judge variance or an artifact of whole-store
+injection, and that per-turn judged delivery does not convert it. The
+10-of-17 both-wrong turns say something sharper: on hard MEMTRACK
+questions the delivered fact was necessary but not sufficient — the
+agent still had to reason over it and often failed, so handing it the
+fact did not move the outcome.
+
+**Status: PRELIMINARY.** 13 pairs is a third of the design; the full
+run can complete it, but the direction is clean (0 helped / 2 hurt on
+delivered turns) and unlikely to reverse. Pending completion, the honest
+program-level statement returns to: no fresh causal benefit of memory
+has been demonstrated on any venue — 21a was the one hint, and its own
+follow-up does not reproduce it. If the completed run changes this, it
+is recorded here; nothing about 21a is edited, both stand.
+
 ## Track 21a — judge adjudication of Track 20 (2026-08-29) — the first time memory HELPED, stated at its true size
 
 Track 20's exact-match parity (31 = 31) was a scoring artifact: strict
