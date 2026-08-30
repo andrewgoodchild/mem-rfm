@@ -64,12 +64,20 @@ and awarded that ledger zero credits (RESULTS.md, Tracks 18b–19).
 
 ## What it's for, and what it costs
 
-Memory pays for procedural things that repeat **and that the
-environment does not already persist**: organizational procedures and
-their changes, decisions and ownership, preferences, cross-repo tribal
-knowledge. Two questions decide whether it is worth adopting, and this
-project measured both. The short answers are below; the full evidence,
-with its scope and caveats, is in [findings](docs/findings.md).
+When someone says ChatGPT "really knows me," that is memory doing its
+easiest job. It is holding facts that live nowhere else: that you are
+vegetarian, that you want short answers, what you are building. Nothing
+in your environment remembers those for you, so writing them down is
+pure gain, and you feel it in every reply.
+
+Coding agents are the opposite case. The facts a coding memory would
+hold, such as build quirks, dependency pins and environment
+workarounds, are already written down in the repository the agent can
+open and read. A stored note is competing with a source the agent can
+simply consult. That difference is what decides whether memory pays
+here, and it is the finding this project spent its live program
+measuring ([memory-types.md](docs/memory-types.md) maps the full
+taxonomy). Two questions follow.
 
 **Does the ranking surface the right memory?** Yes, where the work
 repeats. The clearest case is a fact that goes stale: when a procedure
