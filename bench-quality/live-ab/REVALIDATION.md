@@ -1146,3 +1146,55 @@ from "live wall tax" (answered: impractical) to "delivery + benefit at
 the precomputed decision". The UserPromptSubmit hook and its
 cosine/judge modes remain committed as the delivery mechanism a warm
 service would use; they are not on Track 21b's scored path.
+
+## Track 22 — substrate removal (registered 2026-08-30, before any scored session)
+
+The experiment every prior causal track lacked: a venue where the
+CONTROL cannot reach the source, so memory could be necessary rather
+than a convenience. Two adversarial probes established the enforcement
+requirement the hard way, recorded because they bound the design:
+
+ - Probe 1 (events as a binary sqlite in the workspace, allowedTools =
+   query_events + Read/Grep/Glob): FAILED — the agent pulled the text
+   out of the binary DB with Grep/Read.
+ - Probe 2 (DB moved OUTSIDE the workspace, allowedTools =
+   query_events ONLY): FAILED — the agent still executed a direct
+   SELECT and dumped all 36 events.
+
+Finding, recorded as a result: **a capable agent with ANY code
+execution cannot be prevented from reading local data.** Restricting
+Bash to a single command does not hold; the agent finds and reads the
+file. Substrate removal therefore requires removing code execution
+entirely — the agent gets ONE capped retrieval tool via MCP and NO
+Bash/Read/Write/Grep/Glob — or OS-level sandboxing (which is why
+MEMTRACK's own harness is dockerized).
+
+Design: an MCP events server (events_mcp_server.py) exposing a single
+`query_events(keywords)` tool capped at 5 results, backed by per-instance
+data the agent's process cannot reach (no filesystem tool is granted).
+allowedTools = the MCP tool alone. Pool: the 38 event-only MEMTRACK
+instances (code instances excluded — they need file access). Arms:
+control (query tool only) vs rfm (query tool + whole-store SessionStart
+injection, mirroring Track 20's delivery). Judge-adjudicated.
+
+A third adversarial probe MUST pass before any scored session: an agent
+told to dump the timeline under the MCP-only toolset recovers no more
+than CAP events per query and cannot enumerate the full history. If that
+probe fails too, substrate removal is not achievable in this harness and
+the finding stands as the terminal result.
+
+Registered predictions (scored only if the enforcement probe passes):
+  T22-P1 (enforcement): the adversarial dump probe recovers < half the
+        timeline — the control genuinely cannot read the source.
+  T22-P2 (the benefit, at last a fair test): rfm judged-correct >
+        control, sign over per-instance deltas, one-sided p <= 0.05.
+        This is the first test where memory is not competing against a
+        control that can read the source.
+  T22-P3 (mechanism): on questions the control answers WRONG, rfm's
+        injected store contains the answering fact more often than not
+        — memory wins by surfacing what the capped query could not
+        cheaply reach.
+If P1 passes and P2 fails, that is the terminal negative: even with the
+substrate removed and the control unable to read the source, memory does
+not help a frontier agent. If P2 passes, it is the program's first and
+only demonstrated causal benefit, scoped to access-restricted work.
