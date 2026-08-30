@@ -24,7 +24,15 @@ import run_stream as rs        # noqa: E402  (cli_version)
 import run_track20 as t20      # noqa: E402  (store_path)
 import track22_lib as t22      # noqa: E402
 
-DIR = os.path.join(HERE, "track22")
+# Query budget is the substrate-tightness parameter (REVALIDATION Track 22
+# scope; the budget-sweep hardening). Default 6; --budget N reroutes output
+# to track22-b<N> so sweep points don't collide with the registered run.
+BUDGET = "6"
+for _i, _a in enumerate(sys.argv):
+    if _a == "--budget":
+        BUDGET = sys.argv[_i + 1]
+_SUF = "" if BUDGET == "6" else f"-b{BUDGET}"
+DIR = os.path.join(HERE, "track22" + _SUF)
 RESULTS = os.path.join(DIR, "results.jsonl")
 SESSIONS = os.path.join(DIR, "sessions")
 MODEL = "claude-fable-5"
@@ -69,7 +77,7 @@ def mcp_config(inst, tmp):
     cfg = {"mcpServers": {"track22-events": {
         "command": VENV, "args": [SERVER],
         "env": {"TRACK22_EVENTS_DB": dbpath, "TRACK22_CAP": "5",
-                "TRACK22_MAX_QUERIES": "6"}}}}
+                "TRACK22_MAX_QUERIES": BUDGET}}}}
     path = os.path.join(tmp, "mcp.json")
     json.dump(cfg, open(path, "w"))
     return path
