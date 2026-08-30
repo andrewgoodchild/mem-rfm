@@ -75,108 +75,30 @@ agent when, and only when, the environment does not already hand it the
 answer** — and the evidence for both signs, with its scope and caveats,
 is in [findings](docs/findings.md).
 
-### What it buys
+Two layers, and they came apart. At the **retrieval layer** — ranking,
+*given* correct feedback — the outcome axis reliably helps where work
+recurs: putting the right memory first, retiring a fact a procedure
+change made wrong (0.20 → 0.56 hit@1), preferring an updated fact
+(0.43 → 0.66), scoring usefulness at Spearman 0.83. The load-bearing
+assumption is **acquisition** — obtaining correct feedback in the wild —
+and the causal tracks found the early loop credited engagement, not
+value (79% of the corpus's top ledger was earned in sessions where the
+memory's condition never fired); outcomes are now **condition-gated**, so
+a `+1` requires the named condition to have fired.
 
-| measured | result | basis |
-|---|---|---|
-| putting the right memory first, on recurring work | **+0.012 hit@1** [95% CI +0.005, +0.020], rising to +0.020 over the final third as feedback accumulates | 3,000 real support calls; exploratory, **oracle** outcomes |
-| retiring facts that a procedure change made wrong | recovers to **0.56 hit@1** where similarity-only is still recommending the dead procedure at **0.20**, 1,500 calls later | same corpus, procedures revised mid-stream; **oracle** outcomes |
-| preferring an updated fact over the version it replaced | **0.43 → 0.66**, with no loss of fresh-fact recall | LongMemEval knowledge-update tasks; **oracle** labels |
-| scoring a memory by how useful it truly was | **Spearman 0.83** against ground truth within 25 observations | 52,104 Terminal-Bench trials — **real** test-verified rewards |
-| a live coding run once the ledger has been earned | memory arm beat control: **−8.6% wall**, 9.7k vs 10.9k output tokens | 10 paired Claude Code sessions; **wild** feedback, exploratory — **overtaken**: the registered causal tracks below re-tested this ledger and found no effect; the row stays for the record |
+At the **causal layer** — does having the store change what the agent
+achieves — the answer is the boundary above, drawn over ~20
+pre-registered live tracks: on repository coding, no benefit and a real
+carry cost (+25–27% wall), because a frontier agent just reads the repo;
+where the source is genuinely unreachable, a large significant benefit
+(Track 22: 95 vs 80 correct, p = 0.001). It also doesn't pay where your
+harness already ships memory — Claude Code, Cursor and Devin capture the
+same operational lessons.
 
-The pattern across those rows: *ranking* pays where work recurs and
-feedback is correct, and pays most at the top slot — the position that
-matters when you hand an agent one suggestion. These are retrieval-layer
-results; whether having the store causally helps an agent is the
-question the registered table below answers, and the two layers came
-apart.
-
-**The assumption underneath them, stated plainly.** Three of those rows
-use oracle outcomes. They establish what ranking does *given* correct
-feedback; they do not establish that a system obtains correct feedback
-in the wild. That acquisition step is the load-bearing assumption of
-this whole design, and it has the least clean measurement on the page —
-if the thesis fails, it fails there, not at +0.012 hit@1.
-
-What we can say about acquisition: across six live runs the loop closed
-**67 times by transcript inference against 23 explicit model calls**,
-and replaying those transcripts with explicit feedback as ground truth,
-inference recovered 9 of 15 outcomes with **zero sign errors** — it
-misses (the relevance judgments it structurally cannot see) but it does
-not invert. Sign accuracy turned out to be the wrong reassurance: the
-causal tracks below found the loop's *credit* was wrong — its positives
-were largely earned in sessions where the memory's condition never
-fired (copied commands, credited successes; 79% of the top ledger).
-Outcomes are now condition-gated — a `+1` requires the named condition
-to have fired — and the ledger that motivated the fix could not have
-been earned under it (theory.md, "the condition side of the
-production").
-
-### What it costs, and where it doesn't pay
-
-Unrelated episodic tasks and one-question-over-a-document-pile workloads
-showed no benefit, and on repository bug-fixing the terminal tracks
-measured carrying memories as a real cost — +25 to +27% wall where
-delivery worked and the knowledge went unneeded. If your
-harness already ships its own memory — Claude Code, Cursor and Devin all
-do — the overlap is real and measured: in our own pilots the native
-memory captured the same operational lessons our store did.
-
-Those costs are pre-registered and scored. The live coding program ran
-paired Claude Code sessions on real bugs in three open-source Python
-repos — memory arm against control, resolution scored by each project's
-own tests — and it is the hardest case for memory: episodic work, where
-our own measurements put lesson transfer at ~6%. Every prediction below
-was written down and committed before the run it governs:
-
-| what we asked | prediction | outcome |
-|---|---|---|
-| cold start, familiar repo (pytest) | machinery cost stays within +10% wall / +15% tokens | **PASS** — −7.6% / −12.4% |
-| cold start, never-seen repo (xarray) | same bound | **FAIL** — +32.0% / +35.5%. The leading suspect was excluded by the last row; still unexplained at n=11 ([forensics](docs/findings.md#the-registered-fail-in-detail)) |
-| does the miner catch what sessions pay for? | it stages a candidate whenever a named-cause failure occurs | **PASS** — staged and ratified in-run |
-| does a proven memory keep earning? (pytest) | a memory that earned in phase one earns again in phase two | **NOT TRIGGERED** — nothing earned value on that repo, as registered |
-| same question, never-seen repo (xarray) | as above | **AMBIGUOUS** — our registered wording was defective; disclosed rather than quietly repaired, and [corrected for future registrations](bench-quality/live-ab/REVALIDATION.md) |
-| do stale memories do harm? (sphinx, new era) | an outdated earned ledger stays within +10% wall | **PASS** — +3.0%, and the ledger demoted itself |
-| do demoted memories stay demoted? | outcome-demoted memories are never re-injected | **PASS** — verified in-run |
-| what does an idle memory server cost? (sphinx) | measurable context overhead from tool schemas alone; two-sided decision rule on wall and resolution | **MEASURED** — +189 tokens/session (~0.9% of context), wall +1.0%, resolution identical: context-cost-only |
-| does a human-ratified store help on held-out tasks? (xarray) | fewer events to a first passing test than control | **FAIL** — no effect in either direction, with injection landing 13/13 (Track 10, corrected reading) |
-| does the best earned memory beat no-memory at home? (sphinx) | token-matched, four content forms, on the tasks that earned its ledger | **FAIL** — ties under both detectors; forensics showed 79% of its ledger was earned with its condition silent (Track 11 + C4) |
-| does it at least help a weaker model? (haiku) | condition-liveness gate, then sign consistency | **FAIL** — 0 wins of 5 decided pairs, +27.6% wall: a measured tax (Track 13) |
-| does the full ungated lifecycle help where friction is forced? | a pool engineered so verification dies without the workaround | **FAIL at the gate** — the agent met the condition in 1 of 20 control sessions and verified around it; every lifecycle stage worked, delivery 19/20, and carrying the memory cost +25% wall (Track 19) |
-| does memory help when the control CANNOT read the source? | organizational questions, both arms given no code execution and only a budget-limited query tool | **PASS** — control 68, memory **82** of 98 correct, up on 12 instances / down on 1, **sign p = 0.002**, with 13% fewer queries (Track 22) — the one condition under which memory helped |
-
-How to read the table: the first eight rows are **cost or safety
-bounds** — the program's first phase set out to establish that memory
-does no harm on the workload where it helps least. (The idle-server row
-closes the loop on the xarray FAIL above it: registered while that
-failure stood unexplained, its context-cost-only verdict is what
-attributes the gap to variance rather than machinery.) The next four are
-the registered benefit predictions on repository coding, and all failed —
-the fourth terminally: on that workload the agents do not pay the costs
-the memories describe, because a frontier agent reads or re-derives from
-the repo, so there is nothing for memory to save while carrying it costs
-real time. **The last row is the one that flips.** Every negative above
-shares a hidden feature — the control could reach the source — and Track
-22 removes it: with the timeline behind a budget-limited query tool and
-no code execution, the digested memory produced a large, significant
-benefit. So the table reads as a boundary, not a verdict: **memory helps
-a frontier agent when, and only when, the environment does not already
-hand it the answer** — engineered budget, LLM-adjudicated, organizational
-venue; the repository negatives stand. The search also located a defect
-in the instrument along the way (the ledger credited condition-blind
-copying — fixed by the condition gate). Related retrieval-layer results:
-on PrefEval the composition bound transferred at exactly +0.0000 and the
-retrieval problem was measured as *applicability, not similarity*; and on a
-MEMTRACK replay (organizational/tribal knowledge) the ungated formation
-stack cleared every registered bar (Track 20, 5/5) — forming and
-delivering organizational memory with no human in the loop, at a small
-fraction of the redundancy tax the benchmark's own authors measured for
-memory-as-tools, and without harming correctness. First venue where
-mem-rfm is not a net negative; whether it is a net *positive* needs
-timelines that exceed the context window, the registered next question.
-Per-track record in `bench-quality/RESULTS.md`; synthesis in
-[findings.md](docs/findings.md).
+Every number, every pre-registered prediction, the buys table, the
+acquisition measurement, and the full 13-row registered results table
+are in **[findings.md](docs/findings.md)**; the complete per-track ledger
+is `bench-quality/RESULTS.md`.
 
 **[All findings, and everything that died along the way →](docs/findings.md)**
 
