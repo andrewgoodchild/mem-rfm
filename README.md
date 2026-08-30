@@ -67,33 +67,34 @@ and awarded that ledger zero credits (RESULTS.md, Tracks 18b–19).
 Memory pays for procedural things that repeat **and that the
 environment does not already persist**: organizational procedures and
 their changes, decisions and ownership, preferences, cross-repo tribal
-knowledge. The live program measured this on both sides. Where a
-frontier agent can read the source (a repository) memory has nothing to
-add, but where the source is unreachable it produced a large,
-significant benefit. So the rule is exact: **memory helps a frontier
-agent when, and only when, the environment does not already hand it the
-answer**. The evidence for both signs, with its scope and caveats, is in
-[findings](docs/findings.md).
+knowledge. Two questions decide whether it is worth adopting, and this
+project measured both. The short answers are below; the full evidence,
+with its scope and caveats, is in [findings](docs/findings.md).
 
-Two layers, and they came apart. At the **retrieval layer** (ranking,
-*given* correct feedback) the outcome axis reliably helps where work
-recurs: putting the right memory first, retiring a fact a procedure
-change made wrong (0.20 → 0.56 hit@1), preferring an updated fact
-(0.43 → 0.66), scoring usefulness at Spearman 0.83. Everything there
-rests on **acquisition**, obtaining correct feedback in the wild, and
-the causal tracks found the early loop credited engagement rather than
-value (79% of the corpus's top ledger was earned in sessions where the
-memory's condition never fired). Outcomes are now **condition-gated**, so
-a `+1` requires the named condition to have fired.
+**Does the ranking surface the right memory?** Yes, where the work
+repeats. The clearest case is a fact that goes stale: when a procedure
+changes, the outcome scores pull the old version down and retrieval
+recovers to 0.56 hit@1, while plain similarity search is still
+recommending the dead procedure at 0.20. That result depends on getting
+honest feedback about what helped, which is harder than it sounds. Our
+own scoring was fooled for weeks: an agent that copies a suggested
+command and succeeds looks like proof the memory helped, even when the
+problem the memory warns about never came up. A memory now earns credit
+only in sessions where the situation it describes actually occurred.
 
-At the **causal layer** (does having the store change what the agent
-achieves) the answer is the boundary above, drawn over roughly 20
-pre-registered live tracks. On repository coding: no benefit and a real
-carry cost of +25 to +27% wall, because a frontier agent just reads the
-repo. Where the source is genuinely unreachable: a large significant
-benefit (Track 22, 95 vs 80 correct, p = 0.001). It also doesn't pay
-where your harness already ships memory, since Claude Code, Cursor and
-Devin capture the same operational lessons.
+**Does having the store make the agent better at its job?** Only when
+the agent could not have found the answer by itself. In about twenty
+pre-registered experiments on real bug-fixing, memory did not help at
+all: a capable agent simply reads the repository, so a stored note about
+a build quirk saves nothing, and carrying it costs roughly 25% in extra
+wall-clock. Change one thing, though, and the picture inverts. Put the
+information somewhere the agent cannot read (behind a rate-limited
+search tool rather than files on disk) and the same memories produce a
+large improvement: 95 correct answers against 80, p = 0.001. So the
+question to ask before adopting this is not "is my agent smart enough"
+but "can my agent already reach this information?" Skip it, too, if your
+harness ships its own memory, since Claude Code, Cursor and Devin
+capture the same operational lessons.
 
 Every number, every pre-registered prediction, the buys table, the
 acquisition measurement, and the full 13-row registered results table
