@@ -68,12 +68,16 @@ Memory pays for procedural things that repeat **and that the
 environment does not already persist** — organizational procedures
 and the moments they change, decisions and ownership, user preferences
 and working style, cross-repo tribal knowledge. Our own live program
-proved the second clause the hard way: the operational knowledge we
+measured that boundary on both sides. The operational knowledge we
 originally built this for — build quirks, dependency pins, environment
-workarounds — recurs, but a repository persists it and a frontier
-agent re-derives or routes around it, so there is nothing left for
-memory to save (the registered table below, and
-[findings](docs/findings.md)).
+workarounds — recurs, but a repository persists it and a frontier agent
+re-derives or reads it, so there is nothing for memory to save (the
+registered table below). Yet in a venue where the source is genuinely
+**unreachable** — the agent given no code execution and only a
+budget-limited query tool — the same digested memory produced a large,
+significant benefit (68 → 82 of 98 correct, p = 0.002; Track 22). So the
+rule is exact: **memory helps a frontier agent when, and only when, the
+environment does not already hand it the answer** ([findings](docs/findings.md)).
 
 ### What it buys
 
