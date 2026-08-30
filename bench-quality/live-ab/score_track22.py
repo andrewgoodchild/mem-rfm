@@ -16,11 +16,15 @@ import threading
 import yaml
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-_B = "6"
+_B, _M = "6", "claude-fable-5"
 for _i, _a in enumerate(sys.argv):
     if _a == "--budget":
         _B = sys.argv[_i + 1]
-DIR = os.path.join(HERE, "track22" + ("" if _B == "6" else f"-b{_B}"))
+    if _a == "--model":
+        _M = sys.argv[_i + 1]
+_MT = "" if _M == "claude-fable-5" else "-" + _M.replace(
+    "claude-", "").split("-")[0]
+DIR = os.path.join(HERE, "track22" + ("" if _B == "6" else f"-b{_B}") + _MT)
 MT = os.path.join(HERE, "..", "data", "memtrack", "Memtrak")
 LOCK = threading.Lock()
 

@@ -25,17 +25,22 @@ import run_track20 as t20      # noqa: E402  (store_path)
 import track22_lib as t22      # noqa: E402
 
 # Query budget is the substrate-tightness parameter (REVALIDATION Track 22
-# scope; the budget-sweep hardening). Default 6; --budget N reroutes output
-# to track22-b<N> so sweep points don't collide with the registered run.
+# scope; the budget-sweep hardening). --budget N and --model M reroute
+# output to track22-b<N>[-<tag>] so sweep points and model replications
+# never collide with the registered fable/budget-6 run.
 BUDGET = "6"
+MODEL = "claude-fable-5"
 for _i, _a in enumerate(sys.argv):
     if _a == "--budget":
         BUDGET = sys.argv[_i + 1]
-_SUF = "" if BUDGET == "6" else f"-b{BUDGET}"
+    if _a == "--model":
+        MODEL = sys.argv[_i + 1]
+_MTAG = "" if MODEL == "claude-fable-5" else "-" + MODEL.replace(
+    "claude-", "").split("-")[0]
+_SUF = ("" if BUDGET == "6" else f"-b{BUDGET}") + _MTAG
 DIR = os.path.join(HERE, "track22" + _SUF)
 RESULTS = os.path.join(DIR, "results.jsonl")
 SESSIONS = os.path.join(DIR, "sessions")
-MODEL = "claude-fable-5"
 VENV = os.path.abspath(os.path.join(HERE, "..", "..", "integrations",
                                     "claude-code", ".venv", "bin", "python"))
 SERVER = os.path.abspath(os.path.join(HERE, "events_mcp_server.py"))

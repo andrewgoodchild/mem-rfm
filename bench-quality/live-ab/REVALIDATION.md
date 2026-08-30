@@ -1198,3 +1198,29 @@ If P1 passes and P2 fails, that is the terminal negative: even with the
 substrate removed and the control unable to read the source, memory does
 not help a frontier agent. If P2 passes, it is the program's first and
 only demonstrated causal benefit, scoped to access-restricted work.
+
+### Track 22 budget sweep (registered 2026-08-30, before the sweep runs)
+
+Hardening for the Track 22 scope caveat: the 6-query budget is an
+engineered parameter, so the effect size is conditional on it. The sweep
+varies budget while holding everything else fixed.
+
+Model change, disclosed: the registered Track 22 ran claude-fable-5,
+which hit an account usage limit mid-sweep (every session returned empty;
+that partial data was deleted, not scored). The sweep therefore runs on
+claude-opus-5. Because model and budget would otherwise be confounded,
+BOTH sweep points run on opus: budget=6-opus is the anchor (also a
+model-robustness replication of the headline result) and budget=12-opus
+is the loosened-substrate point. The registered fable budget-6 run stands
+unchanged; opus runs land in track22-b*-opus directories.
+
+Registered predictions:
+  T22S-P1 (model robustness): at budget=6 on opus, rfm > control on
+        judged correctness with sign p <= 0.05 — the boundary result
+        replicates across models.
+  T22S-P2 (the sweep): the rfm-minus-control advantage at budget=12 is
+        SMALLER than at budget=6 (same model). Loosening the substrate
+        should shrink the benefit; if it does not, the benefit is not
+        actually about source-reachability and the Track 22 mechanism
+        reading is wrong.
+Reported as an effect curve, not a pass/fail on P2's magnitude.

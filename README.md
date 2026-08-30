@@ -6,9 +6,9 @@ file and a pure-Python scoring engine; an MCP server and three hooks
 make it drop-in for Claude Code. There is no service and no API key.
 Nothing calls a model at ranking time: the prior is one indexed row
 read, and session-start injection ranks on it alone. Search multiplies
-that prior by similarity from a small local embedding model — the one
+that prior by similarity from a small local embedding model, the one
 neural inference anywhere near retrieval. (Formation and outcome
-judging may optionally use a cheap LLM — the sweep — whose judgments
+judging may optionally use a cheap LLM, the sweep, whose judgments
 become signals the prior learns from; retrieval itself never calls
 one.)
 
@@ -16,10 +16,10 @@ The name is borrowed from marketing's RFM analysis, which segments
 customers by the recency, frequency, and monetary value of their
 purchases. Memories get the same treatment: recency and frequency come
 from ACT-R, the cognitive model of human memory, which prices how likely
-a memory is to be needed again. But mem-rfm goes beyond R and F — where
-marketing puts monetary value, it puts **measured outcomes**: a signed,
+a memory is to be needed again. But mem-rfm goes beyond R and F: where
+marketing puts monetary value, it puts **measured outcomes**, a signed
 per-memory record of whether acting on the memory helped or hurt, fed
-straight back into the ranking. Retrieved-often is cheap to fake — and
+straight back into the ranking. Retrieved-often is cheap to fake, and
 our own live program caught helped-when-used being faked too: agents
 copy a suggested command, the copy succeeds, the ledger inflates. So a
 positive outcome now counts only in sessions where the condition the
@@ -29,7 +29,7 @@ memory names actually fired. Helped-when-*needed* is the signal.
 ## How it works
 
 Retrieval multiplies similarity by each memory's earned prior; every
-retrieval records an access, and the outcome — did it help? — scores it:
+retrieval records an access, and the outcome (did it help?) scores it:
 
 ```sql
 SELECT id, content,
@@ -40,18 +40,18 @@ SELECT rfm_record_access(42);        -- we retrieved memory 42
 SELECT rfm_record_outcome(42, 1.0);  -- ...and it helped (-1.0 if it didn't)
 ```
 
-In Claude Code the loop runs itself — every stage has a cheap in-session
+In Claude Code the loop runs itself: every stage has a cheap in-session
 path and a harness-owned path that does the real work:
 
 | stage | you, in-session | the harness, post-hoc |
 |---|---|---|
 | **Formation** | `memory_save` on "remember this" | SessionEnd mines failed→fixed command pairs from the transcript; `/memory-review` ratifies |
 | **Retrieval** | `memory_search` | SessionStart injects the top-3 by `rfm_score` |
-| **Outcome** | `memory_feedback` when a memory surprises | inferred from what the session acted on, at session end — a `+1` lands only if the memory's named condition fired |
+| **Outcome** | `memory_feedback` when a memory surprises | inferred from what the session acted on, at session end; a `+1` lands only if the memory's named condition fired |
 | **Retention** | `memory_delete` on "forget that" | idle never-useful memories are pruned; proven ones never are |
 
 There is also an **ungated alternative** to the review step: `sweep.py`
-runs continuously (cron or hook) — one cheap LLM extraction per
+runs continuously (cron or hook), doing one cheap LLM extraction per
 transcript against a configurable ontology, near-duplicates merged into
 a sightings count instead of new rows, a **two-sighting quarantine** in
 place of human review (one poisoned transcript is insufficient by
@@ -65,35 +65,35 @@ and awarded that ledger zero credits (RESULTS.md, Tracks 18b–19).
 ## What it's for, and what it costs
 
 Memory pays for procedural things that repeat **and that the
-environment does not already persist** — organizational procedures and
+environment does not already persist**: organizational procedures and
 their changes, decisions and ownership, preferences, cross-repo tribal
-knowledge. The live program measured this on both sides: where a
+knowledge. The live program measured this on both sides. Where a
 frontier agent can read the source (a repository) memory has nothing to
 add, but where the source is unreachable it produced a large,
-significant benefit. So the rule is exact — **memory helps a frontier
+significant benefit. So the rule is exact: **memory helps a frontier
 agent when, and only when, the environment does not already hand it the
-answer** — and the evidence for both signs, with its scope and caveats,
-is in [findings](docs/findings.md).
+answer**. The evidence for both signs, with its scope and caveats, is in
+[findings](docs/findings.md).
 
-Two layers, and they came apart. At the **retrieval layer** — ranking,
-*given* correct feedback — the outcome axis reliably helps where work
+Two layers, and they came apart. At the **retrieval layer** (ranking,
+*given* correct feedback) the outcome axis reliably helps where work
 recurs: putting the right memory first, retiring a fact a procedure
 change made wrong (0.20 → 0.56 hit@1), preferring an updated fact
-(0.43 → 0.66), scoring usefulness at Spearman 0.83. The load-bearing
-assumption is **acquisition** — obtaining correct feedback in the wild —
-and the causal tracks found the early loop credited engagement, not
+(0.43 → 0.66), scoring usefulness at Spearman 0.83. Everything there
+rests on **acquisition**, obtaining correct feedback in the wild, and
+the causal tracks found the early loop credited engagement rather than
 value (79% of the corpus's top ledger was earned in sessions where the
-memory's condition never fired); outcomes are now **condition-gated**, so
+memory's condition never fired). Outcomes are now **condition-gated**, so
 a `+1` requires the named condition to have fired.
 
-At the **causal layer** — does having the store change what the agent
-achieves — the answer is the boundary above, drawn over ~20
-pre-registered live tracks: on repository coding, no benefit and a real
-carry cost (+25–27% wall), because a frontier agent just reads the repo;
-where the source is genuinely unreachable, a large significant benefit
-(Track 22: 95 vs 80 correct, p = 0.001). It also doesn't pay where your
-harness already ships memory — Claude Code, Cursor and Devin capture the
-same operational lessons.
+At the **causal layer** (does having the store change what the agent
+achieves) the answer is the boundary above, drawn over roughly 20
+pre-registered live tracks. On repository coding: no benefit and a real
+carry cost of +25 to +27% wall, because a frontier agent just reads the
+repo. Where the source is genuinely unreachable: a large significant
+benefit (Track 22, 95 vs 80 correct, p = 0.001). It also doesn't pay
+where your harness already ships memory, since Claude Code, Cursor and
+Devin capture the same operational lessons.
 
 Every number, every pre-registered prediction, the buys table, the
 acquisition measurement, and the full 13-row registered results table
@@ -104,7 +104,7 @@ is `bench-quality/RESULTS.md`.
 
 ## Installation
 
-Python 3.10+ with its bundled sqlite3 (≥ 3.35) — nothing to compile:
+Python 3.10+ with its bundled sqlite3 (≥ 3.35), nothing to compile:
 
 ```python
 import sqlite3, rfm            # rfm.py, repo root, stdlib-only
@@ -150,6 +150,6 @@ Also: `PROTOCOL.md` (pre-registrations, amendments 1–16c),
 
 ## License
 
-[Apache-2.0](LICENSE). Datasets are downloaded, never redistributed —
+[Apache-2.0](LICENSE). Datasets are downloaded, never redistributed;
 provenance and terms in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 (note LoCoMo is CC BY-NC).
