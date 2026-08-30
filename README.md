@@ -5,18 +5,6 @@ remembers by whether it actually *helped*. The whole thing is one SQLite
 file and a pure-Python scoring engine; an MCP server and three hooks
 make it drop-in for Claude Code.
 
-**Status:** a research artefact with a working integration. The engine,
-schema and Claude Code hooks are tested and stable, and the experimental
-record below is the point of the project as much as the code is. Treat
-it as something to read, measure against, and borrow from rather than a
-supported product.
-
-**What leaves your machine:** nothing, by default. No service, no API
-key; the store is a local file and the embedding model runs locally. The
-one exception is opt-in: the continuous formation sweep and its outcome
-judge call a cheap LLM, which means transcript excerpts go wherever that
-model runs. Ranking never calls a model at all.
-
 Recency and frequency come from **ACT-R**, the cognitive model of human
 memory: its base-level activation `ln(Σ tᵢ^−d)` treats them as one
 quantity and prices how likely a memory is to be needed again, using a
@@ -182,6 +170,20 @@ claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py
 Every save, search, and outcome is logged to `rfm-log.jsonl` beside the
 database; `log_stats.py` turns the log into the numbers that decide
 whether it is working for you. **[Full API and configuration →](docs/api.md)**
+
+## Status
+
+A research artefact with a working integration. The engine, schema and
+Claude Code hooks are tested and stable, and the experimental record is
+the point of the project as much as the code is. Treat it as something
+to read, measure against, and borrow from rather than a supported
+product.
+
+**What leaves your machine:** nothing, by default. No service, no API
+key; the store is a local file and the embedding model runs locally. The
+one exception is opt-in: the continuous formation sweep and its outcome
+judge call a cheap LLM, which means transcript excerpts go wherever that
+model runs. Ranking never calls a model at all.
 
 ## Documentation
 
