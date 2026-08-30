@@ -65,19 +65,15 @@ and awarded that ledger zero credits (RESULTS.md, Tracks 18b–19).
 ## What it's for, and what it costs
 
 Memory pays for procedural things that repeat **and that the
-environment does not already persist** — organizational procedures
-and the moments they change, decisions and ownership, user preferences
-and working style, cross-repo tribal knowledge. Our own live program
-measured that boundary on both sides. The operational knowledge we
-originally built this for — build quirks, dependency pins, environment
-workarounds — recurs, but a repository persists it and a frontier agent
-re-derives or reads it, so there is nothing for memory to save (the
-registered table below). Yet in a venue where the source is genuinely
-**unreachable** — the agent given no code execution and only a
-budget-limited query tool — the same digested memory produced a large,
-significant benefit (68 → 82 of 98 correct, p = 0.002; Track 22). So the
-rule is exact: **memory helps a frontier agent when, and only when, the
-environment does not already hand it the answer** ([findings](docs/findings.md)).
+environment does not already persist** — organizational procedures and
+their changes, decisions and ownership, preferences, cross-repo tribal
+knowledge. The live program measured this on both sides: where a
+frontier agent can read the source (a repository) memory has nothing to
+add, but where the source is unreachable it produced a large,
+significant benefit. So the rule is exact — **memory helps a frontier
+agent when, and only when, the environment does not already hand it the
+answer** — and the evidence for both signs, with its scope and caveats,
+is in [findings](docs/findings.md).
 
 ### What it buys
 
