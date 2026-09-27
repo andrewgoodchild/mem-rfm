@@ -191,8 +191,32 @@ def material_of(sess):
     return "\n\n".join(parts)[:6000]
 
 
-def admit(db, mem, cmds, src):
-    """Dedupe-as-frequency, provenance, quarantine — then insert or bump."""
+def exposed_ids(db, sess):
+    """Store ids of the memories this session was shown (injected or
+    searched), matched by SIMILARITY for the same reason judge_in_play
+    matches that way: transcript ids belong to whatever store ran the
+    session."""
+    rows = db.execute("SELECT id, content FROM rfm_memories").fetchall()
+    out = set()
+    for tcontent, _idx in sess.exposures.values():
+        best, best_sim = None, 0.0
+        for mid, existing in rows:
+            s = similarity(tcontent, existing)
+            if s > best_sim:
+                best, best_sim = mid, s
+        if best is not None and best_sim >= CONFIG["dedupe_threshold"]:
+            out.add(best)
+    return out
+
+
+def admit(db, mem, cmds, src, exposed=frozenset()):
+    """Dedupe-as-frequency, provenance, quarantine — then insert or bump.
+
+    `exposed`: store ids this session was shown. A lesson matching one of
+    them is the session restating what it was told, not a second
+    independent sighting, so it neither bumps sightings nor records an
+    access — otherwise a quarantined memory surfaced by memory_search and
+    echoed back would release itself (test_feedback_loop.py)."""
     content = (mem.get("content") or "").strip()
     cond = (mem.get("condition_class") or "").strip()
     if not content or not cond:
@@ -216,6 +240,10 @@ def admit(db, mem, cmds, src):
         if s > best_sim:
             best, best_sim = mid, s
     if best is not None and best_sim >= CONFIG["dedupe_threshold"]:
+        if best in exposed:
+            _log({"op": "sweep_self_sighting", "id": best,
+                  "similarity": round(best_sim, 3), "src": src})
+            return best
         db.execute("SELECT rfm_record_access(?)", (best,))
         db.execute("UPDATE rfm_memories SET sightings = "
                    "COALESCE(sightings, 1) + 1 WHERE id = ?", (best,))
@@ -318,6 +346,7 @@ def sweep_one(db, tp, harness=None):
     events = sess.events
     fired = se.fired_classes(events)
     cmds = [e.cmd for e in events if e.cmd]
+    exposed = exposed_ids(db, sess)
     mat = material_of(sess)
     if mat.strip():
         out = parse_json(llm(EXTRACT.format(
@@ -326,7 +355,7 @@ def sweep_one(db, tp, harness=None):
             max_per_session=CONFIG["max_per_session"], material=mat)))
         for mem in (out or [])[:CONFIG["max_per_session"]]:
             if isinstance(mem, dict):
-                admit(db, mem, cmds, src)
+                admit(db, mem, cmds, src, exposed)
     judge_in_play(db, sess, fired, src)
     evict(db)
     db.commit()
