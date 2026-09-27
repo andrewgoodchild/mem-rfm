@@ -355,5 +355,10 @@ bench-quality/            all evidence: retrieval evals, live A/B, throughput, R
 integrations/claude-code/ MCP server, hooks, A/B kit — the live measurement harness
   sweep.py                the ungated formation sweep (config: sweep-config.json;
                           acceptance audit: test_sweep.py; see lifecycle.md)
+  harnesses.py            the harness registry: lifecycle events, scripts,
+                          timeouts and transcript reader per coding agent;
+                          install_hooks.py and the hooks both read it
+  transcripts.py          the normalized session (command events, memories
+                          shown, prose) and one reader per harness
 docs/                     the writeups
 ```

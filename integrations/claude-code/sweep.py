@@ -31,6 +31,8 @@ sys.path.insert(0, os.path.join(HERE, "..", ".."))
 import session_end as se  # noqa: E402  (parse, events, corrections, acted_on)
 import rfm                # noqa: E402
 import secret_scan        # noqa: E402
+import harnesses          # noqa: E402
+import transcripts        # noqa: E402
 
 CONFIG = json.load(open(os.path.join(HERE, "sweep-config.json")))
 DB_PATH = os.path.expanduser(
@@ -176,22 +178,15 @@ def similarity(a, b):
     return len(ta & tb) / len(ta | tb)
 
 
-def material_of(records, events):
+def material_of(sess):
     parts = []
-    for c in se.corrections(events)[:4]:
+    for c in se.corrections(sess.events)[:4]:
         parts.append(f"FAILED: {c['failed']}\nERROR: {c['error']}\n"
                      f"FIXED BY: {c['fixed']}")
-    prose = []
-    for r in records:
-        if r.get("type") != "assistant":
-            continue
-        c = (r.get("message") or {}).get("content")
-        if isinstance(c, list):
-            for b in c:
-                if isinstance(b, dict) and b.get("type") == "text":
-                    t = (b.get("text") or "").strip()
-                    if len(t) >= 200:
-                        prose.append(t)
+    # Reader prose arrives with our own injected blocks already stripped
+    # (transcripts.strip_injected): extracting from the session's echo of a
+    # memory would be the store confirming itself.
+    prose = [t for t in sess.prose if len(t) >= 200]
     parts.extend(prose[-3:])
     return "\n\n".join(parts)[:6000]
 
@@ -247,14 +242,15 @@ def outcome_of(v):
     return None
 
 
-def judge_in_play(db, records, events, fired, src):
+def judge_in_play(db, sess, fired, src):
     # Transcript-parsed in-play content, matched to this store's rows by
     # SIMILARITY, never by id: transcript ids belong to whatever store
     # ran that session, and rehydrating them against this one collides
     # (Track 18's vacuous P3 — wrong content, dead signatures, silent
     # skips). A similarity match also recovers the full text that
     # injection truncation cut from the transcript line.
-    mems = se.in_play_memories(records)
+    events = sess.events
+    mems = sess.exposures
     rows = db.execute("SELECT id, content FROM rfm_memories").fetchall()
     for _tid, (tcontent, first_idx) in mems.items():
         target, best_sim = None, 0.0
@@ -312,15 +308,17 @@ def evict(db):
         _log({"op": "sweep_evict", "id": mid, "score": round(s, 4)})
 
 
-def sweep_one(db, tp):
-    records = se._parse_transcript(tp)
-    events = se.load_events(records)
-    if not events and not records:
+def sweep_one(db, tp, harness=None):
+    harness = harness or harnesses.current()
+    sess = transcripts.read(tp, harness.reader)
+    src = os.path.basename(tp)
+    if not sess.readable:
+        _log({"op": "sweep_unreadable", "harness": harness.name, "src": src})
         return
+    events = sess.events
     fired = se.fired_classes(events)
     cmds = [e.cmd for e in events if e.cmd]
-    src = os.path.basename(tp)
-    mat = material_of(records, events)
+    mat = material_of(sess)
     if mat.strip():
         out = parse_json(llm(EXTRACT.format(
             instruction=CONFIG["instruction"],
@@ -329,7 +327,7 @@ def sweep_one(db, tp):
         for mem in (out or [])[:CONFIG["max_per_session"]]:
             if isinstance(mem, dict):
                 admit(db, mem, cmds, src)
-    judge_in_play(db, records, events, fired, src)
+    judge_in_play(db, sess, fired, src)
     evict(db)
     db.commit()
 

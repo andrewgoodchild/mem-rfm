@@ -40,6 +40,27 @@ measured agent-volunteered saves at 11 of 13 never earning an outcome). `memory_
 give full inspectability of what is remembered; `memory_delete` honors
 "forget that".
 
+## Other coding agents
+
+Everything downstream of a finished session (outcome inference, the
+correction miner, the sweep) reads a normalized `Session` from
+`transcripts.py`: shell commands with their results, the memories the
+session was shown, and the assistant's prose. Only the Claude Code reader
+exists today. Supporting another agent means two additions and no changes
+downstream:
+
+1. a reader in `transcripts.READERS` that turns its transcript into a
+   `Session` (commands MUST keep their results — outcome inference is the
+   pairing of a command with its outcome);
+2. a row in `harnesses.py` naming its hook events, config style, timeout
+   unit and payload field names. `install_hooks.py` and the hooks read the
+   same row, and `test_harnesses.py` pins the invariants.
+
+Hooks select their harness with `RFM_HARNESS` (default `claude-code`). A
+harness whose transcript cannot be read still works MCP-only: search and
+explicit `memory_feedback` keep training the ranking, and `session_end`
+logs `readable: false` rather than an indistinguishable empty session.
+
 ## The formation loop (hooks)
 
 `install_hooks.py` registers both hooks in `~/.claude/settings.json`
