@@ -17,3 +17,7 @@ jobs:
       # stdlib-only by design; the suite is the Rust port's math + SQL
       # surface + regressions + schema agreement, and runs in ~1s.
       - run: python tests/test_rfm.py
+      # Also stdlib-only: the server-path checks skip without the
+      # integration venv (mcp, sqlite-vec); smoke_test.py covers those.
+      - run: python integrations/claude-code/test_secret_scan.py
+      - run: python integrations/claude-code/test_dates.py

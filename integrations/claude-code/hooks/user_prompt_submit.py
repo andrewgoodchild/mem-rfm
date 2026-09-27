@@ -24,6 +24,7 @@ import math
 import os
 import struct
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))  # rfm.py
@@ -195,6 +196,22 @@ def retrieve(prompt):
     return top
 
 
+def saved_dates(ids):
+    """{id: 'YYYY-MM-DD'} save dates for the injected lines."""
+    import sqlite3
+    if not ids or not os.path.exists(DB_PATH):
+        return {}
+    db = sqlite3.connect(DB_PATH)
+    try:
+        q = ",".join("?" * len(ids))
+        return {mid: time.strftime("%Y-%m-%d", time.localtime(ts))
+                for mid, ts in db.execute(
+                    f"SELECT id, created_at FROM rfm_memories WHERE id IN ({q})",
+                    list(ids))}
+    finally:
+        db.close()
+
+
 def main():
     if os.environ.get("RFM_HOOKS_OFF") == "1":
         return
@@ -219,8 +236,11 @@ def main():
     if not top:
         return
     used, lines = 0, []
+    dates = saved_dates([mid for _s, _sim, mid, _c in top])
     for _score, _sim, mid, content in top:
-        line = f"- [{mid}] {sanitize(content)}"
+        # Same dated-bracket contract as session_start.py's injection.
+        saved = f", saved {dates[mid]}" if mid in dates else ""
+        line = f"- [{mid}{saved}] {sanitize(content)}"
         if used + len(line) > CHAR_BUDGET:
             break
         lines.append(line)
