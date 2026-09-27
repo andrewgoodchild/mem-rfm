@@ -2666,3 +2666,101 @@ budget=12 would measure noise. The sweep is therefore reported at its
 anchor and the budget-12 point is NOT RUN, disclosed rather than run to
 produce an uninterpretable number. Re-testing the curve properly needs
 the model with headroom (fable) once its usage limit clears.
+
+## AMB head-to-head vs Hindsight (2026-09-27) — EXPLORATORY: a tie on LoCoMo, −3.0 (ns) on LongMemEval at half the context
+
+Not pre-registered under PROTOCOL.md; reported as exploratory. Harness:
+`amb_eval.py`, against Vectorize's own benchmark
+([AMB](https://github.com/vectorize-io/agent-memory-benchmark)), which
+publishes Hindsight's leaderboard runs WITH each question's retrieved
+context. Those contexts are replayed exactly, beside AMB's hybrid-search
+baseline (Qwen3-0.6B dense + BM42 sparse, RRF) and mem-rfm, and all three
+arms are answered and judged by the same models with AMB's own prompts,
+so the only difference between arms is the context.
+
+- mem-rfm arm: one memory per dialogue turn, stamped with its session
+  date; MiniLM; `sim × rfm_prior(id)` with accesses recorded as
+  `memory_search` records them; filled to hybrid-search's per-question
+  token budget. No LLM at write or rank time.
+- Answer/judge: claude sonnet / claude haiku via `claude -p` (no Gemini
+  key was available; AMB's leaderboard uses Gemini 3.1 Pro / 2.5
+  Flash-Lite). The JSON think-first slot is named `evidence`, not
+  `reasoning`, because the CLI refuses the latter.
+- n = 200 per dataset, stratified by question category (seed 7).
+  Bootstrap 95% CIs; paired deltas on the same questions.
+
+| LoCoMo10 (n=200) | accuracy | context tokens | AMB published, same questions |
+|---|---|---|---|
+| **mem-rfm** | **0.935** [0.900, 0.965] | 23.2k | — |
+| Hindsight | 0.925 [0.885, 0.960] | 31.1k | 0.915 |
+| hybrid-search | 0.805 [0.750, 0.860] | 19.2k | 0.795 |
+
+| LongMemEval-S (n=199) | accuracy | context tokens | AMB published, same questions |
+|---|---|---|---|
+| mem-rfm | 0.905 [0.864, 0.945] | 23.4k | — |
+| **Hindsight** | **0.935** [0.900, 0.965] | 46.4k | 0.980 |
+| hybrid-search | 0.794 [0.739, 0.849] | 26.0k | 0.739 |
+
+Paired: mem-rfm − Hindsight **+0.010 [−0.015, +0.035]** on LoCoMo and
+**−0.030 [−0.075, +0.015]** on LongMemEval, a tie and a non-significant
+deficit at half the context. mem-rfm − hybrid-search is +0.130
+[+0.075, +0.185] and +0.111 [+0.050, +0.171].
+
+**Calibration.** On LoCoMo the replay reproduces AMB's published
+accuracies within 1 point for both baselines, so the Claude answer/judge
+pair is not what moves the numbers. On LongMemEval it is looser
+(Hindsight 0.935 against 0.980 published): AMB's Hindsight run handed the
+answer model the provider's raw recall JSON, and the replay has only the
+rendered context string. Hindsight's true margin there may be larger than
+3 points.
+
+**Where the separation comes from: dates.** Temporal questions: mem-rfm
+0.881 / Hindsight 0.881 / hybrid-search 0.500 on LoCoMo; 0.868 / 0.925 /
+0.491 on LongMemEval. Hybrid-search chunks session JSON that carries no
+dates, mem-rfm stamps each turn with its session date, and Hindsight
+recovers them with write-time LLM extraction. This is the case for the
+`saved` date now shown on search hits and injected lines (docs/api.md).
+
+**Scope, stated plainly.**
+1. LoCoMo at AMB's budget is near full-context: the budget holds about
+   530 of each conversation's ~600 turns. The LoCoMo tie says Hindsight's
+   extraction pipeline adds nothing over dated raw turns on that test,
+   not that mem-rfm's ranking beats Hindsight's.
+2. The M axis is never exercised. Neither dataset gives feedback, so
+   mem-rfm ran as similarity × activation prior.
+3. Hindsight has no usage or outcome term in ranking (RRF over four arms
+   → cross-encoder → recency/temporal/proof_count multipliers, the last
+   capped at ±5%; it dropped its never-written `access_count` column in
+   Aug 2026), so the differentiation claim is unchanged.
+4. AMB's coding benchmark (sdebench) was not run: vanilla agents solve
+   98–100% of its 61 tasks, the same as with Hindsight, so it cannot
+   separate systems on its headline metric.
+
+### Follow-up: the LongMemEval gap is aggregation, not retrieval
+
+83.5% of mem-rfm's LongMemEval context was verbose assistant replies,
+while the evidence sits mostly in user turns. Truncating assistant turns
+in the rendered context (retrieval still over the full turn) lifted
+retrieval-only recall sharply: the share of questions with every
+evidence-session user turn in context went 0.44 → 0.82, and a date-window
+boost for "N weeks ago" phrasing added nothing on top (it fires on 10
+questions). End to end it did not help:
+
+| LongMemEval arm | accuracy | vs mem-rfm | multi-session | temporal | single-session-assistant |
+|---|---|---|---|---|---|
+| mem-rfm | 0.905 | — | 0.868 | 0.868 | 1.000 |
+| assistant turns cut to 300 chars | 0.834 | **−0.070** [−0.126, −0.015] | 0.830 | 0.962 | 0.409 |
+| cut, top-10 hits kept whole | 0.899 | −0.005 [−0.045, +0.035] | 0.849 | 0.906 | 1.000 |
+
+Cutting breaks the questions whose answer is the assistant's own words;
+protecting the top hits repairs that and nets nothing. Multi-session
+accuracy did not move with near-doubled evidence recall, so the residual
+gap to Hindsight is in counting and totalling across sessions over raw
+chat, which is what Hindsight's compact write-time facts address. Next
+test, not run: write-time fact extraction (one haiku call per session,
+dated and coreference-resolved) stored beside the raw turns, piloted on
+the 53 multi-session questions. Neither truncation variant ships.
+
+Per-question contexts, answers and judgments are regenerable and not
+committed (they quote LoCoMo, CC BY-NC); `results-amb/*/report.json`
+holds the metrics.
