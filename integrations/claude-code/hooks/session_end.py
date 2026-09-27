@@ -321,7 +321,9 @@ def corrections(events):
     return out
 
 
-INJECTED = re.compile(r"^- \[(\d+)\] (.+)$", re.M)
+# "- [12] content" (older transcripts) or "- [12, saved 2026-03-02] content";
+# only the id and the content are captured.
+INJECTED = re.compile(r"^- \[(\d+)(?:, [^\]]*)?\] (.+)$", re.M)
 
 
 def in_play_memories(records):

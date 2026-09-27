@@ -70,6 +70,8 @@ class SaveResult(BaseModel):
 class SearchHit(BaseModel):
     id: int
     content: str
+    saved: str = Field(description="date the memory was saved (YYYY-MM-DD); "
+                                   "weigh old advice against newer changes")
     score: float = Field(description="similarity x rfm_prior, the ranking score")
 
 
@@ -451,6 +453,10 @@ def _get(memory_id: int) -> MemoryRow:
                      score=round(r[6], 4), scope=r[7])
 
 
+def _day(ts: float) -> str:
+    return time.strftime("%Y-%m-%d", time.localtime(ts))
+
+
 def _search(query: str, limit: int = 5, scope: str | None = None,
             min_score: float = 0.0) -> list[SearchHit]:
     # Same clamp as _list: SQLite reads LIMIT -1 as unlimited, so an
@@ -467,8 +473,9 @@ def _search(query: str, limit: int = 5, scope: str | None = None,
         # factors can be logged separately — the arithmetic and the ordering
         # are unchanged.
         rows = d.execute(
-            f"""SELECT id, content, sim, prior, sim * prior AS score, last_access FROM (
-                   SELECT id, content, last_access,
+            f"""SELECT id, content, sim, prior, sim * prior AS score, last_access,
+                      created_at FROM (
+                   SELECT id, content, last_access, created_at,
                           max(1.0 - vec_distance_cosine(embedding, ?), 0) AS sim,
                           rfm_prior(id) AS prior
                    FROM rfm_memories WHERE embedding IS NOT NULL {_scope_sql(scope)})
@@ -514,7 +521,8 @@ def _search(query: str, limit: int = 5, scope: str | None = None,
                 order_changed=got != sim_only,
                 accesses_recorded=len(fresh), accesses_suppressed=len(rows) - len(fresh),
                 sim_only=sim_only)
-    return [SearchHit(id=r[0], content=r[1], score=round(r[4], 4)) for r in rows]
+    return [SearchHit(id=r[0], content=r[1], saved=_day(r[6]), score=round(r[4], 4))
+            for r in rows]
 
 
 @serialized

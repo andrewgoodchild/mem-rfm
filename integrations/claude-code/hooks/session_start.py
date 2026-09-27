@@ -151,13 +151,13 @@ def main():
                       f"{int(os.environ.get('RFM_QUARANTINE', 2))}) "
                       if has_sightings else "")
         rows = db.execute(
-            "SELECT id, content, rfm_score(id) AS s FROM rfm_memories "
+            "SELECT id, content, rfm_score(id) AS s, created_at FROM rfm_memories "
             "WHERE NOT (outcome_count > 0 AND value_score < 0) "
             f"{quarantine}"
             "ORDER BY s DESC LIMIT ?", (TOP_K,)).fetchall()
     lines, used, truncated = [], 0, []
     budget = CHAR_BUDGET - len(note)  # the note spends injection budget too
-    for i, (mid, content, _s) in enumerate(rows):
+    for i, (mid, content, _s, created) in enumerate(rows):
         # Stored content is untrusted data headed into a model's context:
         # flatten control chars/whitespace and defuse the </memories> close
         # tag so one memory can't fabricate extra list items or break out of
@@ -165,7 +165,13 @@ def main():
         # rows written by other clients).
         flat = "".join(ch if ch.isprintable() else " " for ch in str(content))
         flat = " ".join(flat.replace("</memories>", "(/memories)").split())
-        line = f"- [{mid}] {flat}"
+        # The save date rides inside the id bracket: "- [12, saved
+        # 2026-03-02] ..." -- a contract with INJECTED in session_end.py,
+        # which must capture the content alone. A dated memory lets the
+        # agent weigh old advice against newer changes (the AMB runs:
+        # dated turns 87-88% on temporal questions, undated chunks 49-50%).
+        head = f"- [{mid}, saved {time.strftime('%Y-%m-%d', time.localtime(created))}] "
+        line = head + flat
         # Each memory may spend an even share of the REMAINING budget, not a
         # fixed slice: a small store shows its memories whole instead of
         # cutting them mid-sentence while most of the budget goes unused, a
@@ -174,7 +180,7 @@ def main():
         # marked, so truncated advice cannot read as complete.
         share = (budget - used) // (len(rows) - i)
         if len(line) > share:
-            if share < len(f"- [{mid}] ") + 40:
+            if share < len(head) + 40:
                 break     # not enough room left for a useful line
             line = line[:share - 1].rstrip() + "…"
             truncated.append(mid)
@@ -188,8 +194,8 @@ def main():
     _log({"op": "injection",
           "session": (hook_input.get("session_id") or "?")[:8],
           "results": [{"id": mid, "prior": round(s, 4)}
-                      for mid, _c, s in rows],
-          "injected": [mid for mid, _c, _s in rows[:len(lines)]],
+                      for mid, _c, s, _t in rows],
+          "injected": [mid for mid, _c, _s, _t in rows[:len(lines)]],
           "truncated": truncated, "chars": used, "staged": staged})
     parts = []
     if lines:
