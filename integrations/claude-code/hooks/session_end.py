@@ -51,8 +51,6 @@ Install (settings.json):
 Reads the hook payload on stdin; writes candidates to
 $RFM_MEMORY_DB's directory as `pending-memories.md` and outcomes to the DB.
 """
-import collections
-import datetime
 import json
 import os
 import re
@@ -66,6 +64,8 @@ sys.path.insert(0, os.path.join(HERE, ".."))               # server.py's dir
 import rfm  # noqa: E402  (repo-root module; scoring engine)
 import log_env  # noqa: E402  (server.py's sibling; shared RFM_LOG contract)
 import secret_scan  # noqa: E402  (server.py's sibling; credential redaction)
+import harnesses  # noqa: E402  (server.py's sibling; lifecycle registry)
+import transcripts  # noqa: E402  (server.py's sibling; normalized session)
 
 DB_PATH = os.path.expanduser(
     os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
@@ -160,15 +160,16 @@ def ensure_conditions(db):
                    (cond, mid))
         _log({"op": "condition_stamp", "id": mid, "condition": cond})
 
-# One Bash-call event, in order. `is_err` is the harness's own verdict, kept
-# separate from the FAILURE regex (which runs over OUTPUT text, so a
-# successful `grep -rn ModuleNotFoundError` must not read as a failure just
-# because its matches contain failure words). `got` distinguishes a clean
-# exit from a command whose result never arrived (session ended mid-flight)
-# — an unknown result is not a success. Named fields everywhere a field is
-# read, instead of a positional tuple threaded by index across four
-# functions.
-Event = collections.namedtuple("Event", "cmd is_err body got")
+# The normalized session lives in transcripts.py, shared by every harness
+# reader. These names stay importable from here because the replay and
+# evaluation scripts in bench-quality/live-ab call them directly.
+Event = transcripts.Event
+INJECTED = transcripts.INJECTED
+_is_bash_call = transcripts.is_bash_call
+_parse_transcript = transcripts.parse_jsonl
+load_events = transcripts.claude_events
+in_play_memories = transcripts.claude_exposures
+session_start_time = transcripts.claude_start
 
 
 def tokens(cmd):
@@ -184,15 +185,6 @@ def program(cmd):
     return ""
 
 
-def _is_bash_call(block):
-    """A tool_use block that launches a real (non-empty) Bash command.
-    Shared by load_events and in_play_memories so their two views of "which
-    Bash calls happened" cannot silently diverge — in_play_memories' n_bash
-    offset must line up with load_events' events list."""
-    return (block.get("type") == "tool_use" and block.get("name") == "Bash"
-            and bool((block.get("input") or {}).get("command", "")))
-
-
 def _log(fields):
     """Append one line to rfm-log.jsonl. Never raises — a log write must
     not be the reason the hook fails."""
@@ -203,53 +195,6 @@ def _log(fields):
             fh.write(json.dumps({"t": round(time.time(), 3), **fields}) + "\n")
     except OSError:
         pass
-
-
-def _parse_transcript(path):
-    """Every JSONL record in the transcript, parsed once. load_events and
-    in_play_memories both scan it (for different signals); a shared parse
-    avoids reading and JSON-decoding a potentially multi-MB transcript
-    twice per hook run."""
-    try:
-        lines = open(path, errors="replace").read().splitlines()
-    except OSError:
-        return []
-    out = []
-    for line in lines:
-        try:
-            out.append(json.loads(line))
-        except Exception:
-            continue
-    return out
-
-
-def load_events(records):
-    """[Event, ...] per Bash call, in order."""
-    pending, raw = {}, []
-    for d in records:
-        content = (d.get("message") or {}).get("content")
-        if not isinstance(content, list):
-            continue
-        for b in content:
-            if not isinstance(b, dict):
-                continue
-            if _is_bash_call(b):
-                cmd = (b.get("input") or {}).get("command", "")
-                pending[b.get("id")] = len(raw)
-                raw.append([cmd, False, "", False])
-            elif b.get("type") == "tool_result":
-                idx = pending.pop(b.get("tool_use_id"), None)
-                if idx is None:
-                    continue
-                body = b.get("content")
-                if isinstance(body, list):
-                    body = " ".join(x.get("text", "") for x in body
-                                    if isinstance(x, dict))
-                body = (body or "")[:800]
-                raw[idx][2] = body
-                raw[idx][1] = bool(b.get("is_error"))
-                raw[idx][3] = True
-    return [Event(*r) for r in raw]
 
 
 def informative_head(cmd):
@@ -321,76 +266,6 @@ def corrections(events):
     return out
 
 
-# "- [12] content" (older transcripts) or "- [12, saved 2026-03-02] content";
-# only the id and the content are captured.
-INJECTED = re.compile(r"^- \[(\d+)(?:, [^\]]*)?\] (.+)$", re.M)
-
-
-def in_play_memories(records):
-    """{memory_id: (content, first_event_idx)} for memories the session could
-    have acted on: the SessionStart injection block and memory_search tool
-    results, both of which sit verbatim in the transcript.
-
-    first_event_idx is how many Bash events precede the memory's first
-    appearance (0 for injected ones), counted with load_events' own
-    _is_bash_call predicate. A memory cannot have influenced a command that
-    ran before the session ever saw it, so outcome inference starts matching
-    there."""
-    mems, search_calls = {}, set()
-    n_bash = 0
-
-    def note(mid, content):
-        mems.setdefault(int(mid), (content, n_bash))
-
-    def scan_text(text):
-        if "[rfm-memory:" in text:
-            for mid, content in INJECTED.findall(text):
-                note(mid, content)
-
-    for d in records:
-        # Headless (sdk-cli) transcripts carry the SessionStart injection in
-        # an attachment record (attachment.type == "hook_additional_context"),
-        # never inside message.content — scanning only messages misses the
-        # PRIMARY way memories enter a session (pilot 2: inference recovered
-        # 1 of 15 outcomes until this branch existed). Interactive transcripts
-        # embed it in a message, so both paths stay.
-        att = d.get("attachment")
-        if isinstance(att, dict) and att.get("type") == "hook_additional_context":
-            body = att.get("content")
-            for part in (body if isinstance(body, list) else [body]):
-                if isinstance(part, str):
-                    scan_text(part)
-            continue
-        content = (d.get("message") or {}).get("content")
-        if isinstance(content, str):
-            scan_text(content)
-            continue
-        if not isinstance(content, list):
-            continue
-        for b in content:
-            if not isinstance(b, dict):
-                continue
-            if b.get("type") == "text":
-                scan_text(b.get("text", ""))
-            elif _is_bash_call(b):
-                n_bash += 1
-            elif (b.get("type") == "tool_use"
-                  and str(b.get("name", "")).endswith("memory_search")):
-                search_calls.add(b.get("id"))
-            elif (b.get("type") == "tool_result"
-                  and b.get("tool_use_id") in search_calls):
-                body = b.get("content")
-                if isinstance(body, list):
-                    body = " ".join(x.get("text", "") for x in body
-                                    if isinstance(x, dict))
-                try:
-                    for r in json.loads(body or "{}").get("result", []):
-                        note(r["id"], str(r.get("content", "")))
-                except Exception:
-                    continue
-    return mems
-
-
 def rehydrate(mems):
     """Replace transcript-derived memory content with the store's full text.
     Injected lines are cut to the injection char budget, so a signature
@@ -411,28 +286,6 @@ def rehydrate(mems):
     except sqlite3.Error:
         pass
     return mems
-
-
-def session_start_time(records):
-    """Epoch seconds of the earliest transcript timestamp — the session
-    boundary record_outcomes needs: explicit feedback given THIS session
-    wins over an inferred outcome, but an outcome closed in a previous
-    session must not block this session's use from being recorded (injection
-    writes no access row, so the previous outcome is still the latest).
-    None when nothing parses; the caller then abstains from overriding any
-    existing outcome — the conservative reading."""
-    best = None
-    for d in records:
-        ts = d.get("timestamp")
-        if not isinstance(ts, str):
-            continue
-        try:
-            t = datetime.datetime.fromisoformat(
-                ts.replace("Z", "+00:00")).timestamp()
-        except ValueError:
-            continue
-        best = t if best is None else min(best, t)
-    return best
 
 
 def _signature(mem_content):
@@ -601,12 +454,13 @@ def main():
         payload = json.load(sys.stdin)
     except Exception:
         payload = {}
-    transcript = payload.get("transcript_path")
+    harness = harnesses.current()
+    transcript = harnesses.payload_field(harness, "transcript", payload)
     if not transcript or not os.path.exists(transcript):
         return
-    records = _parse_transcript(transcript)
-    events = load_events(records)
-    session = (payload.get("session_id") or "?")[:8]
+    sess = transcripts.read(transcript, harness.reader)
+    events = sess.events
+    session = (harnesses.payload_field(harness, "session", payload) or "?")[:8]
     notes = []
 
     found = corrections(events)
@@ -628,10 +482,9 @@ def main():
                 f.write(line + "\n")
         notes.append(f"staged {staged} memory candidate(s) in {OUT}")
 
-    mems = rehydrate(in_play_memories(records))
+    mems = rehydrate(dict(sess.exposures))
     fired = fired_classes(events)
-    recorded = record_outcomes(infer_outcomes(mems, events),
-                               session_start_time(records), fired)
+    recorded = record_outcomes(infer_outcomes(mems, events), sess.start, fired)
     if recorded:
         notes.append(f"recorded {recorded} inferred outcome(s)")
     pruned = prune(PRUNE_DAYS)
@@ -641,7 +494,11 @@ def main():
     # Run marker, written even when every count is zero: without it, a run
     # that found nothing is indistinguishable in the log from the hook never
     # firing, and the formation loop cannot be audited.
-    _log({"op": "session_end", "session": session, "events": len(events),
+    # `readable` separates "nothing happened" from "could not read this
+    # harness's transcript" — the degraded, MCP-only mode, in which
+    # outcomes come only from explicit memory_feedback.
+    _log({"op": "session_end", "session": session, "harness": harness.name,
+          "readable": sess.readable, "events": len(events),
           "in_play": len(mems), "staged": staged, "outcomes": recorded,
           "conditions": sorted(fired), "pruned": pruned})
     if notes:
