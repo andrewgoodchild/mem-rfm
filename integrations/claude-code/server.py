@@ -42,6 +42,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", ".."))
 import rfm  # noqa: E402  (repo-root module; scoring engine)
 import log_env  # noqa: E402  (sibling module; shared RFM_LOG contract)
+import secret_scan  # noqa: E402  (sibling module; shared credential redaction)
 
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 EMBEDDER_ID = os.environ.get("RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
@@ -356,6 +357,9 @@ def _check(content: str) -> str:
     {"error": ...} inside a success envelope reads as success to the model,
     which then does not retry; MCP requires isError so it can self-correct."""
     content = _sanitize(content.strip())
+    content, kinds = secret_scan.redact(content)
+    if kinds:
+        log("secret_redacted", kinds=kinds)
     if not content:
         raise ValueError("empty content")
     if len(content) > MAX_CONTENT:

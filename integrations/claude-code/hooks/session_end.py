@@ -65,6 +65,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))  # repo root: rfm.py
 sys.path.insert(0, os.path.join(HERE, ".."))               # server.py's dir
 import rfm  # noqa: E402  (repo-root module; scoring engine)
 import log_env  # noqa: E402  (server.py's sibling; shared RFM_LOG contract)
+import secret_scan  # noqa: E402  (server.py's sibling; credential redaction)
 
 DB_PATH = os.path.expanduser(
     os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
@@ -615,8 +616,14 @@ def main():
             f.write("<!-- Proposed, not saved. Review, then keep the useful ones\n"
                     "     with memory_save. -->\n\n")
             for c in found[:MAX_CANDIDATES]:
-                f.write(f"- In this project, `{c['failed']}` fails ({c['error']}); "
-                        f"use `{c['fixed']}` instead.\n")
+                # The candidate file is plaintext on disk and the source of
+                # memory_save calls, so it is scrubbed like the store is.
+                line, kinds = secret_scan.redact(
+                    f"- In this project, `{c['failed']}` fails ({c['error']}); "
+                    f"use `{c['fixed']}` instead.")
+                if kinds:
+                    _log({"op": "secret_redacted", "kinds": kinds})
+                f.write(line + "\n")
         notes.append(f"staged {staged} memory candidate(s) in {OUT}")
 
     mems = rehydrate(in_play_memories(records))

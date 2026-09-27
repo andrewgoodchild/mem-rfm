@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.join(HERE, "hooks"))
 sys.path.insert(0, os.path.join(HERE, "..", ".."))
 import session_end as se  # noqa: E402  (parse, events, corrections, acted_on)
 import rfm                # noqa: E402
+import secret_scan        # noqa: E402
 
 CONFIG = json.load(open(os.path.join(HERE, "sweep-config.json")))
 DB_PATH = os.path.expanduser(
@@ -210,6 +211,9 @@ def admit(db, mem, cmds, src):
                   "src": src})
             action = ""
     text = content if not action else f"{content} Command: `{action}`"
+    text, kinds = secret_scan.redact(text)
+    if kinds:
+        _log({"op": "secret_redacted", "kinds": kinds, "src": src})
     best, best_sim = None, 0.0
     for mid, existing in db.execute(
             "SELECT id, content FROM rfm_memories").fetchall():
