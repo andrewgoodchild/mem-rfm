@@ -21,3 +21,5 @@ jobs:
       # integration venv (mcp, sqlite-vec); smoke_test.py covers those.
       - run: python integrations/claude-code/test_secret_scan.py
       - run: python integrations/claude-code/test_dates.py
+      - run: python integrations/claude-code/test_harnesses.py
+      - run: python integrations/claude-code/test_feedback_loop.py
