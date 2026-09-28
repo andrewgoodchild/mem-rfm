@@ -51,7 +51,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import harnesses  # noqa: E402
 PYTHON = os.path.join(HERE, ".venv", "bin", "python")
-SETTINGS = os.path.expanduser(harnesses.HARNESSES[harnesses.DEFAULT].settings)
 CLAUDE_MD = os.path.expanduser("~/.claude/CLAUDE.md")
 SKILL_SRC = os.path.join(HERE, "skills", "memory-review")
 SKILL_DST = os.path.expanduser("~/.claude/skills/memory-review")
@@ -61,6 +60,7 @@ SKILL_DST = os.path.expanduser("~/.claude/skills/memory-review")
 # transcript reader from — so what gets installed and what runs cannot
 # drift apart. The rationale for each entry lives with its row there.
 HARNESS = harnesses.HARNESSES[harnesses.DEFAULT]
+SETTINGS = os.path.expanduser(HARNESS.settings)
 if HARNESS.config_style != "nested":
     raise NotImplementedError(f"config style {HARNESS.config_style!r}")
 HOOKS = {h.event: os.path.join(HERE, "hooks", h.script)

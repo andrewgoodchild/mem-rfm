@@ -31,6 +31,8 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))  # rfm.py
 sys.path.insert(0, os.path.join(HERE, ".."))               # log_env
 sys.path.insert(0, HERE)
 import log_env  # noqa: E402
+import harnesses  # noqa: E402
+import transcripts  # noqa: E402
 
 DB_PATH = os.path.expanduser(
     os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
@@ -92,9 +94,7 @@ def cosine(qvec, blob):
     return sum(a * b for a, b in zip(qvec, m))   # both normalized
 
 
-def sanitize(content):
-    flat = "".join(ch if ch.isprintable() else " " for ch in str(content))
-    return " ".join(flat.replace("</memories>", "(/memories)").split())
+sanitize = transcripts.flatten
 
 
 # Applicability judge (RFM_PERTURN_JUDGE=1). Cosine cannot bridge the
@@ -163,53 +163,37 @@ def retrieve(prompt):
                   if has_s else "")
     args = ([QUARANTINE] if has_s else [])
     rows = db.execute(
-        "SELECT id, content, embedding, rfm_prior(id) AS prior "
+        "SELECT id, content, embedding, rfm_prior(id) AS prior, created_at "
         "FROM rfm_memories "
         "WHERE NOT (outcome_count > 0 AND value_score < 0) "
         f"{quarantine}"
         "AND embedding IS NOT NULL", args).fetchall()
     scored = []
-    for mid, content, blob, prior in rows:
+    for mid, content, blob, prior, created in rows:
         sim = cosine(qvec, blob)
-        scored.append((sim * prior, sim, mid, content))
+        scored.append((sim * prior, sim, mid, content, created))
     scored.sort(reverse=True)
 
     if os.environ.get("RFM_PERTURN_JUDGE") == "1":
         # Cosine prefilters (no floor — the gap is too small); the judge
         # selects which prefiltered facts answer the turn.
-        cands = [(mid, content) for _s, _sim, mid, content
+        cands = [(mid, content) for _s, _sim, mid, content, _t
                  in scored[:JUDGE_PREFILTER]]
         picked = judge_applicable(prompt, cands) if cands else []
         if picked is not None:
-            simof = {mid: sim for _s, sim, mid, _c in scored}
-            top = [(simof.get(mid, 0.0) or 0.0, simof.get(mid, 0.0), mid, c)
-                   for mid, c in picked[:K]]
+            simof = {mid: (sim, t) for _s, sim, mid, _c, t in scored}
+            top = [(simof[mid][0], simof[mid][0], mid, c, simof[mid][1])
+                   for mid, c in picked[:K] if mid in simof]
         else:                       # judge failed: fall back to cosine floor
             top = [t for t in scored if t[1] >= FLOOR][:K]
     else:
         top = [t for t in scored if t[1] >= FLOOR][:K]
 
-    for _score, _sim, mid, _c in top:
+    for _score, _sim, mid, _c, _t in top:
         db.execute("SELECT rfm_record_access(?)", (mid,))
     db.commit()
     db.close()
     return top
-
-
-def saved_dates(ids):
-    """{id: 'YYYY-MM-DD'} save dates for the injected lines."""
-    import sqlite3
-    if not ids or not os.path.exists(DB_PATH):
-        return {}
-    db = sqlite3.connect(DB_PATH)
-    try:
-        q = ",".join("?" * len(ids))
-        return {mid: time.strftime("%Y-%m-%d", time.localtime(ts))
-                for mid, ts in db.execute(
-                    f"SELECT id, created_at FROM rfm_memories WHERE id IN ({q})",
-                    list(ids))}
-    finally:
-        db.close()
 
 
 def main():
@@ -225,22 +209,20 @@ def main():
         payload = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
         return
-    prompt = payload.get("prompt") or payload.get("user_prompt") or ""
+    harness = harnesses.current()
+    prompt = harnesses.payload_field(harness, "prompt", payload) or ""
     if not prompt.strip():
         return
-    session = (payload.get("session_id") or "?")[:8]
+    session = (harnesses.payload_field(harness, "session", payload) or "?")[:8]
     top = retrieve(prompt)
     _log({"op": "perturn_retrieval", "session": session,
-          "injected": [mid for _s, _sim, mid, _c in top],
-          "sims": [round(sim, 3) for _s, sim, _m, _c in top]})
+          "injected": [mid for _s, _sim, mid, _c, _t in top],
+          "sims": [round(sim, 3) for _s, sim, _m, _c, _t in top]})
     if not top:
         return
     used, lines = 0, []
-    dates = saved_dates([mid for _s, _sim, mid, _c in top])
-    for _score, _sim, mid, content in top:
-        # Same dated-bracket contract as session_start.py's injection.
-        saved = f", saved {dates[mid]}" if mid in dates else ""
-        line = f"- [{mid}{saved}] {sanitize(content)}"
+    for _score, _sim, mid, content, created in top:
+        line = transcripts.line_head(mid, created) + sanitize(content)
         if used + len(line) > CHAR_BUDGET:
             break
         lines.append(line)

@@ -448,7 +448,7 @@ def _get(memory_id: int) -> MemoryRow:
     if r is None:
         raise ValueError(f"no memory with id {memory_id}")
     return MemoryRow(id=r[0], content=r[1],
-                     created=time.strftime("%Y-%m-%d", time.localtime(r[2])),
+                     created=_day(r[2]),
                      accesses=r[3], value=round(r[4], 3), outcomes=r[5],
                      score=round(r[6], 4), scope=r[7])
 
@@ -603,7 +603,7 @@ def _list(limit: int = 20, offset: int = 0) -> ListResult:
     # A bare list gives a paging agent no stopping condition.
     return ListResult(
         items=[MemoryRow(id=r[0], content=r[1],
-                         created=time.strftime("%Y-%m-%d", time.localtime(r[2])),
+                         created=_day(r[2]),
                          accesses=r[3], value=round(r[4], 3), outcomes=r[5],
                          score=round(r[6], 4), scope=r[7]) for r in rows],
         total=total, has_more=offset + len(rows) < total)
@@ -637,7 +637,7 @@ def _export() -> str:
     lines = ["# mem-rfm export", ""]
     used = 0
     for mid, content, created, acc, val, score, mscope in rows:
-        day = time.strftime("%Y-%m-%d", time.localtime(created))
+        day = _day(created)
         scope_tag = f", scope {mscope}" if mscope else ""
         line = (f"- [{mid}] ({day}, {acc} uses, value {val:+.2f}, "
                 f"score {score:.3f}{scope_tag}) {content}")

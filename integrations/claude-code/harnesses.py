@@ -40,8 +40,10 @@ HARNESSES = {
         settings="~/.claude/settings.json",
         config_style="nested",
         timeout_unit="seconds",
+        # A tuple lists alternative spellings, tried in order: Claude
+        # Code has sent the prompt as both.
         payload={"transcript": "transcript_path", "session": "session_id",
-                 "prompt": "prompt"},
+                 "prompt": ("prompt", "user_prompt")},
         reader="claude-code",
         # Dict order is install order: the order a fresh install writes the
         # events into settings.json, kept as the pre-registry installer had it.
@@ -76,7 +78,12 @@ def current():
 
 def payload_field(harness, key, payload):
     """One field of a hook's stdin JSON, by the harness's own name for it."""
-    return (payload or {}).get(harness.payload[key])
+    names = harness.payload[key]
+    for name in (names,) if isinstance(names, str) else names:
+        value = (payload or {}).get(name)
+        if value:
+            return value
+    return None
 
 
 def host_timeout(harness, seconds):

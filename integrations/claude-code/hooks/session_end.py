@@ -160,16 +160,12 @@ def ensure_conditions(db):
                    (cond, mid))
         _log({"op": "condition_stamp", "id": mid, "condition": cond})
 
-# The normalized session lives in transcripts.py, shared by every harness
-# reader. These names stay importable from here because the replay and
-# evaluation scripts in bench-quality/live-ab call them directly.
-Event = transcripts.Event
-INJECTED = transcripts.INJECTED
-_is_bash_call = transcripts.is_bash_call
+# The normalized session lives in transcripts.py. These three names stay
+# importable from here only because bench-quality/live-ab's
+# formation_study.py, eval_selection.py and miner_replay.py call them.
 _parse_transcript = transcripts.parse_jsonl
 load_events = transcripts.claude_events
 in_play_memories = transcripts.claude_exposures
-session_start_time = transcripts.claude_start
 
 
 def tokens(cmd):
@@ -458,7 +454,7 @@ def main():
     transcript = harnesses.payload_field(harness, "transcript", payload)
     if not transcript or not os.path.exists(transcript):
         return
-    sess = transcripts.read(transcript, harness.reader)
+    sess = transcripts.read(transcript, harness.reader, prose=False)
     events = sess.events
     session = (harnesses.payload_field(harness, "session", payload) or "?")[:8]
     notes = []

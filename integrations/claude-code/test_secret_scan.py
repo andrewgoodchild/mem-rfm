@@ -60,6 +60,12 @@ BENIGN = [
     "git clone https://github.com/org/repo.git",
     "use --token-file ~/.config/tok instead of inline tokens",
     "PASSWORD=****",
+    # Code that produces a secret at run time is the fix worth keeping.
+    'api_key = os.environ["API_KEY"]',
+    "token = get_token(repo)",
+    "password=getpass.getpass()",
+    "secret_key: settings.SECRET_KEY",
+    "git clone https://x-access-token:${GH_TOKEN}@github.com/o/r",
 ]
 print("benign text passes through")
 for text in BENIGN:
