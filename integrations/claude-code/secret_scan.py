@@ -38,18 +38,29 @@ PATTERNS = [
         r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}"), 0),
     ("bearer_token", re.compile(
         r"(?i)\bbearer\s+([A-Za-z0-9._~+/-]{20,}=*)"), 1),
+    # user:password@host, but not user:${TOKEN}@host -- a reference is not
+    # a secret, and redacting it breaks the command it sits in.
     ("url_credentials", re.compile(
-        r"\b[a-z][a-z0-9+.-]*://[^/\s:@]+:([^@\s/]+)@"), 1),
+        r"\b[a-z][a-z0-9+.-]*://[^/\s:@]+:(?![$<{%*\[])([^@\s/]+)@"), 1),
     # KEY=value / key: "value" where the name ENDS in a secret word
     # (GITHUB_TOKEN, db_password -- not token_count, max_tokens) and the
     # value is a literal: not a $VAR, ${VAR}, <placeholder>, %s, masked ****,
-    # or a span an earlier rule already redacted.
+    # a span an earlier rule already redacted, or code (SKIP below:
+    # os.environ["API_KEY"], get_token(repo), settings.SECRET_KEY).
     ("secret_assignment", re.compile(
         r"(?i)\b[A-Za-z0-9_.-]*(?:password|passwd|secret|token|api[_-]?key|"
         r"access[_-]?key|secret[_-]?key|private[_-]?key|client[_-]?secret)"
         r"""(?![A-Za-z0-9_])["']?\s*[:=]\s*["']?(?![$<{%*\[])"""
         r"""([^\s"'`,;]{8,})"""), 1),
 ]
+
+
+# Per rule: a match whose group also matches this is left alone. Only the
+# generic assignment rule can match code -- a call, a subscript, or a dotted
+# name, an expression that PRODUCES a secret at run time and is exactly the
+# fix worth remembering. Vendor-prefixed formats cannot be code.
+SKIP = {"secret_assignment": re.compile(
+    r"[(\[]|^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+$")}
 
 
 def enabled():
@@ -65,13 +76,14 @@ def redact(text):
         return text, []
     kinds = []
     for kind, pat, group in PATTERNS:
-        def sub(m, kind=kind, group=group):
+        skip = SKIP.get(kind)
+
+        def sub(m, kind=kind, group=group, skip=skip):
+            if skip and skip.search(m.group(group)):
+                return m.group(0)
             kinds.append(kind)
-            if group == 0:
-                return f"[REDACTED:{kind}]"
             s, e = m.span(group)
-            base = m.start(0)
-            whole = m.group(0)
-            return whole[:s - base] + f"[REDACTED:{kind}]" + whole[e - base:]
+            return (m.string[m.start():s] + f"[REDACTED:{kind}]"
+                    + m.string[e:m.end()])
         text = pat.sub(sub, text)
     return text, kinds

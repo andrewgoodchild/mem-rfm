@@ -28,7 +28,7 @@ FLAGSHIP = ("sphinx-rfm clone: app-based tests fail at startup "
             "(ExtensionError/VersionRequirementError) because the venv's "
             "sphinxcontrib packages are too new. Workaround: prepend a "
             "stubs dir to PYTHONPATH.")
-E = se.Event  # (cmd, is_err, body, got)
+E = se.transcripts.Event  # (cmd, is_err, body, got)
 
 failures = []
 

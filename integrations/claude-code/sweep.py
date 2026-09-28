@@ -191,22 +191,28 @@ def material_of(sess):
     return "\n\n".join(parts)[:6000]
 
 
+def best_match(text, rows):
+    """(id, similarity) of the stored row closest to `text` when it clears
+    the dedupe threshold, else (None, best similarity). The one matching
+    rule shared by admission, self-sighting and the in-play judge."""
+    best, best_sim = None, 0.0
+    for mid, existing in rows:
+        s = similarity(text, existing)
+        if s > best_sim:
+            best, best_sim = mid, s
+    if best_sim >= CONFIG["dedupe_threshold"]:
+        return best, best_sim
+    return None, best_sim
+
+
 def exposed_ids(db, sess):
     """Store ids of the memories this session was shown (injected or
     searched), matched by SIMILARITY for the same reason judge_in_play
     matches that way: transcript ids belong to whatever store ran the
     session."""
     rows = db.execute("SELECT id, content FROM rfm_memories").fetchall()
-    out = set()
-    for tcontent, _idx in sess.exposures.values():
-        best, best_sim = None, 0.0
-        for mid, existing in rows:
-            s = similarity(tcontent, existing)
-            if s > best_sim:
-                best, best_sim = mid, s
-        if best is not None and best_sim >= CONFIG["dedupe_threshold"]:
-            out.add(best)
-    return out
+    matched = (best_match(c, rows)[0] for c, _idx in sess.exposures.values())
+    return {mid for mid in matched if mid is not None}
 
 
 def admit(db, mem, cmds, src, exposed=frozenset()):
@@ -233,13 +239,9 @@ def admit(db, mem, cmds, src, exposed=frozenset()):
     text, kinds = secret_scan.redact(text)
     if kinds:
         _log({"op": "secret_redacted", "kinds": kinds, "src": src})
-    best, best_sim = None, 0.0
-    for mid, existing in db.execute(
-            "SELECT id, content FROM rfm_memories").fetchall():
-        s = similarity(text, existing)
-        if s > best_sim:
-            best, best_sim = mid, s
-    if best is not None and best_sim >= CONFIG["dedupe_threshold"]:
+    best, best_sim = best_match(
+        text, db.execute("SELECT id, content FROM rfm_memories").fetchall())
+    if best is not None:
         if best in exposed:
             _log({"op": "sweep_self_sighting", "id": best,
                   "similarity": round(best_sim, 3), "src": src})
@@ -277,23 +279,13 @@ def judge_in_play(db, sess, fired, src):
     # (Track 18's vacuous P3 — wrong content, dead signatures, silent
     # skips). A similarity match also recovers the full text that
     # injection truncation cut from the transcript line.
-    events = sess.events
-    mems = sess.exposures
     rows = db.execute("SELECT id, content FROM rfm_memories").fetchall()
-    for _tid, (tcontent, first_idx) in mems.items():
-        target, best_sim = None, 0.0
-        for mid, existing in rows:
-            s = similarity(tcontent, existing)
-            if s > best_sim:
-                target, best_sim = mid, s
-        content = tcontent
-        if target is not None and best_sim >= CONFIG["dedupe_threshold"]:
-            content = next(c for m, c in rows if m == target)
-        else:
-            target = None
+    for _tid, (tcontent, first_idx) in sess.exposures.items():
+        target, _sim = best_match(tcontent, rows)
+        content = tcontent if target is None else dict(rows)[target]
         sig = se._signature(content)
         acted = []
-        for e in events[first_idx:]:
+        for e in sess.events[first_idx:]:
             if se.acted_on(sig, e.cmd):
                 acted.append(f"$ {e.cmd.splitlines()[0][:160]}\n"
                              f"  -> {'ERROR' if e.is_err else 'ok'}: "
@@ -336,8 +328,8 @@ def evict(db):
         _log({"op": "sweep_evict", "id": mid, "score": round(s, 4)})
 
 
-def sweep_one(db, tp, harness=None):
-    harness = harness or harnesses.current()
+def sweep_one(db, tp):
+    harness = harnesses.current()
     sess = transcripts.read(tp, harness.reader)
     src = os.path.basename(tp)
     if not sess.readable:
@@ -346,16 +338,19 @@ def sweep_one(db, tp, harness=None):
     events = sess.events
     fired = se.fired_classes(events)
     cmds = [e.cmd for e in events if e.cmd]
-    exposed = exposed_ids(db, sess)
     mat = material_of(sess)
     if mat.strip():
         out = parse_json(llm(EXTRACT.format(
             instruction=CONFIG["instruction"],
             ontology=", ".join(CONFIG["ontology"]),
             max_per_session=CONFIG["max_per_session"], material=mat)))
-        for mem in (out or [])[:CONFIG["max_per_session"]]:
-            if isinstance(mem, dict):
-                admit(db, mem, cmds, src, exposed)
+        mems = [m for m in (out or [])[:CONFIG["max_per_session"]]
+                if isinstance(m, dict)]
+        # Matched before any admission, and only when there is something
+        # to admit: the scan is O(exposures x rows).
+        exposed = exposed_ids(db, sess) if mems else set()
+        for mem in mems:
+            admit(db, mem, cmds, src, exposed)
     judge_in_play(db, sess, fired, src)
     evict(db)
     db.commit()

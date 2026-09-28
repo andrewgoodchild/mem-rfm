@@ -75,6 +75,8 @@ with open(foreign, "w") as f:           # a different harness's event log
         "type": "function_call", "name": "shell",
         "arguments": "{\"command\": [\"pytest\"]}"}}) + "\n")
     f.write("not json at all\n")
+    for scalar in ("[1, 2]", '"x"', "null", "7"):     # JSON, but not records
+        f.write(scalar + "\n")
 s = transcripts.read(foreign)
 check("foreign transcript reads as empty and unreadable",
       not s.readable and s.events == [] and s.exposures == {}, str(s))

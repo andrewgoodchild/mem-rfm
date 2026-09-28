@@ -22,6 +22,7 @@ os.environ["RFM_LOG"] = "0"
 sys.path.insert(0, os.path.join(HERE, "hooks"))
 sys.path.insert(0, HERE)
 import session_end as se  # noqa: E402
+import transcripts  # noqa: E402
 
 failures = []
 
@@ -52,12 +53,12 @@ check("dated line", "- [7, saved 2026-03-02] setuptools 82" in ctx, ctx[:200])
 check("A/B marker unchanged", ctx.startswith("[rfm-memory:"), ctx[:30])
 
 print("session_end parses injected lines")
-got = se.INJECTED.findall(ctx)
+got = transcripts.INJECTED.findall(ctx)
 check("new format: id and content only",
       got == [("7", "setuptools 82 drops pkg_resources; add a shim to PYTHONPATH")],
       str(got))
 check("old format still parses",
-      se.INJECTED.findall("- [12] use the shim") == [("12", "use the shim")])
+      transcripts.INJECTED.findall("- [12] use the shim") == [("12", "use the shim")])
 
 print("memory_search")
 try:

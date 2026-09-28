@@ -37,6 +37,8 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))  # repo root: rfm.py
 sys.path.insert(0, os.path.join(HERE, ".."))               # server.py's dir
 import rfm  # noqa: E402  (repo-root module; scoring engine)
 import log_env  # noqa: E402  (server.py's sibling; shared RFM_LOG contract)
+import harnesses  # noqa: E402  (server.py's sibling; lifecycle registry)
+import transcripts  # noqa: E402  (server.py's sibling; injection-line format)
 
 # One RFM_LOG owner for every writer: injection lines land in the same
 # rfm-log.jsonl as the server's and session_end's, and RFM_LOG=0 silences
@@ -81,8 +83,9 @@ def write_sidecar(hook_input):
     record = {
         "ab_session": ab_session,
         "arm": os.environ.get("RFM_AB_ARM", "rfm"),
-        "session_id": hook_input.get("session_id"),
-        "transcript_path": hook_input.get("transcript_path"),
+        "session_id": harnesses.payload_field(harnesses.current(), "session", hook_input),
+        "transcript_path": harnesses.payload_field(harnesses.current(), "transcript",
+                                                   hook_input),
     }
     sidecar = os.path.join(HERE, "..", "ab", "ab_sessions.jsonl")
     with open(sidecar, "a") as f:
@@ -158,20 +161,12 @@ def main():
     lines, used, truncated = [], 0, []
     budget = CHAR_BUDGET - len(note)  # the note spends injection budget too
     for i, (mid, content, _s, created) in enumerate(rows):
-        # Stored content is untrusted data headed into a model's context:
-        # flatten control chars/whitespace and defuse the </memories> close
-        # tag so one memory can't fabricate extra list items or break out of
-        # the data block (server sanitizes identically at save; this covers
-        # rows written by other clients).
-        flat = "".join(ch if ch.isprintable() else " " for ch in str(content))
-        flat = " ".join(flat.replace("</memories>", "(/memories)").split())
-        # The save date rides inside the id bracket: "- [12, saved
-        # 2026-03-02] ..." -- a contract with INJECTED in session_end.py,
-        # which must capture the content alone. A dated memory lets the
-        # agent weigh old advice against newer changes (the AMB runs:
-        # dated turns 87-88% on temporal questions, undated chunks 49-50%).
-        head = f"- [{mid}, saved {time.strftime('%Y-%m-%d', time.localtime(created))}] "
-        line = head + flat
+        # Server sanitizes identically at save; flattening here covers rows
+        # written by other clients. The dated head is the transcripts.INJECTED
+        # contract, and lets the agent weigh old advice against newer changes
+        # (AMB: dated turns 87-88% on temporal questions, undated chunks 49-50%).
+        head = transcripts.line_head(mid, created)
+        line = head + transcripts.flatten(content)
         # Each memory may spend an even share of the REMAINING budget, not a
         # fixed slice: a small store shows its memories whole instead of
         # cutting them mid-sentence while most of the budget goes unused, a
