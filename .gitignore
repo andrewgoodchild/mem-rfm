@@ -28,3 +28,4 @@ bench-quality/data/terminalbench/
 bench-quality/results-amb/*/contexts-*.json
 bench-quality/results-amb/*/answers.jsonl
 bench-quality/results-amb/*/judgments.jsonl
+bench-quality/results-amb/*/facts.jsonl
