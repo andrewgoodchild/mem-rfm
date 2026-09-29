@@ -42,6 +42,7 @@ import argparse
 import concurrent.futures as cf
 import datetime as dt
 import gzip
+import hashlib
 import json
 import os
 import random
@@ -164,13 +165,150 @@ def shown(role, text, rank, trunc, full_top):
     return text
 
 
-def build_rfm_contexts(dataset, queries, docs, wanted, budgets, out, arm="mem-rfm",
-                       trunc=0, full_top=0, emb_cache=None):
+# ---------------------------------------------------------------- write-time facts
+#
+# The LongMemEval gap to Hindsight is cross-session aggregation (counting,
+# totalling, latest-value) and relative dates, not retrieval recall
+# (RESULTS.md, AMB follow-up). Hindsight answers both at WRITE time: an LLM
+# turns each chunk into short, dated, self-contained facts (its
+# fact_extraction.py, MIT). This is that idea in mem-rfm's shape: one haiku
+# call per few sessions, facts stored beside the raw turns as ordinary
+# memories, ranked by the same sim x rfm_prior. Nothing calls a model at
+# ranking time.
+
+FACT_PROMPT = """You extract durable facts about the USER from chat sessions, for a long-term memory that will later answer questions about the user's life.
+
+For each numbered session below (each has its date), list the facts a future question could need: events, purchases, amounts, counts, names, places, possessions, jobs, plans, preferences, and changes of state.
+
+Rules:
+- One fact per item. If the user mentions three things, write three facts.
+- Self-contained: name people and things explicitly ("the user's friend Rachel", "the user's Fender Stratocaster"), never "it" or "they".
+- Absolute dates: convert relative time ("yesterday", "last Saturday", "two weeks ago", "next month") to a calendar date using the session date, and write the date inside the fact.
+- Keep exact numbers, prices, durations and titles verbatim.
+- Record changes as changes: "the user switched from X to Y", "the user no longer has Z", "the user's pre-approval rose to $400,000".
+- Include what the assistant said only when the user adopted it or it answered a personal question.
+- Skip greetings, generic advice, and anything not about the user. A session with nothing about the user yields no facts.
+
+Return JSON: {{"facts": [{{"s": <session number>, "fact": "<one sentence>"}}]}}
+
+{sessions}"""
+FACT_BATCH = 4
+FACT_ASSISTANT_CHARS = 300
+
+
+def session_key(doc):
+    """Facts depend on the content AND the date relative phrases resolve
+    against, so the same filler session under two dates is two keys."""
+    return hashlib.sha1(((doc.get("timestamp") or "")[:10] + "\x1f"
+                         + doc["content"]).encode()).hexdigest()
+
+
+def render_session(i, doc):
+    """User turns whole, assistant turns cut: the facts are about the user,
+    and the raw assistant turns stay in the retrieval pool regardless."""
+    lines = [f"### Session {i} (date {(doc.get('timestamp') or '')[:10]})"]
+    try:
+        turns = json.loads(doc["content"])
+    except json.JSONDecodeError:
+        return "\n".join(lines + [doc["content"][:6000]])
+    for t in turns:
+        role = t.get("role") or t.get("speaker") or "?"
+        text = " ".join(str(t.get("content") or t.get("text") or "").split())
+        if role == "assistant" and len(text) > FACT_ASSISTANT_CHARS:
+            text = text[:FACT_ASSISTANT_CHARS] + " …"
+        lines.append(f"{role}: {text[:3000]}")
+    return "\n".join(lines)
+
+
+def extract_facts(docs, out, model, jobs):
+    """{session_key: [fact, ...]} for every doc, cached in facts.jsonl."""
+    path = os.path.join(out, "facts.jsonl")
+    todo, seen = [], set()
+    for d in docs:
+        k = session_key(d)
+        if k not in seen:
+            seen.add(k)
+            todo.append((k, d))
+    batches = [todo[i:i + FACT_BATCH] for i in range(0, len(todo), FACT_BATCH)]
+
+    def one(batch):
+        body = "\n\n".join(render_session(i + 1, d) for i, (_k, d) in enumerate(batch))
+        v = claude_json(FACT_PROMPT.format(sessions=body), model, ["facts"])
+        if v is None or not isinstance(v["facts"], list):
+            return None
+        by = {k: [] for k, _ in batch}
+        for f in v["facts"]:
+            try:
+                n = int(f["s"])
+            except (KeyError, ValueError, TypeError):
+                continue
+            if not 1 <= n <= len(batch):     # s=0 would index batch[-1]
+                continue
+            k = batch[n - 1][0]
+            fact = " ".join(str(f.get("fact") or "").split())
+            if fact:
+                by[k].append(fact)
+        return {"by": by}
+
+    items = [("|".join(k for k, _ in b), b) for b in batches]
+    cache = run_cached(path, jobs, one, items)
+    facts = {}
+    for rec in cache.values():
+        facts.update(rec.get("by", {}))
+    return facts
+
+
+def cached_encode(emb, texts, path, legacy_ok=False):
+    """Embeddings for `texts`, cached at `path` under a hash of the texts:
+    a matching length alone would pair stale vectors with re-extracted
+    facts. legacy_ok accepts a pre-hash cache on length, safe only where
+    the texts are a deterministic function of the dataset (the turns)."""
+    h = hashlib.sha1("\x1f".join(texts).encode()).hexdigest()
+    e = None
+    if path and os.path.exists(path):
+        z = np.load(path)
+        stored = str(z["h"]) if "h" in z.files else None
+        if stored == h or (stored is None and legacy_ok and len(z["e"]) == len(texts)):
+            e = z["e"]
+    if e is None:
+        e = common.encode(emb, texts)
+        if path:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            np.savez(path, e=e, h=h)
+    return e
+
+
+def fill(order, cap, used, picked, render):
+    """Append rows in `order` while the token total stays within `cap`."""
+    for rank, i in enumerate(order):
+        t = render(rank, i)
+        if used + ntok(t) > cap:
+            break
+        picked.append((i, t))
+        used += ntok(t)
+    return used
+
+
+def build_rfm_contexts(queries, docs, wanted, budgets, out, arm="mem-rfm",
+                       trunc=0, full_top=0, emb_cache=None, facts=None, fact_share=0.0):
     """Per isolation unit: fresh store, turns inserted with their session
     time, every query of the unit asked in dataset order (accesses recorded
-    on what comes back, as memory_search does); only `wanted` are kept."""
+    on what comes back, as memory_search does); only `wanted` are kept.
+
+    Contexts are cached per arm and reused unit by unit, so the cache is
+    keyed by the parameters that built it (params-<arm>.json): reusing an
+    arm name with different settings is refused instead of silently
+    reporting the old contexts."""
     path = os.path.join(out, f"contexts-{arm}.json")
+    ppath = os.path.join(out, f"params-{arm}.json")
+    params = {"trunc": trunc, "full_top": full_top, "facts": facts is not None,
+              "fact_share": fact_share, "embedder": common.EMBEDDER_ID}
     ctx = json.load(open(path)) if os.path.exists(path) else {}
+    stored = json.load(open(ppath)) if os.path.exists(ppath) else None
+    if ctx and stored != params:
+        sys.exit(f"arm {arm!r} was built with {stored}, not {params}; "
+                 f"pick another --arm or delete {path}")
+    json.dump(params, open(ppath, "w"))
     emb = common.get_embedder()
     by_unit = defaultdict(list)
     for d in docs:
@@ -187,13 +325,21 @@ def build_rfm_contexts(dataset, queries, docs, wanted, budgets, out, arm="mem-rf
             ts = iso_ts(d.get("timestamp"))
             for role, t in turns_of(d):
                 rows.append((len(rows) + 1, t, ts, role))
-        cp = emb_cache and os.path.join(emb_cache, f"{unit}.npz")
-        embs = np.load(cp)["e"] if cp and os.path.exists(cp) else None
-        if embs is None or len(embs) != len(rows):
-            embs = common.encode(emb, [r[1] for r in rows])
-            if cp:
-                os.makedirs(emb_cache, exist_ok=True)
-                np.savez(cp, e=embs)
+        embs = cached_encode(emb, [r[1] for r in rows],
+                             emb_cache and os.path.join(emb_cache, f"{unit}.npz"),
+                             legacy_ok=True)
+        if facts is not None:
+            frows = []
+            for d in sorted(by_unit[unit], key=lambda d: d.get("timestamp") or ""):
+                date = (d.get("timestamp") or "")[:10]
+                for f in facts.get(session_key(d), []):
+                    frows.append((len(rows) + len(frows) + 1, f"[{date}] fact: {f}",
+                                  iso_ts(d.get("timestamp")), "fact"))
+            if frows:
+                femb = cached_encode(emb, [r[1] for r in frows], emb_cache and os.path.join(
+                    emb_cache, f"{unit}.facts.npz"))
+                rows += frows
+                embs = np.vstack([embs, femb])
         db = sqlite3.connect(":memory:")
         rfm.register(db)
         db.execute("SELECT rfm_init()")
@@ -211,12 +357,17 @@ def build_rfm_contexts(dataset, queries, docs, wanted, budgets, out, arm="mem-rf
             order = np.argsort(-score, kind="stable")
             budget = budgets.get(q["id"], 20_000)
             picked, used = [], 0
-            for rank, i in enumerate(order):
-                t = shown(rows[i][3], rows[i][1], rank, trunc, full_top)
-                if used + ntok(t) > budget:
-                    break
-                picked.append((i, t))
-                used += ntok(t)
+            if fact_share:
+                # Facts first, up to their share of the budget: raw turns
+                # are long, and pooled on score alone they left facts 5.8%
+                # of the context tokens (RESULTS.md, write-time facts).
+                used = fill([i for i in order if rows[i][3] == "fact"],
+                            fact_share * budget, used, picked,
+                            lambda _r, i: rows[i][1])
+                taken = {i for i, _ in picked}
+                order = [i for i in order if i not in taken]
+            fill(order, budget, used, picked,
+                 lambda r, i: shown(rows[i][3], rows[i][1], r, trunc, full_top))
             for i, _ in picked[:50]:           # shipped memory_search: top hits record access
                 db.execute("SELECT rfm_record_access(?)", (ids[i],))
             if q["id"] in wanted:
@@ -252,12 +403,15 @@ def claude_json(prompt, model, keys):
     return None
 
 
+def load_jsonl(path):
+    """{record["key"]: record} for a results file; empty if absent."""
+    if not os.path.exists(path):
+        return {}
+    return {r["key"]: r for r in map(json.loads, open(path))}
+
+
 def run_cached(path, jobs, fn, items):
-    cache = {}
-    if os.path.exists(path):
-        for line in open(path):
-            r = json.loads(line)
-            cache[r["key"]] = r
+    cache = load_jsonl(path)
     todo = [it for it in items if it[0] not in cache]
     print(f"  {len(items) - len(todo)} cached, {len(todo)} to run", flush=True)
     done = [0]
@@ -294,7 +448,7 @@ def main():
     ap.add_argument("--dataset", choices=list(SPLIT), required=True)
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--stage", default="all",
-                    choices=["retrieve", "answer", "judge", "report", "all"])
+                    choices=["extract", "retrieve", "answer", "judge", "report", "all"])
     ap.add_argument("--answer-model", default="sonnet")
     ap.add_argument("--judge-model", default="haiku")
     ap.add_argument("--jobs", type=int, default=6)
@@ -305,6 +459,13 @@ def main():
                     help="cut assistant turns to N chars in the context")
     ap.add_argument("--full-top", type=int, default=0,
                     help="...except the top K ranked hits, shown in full")
+    ap.add_argument("--facts", action="store_true",
+                    help="add write-time extracted facts to the memory pool "
+                         "(stage extract builds them; cached in facts.jsonl)")
+    ap.add_argument("--fact-model", default="haiku")
+    ap.add_argument("--fact-share", type=float, default=0.0,
+                    help="reserve this share of the budget for top-ranked "
+                         "facts, placed first (0 = pool facts with turns)")
     ap.add_argument("--emb-cache", default=None,
                     help="directory for per-unit embedding caches")
     a = ap.parse_args()
@@ -327,10 +488,18 @@ def main():
     contexts = {arm: {qid: pub[arm][qid]["context"] for qid in wanted}
                 for arm in pub}
     budgets = {qid: pub["hybrid-search"][qid]["context_tokens"] for qid in qmap}
-    if a.stage in ("retrieve", "all"):
+    facts = None
+    if a.stage in ("extract", "retrieve", "all"):
         docs = load_gz(os.path.join(base, "documents.json.gz"))
-        build_rfm_contexts(a.dataset, queries, docs, wanted, budgets, out, a.arm,
-                           a.trunc_assistant, a.full_top, a.emb_cache)
+    if a.facts and a.stage in ("extract", "retrieve", "all"):
+        units = {qmap[q]["user_id"] for q in wanted}
+        facts = extract_facts([d for d in docs if d["user_id"] in units], out,
+                              a.fact_model, a.jobs)
+        print(f"  facts: {sum(map(len, facts.values()))} over {len(facts)} sessions")
+    if a.stage in ("retrieve", "all"):
+        build_rfm_contexts(queries, docs, wanted, budgets, out, a.arm,
+                           a.trunc_assistant, a.full_top, a.emb_cache, facts,
+                           a.fact_share)
     for f in sorted(os.listdir(out)):              # every mem-rfm arm built so far
         if f.startswith("contexts-") and f.endswith(".json"):
             contexts[f[len("contexts-"):-len(".json")]] = json.load(open(os.path.join(out, f)))
@@ -350,11 +519,7 @@ def main():
                  if qid in contexts[arm]]
         run_cached(ans_path, a.jobs, answer, items)
 
-    answers = {}
-    if os.path.exists(ans_path):
-        for line in open(ans_path):
-            r = json.loads(line)
-            answers[r["key"]] = r
+    answers = load_jsonl(ans_path)
 
     jud_path = os.path.join(out, "judgments.jsonl")
     if a.stage in ("judge", "all"):
@@ -373,24 +538,19 @@ def main():
         run_cached(jud_path, a.jobs, judge, [(k, k) for k in sorted(answers)])
 
     if a.stage in ("report", "all"):
-        jud = {}
-        if os.path.exists(jud_path):
-            for line in open(jud_path):
-                r = json.loads(line)
-                jud[r["key"]] = bool(r["correct"])
+        jud = {k: bool(r["correct"]) for k, r in load_jsonl(jud_path).items()}
         qids = sorted(q for q in wanted
                       if all(f"{arm}|{q}" in jud for arm in arms))
         report = {"dataset": a.dataset, "n": len(qids),
                   "answer_model": a.answer_model, "judge_model": a.judge_model,
-                  "arms": {}, "paired": {}, "by_category": {}, "context_tokens": {}}
+                  "arms": {}, "paired": {}, "by_category": {}, "context_tokens": {},
+                  "published_accuracy_same_qids": {}}
         for arm in arms:
             acc = [jud[f"{arm}|{q}"] for q in qids]
             m, lo, hi = boot(acc)
             report["arms"][arm] = [round(m, 4), round(lo, 4), round(hi, 4)]
             report["context_tokens"][arm] = round(float(np.mean(
                 [ntok(contexts[arm][q]) for q in qids])), 1)
-            report["published_accuracy_same_qids"] = report.get(
-                "published_accuracy_same_qids", {})
             if arm in pub:
                 report["published_accuracy_same_qids"][arm] = round(float(np.mean(
                     [pub[arm][q]["correct"] for q in qids])), 4)
