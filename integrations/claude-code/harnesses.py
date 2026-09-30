@@ -27,6 +27,7 @@ test_harnesses.py rather than a comment:
 """
 import collections
 import os
+import sys
 
 HookSpec = collections.namedtuple("HookSpec", "event script matcher timeout")
 Harness = collections.namedtuple(
@@ -71,9 +72,15 @@ DEFAULT = "claude-code"
 
 def current():
     """The harness this hook process serves: RFM_HARNESS, else Claude Code.
-    Defaulting keeps every existing install working unchanged."""
-    return HARNESSES.get(os.environ.get("RFM_HARNESS", DEFAULT),
-                         HARNESSES[DEFAULT])
+    Defaulting keeps every existing install working unchanged; an unknown
+    name falls back too, but says so on stderr rather than silently reading
+    another harness's transcripts as Claude Code's."""
+    name = os.environ.get("RFM_HARNESS", DEFAULT)
+    if name not in HARNESSES:
+        print(f"rfm: unknown RFM_HARNESS {name!r}; using {DEFAULT} "
+              f"(known: {', '.join(HARNESSES)})", file=sys.stderr)
+        name = DEFAULT
+    return HARNESSES[name]
 
 
 def payload_field(harness, key, payload):

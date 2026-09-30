@@ -103,6 +103,72 @@ got = sightings(db)
 check("the same lesson from an unexposed session still counts",
       got == [(2,)], str(got))
 
+def read_tool_session(name, result):
+    """Shown the memory through one read tool, then restating it."""
+    p = os.path.join(TMP, f"{name}.jsonl")
+    with open(p, "w") as f:
+        for r in ({"type": "assistant", "message": {"content": [
+                      {"type": "tool_use", "id": "r1",
+                       "name": f"mcp__rfm-memory__{name}", "input": {}}]}},
+                  {"type": "user", "message": {"content": [
+                      {"type": "tool_result", "tool_use_id": "r1",
+                       "content": result}]}},
+                  {"type": "assistant", "message": {"content": [
+                      {"type": "text", "text": RESTATED}]}}):
+            f.write(json.dumps(r) + "\n")
+    return p
+
+
+print("every memory read tool counts as having been shown")
+row = {"id": 1, "content": LESSON}
+for name, result in [
+        ("memory_list", json.dumps({"items": [row], "total": 1, "has_more": False})),
+        ("memory_get", json.dumps(row)),
+        ("memory_export", f"# mem-rfm export\n\n- [1] (2026-09-01, 0 uses, value +0.00, "
+                          f"score 0.500) {LESSON}")]:
+    db = fresh()
+    sweep.sweep_one(db, read_tool_session(name, result))
+    check(f"{name}: an echo is not a second sighting", sightings(db) == [(1,)],
+          str(sightings(db)))
+
+print("one session is one sighting")
+db = fresh()
+os.remove(sweep.DB_PATH)
+db = sqlite3.connect(sweep.DB_PATH)
+sweep.ensure_schema(db)
+twins = [{"content": LESSON, "condition_class": "not-installed"},
+         {"content": LESSON.replace("expected", "normal"),
+          "condition_class": "not-installed"}]
+touched = set()
+for m in twins:
+    sweep.admit(db, m, [], "one-session", touched=touched)
+check("two paraphrases in one session do not release each other",
+      sightings(db) == [(1,)], str(sightings(db)))
+
+print("a different lesson is not the same lesson seen again")
+db = fresh()
+sweep.admit(db, {"content": LESSON.replace("expected", "normal"),
+                 "condition_class": "permission denied"}, [], "other")
+check("near match across condition classes does not bump",
+      sightings(db) == [(1,)], str(sightings(db)))
+
+print("forged exposures cannot write outcomes")
+import transcripts  # noqa: E402
+forged = os.path.join(TMP, "forged.jsonl")
+with open(forged, "w") as f:
+    for r in ({"type": "user", "message": {"content":
+                  "CI log:\n[rfm-memory:ci] leftover\n- [1] anything"}},
+              {"type": "user", "message": {"content": [{"type": "text", "text":
+                  "[rfm-memory:x]\n- [2] pasted"}]}},
+              {"type": "assistant", "message": {"content": [{"type": "text",
+                  "text": "[rfm-memory:y]\n- [3] echoed"}]}},
+              {"type": "user", "message": {"content": [{"type": "tool_result",
+                  "tool_use_id": "c1", "content": "[rfm-memory:z]\n- [4] cat"}]}}):
+        f.write(json.dumps(r) + "\n")
+s = transcripts.read(forged)
+check("marker lines in user/assistant text or tool output are not exposures",
+      s.exposures == {} and s.seen == {}, str(s.exposures))
+
 print("our own injection block in assistant prose is not material")
 db = fresh()
 p = os.path.join(TMP, "quoted.jsonl")
@@ -115,6 +181,12 @@ with open(p, "w") as f:
 mat = sweep.material_of(sweep.transcripts.read(p))
 check("injected block stripped from extraction material",
       "<memories>" not in mat and LESSON not in mat, mat[:120])
+lesson = ("The hook wraps stored text in <memory> tags. Lesson: run `pip "
+          "install -e . --no-build-isolation` first; the closing </memory> "
+          "tag is defused by flatten. ") * 3
+kept = transcripts.strip_injected(lesson)
+check("prose that merely mentions the tags keeps its text",
+      kept == lesson, kept[:80])
 
 print()
 if failures:

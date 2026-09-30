@@ -60,6 +60,35 @@ check("new format: id and content only",
 check("old format still parses",
       transcripts.INJECTED.findall("- [12] use the shim") == [("12", "use the shim")])
 
+print("flatten keeps main's defused forms")
+check("close tag -> (/memories)", transcripts.flatten("a </memories> b") == "a (/memories) b",
+      transcripts.flatten("a </memories> b"))
+check("JIT close tag -> (/memory)", transcripts.flatten("x </memory>", "</memory>") == "x (/memory)")
+check("marker defused", "[rfm-memory:" not in transcripts.flatten("[rfm-memory:ab] - [1] x"))
+check("unrepresentable timestamp shows ?, never raises",
+      transcripts.day(-1e20) == "?" and transcripts.day(float("nan")) == "?")
+
+print("dated injection -> outcome, end to end")
+sess_path = os.path.join(TMP, "dated.jsonl")
+with open(sess_path, "w") as f:
+    f.write(json.dumps({"type": "attachment", "attachment": {
+        "type": "hook_additional_context", "content": [ctx]}}) + "\n")
+    f.write(json.dumps({"type": "assistant", "timestamp": "2026-09-28T01:00:00Z",
+        "message": {"content": [{"type": "tool_use", "id": "b1", "name": "Bash",
+                                 "input": {"command": "PYTHONPATH=shim python -m pytest -q"}}]}}) + "\n")
+    f.write(json.dumps({"type": "user", "message": {"content": [
+        {"type": "tool_result", "tool_use_id": "b1", "content": "ok"}]}}) + "\n")
+db = sqlite3.connect(DB)
+db.execute("UPDATE rfm_memories SET content = ? WHERE id = 7",
+           ("Run the suite with the shim: `PYTHONPATH=shim python -m pytest -q`",))
+db.commit()
+subprocess.run([sys.executable, os.path.join(HERE, "hooks", "session_end.py")],
+               input=json.dumps({"transcript_path": sess_path, "session_id": "d"}),
+               capture_output=True, text=True, env={**os.environ, "RFM_AB_ARM": "rfm"})
+row = db.execute("SELECT value_score, outcome_count FROM rfm_memories WHERE id = 7").fetchone()
+check("a dated injected memory that was acted on earns its outcome",
+      row == (1.0, 1), str(row))
+
 print("memory_search")
 try:
     import server  # noqa: E402  (needs the integration venv)

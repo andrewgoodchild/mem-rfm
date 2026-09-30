@@ -99,6 +99,22 @@ def session_end(path):
     return r.returncode, (marks[-1] if marks else {})
 
 
+for bad in ({"type": "user", "message": "hi"},
+            {"type": "user", "message": {"content": [{"type": "text", "text": None}]}},
+            {"type": "user", "message": {"content": [{"type": "tool_result",
+                                                      "tool_use_id": "b", "content": {"x": 1}}]}},
+            {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": ["x"],
+                                                           "name": "Bash", "input": "ls"}]}}):
+    p = os.path.join(TMP, "malformed.jsonl")
+    with open(p, "w") as f:
+        f.write(json.dumps(bad) + "\n")
+    try:
+        transcripts.read(p)
+        ok = True
+    except Exception as e:
+        ok = f"{type(e).__name__}: {e}"
+    check(f"valid JSON in a bad shape never raises: {json.dumps(bad)[:50]}", ok is True, str(ok))
+
 rc, mark = session_end(foreign)
 check("session_end on a foreign transcript exits cleanly", rc == 0, str(rc))
 check("...and logs it as unreadable, not as an empty session",
