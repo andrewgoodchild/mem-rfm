@@ -165,7 +165,10 @@ def ensure_conditions(db):
 # formation_study.py, eval_selection.py and miner_replay.py call them.
 _parse_transcript = transcripts.parse_jsonl
 load_events = transcripts.claude_events
-in_play_memories = transcripts.claude_exposures
+
+
+def in_play_memories(records):
+    return transcripts.claude_exposures(records)[0]
 
 
 def tokens(cmd):

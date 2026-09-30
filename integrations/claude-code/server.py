@@ -43,6 +43,7 @@ sys.path.insert(0, os.path.join(HERE, "..", ".."))
 import rfm  # noqa: E402  (repo-root module; scoring engine)
 import log_env  # noqa: E402  (sibling module; shared RFM_LOG contract)
 import secret_scan  # noqa: E402  (sibling module; shared credential redaction)
+import transcripts  # noqa: E402  (sibling module; the one content sanitizer)
 
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 EMBEDDER_ID = os.environ.get("RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
@@ -347,11 +348,9 @@ def _sanitize(content: str) -> str:
     injected lines), defuse the marker prefix (prevents spoofing A/B
     attribution — format contract with hooks/session_start.py's injection
     marker and ab/ab_stats.py MARKER_RE) and the hook's close tag (prevents
-    breaking out of its <memories> data block)."""
-    content = "".join(ch if ch.isprintable() else " " for ch in content)
-    content = content.replace("[rfm-memory:", "[rfm-memory ")
-    content = content.replace("</memories>", "(/memories)")
-    return " ".join(content.split())
+    breaking out of its <memories> data block). One implementation, shared
+    with the sweep's writes and every hook's display: transcripts.flatten."""
+    return transcripts.flatten(content)
 
 
 def _check(content: str) -> str:

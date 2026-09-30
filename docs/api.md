@@ -275,13 +275,18 @@ Environment:
 
 Every write path — `memory_save`, `memory_update`, the transcript sweep's
 admission, and the SessionEnd candidate file — passes content through
-`secret_scan.py` first. Vendor-format keys (GitHub, OpenAI, Anthropic,
-AWS, Google, Slack, Stripe), PEM private keys, JWTs, bearer tokens,
-passwords in URLs and literal values assigned to secret-named variables
-become `[REDACTED:<kind>]`; the rest of the memory is kept, because "npm ci
-401s until `NPM_TOKEN` is exported" is still worth remembering without the
-token. References such as `$GITHUB_TOKEN`, `${API_KEY}` and
-`<your-token>` are left alone. Each redaction logs its kinds, never the
+`secret_scan.py` first. Vendor-format keys (GitHub, GitLab, OpenAI,
+Anthropic, AWS, Google, Hugging Face, npm, PyPI, Slack, Stripe, Sentry),
+PEM and PGP private keys, JWTs, bearer and Authorization tokens,
+passwords in URLs, CLI password flags (`mysql -p…`, `docker login -p`,
+`curl -u user:pass`), .netrc entries and literal values assigned to
+secret-named variables become `[REDACTED:<kind>]`; the rest of the memory is
+kept, because "npm ci 401s until `NPM_TOKEN` is exported" is still worth
+remembering without the token. References (`$GITHUB_TOKEN`, `${API_KEY}`,
+`$(gh auth token)`, `<your-token>`) and code that produces a secret at run
+time (`os.environ["API_KEY"]`, `get_token(repo)`, `OpenAI(api_key=OPENAI_API_KEY)`)
+are left alone; the accepted cost is that a passphrase written like an
+identifier (`correct_horse_battery`) is not redacted. Each redaction logs its kinds, never the
 value. Rows stored before the scan existed are not rewritten.
 
 Memories surface with the date they were saved: search hits carry

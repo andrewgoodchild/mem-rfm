@@ -30,11 +30,19 @@ GH = "ghp_" + "a1B2" * 9
 SECRETS = {
     "github_token": f"export GITHUB_TOKEN={GH} then re-run npm ci",
     "openai_key": "OPENAI_API_KEY=sk-proj-" + "x7" * 16,
+    "gitlab_token": "curl -H 'PRIVATE-TOKEN: glpat-ABCDEFGHIJKLMNOPQRST' https://gitlab",
+    "npm_token": "//registry.npmjs.org/:_authToken=npm_" + "A1b2" * 9,
+    "huggingface_token": "hf_" + "Ab1" * 11,
+    "slack_webhook": "https://hooks.slack.com/services/T0000/B0000/XXXXXXXXXXXXXXXXXXXXXXXX",
+    "authorization": "curl -H 'Authorization: token d8e8fca2dc0f896fd7cb4cb0031ba249' api",
+    "cli_password": "mysql -u root -phunter2secret db",
+    "netrc_password": "machine api.heroku.com login me@x.com password 8f3c2a1b-hunter2",
+    "aws_configure": "aws configure set aws_secret_access_key wJalrXUtnFEMI/K7MDENG/bPxRfiCY",
     "anthropic_key": "key sk-ant-api03-" + "Zq" * 20,
     "aws_access_key": "aws configure set aws_access_key_id AKIAIOSFODNN7EXAMPLE",
     "bearer_token": 'curl -H "Authorization: Bearer abcdefghijklmnopqrstuvwxyz0123" api',
     "url_credentials": "pip install --index-url https://bob:hunter2pass@pypi.corp/simple x",
-    "private_key": "-----BEGIN OPENSSH PRIVATE KEY----- b3BlbnNzaC1rZXk -----END OPENSSH PRIVATE KEY-----",
+    "private_key": "-----BEGIN PGP PRIVATE KEY BLOCK----- lQOYBF -----END PGP PRIVATE KEY BLOCK-----",
     "secret_assignment": 'DB_PASSWORD="s3cretValue!" in .env',
     "jwt": "cookie eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_X",
 }
@@ -66,7 +74,35 @@ BENIGN = [
     "password=getpass.getpass()",
     "secret_key: settings.SECRET_KEY",
     "git clone https://x-access-token:${GH_TOKEN}@github.com/o/r",
+    "git clone https://x-access-token:$TOKEN@github.com/o/r",
+    "client = OpenAI(api_key=OPENAI_API_KEY)",
+    "psycopg2.connect(host=h, password=db_password)",
+    "export GITHUB_TOKEN=$(gh auth token)",
+    "volumes:\n  - name: creds\n    secret:\n      secretName: db-credentials",
+    "jq '.token=.access_token' resp.json",
+    "SECRET_KEY=/etc/app/secret.pem",
+    "pip install scikit-learn sk-video-processing-toolkit",
 ]
+# Literal secrets the first version let through (adversarial review).
+MORE = [
+    "DB_PASSWORD=hunter2.pass",               # dotted, but a digit: a password
+    "DB_PASSWORD=pa(ss)word99",               # a paren, but not a call
+    "PGPASSWORD=hunter2",                     # short
+    "SECRET_KEY=$ecr3tV@lue123",              # starts with $, not a reference
+    "DJANGO_SECRET_KEY='django-insecure-abc;123$xyz'",   # quoted, with ;
+    "password: 'my pass phrase with spaces'",
+    "DATABASE_URL=postgres://user:p@ss@host/db",
+    "redis://:hunter2secret@localhost:6379",
+    "twine upload -u __token__ -p pypi-AgEIcHlwaS5vcmc" + "A" * 50,
+    "curl -u admin:hunter2secret https://api",
+]
+print("literal secrets in awkward shapes")
+for text in MORE:
+    out, kinds = secret_scan.redact(text)
+    leaked = [w for w in ("hunter2", "p@ss", "ecr3t", "123$xyz", "phrase", "AgEI")
+              if w in text and w in out]
+    check(text[:40], kinds and not leaked, f"{out!r}")
+
 print("benign text passes through")
 for text in BENIGN:
     out, kinds = secret_scan.redact(text)

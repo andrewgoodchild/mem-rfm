@@ -38,8 +38,14 @@ import time
 Event = collections.namedtuple("Event", "cmd is_err body got")
 
 Session = collections.namedtuple(
-    "Session", "events exposures prose start readable")
-"""exposures: {memory_id: (content, first_event_idx)}."""
+    "Session", "events exposures seen prose start readable")
+"""exposures: {memory_id: (content, first_event_idx)} -- memories injected
+by a hook or returned by memory_search, the ones outcome inference credits.
+seen: {memory_id: content} -- every memory the session was shown by any
+route, including memory_list/get/export; what makes a later restatement of
+it not independent evidence (quarantine)."""
+
+EMPTY = Session([], {}, {}, [], None, False)
 
 # ---------------------------------------------------------------- injection
 #
@@ -48,17 +54,27 @@ Session = collections.namedtuple(
 
 
 def day(ts):
-    """A memory's save date as shown to the agent: YYYY-MM-DD."""
-    return time.strftime("%Y-%m-%d", time.localtime(ts))
+    """A memory's save date as shown to the agent: YYYY-MM-DD, or '?' for a
+    timestamp the platform cannot represent (a row written by another client
+    in milliseconds, or garbage) — never an exception that would take the
+    whole injection down with it."""
+    try:
+        return time.strftime("%Y-%m-%d", time.localtime(ts))
+    except (OverflowError, ValueError, OSError, TypeError):
+        return "?"
 
 
 def flatten(content, close_tag="</memories>"):
     """Stored content is untrusted data headed into a model's context:
     control chars and newlines become spaces (one memory cannot fabricate
-    extra list items) and the enclosing block's close tag is defused (it
-    cannot break out of its data block)."""
+    extra list items), the enclosing block's close tag is defused (it cannot
+    break out of its data block), and our own marker is defused (it cannot
+    pass for an injection block — or spoof A/B attribution). The same
+    function sanitizes content at write time (server, sweep)."""
     flat = "".join(ch if ch.isprintable() else " " for ch in str(content))
-    return " ".join(flat.replace(close_tag, "(" + close_tag[2:-1] + ")").split())
+    flat = flat.replace("[rfm-memory:", "[rfm-memory ")
+    flat = flat.replace(close_tag, "(/" + close_tag[2:-1] + ")")
+    return " ".join(flat.split())
 
 
 def line_head(mid, created_at):
@@ -71,12 +87,13 @@ def line_head(mid, created_at):
 # only the id and the content are captured.
 INJECTED = re.compile(r"^- \[(\d+)(?:, [^\]]*)?\] (.+)$", re.M)
 
-# Structural, not content-guessing: our own injection blocks, and the host
-# wrappers that carry hook output, removed from prose before anything is
-# mined from it. Without this the sweep can extract a memory from the
-# session's own echo of it (test_feedback_loop.py).
+# Structural, not content-guessing: our own injection blocks removed from
+# prose before anything is mined from it, so the sweep cannot extract a
+# memory from the session's echo of it (test_feedback_loop.py). Only the
+# shape the hooks write counts — the tag alone on its line — so prose that
+# merely mentions a <memory> tag keeps its text.
 _OURS = re.compile(
-    r"<(memories|memory|system-reminder|task-notification)>[\s\S]*?</\1>"
+    r"^<(memories|memory)>$[\s\S]*?^</\1>$"
     r"|^\[rfm-memory[^\]\n]*\][^\n]*$", re.M)
 
 
@@ -147,63 +164,79 @@ def claude_events(records):
     return [Event(*r) for r in raw]
 
 
+# MCP tools whose results put stored memories in front of the session.
+_READ_TOOL = re.compile(r"memory_(search|list|get|export)$")
+# memory_export's markdown lines: "- [12] (2026-03-02, 3 uses, ...) content".
+_EXPORT_LINE = re.compile(r"^- \[(\d+)\] \([^)]*\) (.+)$", re.M)
+
+
+def _rows_in(value):
+    """(id, content) for every stored memory in a read tool's result:
+    objects carrying an int id and a content string (search hits, list
+    items, a single get), or export's markdown lines."""
+    if isinstance(value, dict):
+        if isinstance(value.get("id"), int) and isinstance(value.get("content"), str):
+            yield value["id"], value["content"]
+        for v in value.values():
+            yield from _rows_in(v)
+    elif isinstance(value, list):
+        for v in value:
+            yield from _rows_in(v)
+    elif isinstance(value, str):
+        for mid, content in _EXPORT_LINE.findall(value):
+            yield int(mid), content
+
+
 def claude_exposures(records):
-    """{memory_id: (content, first_event_idx)} for memories the session could
-    have acted on: the SessionStart injection block and memory_search tool
-    results, both verbatim in the transcript. first_event_idx is how many
-    Bash events precede the memory's first appearance (0 for injected ones):
-    a memory cannot have influenced a command that ran before the session
-    saw it."""
-    mems, search_calls = {}, set()
+    """(exposures, seen) — see Session.
+
+    Only two sources are trusted, because both are written by us: a hook's
+    additionalContext (attachment.type == "hook_additional_context" -- where
+    Claude Code records it in headless AND interactive sessions: checked on
+    interactive transcripts from 2.1.220 and 2.1.246) and the results
+    of our own MCP read tools. Text the session merely read or wrote — a
+    user message, a pasted CI log, assistant prose, a tool_result from
+    `cat` — can contain "[rfm-memory:" and "- [N] ..." lines, and was once
+    enough to write an outcome against any memory id N."""
+    mems, seen, read_calls = {}, {}, {}
     n_bash = 0
 
-    def note(mid, content):
-        mems.setdefault(int(mid), (content, n_bash))
-
-    def scan_text(text):
-        if "[rfm-memory:" in text:
-            for mid, content in INJECTED.findall(text):
-                note(mid, content)
+    def note(mid, content, exposure):
+        seen.setdefault(int(mid), content)
+        if exposure:
+            mems.setdefault(int(mid), (content, n_bash))
 
     for d in records:
-        # Headless (sdk-cli) transcripts carry the SessionStart injection in
-        # an attachment record (attachment.type == "hook_additional_context"),
-        # never inside message.content — scanning only messages misses the
-        # PRIMARY way memories enter a session (pilot 2: inference recovered
-        # 1 of 15 outcomes until this branch existed). Interactive transcripts
-        # embed it in a message, so both paths stay.
         att = d.get("attachment")
         if isinstance(att, dict) and att.get("type") == "hook_additional_context":
             body = att.get("content")
             for part in (body if isinstance(body, list) else [body]):
-                if isinstance(part, str):
-                    scan_text(part)
+                if isinstance(part, str) and "[rfm-memory:" in part:
+                    for mid, content in INJECTED.findall(part):
+                        note(mid, content, True)
             continue
         content = (d.get("message") or {}).get("content")
-        if isinstance(content, str):
-            scan_text(content)
-            continue
         if not isinstance(content, list):
             continue
         for b in content:
             if not isinstance(b, dict):
                 continue
-            if b.get("type") == "text":
-                scan_text(b.get("text", ""))
-            elif is_bash_call(b):
+            if is_bash_call(b):
                 n_bash += 1
-            elif (b.get("type") == "tool_use"
-                  and str(b.get("name", "")).endswith("memory_search")):
-                search_calls.add(b.get("id"))
-            elif (b.get("type") == "tool_result"
-                  and b.get("tool_use_id") in search_calls):
+            elif b.get("type") == "tool_use":
+                m = _READ_TOOL.search(str(b.get("name", "")))
+                if m:
+                    read_calls[b.get("id")] = m.group(1)
+            elif b.get("type") == "tool_result" and b.get("tool_use_id") in read_calls:
+                body = _result_text(b.get("content")) or ""
                 try:
-                    body = _result_text(b.get("content"))
-                    for r in json.loads(body or "{}").get("result", []):
-                        note(r["id"], str(r.get("content", "")))
-                except Exception:
-                    continue
-    return mems
+                    parsed = json.loads(body)
+                except (json.JSONDecodeError, TypeError):
+                    parsed = body
+                exposure = read_calls[b.get("tool_use_id")] == "search"
+                for mid, text in _rows_in(parsed):
+                    note(mid, text, exposure)
+    return mems, seen
 
 
 def claude_prose(records):
@@ -247,9 +280,11 @@ def claude_readable(records):
 
 def read_claude_code(path, prose=True):
     records = parse_jsonl(path)
+    exposures, seen = claude_exposures(records)
     return Session(
         events=claude_events(records),
-        exposures=claude_exposures(records),
+        exposures=exposures,
+        seen=seen,
         prose=claude_prose(records) if prose else [],
         start=claude_start(records),
         readable=claude_readable(records),
@@ -265,5 +300,11 @@ def read(path, harness="claude-code", prose=True):
     skips the assistant-text pass for callers that never read it."""
     reader = READERS.get(harness)
     if reader is None:
-        return Session([], {}, [], None, False)
-    return reader(path, prose)
+        return EMPTY
+    try:
+        return reader(path, prose)
+    except Exception:
+        # Valid JSON in an unexpected shape ("text": null, "message": "hi",
+        # a dict where a list belongs) must not take a SessionEnd hook or a
+        # whole sweep down with it: unreadable, not fatal.
+        return EMPTY
