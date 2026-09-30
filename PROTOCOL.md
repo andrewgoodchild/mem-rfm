@@ -987,3 +987,54 @@ is hard for similarity with or without twins). Re-anchored bars:
 No full-run data existed before this correction; both smokes are kept
 in results-prefeval/ (judge-v1-smoke.jsonl; the v2 rows regenerate
 under the corrected scorer on the full run).
+
+## Amendment 18 (2026-10-01): write-time facts on held-out LongMemEval — registered before the run
+
+**Why.** The exploratory facts result on the 199 development questions
+(commit 0f8f330) is withdrawn (RESULTS.md, "AMB head-to-head: adversarial
+review"): its extraction prompt leaked two gold answers, it was the best of
+five variants tried on those questions, and a Claude judge under-credited
+Hindsight. This amendment tests the idea once, cleanly.
+
+**Data.** AMB LongMemEval-S, the 301 questions NOT in the development sample
+(`amb_eval.py --heldout`: all 500 minus `sample(queries, 200)`, seed 7, the
+199 used so far). Verified before registration: 301 questions, 0 overlap;
+per category multi-session 80, temporal-reasoning 80, knowledge-update 47,
+single-session-user 42, single-session-assistant 34, preference 18. No
+held-out question, answer or context has been read, answered or judged.
+
+**Frozen method** (bench-quality/amb_eval.py as committed with this
+amendment; nothing tuned after this point):
+- `mem-rfm`: dated per-turn memories, MiniLM, sim x rfm_prior with accesses
+  recorded, filled to hybrid-search's per-question `context_tokens` budget
+  counted in tiktoken cl100k (AMB's unit).
+- `mem-rfm-facts`: the same, plus write-time facts: one haiku call per 4
+  sessions (user turns whole, assistant turns cut to 300 chars) with
+  FACT_PROMPT id `3df4b92cea` (the corrected prompt; its examples occur in no
+  question or gold answer of either dataset). Facts placed first up to 50%
+  of the budget (`--fact-share 0.5`), then ranked turns. Disclosed: the
+  prompt and the 0.5 share were designed on the 199 development questions,
+  where every fact fit (~16% of tokens); on held-out haystacks the same may
+  hold.
+- `hindsight`, `hybrid-search`: AMB's published per-question contexts,
+  replayed.
+- Answers: claude sonnet, AMB's answer prompt. Primary judge: claude haiku,
+  AMB's judge prompts (as in development). Audit judge: claude sonnet
+  re-judges EVERY answer of `mem-rfm-facts` and `hindsight` (both sides, not
+  only disagreements).
+
+**Endpoints.** Paired over the same questions; 95% bootstrap CI (10,000
+resamples, seed 7) and exact McNemar p.
+- **H1 (primary): facts help.** `mem-rfm-facts - mem-rfm` under the primary
+  judge: PASS iff the CI lower bound > 0. Falsifies: write-time facts do not
+  improve answer accuracy over dated raw turns at equal budget.
+- **H2: facts vs Hindsight, audited.** `mem-rfm-facts - hindsight` under the
+  AUDIT judge: report the delta and CI. "Matches Hindsight" may be claimed
+  only if the audit CI lies within [-0.03, +0.03]; "beats" only if its
+  lower bound > 0. If the primary and audit judges disagree in sign, the
+  audit judge's reading is the one reported.
+- **H3 (descriptive, no bar):** per-category deltas for H1, expected
+  positive on multi-session and temporal-reasoning (the mechanism).
+
+**What does not change the verdict.** A failed H1 is published as failed.
+No re-run with another prompt, share or judge on these 301 questions.
