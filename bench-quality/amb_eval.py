@@ -41,6 +41,7 @@ Usage:
 import argparse
 import concurrent.futures as cf
 import datetime as dt
+import functools
 import gzip
 import hashlib
 import json
@@ -151,7 +152,17 @@ def turns_of(doc):
 
 
 def ntok(s):
-    return max(1, len(s) // 4)          # AMB's own context_tokens estimate
+    """Tokens as AMB counts them (tiktoken cl100k_base, its
+    utils.count_tokens), so a budget taken from a published run's
+    context_tokens is spent in the same unit. The first runs used len/4,
+    which gave mem-rfm ~1.26x hybrid-search's context on LoCoMo (RESULTS.md)."""
+    return max(1, len(_ENC().encode(s, disallowed_special=())))
+
+
+@functools.lru_cache(maxsize=1)
+def _ENC():
+    import tiktoken
+    return tiktoken.get_encoding("cl100k_base")
 
 
 def shown(role, text, rank, trunc, full_top):
@@ -182,16 +193,22 @@ For each numbered session below (each has its date), list the facts a future que
 
 Rules:
 - One fact per item. If the user mentions three things, write three facts.
-- Self-contained: name people and things explicitly ("the user's friend Rachel", "the user's Fender Stratocaster"), never "it" or "they".
+- Self-contained: name people and things explicitly ("the user's colleague Priya", "the user's Honda Civic"), never "it" or "they".
 - Absolute dates: convert relative time ("yesterday", "last Saturday", "two weeks ago", "next month") to a calendar date using the session date, and write the date inside the fact.
 - Keep exact numbers, prices, durations and titles verbatim.
-- Record changes as changes: "the user switched from X to Y", "the user no longer has Z", "the user's pre-approval rose to $400,000".
+- Record changes as changes: "the user switched from X to Y", "the user no longer has Z", "the user's rent rose to $1,850".
 - Include what the assistant said only when the user adopted it or it answered a personal question.
 - Skip greetings, generic advice, and anything not about the user. A session with nothing about the user yields no facts.
 
 Return JSON: {{"facts": [{{"s": <session number>, "fact": "<one sentence>"}}]}}
 
 {sessions}"""
+# The first version of this prompt used two gold answers from the
+# LongMemEval sample as its examples, written after reading the failures
+# (RESULTS.md, adversarial review). These examples appear in no question or
+# gold answer of either dataset. Extracted facts are cached under a hash of
+# the prompt, so changing it can never reuse facts the old one produced.
+FACT_PROMPT_ID = hashlib.sha1(FACT_PROMPT.encode()).hexdigest()[:10]
 FACT_BATCH = 4
 FACT_ASSISTANT_CHARS = 300
 
@@ -250,7 +267,7 @@ def extract_facts(docs, out, model, jobs):
                 by[k].append(fact)
         return {"by": by}
 
-    items = [("|".join(k for k, _ in b), b) for b in batches]
+    items = [(FACT_PROMPT_ID + ":" + "|".join(k for k, _ in b), b) for b in batches]
     cache = run_cached(path, jobs, one, items)
     facts = {}
     for rec in cache.values():
@@ -301,8 +318,10 @@ def build_rfm_contexts(queries, docs, wanted, budgets, out, arm="mem-rfm",
     reporting the old contexts."""
     path = os.path.join(out, f"contexts-{arm}.json")
     ppath = os.path.join(out, f"params-{arm}.json")
-    params = {"trunc": trunc, "full_top": full_top, "facts": facts is not None,
-              "fact_share": fact_share, "embedder": common.EMBEDDER_ID}
+    params = {"trunc": trunc, "full_top": full_top,
+              "facts": FACT_PROMPT_ID if facts is not None else False,
+              "fact_share": fact_share, "embedder": common.EMBEDDER_ID,
+              "tokens": "cl100k"}
     ctx = json.load(open(path)) if os.path.exists(path) else {}
     stored = json.load(open(ppath)) if os.path.exists(ppath) else None
     if ctx and stored != params:

@@ -2669,6 +2669,12 @@ the model with headroom (fable) once its usage limit clears.
 
 ## AMB head-to-head vs Hindsight (2026-09-27) — EXPLORATORY: a tie on LoCoMo, −3.0 (ns) on LongMemEval at half the context
 
+> **Corrected 2026-09-30** by an adversarial review — see "AMB
+> head-to-head: adversarial review" below. The LoCoMo tie reflects dates
+> and near-full context, not ranking; the LongMemEval comparison is biased
+> against Hindsight by the Claude judge; and the write-time facts result
+> stated in commit 0f8f330 ("ties Hindsight") is withdrawn.
+
 Not pre-registered under PROTOCOL.md; reported as exploratory. Harness:
 `amb_eval.py`, against Vectorize's own benchmark
 ([AMB](https://github.com/vectorize-io/agent-memory-benchmark)), which
@@ -2686,7 +2692,8 @@ so the only difference between arms is the context.
   key was available; AMB's leaderboard uses Gemini 3.1 Pro / 2.5
   Flash-Lite). The JSON think-first slot is named `evidence`, not
   `reasoning`, because the CLI refuses the latter.
-- n = 200 per dataset, stratified by question category (seed 7).
+- n = 200 on LoCoMo and 199 on LongMemEval (proportional rounding),
+  stratified by question category (seed 7).
   Bootstrap 95% CIs; paired deltas on the same questions.
 
 | LoCoMo10 (n=200) | accuracy | context tokens | AMB published, same questions |
@@ -2707,12 +2714,13 @@ deficit at half the context. mem-rfm − hybrid-search is +0.130
 [+0.075, +0.185] and +0.111 [+0.050, +0.171].
 
 **Calibration.** On LoCoMo the replay reproduces AMB's published
-accuracies within 1 point for both baselines, so the Claude answer/judge
-pair is not what moves the numbers. On LongMemEval it is looser
-(Hindsight 0.935 against 0.980 published): AMB's Hindsight run handed the
-answer model the provider's raw recall JSON, and the replay has only the
-rendered context string. Hindsight's true margin there may be larger than
-3 points.
+accuracies within 1 point for both baselines in aggregate, though per
+question our verdicts disagree with the published ones on 8-14% of
+questions and the errors happen to cancel. On LongMemEval it is looser
+(Hindsight 0.935 against 0.980 published); the cause is mainly the Claude
+judge (see the adversarial review), not the rendered context string, since
+AMB's raw JSON was used for both baselines on both datasets. Hindsight's
+true margin there is probably larger than 3 points.
 
 **Where the separation comes from: dates.** Temporal questions: mem-rfm
 0.881 / Hindsight 0.881 / hybrid-search 0.500 on LoCoMo; 0.868 / 0.925 /
@@ -2764,3 +2772,73 @@ the 53 multi-session questions. Neither truncation variant ships.
 Per-question contexts, answers and judgments are regenerable and not
 committed (they quote LoCoMo, CC BY-NC); `results-amb/*/report.json`
 holds the metrics.
+
+## AMB head-to-head: adversarial review (2026-09-30) — the facts "tie" is withdrawn; the LoCoMo and LongMemEval readings are corrected
+
+Three independent reviewers attacked the branch's code and claims; each
+finding below was reproduced from the committed harness and the local
+(gitignored) per-question artifacts, and the claim-changing ones were
+re-checked by hand.
+
+**1. Write-time facts: withdrawn.** Commit 0f8f330 reported facts50 at
+0.935 on the 199 LongMemEval questions, equal to Hindsight. It does not
+stand:
+- *Contaminated prompt.* The extraction prompt's two examples ("the user's
+  pre-approval rose to $400,000", "the user's Fender Stratocaster") are the
+  gold answers of two sampled questions (852ce960, gpt4_194be4b3), written
+  after reading the failure list that contained both. Both questions flip
+  from wrong under mem-rfm to right under both facts arms; scoring them as
+  mem-rfm did gives facts50 0.925. The examples are replaced by ones that
+  appear in no question or gold answer of either dataset, and facts are now
+  cached under a hash of the prompt so re-extraction cannot reuse them.
+- *Not what was described.* "Half the budget reserved for facts" put every
+  extracted fact of the haystack into the context in 199 of 199 questions,
+  about 16% of the tokens: a full fact summary placed first, then ranked
+  turns. The sim x rfm_prior ranking played no part for facts.
+- *Judge.* facts50 and Hindsight split 7-7 on disagreements; AMB's
+  published run had Hindsight right on all 7 of facts50's wins, and at
+  least 4 of them are judge errors — 08f4fc43's answer is byte-identical
+  for Hindsight (judged wrong) and facts50 (judged right).
+- *Forking paths.* Five mem-rfm arms were answered end to end on the same
+  199 questions and the prompt was written after reading their failures;
+  facts50 vs mem-rfm is 15 vs 9 discordant (McNemar p = 0.31) before any
+  correction. Any retest belongs on the 301 held-out questions.
+
+**2. LongMemEval: the Claude judge under-credits Hindsight.** Hindsight's
+answers hedge more and run longer, and the haiku judge applied to AMB's
+"a subset of the answer is wrong" prompt penalizes that. About 6 of
+mem-rfm's 9 wins over Hindsight are correct but hedged Hindsight answers
+marked wrong. The -3.0 (ns) gap is best read as "Hindsight ahead by more
+than 3 points". AMB's published 0.980 carries an unverified confound of its
+own: Hindsight's raw recall JSON includes document ids, and LongMemEval
+evidence-session ids contain `_answer_`.
+
+**3. LoCoMo: the tie is dates plus near-full context, not ranking.** At the
+same per-question budget, the share of gold-session turns in context is
+0.932 for mem-rfm, 0.901 for random dated turns and 0.895 for the last N
+turns. And the budget was spent in len/4 "tokens" while AMB counts
+tiktoken cl100k, which gave mem-rfm a median 1.26x hybrid-search's context
+on LoCoMo (0.90x on LongMemEval). The +13 over hybrid-search is dates and
+more of the conversation. `ntok` now counts as AMB does. On LongMemEval,
+where the budget is a fifth of the haystack, retrieval does matter: 0.823
+gold-turn coverage for mem-rfm against 0.183 random and 0.223 last-N.
+
+**4. Smaller.** On LoCoMo the "usage" the prior learned from was the
+benchmark's own other questions (every question of a conversation is asked
+in order and records accesses); on LongMemEval each haystack has one
+question, so none. The bootstrap resamples questions without clustering by
+conversation, so LoCoMo's per-arm CIs are somewhat narrow.
+
+**What held.** Every number in the tables above matches the reports;
+"half the context" on LongMemEval holds per question (median 0.51); and
+the Hindsight source claims hold — no usage or outcome term in recall,
+reflect, consolidation or mental models, and access_count was never
+written before it was dropped.
+
+**Security findings from the same review** (fixed in the integration, see
+commit history): forged exposures from pasted text could write outcomes to
+any memory id; memory_list/get/export echoes and same-session paraphrases
+released memories from quarantine; sweep-written content was unsanitized;
+the sweep logged a rejected command, secrets included, even with
+RFM_LOG=0; and the new secret scanner had gaps and code false positives.
+
