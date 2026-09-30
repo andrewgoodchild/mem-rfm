@@ -462,12 +462,30 @@ def boot(d, n=10_000, seed=7):
     return d.mean(), np.percentile(m, 2.5), np.percentile(m, 97.5)
 
 
+def mcnemar(d):
+    """Exact two-sided McNemar test on paired 0/1 differences: the
+    discordant counts and the binomial p-value."""
+    from math import comb
+    b, c = sum(1 for v in d if v > 0), sum(1 for v in d if v < 0)
+    n = b + c
+    p = 1.0 if n == 0 else min(1.0, 2 * sum(comb(n, k) for k in range(min(b, c) + 1)) / 2 ** n)
+    return {"x_only": b, "y_only": c, "p": round(p, 4)}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", choices=list(SPLIT), required=True)
     ap.add_argument("--n", type=int, default=200)
+    ap.add_argument("--heldout", action="store_true",
+                    help="evaluate the questions NOT in the --n development "
+                         "sample (the untouched remainder)")
+    ap.add_argument("--audit-arms", default="",
+                    help="comma-separated arms whose answers the audit stage "
+                         "re-judges with --audit-model (judge-bias check)")
+    ap.add_argument("--audit-model", default="sonnet")
     ap.add_argument("--stage", default="all",
-                    choices=["extract", "retrieve", "answer", "judge", "report", "all"])
+                    choices=["extract", "retrieve", "answer", "judge", "audit",
+                             "report", "all"])
     ap.add_argument("--answer-model", default="sonnet")
     ap.add_argument("--judge-model", default="haiku")
     ap.add_argument("--jobs", type=int, default=6)
@@ -497,7 +515,8 @@ def main():
     queries = load_gz(os.path.join(base, "queries.json.gz"))
     pub = {arm: published(a.dataset, arm) for arm in BASELINES}
     queries = [q for q in queries if all(q["id"] in pub[arm] for arm in pub)]
-    wanted = set(sample(queries, a.n))
+    dev = set(sample(queries, a.n))
+    wanted = {q["id"] for q in queries} - dev if a.heldout else dev
     qmap = {q["id"]: q for q in queries}
     print(f"{a.dataset}: {len(wanted)} questions "
           f"(of {len(queries)} with published contexts for both baselines)")
@@ -540,8 +559,7 @@ def main():
 
     answers = load_jsonl(ans_path)
 
-    jud_path = os.path.join(out, "judgments.jsonl")
-    if a.stage in ("judge", "all"):
+    def judge_all(model, path, keys):
         def judge(key):
             arm, qid = key.split("|", 1)
             q = qmap[qid]
@@ -550,11 +568,26 @@ def main():
             else:
                 fn = ds.build_judge_prompt
             v = claude_json(fn(q["query"], q["gold_answers"], str(answers[key]["answer"])),
-                            a.judge_model, ["reason", "correct"])
+                            model, ["reason", "correct"])
             if v is not None:
                 v["correct"] = v["correct"] in (True, "true", "True", "yes")
             return v
-        run_cached(jud_path, a.jobs, judge, [(k, k) for k in sorted(answers)])
+        run_cached(path, a.jobs, judge, [(k, k) for k in keys])
+
+    jud_path = os.path.join(out, "judgments.jsonl")
+    if a.stage in ("judge", "all"):
+        judge_all(a.judge_model, jud_path, sorted(answers))
+
+    # A second, stronger judge over whole arms (both sides of a comparison,
+    # every answer, not only disagreements): the development run found the
+    # haiku judge marking correct-but-hedged answers wrong, which cost
+    # Hindsight more than it cost us.
+    audit_arms = [x for x in a.audit_arms.split(",") if x]
+    audit_path = os.path.join(out, f"judgments-audit-{a.audit_model}.jsonl")
+    if audit_arms and a.stage in ("audit", "all"):
+        judge_all(a.audit_model, audit_path,
+                  sorted(k for k in answers if k.split("|", 1)[0] in audit_arms
+                         and k.split("|", 1)[1] in wanted))
 
     if a.stage in ("report", "all"):
         jud = {k: bool(r["correct"]) for k, r in load_jsonl(jud_path).items()}
@@ -576,9 +609,22 @@ def main():
         pairs = [(x, y) for x in arms if x not in BASELINES for y in BASELINES]
         pairs += [("hybrid-search", "hindsight")]
         pairs += [(x, "mem-rfm") for x in arms if x not in BASELINES + ["mem-rfm"]]
+        report["mcnemar"] = {}
         for x, y in pairs:
             d = [int(jud[f"{x}|{q}"]) - int(jud[f"{y}|{q}"]) for q in qids]
             report["paired"][f"{x} - {y}"] = [round(v, 4) for v in boot(d)]
+            report["mcnemar"][f"{x} - {y}"] = mcnemar(d)
+        aud = {k: bool(r["correct"]) for k, r in load_jsonl(audit_path).items()}
+        if audit_arms:
+            aq = [q for q in qids if all(f"{arm}|{q}" in aud for arm in audit_arms)]
+            report["audit"] = {"model": a.audit_model, "n": len(aq), "arms": {
+                arm: round(float(np.mean([aud[f"{arm}|{q}"] for q in aq])), 4)
+                for arm in audit_arms}, "paired": {}, "mcnemar": {}}
+            for i, x in enumerate(audit_arms):
+                for y in audit_arms[i + 1:]:
+                    d = [int(aud[f"{x}|{q}"]) - int(aud[f"{y}|{q}"]) for q in aq]
+                    report["audit"]["paired"][f"{x} - {y}"] = [round(v, 4) for v in boot(d)]
+                    report["audit"]["mcnemar"][f"{x} - {y}"] = mcnemar(d)
         cats = defaultdict(list)
         for q in qids:
             cats[category(qmap[q])].append(q)

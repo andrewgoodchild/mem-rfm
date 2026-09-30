@@ -25,7 +25,7 @@ integrations/claude-code/ab/ab_sessions.jsonl
 bench-quality/data/terminalbench/
 # AMB replay: contexts/answers/judgments quote dataset text (LoCoMo is
 # CC BY-NC) and are regenerable; only the metrics report is committed.
-bench-quality/results-amb/*/contexts-*.json
-bench-quality/results-amb/*/answers.jsonl
-bench-quality/results-amb/*/judgments.jsonl
-bench-quality/results-amb/*/facts.jsonl
+bench-quality/results-amb*/*/contexts-*.json
+bench-quality/results-amb*/*/answers.jsonl
+bench-quality/results-amb*/*/judgments*.jsonl
+bench-quality/results-amb*/*/facts.jsonl
