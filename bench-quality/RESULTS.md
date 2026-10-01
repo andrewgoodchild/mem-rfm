@@ -2842,3 +2842,52 @@ released memories from quarantine; sweep-written content was unsanitized;
 the sweep logged a rejected command, secrets included, even with
 RFM_LOG=0; and the new secret scanner had gaps and code false positives.
 
+
+## Amendment 18 (2026-10-01): write-time facts on held-out LongMemEval — H1 FAILED; mem-rfm ties Hindsight without them
+
+Registered in PROTOCOL.md (commit fbe3bf1) before any of the 301 held-out
+questions was answered or judged; run exactly as frozen.
+
+| held-out LongMemEval (n=301) | accuracy (haiku judge) | context tokens |
+|---|---|---|
+| Hindsight | 0.904 [0.870, 0.937] | 43.7k |
+| **mem-rfm** | **0.904** [0.870, 0.937] | 23.5k |
+| mem-rfm-facts | 0.900 [0.867, 0.934] | 24.3k |
+| hybrid-search | 0.781 [0.734, 0.827] | 23.2k |
+
+**H1 (primary), facts help: FAIL.** mem-rfm-facts - mem-rfm = -0.003
+[-0.033, +0.027]; 11 questions only facts got right, 12 only plain
+mem-rfm did (McNemar p = 1.0). Write-time facts, with a clean prompt and
+on questions nobody had looked at, do not improve accuracy over dated raw
+turns at equal budget. The development result (+3.0) was the leaked
+examples, the variant search and the judge.
+
+**H2, facts vs Hindsight under the sonnet audit judge: within the
+registered band.** Both arms 0.957 under sonnet (it is more lenient than
+haiku: Hindsight 0.904 -> 0.957); mem-rfm-facts - hindsight = 0.000
+[-0.023, +0.023], 6 vs 6 discordant. Read with H1: the match is not the
+facts' doing. Plain mem-rfm already ties Hindsight under the primary judge
+(0.000 [-0.030, +0.030], 11 vs 11), at 54% of its context and with no LLM
+at write or rank time. (Plain mem-rfm was not in the registered audit.)
+
+**H3 (descriptive), per category, facts - plain:** temporal-reasoning
++0.050 (0.975 vs 0.925), multi-session 0.000, knowledge-update -0.021,
+single-session-user -0.024, preference -0.167 (n = 18), assistant 0.000.
+Absolute dates help where the question is about dates and cost a little
+elsewhere: facts displace raw turns from a fixed budget.
+
+**What this changes.** The development set's "-3.0 behind Hindsight" did
+not replicate: on 301 untouched questions mem-rfm and Hindsight are level.
+The gap there was within noise and the haiku judge's bias. Write-time fact
+extraction is not worth its cost for this workload; a temporal-only use
+(dating relative references at write time) is the one signal, and is not
+claimed — it is a per-category observation, not a registered endpoint.
+
+**Execution note (disclosed).** An account usage limit interrupted the
+run: 318 of 3,576 extraction batches and 1,012 of 1,204 answers failed
+silently. Recovery changed no frozen setting: the missing batches were
+re-extracted, the facts arm's contexts and its few answers built on the
+incomplete facts were deleted and rebuilt, and answering, judging and the
+audit were re-run until nothing remained (all 1,204 answers, 1,204
+judgments, 602 audit judgments). Final extraction: 47,867 facts over all
+14,301 held-out sessions. Run logs: results-amb-heldout/run.log, run2.log.
