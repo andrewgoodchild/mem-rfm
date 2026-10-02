@@ -1,0 +1,109 @@
+preflight ok: 21 pool tasks x 2 arms = 42 sessions, model claude-fable-5, cli 2.1.246 (Claude Code)
+CLAUDE.md: removed CLAUDE.md block
+=== sphinx-doc__sphinx-7440 [control] (<15 min fix) ===
+    resolved=True wall=348s 1 passed, 5 warnings in 0.21s
+=== sphinx-doc__sphinx-7440 [sweep] (<15 min fix) ===
+    resolved=True wall=261s 1 passed, 5 warnings in 0.20s
+    sweep done: store has 1 memories
+=== sphinx-doc__sphinx-7748 [control] (15 min - 1 hour) ===
+    resolved=False wall=228s 2 failed, 7 warnings in 0.28s
+=== sphinx-doc__sphinx-7748 [sweep] (15 min - 1 hour) ===
+    resolved=True wall=450s 2 passed, 7 warnings in 0.21s
+    sweep done: store has 1 memories
+=== sphinx-doc__sphinx-7985 [control] (15 min - 1 hour) ===
+    resolved=True wall=128s 2 passed, 3 warnings in 2.08s
+=== sphinx-doc__sphinx-7985 [sweep] (15 min - 1 hour) ===
+    resolved=True wall=144s 2 passed, 3 warnings in 2.04s
+    sweep done: store has 1 memories
+=== sphinx-doc__sphinx-8035 [control] (15 min - 1 hour) ===
+    resolved=True wall=223s 1 passed, 5 warnings in 0.15s
+=== sphinx-doc__sphinx-8035 [sweep] (15 min - 1 hour) ===
+preflight ok: 21 pool tasks x 2 arms = 42 sessions, model claude-fable-5, cli 2.1.246 (Claude Code)
+resuming: 7 session(s) recorded
+CLAUDE.md: removed CLAUDE.md block
+=== sphinx-doc__sphinx-8035 [sweep] (15 min - 1 hour) ===
+    resolved=True wall=305s 1 passed, 5 warnings in 0.17s
+    sweep done: store has 2 memories
+=== sphinx-doc__sphinx-8120 [control] (15 min - 1 hour) ===
+    resolved=True wall=139s 1 passed, 7 warnings in 0.34s
+=== sphinx-doc__sphinx-8120 [sweep] (15 min - 1 hour) ===
+    resolved=True wall=86s 1 passed, 7 warnings in 0.60s
+    sweep done: store has 2 memories
+=== sphinx-doc__sphinx-8269 [control] (<15 min fix) ===
+    resolved=True wall=53s 1 passed, 3 warnings in 0.19s
+=== sphinx-doc__sphinx-8269 [sweep] (<15 min fix) ===
+    resolved=True wall=72s 1 passed, 3 warnings in 0.21s
+    sweep done: store has 2 memories
+=== sphinx-doc__sphinx-8459 [control] (<15 min fix) ===
+    resolved=True wall=137s 1 passed, 3 warnings in 0.27s
+=== sphinx-doc__sphinx-8459 [sweep] (<15 min fix) ===
+    resolved=True wall=145s 1 passed, 3 warnings in 0.27s
+    sweep done: store has 2 memories
+=== sphinx-doc__sphinx-8475 [control] (<15 min fix) ===
+    resolved=True wall=75s 1 passed, 3 warnings in 0.26s
+=== sphinx-doc__sphinx-8475 [sweep] (<15 min fix) ===
+    resolved=True wall=69s 1 passed, 3 warnings in 0.27s
+    sweep done: store has 2 memories
+=== sphinx-doc__sphinx-8548 [control] (1-4 hours) ===
+    resolved=True wall=417s 1 passed, 5 warnings in 0.20s
+=== sphinx-doc__sphinx-8548 [sweep] (1-4 hours) ===
+    resolved=True wall=432s 1 passed, 5 warnings in 0.20s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-8551 [control] (15 min - 1 hour) ===
+    resolved=True wall=123s 1 passed, 5 warnings in 0.25s
+=== sphinx-doc__sphinx-8551 [sweep] (15 min - 1 hour) ===
+    resolved=True wall=110s 1 passed, 5 warnings in 0.26s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-8593 [control] (15 min - 1 hour) ===
+    resolved=True wall=88s 2 passed, 7 warnings in 0.19s
+=== sphinx-doc__sphinx-8593 [sweep] (15 min - 1 hour) ===
+    resolved=True wall=218s 2 passed, 7 warnings in 0.18s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-8595 [control] (<15 min fix) ===
+    resolved=True wall=64s 1 passed, 5 warnings in 0.18s
+=== sphinx-doc__sphinx-8595 [sweep] (<15 min fix) ===
+    resolved=True wall=90s 1 passed, 5 warnings in 0.19s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-8638 [control] (15 min - 1 hour) ===
+    resolved=True wall=222s 1 passed, 6 warnings in 0.28s
+=== sphinx-doc__sphinx-8638 [sweep] (15 min - 1 hour) ===
+    resolved=True wall=188s 1 passed, 6 warnings in 0.27s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-9230 [control] (<15 min fix) ===
+preflight ok: 21 pool tasks x 2 arms = 42 sessions, model claude-fable-5, cli 2.1.246 (Claude Code)
+resuming: 26 session(s) recorded
+CLAUDE.md: removed CLAUDE.md block
+=== sphinx-doc__sphinx-9230 [control] (<15 min fix) ===
+    resolved=True wall=54s 1 passed, 1 warning in 0.26s
+=== sphinx-doc__sphinx-9230 [sweep] (<15 min fix) ===
+    resolved=True wall=197s 1 passed, 1 warning in 0.27s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-9258 [control] (<15 min fix) ===
+    resolved=True wall=70s 1 passed, 1 warning in 0.26s
+=== sphinx-doc__sphinx-9258 [sweep] (<15 min fix) ===
+    resolved=True wall=158s 1 passed, 1 warning in 0.27s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-9461 [control] (1-4 hours) ===
+    resolved=True wall=349s 3 passed, 1 warning in 0.36s
+=== sphinx-doc__sphinx-9461 [sweep] (1-4 hours) ===
+    resolved=True wall=387s 3 passed, 1 warning in 0.34s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-9591 [control] (<15 min fix) ===
+    resolved=True wall=133s 1 passed, 1 warning in 0.28s
+=== sphinx-doc__sphinx-9591 [sweep] (<15 min fix) ===
+    resolved=True wall=133s 1 passed, 1 warning in 0.28s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-9602 [control] (15 min - 1 hour) ===
+    resolved=False wall=145s 1 failed, 1 warning in 0.32s
+=== sphinx-doc__sphinx-9602 [sweep] (15 min - 1 hour) ===
+    resolved=False wall=252s 1 failed, 1 warning in 0.30s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-9673 [control] (15 min - 1 hour) ===
+    resolved=True wall=55s 1 passed, 1 warning in 0.25s
+=== sphinx-doc__sphinx-9673 [sweep] (15 min - 1 hour) ===
+    resolved=True wall=133s 1 passed, 1 warning in 0.29s
+    sweep done: store has 3 memories
+=== sphinx-doc__sphinx-9698 [control] (<15 min fix) ===
+    resolved=True wall=62s 1 passed, 1 warning in 0.28s
+=== sphinx-doc__sphinx-9698 [sweep] (<15 min fix) ===
+    resolved=True wall=67s 1 passed, 1 warning in 0.28s

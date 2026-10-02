@@ -1,0 +1,13 @@
+sweep: 50 transcript(s), db /Users/andrewgoodchild/code/mem-rfm/bench-quality/live-ab/track18/rfm-memory.db
+  5/50
+  10/50
+  15/50
+  20/50
+  25/50
+  30/50
+  35/50
+  40/50
+  45/50
+  50/50
+sweep done: store has 65 memories
+preflight ok: 50 transcripts (30 rfm-arm), store /Users/andrewgoodchild/code/mem-rfm/bench-quality/live-ab/track18/rfm-memory.db
