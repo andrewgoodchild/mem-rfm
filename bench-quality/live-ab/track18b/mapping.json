@@ -1,0 +1,252 @@
+{
+  "session-44433866e79b.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7454",
+    "arm": "control"
+  },
+  "session-5ec844ed25ac.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7454",
+    "arm": "rfm"
+  },
+  "session-7127b3dcbeed.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7462",
+    "arm": "control"
+  },
+  "session-83781fe52cd6.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7462",
+    "arm": "rfm"
+  },
+  "session-078ca6b63720.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7757",
+    "arm": "control"
+  },
+  "session-9fe517dd1cc4.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7757",
+    "arm": "rfm"
+  },
+  "session-f5f133219460.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7889",
+    "arm": "control"
+  },
+  "session-fd806eeb531e.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7889",
+    "arm": "rfm"
+  },
+  "session-9013e491bac5.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7910",
+    "arm": "control"
+  },
+  "session-338afcc11906.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-7910",
+    "arm": "rfm"
+  },
+  "session-3a1ed785c384.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-8056",
+    "arm": "control"
+  },
+  "session-c5ae830f0ebc.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-8056",
+    "arm": "rfm"
+  },
+  "session-580b0968203c.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-9281",
+    "arm": "control"
+  },
+  "session-f221bb918b72.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-9281",
+    "arm": "rfm"
+  },
+  "session-0d8d3a4641e5.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-9320",
+    "arm": "control"
+  },
+  "session-bc62a051a608.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-9320",
+    "arm": "rfm"
+  },
+  "session-4c6dd5ff777a.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-9367",
+    "arm": "control"
+  },
+  "session-8d150daac1a1.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-9367",
+    "arm": "rfm"
+  },
+  "session-635ad8f81916.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-9658",
+    "arm": "control"
+  },
+  "session-6190e6386256.jsonl": {
+    "run": "pilot2",
+    "task": "sphinx-doc__sphinx-9658",
+    "arm": "rfm"
+  },
+  "session-c916615d5753.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-7454",
+    "arm": "rfm"
+  },
+  "session-cde5629cda84.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-7462",
+    "arm": "rfm"
+  },
+  "session-ccc75d3f7478.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-7757",
+    "arm": "rfm"
+  },
+  "session-1ab761ad5d8b.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-7889",
+    "arm": "rfm"
+  },
+  "session-235469a6178a.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-7910",
+    "arm": "rfm"
+  },
+  "session-9b5c43455bd5.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-8056",
+    "arm": "rfm"
+  },
+  "session-aa84d3751576.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-9281",
+    "arm": "rfm"
+  },
+  "session-6032691e1da5.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-9320",
+    "arm": "rfm"
+  },
+  "session-b28477ba1125.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-9367",
+    "arm": "rfm"
+  },
+  "session-0e4240ad5d86.jsonl": {
+    "run": "pilot3",
+    "task": "sphinx-doc__sphinx-9658",
+    "arm": "rfm"
+  },
+  "session-0212e36847e7.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7454",
+    "arm": "control"
+  },
+  "session-b7df1803a275.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7454",
+    "arm": "rfm"
+  },
+  "session-2d9340895be7.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7462",
+    "arm": "control"
+  },
+  "session-6242171ba6fd.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7462",
+    "arm": "rfm"
+  },
+  "session-536629705631.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7757",
+    "arm": "control"
+  },
+  "session-21048f8daa7b.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7757",
+    "arm": "rfm"
+  },
+  "session-cab1d249e162.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7889",
+    "arm": "control"
+  },
+  "session-4afe55d81d58.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7889",
+    "arm": "rfm"
+  },
+  "session-2cecbf764933.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7910",
+    "arm": "control"
+  },
+  "session-193e7ed6ea38.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-7910",
+    "arm": "rfm"
+  },
+  "session-1a270152a840.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-8056",
+    "arm": "control"
+  },
+  "session-4a9a4317e3df.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-8056",
+    "arm": "rfm"
+  },
+  "session-7d2e2e4fffe7.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-9281",
+    "arm": "control"
+  },
+  "session-2d5b956d0879.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-9281",
+    "arm": "rfm"
+  },
+  "session-4bf28da5af63.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-9320",
+    "arm": "control"
+  },
+  "session-ae7882b3b3e6.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-9320",
+    "arm": "rfm"
+  },
+  "session-feefc14e27ac.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-9367",
+    "arm": "control"
+  },
+  "session-8c244d1a3df0.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-9367",
+    "arm": "rfm"
+  },
+  "session-37de9e98914f.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-9658",
+    "arm": "control"
+  },
+  "session-bbd6311d575a.jsonl": {
+    "run": "pilot4",
+    "task": "sphinx-doc__sphinx-9658",
+    "arm": "rfm"
+  }
+}

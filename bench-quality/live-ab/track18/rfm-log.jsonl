@@ -1,0 +1,78 @@
+{"t": 1787868870.246, "op": "sweep_provenance_drop", "action": "filter sphinxcontrib extensions from builtin_extensions; use classic theme", "src": "session-44433866e79b.jsonl"}
+{"t": 1787868870.246, "op": "sweep_admit", "id": 1, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-44433866e79b.jsonl"}
+{"t": 1787868870.246, "op": "sweep_admit", "id": 2, "condition": "intersphinx-reftype-mismatch", "action_provenance": "none", "src": "session-44433866e79b.jsonl"}
+{"t": 1787868929.456, "op": "sweep_admit", "id": 3, "condition": "versionrequirementerror", "action_provenance": "quoted", "src": "session-5ec844ed25ac.jsonl"}
+{"t": 1787868989.21, "op": "sweep_admit", "id": 4, "condition": "era-pinned-venv", "action_provenance": "none", "src": "session-078ca6b63720.jsonl"}
+{"t": 1787869026.867, "op": "sweep_admit", "id": 5, "condition": "era-pinned-venv", "action_provenance": "none", "src": "session-9fe517dd1cc4.jsonl"}
+{"t": 1787869026.867, "op": "sweep_admit", "id": 6, "condition": "python-ast-alignment", "action_provenance": "none", "src": "session-9fe517dd1cc4.jsonl"}
+{"t": 1787869060.443, "op": "sweep_admit", "id": 7, "condition": "era-pinned-venv", "action_provenance": "none", "src": "session-f5f133219460.jsonl"}
+{"t": 1787869093.627, "op": "sweep_admit", "id": 8, "condition": "importerror", "action_provenance": "none", "src": "session-fd806eeb531e.jsonl"}
+{"t": 1787869121.205, "op": "sweep_provenance_drop", "action": "import inspect; original = inspect.unwrap(decorated_func)", "src": "session-9013e491bac5.jsonl"}
+{"t": 1787869121.206, "op": "sweep_admit", "id": 9, "condition": "decorator-wrapped-function-context-loss", "action_provenance": "none", "src": "session-9013e491bac5.jsonl"}
+{"t": 1787869121.206, "op": "sweep_admit", "id": 10, "condition": "cross-module-decorator-globals-mismatch", "action_provenance": "none", "src": "session-9013e491bac5.jsonl"}
+{"t": 1787869121.206, "op": "sweep_provenance_drop", "action": "inspect.unwrap(obj).__globals__[symbol_name] instead of obj.__globals__[symbol_n", "src": "session-9013e491bac5.jsonl"}
+{"t": 1787869121.206, "op": "sweep_admit", "id": 11, "condition": "decorator-wrapped-function-context-loss", "action_provenance": "none", "src": "session-9013e491bac5.jsonl"}
+{"t": 1787869147.878, "op": "sweep_provenance_drop", "action": "from sphinx.util import inspect; use inspect.unwrap(obj)", "src": "session-338afcc11906.jsonl"}
+{"t": 1787869147.88, "op": "sweep_admit", "id": 12, "condition": "tooling-best-practice", "action_provenance": "none", "src": "session-338afcc11906.jsonl"}
+{"t": 1787869147.88, "op": "sweep_admit", "id": 13, "condition": "test-methodology", "action_provenance": "none", "src": "session-338afcc11906.jsonl"}
+{"t": 1787869147.88, "op": "sweep_admit", "id": 14, "condition": "environment-quirk", "action_provenance": "none", "src": "session-338afcc11906.jsonl"}
+{"t": 1787869200.411, "op": "sweep_admit", "id": 15, "condition": "versionrequirementerror", "action_provenance": "quoted", "src": "session-580b0968203c.jsonl"}
+{"t": 1787869215.542, "op": "sweep_admit", "id": 16, "condition": "too-new-packages", "action_provenance": "none", "src": "session-f221bb918b72.jsonl"}
+{"t": 1787869225.68, "op": "sweep_admit", "id": 17, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-0d8d3a4641e5.jsonl"}
+{"t": 1787869252.16, "op": "sweep_admit", "id": 18, "condition": "logic-error in prompt default handling", "action_provenance": "none", "src": "session-bc62a051a608.jsonl"}
+{"t": 1787869252.161, "op": "sweep_provenance_drop", "action": "use known PYTHONPATH stubs when running test_quickstart_and_build", "src": "session-bc62a051a608.jsonl"}
+{"t": 1787869252.161, "op": "sweep_admit", "id": 19, "condition": "importerror", "action_provenance": "none", "src": "session-bc62a051a608.jsonl"}
+{"t": 1787869252.161, "op": "sweep_admit", "id": 20, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-bc62a051a608.jsonl"}
+{"t": 1787869276.187, "op": "sweep_admit", "id": 21, "condition": "testing-convention", "action_provenance": "none", "src": "session-4c6dd5ff777a.jsonl"}
+{"t": 1787869324.681, "op": "sweep_admit", "id": 22, "condition": "importerror", "action_provenance": "none", "src": "session-8d150daac1a1.jsonl"}
+{"t": 1787869324.682, "op": "sweep_admit", "id": 23, "condition": "not-implemented", "action_provenance": "none", "src": "session-8d150daac1a1.jsonl"}
+{"t": 1787869376.194, "op": "sweep_admit", "id": 24, "condition": "too-new-packages", "action_provenance": "quoted", "src": "session-6190e6386256.jsonl"}
+{"t": 1787869376.195, "op": "sweep_admit", "id": 25, "condition": "era-pinned-venv", "action_provenance": "none", "src": "session-6190e6386256.jsonl"}
+{"t": 1787869397.517, "op": "sweep_admit", "id": 26, "condition": "era-pinned-venv", "action_provenance": "none", "src": "session-c916615d5753.jsonl"}
+{"t": 1787869439.247, "op": "sweep_admit", "id": 27, "condition": "too-new-packages", "action_provenance": "none", "src": "session-cde5629cda84.jsonl"}
+{"t": 1787869439.248, "op": "sweep_admit", "id": 28, "condition": "edge-case-pattern", "action_provenance": "none", "src": "session-cde5629cda84.jsonl"}
+{"t": 1787869462.694, "op": "sweep_admit", "id": 29, "condition": "too-new-packages", "action_provenance": "none", "src": "session-ccc75d3f7478.jsonl"}
+{"t": 1787869462.695, "op": "sweep_admit", "id": 30, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-ccc75d3f7478.jsonl"}
+{"t": 1787869484.742, "op": "sweep_provenance_drop", "action": "str(key) coercion in __getitem__ before string concatenation or type() calls", "src": "session-1ab761ad5d8b.jsonl"}
+{"t": 1787869484.743, "op": "sweep_admit", "id": 31, "condition": "typeerror", "action_provenance": "none", "src": "session-1ab761ad5d8b.jsonl"}
+{"t": 1787869541.951, "op": "sweep_admit", "id": 32, "condition": "too-new-packages", "action_provenance": "none", "src": "session-aa84d3751576.jsonl"}
+{"t": 1787869598.487, "op": "sweep_admit", "id": 33, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-0212e36847e7.jsonl"}
+{"t": 1787869631.806, "op": "sweep_admit", "id": 34, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-b7df1803a275.jsonl"}
+{"t": 1787869631.806, "op": "sweep_admit", "id": 35, "condition": "no such file or directory", "action_provenance": "quoted", "src": "session-b7df1803a275.jsonl"}
+{"t": 1787869631.807, "op": "sweep_admit", "id": 36, "condition": "era-pinned-venv", "action_provenance": "none", "src": "session-b7df1803a275.jsonl"}
+{"t": 1787869645.995, "op": "sweep_admit", "id": 37, "condition": "versionrequirementerror (Python 3.9+ vs 3.8 typing API)", "action_provenance": "none", "src": "session-2d9340895be7.jsonl"}
+{"t": 1787869645.996, "op": "sweep_admit", "id": 38, "condition": "versionrequirementerror (workaround)", "action_provenance": "none", "src": "session-2d9340895be7.jsonl"}
+{"t": 1787869645.997, "op": "sweep_admit", "id": 39, "condition": "not-installed (fixture shim)", "action_provenance": "none", "src": "session-2d9340895be7.jsonl"}
+{"t": 1787869677.564, "op": "sweep_provenance_drop", "action": "export PYTHONPATH=<test-stubs-dir>:$PYTHONPATH", "src": "session-6242171ba6fd.jsonl"}
+{"t": 1787869677.565, "op": "sweep_admit", "id": 40, "condition": "era-pinned-venv", "action_provenance": "none", "src": "session-6242171ba6fd.jsonl"}
+{"t": 1787869723.26, "op": "sweep_admit", "id": 41, "condition": "extensionerror", "action_provenance": "none", "src": "session-536629705631.jsonl"}
+{"t": 1787869752.213, "op": "sweep_provenance_drop", "action": "implement or use a line-length verification script when flake8 is unavailable", "src": "session-21048f8daa7b.jsonl"}
+{"t": 1787869752.214, "op": "sweep_admit", "id": 42, "condition": "not-installed", "action_provenance": "none", "src": "session-21048f8daa7b.jsonl"}
+{"t": 1787869752.214, "op": "sweep_provenance_drop", "action": "hasattr(args, 'posonlyargs') or sys.version_info check before accessing", "src": "session-21048f8daa7b.jsonl"}
+{"t": 1787869752.214, "op": "sweep_admit", "id": 43, "condition": "era-pinned-venv", "action_provenance": "none", "src": "session-21048f8daa7b.jsonl"}
+{"t": 1787869789.69, "op": "sweep_admit", "id": 44, "condition": "era-pinned-venv", "action_provenance": "quoted", "src": "session-4afe55d81d58.jsonl"}
+{"t": 1787869789.691, "op": "sweep_admit", "id": 45, "condition": "not-installed", "action_provenance": "none", "src": "session-4afe55d81d58.jsonl"}
+{"t": 1787869810.399, "op": "sweep_admit", "id": 46, "condition": "test-framework-quirk", "action_provenance": "none", "src": "session-2cecbf764933.jsonl"}
+{"t": 1787869844.921, "op": "sweep_provenance_drop", "action": "from sphinx.util import inspect; call inspect.unwrap(obj) when unwrapping decora", "src": "session-193e7ed6ea38.jsonl"}
+{"t": 1787869844.922, "op": "sweep_admit", "id": 47, "condition": "sphinx-introspection-compat", "action_provenance": "none", "src": "session-193e7ed6ea38.jsonl"}
+{"t": 1787869844.922, "op": "sweep_provenance_drop", "action": "grep '^.\\{96,\\}' files or manually verify no lines exceed 95 characters", "src": "session-193e7ed6ea38.jsonl"}
+{"t": 1787869844.922, "op": "sweep_admit", "id": 48, "condition": "not-installed", "action_provenance": "none", "src": "session-193e7ed6ea38.jsonl"}
+{"t": 1787869867.032, "op": "sweep_admit", "id": 49, "condition": "stale-test-expectation", "action_provenance": "none", "src": "session-1a270152a840.jsonl"}
+{"t": 1787869867.033, "op": "sweep_admit", "id": 50, "condition": "require-external-shim", "action_provenance": "none", "src": "session-1a270152a840.jsonl"}
+{"t": 1787869905.248, "op": "sweep_admit", "id": 51, "condition": "not-installed", "action_provenance": "quoted", "src": "session-4a9a4317e3df.jsonl"}
+{"t": 1787869905.249, "op": "sweep_admit", "id": 52, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-4a9a4317e3df.jsonl"}
+{"t": 1787869915.457, "op": "sweep_admit", "id": 53, "condition": "versionrequirementerror + era-pinned-venv", "action_provenance": "quoted", "src": "session-7d2e2e4fffe7.jsonl"}
+{"t": 1787869915.457, "op": "sweep_admit", "id": 54, "condition": "not-installed", "action_provenance": "none", "src": "session-7d2e2e4fffe7.jsonl"}
+{"t": 1787869931.551, "op": "sweep_admit", "id": 55, "condition": "era-pinned-venv", "action_provenance": "quoted", "src": "session-2d5b956d0879.jsonl"}
+{"t": 1787869931.552, "op": "sweep_admit", "id": 56, "condition": "extensionerror", "action_provenance": "none", "src": "session-2d5b956d0879.jsonl"}
+{"t": 1787869931.552, "op": "sweep_admit", "id": 57, "condition": "no such file or directory", "action_provenance": "quoted", "src": "session-2d5b956d0879.jsonl"}
+{"t": 1787869944.027, "op": "sweep_admit", "id": 58, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-4bf28da5af63.jsonl"}
+{"t": 1787869965.017, "op": "sweep_admit", "id": 59, "condition": "versionrequirementerror", "action_provenance": "quoted", "src": "session-ae7882b3b3e6.jsonl"}
+{"t": 1787869965.017, "op": "sweep_provenance_drop", "action": "pip install flake8", "src": "session-ae7882b3b3e6.jsonl"}
+{"t": 1787869965.017, "op": "sweep_admit", "id": 60, "condition": "not-installed", "action_provenance": "none", "src": "session-ae7882b3b3e6.jsonl"}
+{"t": 1787869978.959, "op": "sweep_admit", "id": 61, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-feefc14e27ac.jsonl"}
+{"t": 1787870007.208, "op": "sweep_provenance_drop", "action": "pip install flake8 mypy pyflakes", "src": "session-8c244d1a3df0.jsonl"}
+{"t": 1787870007.209, "op": "sweep_admit", "id": 62, "condition": "not-installed", "action_provenance": "none", "src": "session-8c244d1a3df0.jsonl"}
+{"t": 1787870007.21, "op": "sweep_admit", "id": 63, "condition": "feature-not-implemented", "action_provenance": "none", "src": "session-8c244d1a3df0.jsonl"}
+{"t": 1787870025.966, "op": "sweep_admit", "id": 64, "condition": "versionrequirementerror", "action_provenance": "none", "src": "session-37de9e98914f.jsonl"}
+{"t": 1787870044.569, "op": "sweep_admit", "id": 65, "condition": "too-new-packages", "action_provenance": "quoted", "src": "session-bbd6311d575a.jsonl"}
