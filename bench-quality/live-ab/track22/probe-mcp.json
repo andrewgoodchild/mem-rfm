@@ -1,0 +1,1 @@
+{"mcpServers": {"track22-events": {"command": "/Users/andrewgoodchild/code/mem-rfm/integrations/claude-code/.venv/bin/python", "args": ["/Users/andrewgoodchild/code/mem-rfm/bench-quality/live-ab/events_mcp_server.py"], "env": {"TRACK22_EVENTS_DB": "/Users/andrewgoodchild/code/mem-rfm/bench-quality/live-ab/track22/data/1.db", "TRACK22_CAP": "5"}}}}

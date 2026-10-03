@@ -1,0 +1,413 @@
+longmemeval: 199 questions (of 500 with published contexts for both baselines)
+  2356 cached, 0 to run
+  facts: 32203 over 9422 sessions
+  unit 1/199 (640 turns)
+  unit 2/199 (656 turns)
+  unit 3/199 (651 turns)
+  unit 4/199 (695 turns)
+  unit 5/199 (636 turns)
+  unit 6/199 (662 turns)
+  unit 7/199 (616 turns)
+  unit 8/199 (642 turns)
+  unit 9/199 (693 turns)
+  unit 10/199 (671 turns)
+  unit 11/199 (688 turns)
+  unit 12/199 (599 turns)
+  unit 13/199 (688 turns)
+  unit 14/199 (686 turns)
+  unit 15/199 (685 turns)
+  unit 16/199 (642 turns)
+  unit 17/199 (648 turns)
+  unit 18/199 (696 turns)
+  unit 19/199 (725 turns)
+  unit 20/199 (606 turns)
+  unit 21/199 (631 turns)
+  unit 22/199 (637 turns)
+  unit 23/199 (670 turns)
+  unit 24/199 (630 turns)
+  unit 25/199 (682 turns)
+  unit 26/199 (706 turns)
+  unit 27/199 (685 turns)
+  unit 28/199 (698 turns)
+  unit 29/199 (683 turns)
+  unit 30/199 (646 turns)
+  unit 31/199 (645 turns)
+  unit 32/199 (699 turns)
+  unit 33/199 (630 turns)
+  unit 34/199 (660 turns)
+  unit 35/199 (656 turns)
+  unit 36/199 (631 turns)
+  unit 37/199 (653 turns)
+  unit 38/199 (687 turns)
+  unit 39/199 (641 turns)
+  unit 40/199 (646 turns)
+  unit 41/199 (642 turns)
+  unit 42/199 (592 turns)
+  unit 43/199 (635 turns)
+  unit 44/199 (670 turns)
+  unit 45/199 (602 turns)
+  unit 46/199 (658 turns)
+  unit 47/199 (714 turns)
+  unit 48/199 (658 turns)
+  unit 49/199 (654 turns)
+  unit 50/199 (588 turns)
+  unit 51/199 (657 turns)
+  unit 52/199 (657 turns)
+  unit 53/199 (675 turns)
+  unit 54/199 (728 turns)
+  unit 55/199 (658 turns)
+  unit 56/199 (666 turns)
+  unit 57/199 (578 turns)
+  unit 58/199 (631 turns)
+  unit 59/199 (644 turns)
+  unit 60/199 (664 turns)
+  unit 61/199 (685 turns)
+  unit 62/199 (613 turns)
+  unit 63/199 (687 turns)
+  unit 64/199 (709 turns)
+  unit 65/199 (662 turns)
+  unit 66/199 (613 turns)
+  unit 67/199 (664 turns)
+  unit 68/199 (728 turns)
+  unit 69/199 (619 turns)
+  unit 70/199 (645 turns)
+  unit 71/199 (663 turns)
+  unit 72/199 (645 turns)
+  unit 73/199 (644 turns)
+  unit 74/199 (624 turns)
+  unit 75/199 (613 turns)
+  unit 76/199 (691 turns)
+  unit 77/199 (679 turns)
+  unit 78/199 (574 turns)
+  unit 79/199 (652 turns)
+  unit 80/199 (607 turns)
+  unit 81/199 (621 turns)
+  unit 82/199 (706 turns)
+  unit 83/199 (633 turns)
+  unit 84/199 (673 turns)
+  unit 85/199 (730 turns)
+  unit 86/199 (602 turns)
+  unit 87/199 (719 turns)
+  unit 88/199 (630 turns)
+  unit 89/199 (642 turns)
+  unit 90/199 (676 turns)
+  unit 91/199 (614 turns)
+  unit 92/199 (694 turns)
+  unit 93/199 (662 turns)
+  unit 94/199 (628 turns)
+  unit 95/199 (656 turns)
+  unit 96/199 (758 turns)
+  unit 97/199 (615 turns)
+  unit 98/199 (617 turns)
+  unit 99/199 (758 turns)
+  unit 100/199 (621 turns)
+  unit 101/199 (641 turns)
+  unit 102/199 (741 turns)
+  unit 103/199 (665 turns)
+  unit 104/199 (704 turns)
+  unit 105/199 (658 turns)
+  unit 106/199 (684 turns)
+  unit 107/199 (665 turns)
+  unit 108/199 (654 turns)
+  unit 109/199 (661 turns)
+  unit 110/199 (653 turns)
+  unit 111/199 (663 turns)
+  unit 112/199 (640 turns)
+  unit 113/199 (613 turns)
+  unit 114/199 (639 turns)
+  unit 115/199 (674 turns)
+  unit 116/199 (683 turns)
+  unit 117/199 (660 turns)
+  unit 118/199 (640 turns)
+  unit 119/199 (650 turns)
+  unit 120/199 (618 turns)
+  unit 121/199 (679 turns)
+  unit 122/199 (646 turns)
+  unit 123/199 (628 turns)
+  unit 124/199 (623 turns)
+  unit 125/199 (635 turns)
+  unit 126/199 (611 turns)
+  unit 127/199 (624 turns)
+  unit 128/199 (694 turns)
+  unit 129/199 (719 turns)
+  unit 130/199 (675 turns)
+  unit 131/199 (641 turns)
+  unit 132/199 (594 turns)
+  unit 133/199 (640 turns)
+  unit 134/199 (623 turns)
+  unit 135/199 (744 turns)
+  unit 136/199 (617 turns)
+  unit 137/199 (612 turns)
+  unit 138/199 (706 turns)
+  unit 139/199 (628 turns)
+  unit 140/199 (650 turns)
+  unit 141/199 (580 turns)
+  unit 142/199 (678 turns)
+  unit 143/199 (567 turns)
+  unit 144/199 (657 turns)
+  unit 145/199 (622 turns)
+  unit 146/199 (667 turns)
+  unit 147/199 (649 turns)
+  unit 148/199 (531 turns)
+  unit 149/199 (701 turns)
+  unit 150/199 (730 turns)
+  unit 151/199 (629 turns)
+  unit 152/199 (647 turns)
+  unit 153/199 (653 turns)
+  unit 154/199 (708 turns)
+  unit 155/199 (638 turns)
+  unit 156/199 (701 turns)
+  unit 157/199 (667 turns)
+  unit 158/199 (673 turns)
+  unit 159/199 (671 turns)
+  unit 160/199 (646 turns)
+  unit 161/199 (675 turns)
+  unit 162/199 (687 turns)
+  unit 163/199 (657 turns)
+  unit 164/199 (677 turns)
+  unit 165/199 (654 turns)
+  unit 166/199 (653 turns)
+  unit 167/199 (581 turns)
+  unit 168/199 (722 turns)
+  unit 169/199 (562 turns)
+  unit 170/199 (662 turns)
+  unit 171/199 (595 turns)
+  unit 172/199 (666 turns)
+  unit 173/199 (627 turns)
+  unit 174/199 (658 turns)
+  unit 175/199 (662 turns)
+  unit 176/199 (624 turns)
+  unit 177/199 (684 turns)
+  unit 178/199 (691 turns)
+  unit 179/199 (683 turns)
+  unit 180/199 (678 turns)
+  unit 181/199 (637 turns)
+  unit 182/199 (668 turns)
+  unit 183/199 (596 turns)
+  unit 184/199 (659 turns)
+  unit 185/199 (691 turns)
+  unit 186/199 (685 turns)
+  unit 187/199 (607 turns)
+  unit 188/199 (660 turns)
+  unit 189/199 (647 turns)
+  unit 190/199 (657 turns)
+  unit 191/199 (643 turns)
+  unit 192/199 (643 turns)
+  unit 193/199 (635 turns)
+  unit 194/199 (665 turns)
+  unit 195/199 (625 turns)
+  unit 196/199 (651 turns)
+  unit 197/199 (698 turns)
+  unit 198/199 (709 turns)
+  unit 199/199 (689 turns)
+  1194 cached, 199 to run
+    25/199
+    50/199
+    75/199
+    100/199
+    125/199
+    150/199
+    175/199
+  1194 cached, 199 to run
+    25/199
+    50/199
+    75/199
+    100/199
+    125/199
+    150/199
+    175/199
+{
+  "dataset": "longmemeval",
+  "n": 199,
+  "answer_model": "sonnet",
+  "judge_model": "haiku",
+  "arms": {
+    "hindsight": [
+      0.9347,
+      0.8995,
+      0.9648
+    ],
+    "hybrid-search": [
+      0.794,
+      0.7387,
+      0.8492
+    ],
+    "mem-rfm-facts": [
+      0.9095,
+      0.8693,
+      0.9447
+    ],
+    "mem-rfm-facts50": [
+      0.9347,
+      0.8995,
+      0.9648
+    ],
+    "mem-rfm-trunc300-top10": [
+      0.8995,
+      0.8543,
+      0.9397
+    ],
+    "mem-rfm-trunc300": [
+      0.8342,
+      0.7839,
+      0.8844
+    ],
+    "mem-rfm": [
+      0.9045,
+      0.8643,
+      0.9447
+    ]
+  },
+  "paired": {
+    "mem-rfm-facts - hindsight": [
+      -0.0251,
+      -0.0653,
+      0.0101
+    ],
+    "mem-rfm-facts - hybrid-search": [
+      0.1156,
+      0.0553,
+      0.1759
+    ],
+    "mem-rfm-facts50 - hindsight": [
+      0.0,
+      -0.0352,
+      0.0352
+    ],
+    "mem-rfm-facts50 - hybrid-search": [
+      0.1407,
+      0.0754,
+      0.206
+    ],
+    "mem-rfm-trunc300-top10 - hindsight": [
+      -0.0352,
+      -0.0754,
+      0.005
+    ],
+    "mem-rfm-trunc300-top10 - hybrid-search": [
+      0.1055,
+      0.0452,
+      0.1658
+    ],
+    "mem-rfm-trunc300 - hindsight": [
+      -0.1005,
+      -0.1508,
+      -0.0503
+    ],
+    "mem-rfm-trunc300 - hybrid-search": [
+      0.0402,
+      -0.0302,
+      0.1106
+    ],
+    "mem-rfm - hindsight": [
+      -0.0302,
+      -0.0754,
+      0.0151
+    ],
+    "mem-rfm - hybrid-search": [
+      0.1106,
+      0.0503,
+      0.1709
+    ],
+    "hybrid-search - hindsight": [
+      -0.1407,
+      -0.201,
+      -0.0804
+    ],
+    "mem-rfm-facts - mem-rfm": [
+      0.005,
+      -0.0452,
+      0.0553
+    ],
+    "mem-rfm-facts50 - mem-rfm": [
+      0.0302,
+      -0.0151,
+      0.0754
+    ],
+    "mem-rfm-trunc300-top10 - mem-rfm": [
+      -0.005,
+      -0.0452,
+      0.0352
+    ],
+    "mem-rfm-trunc300 - mem-rfm": [
+      -0.0704,
+      -0.1256,
+      -0.0151
+    ]
+  },
+  "by_category": {
+    "knowledge-update": {
+      "n": 31,
+      "hindsight": 1.0,
+      "hybrid-search": 0.871,
+      "mem-rfm-facts": 0.968,
+      "mem-rfm-facts50": 0.968,
+      "mem-rfm-trunc300-top10": 0.968,
+      "mem-rfm-trunc300": 0.968,
+      "mem-rfm": 0.968
+    },
+    "multi-session": {
+      "n": 53,
+      "hindsight": 0.925,
+      "hybrid-search": 0.868,
+      "mem-rfm-facts": 0.868,
+      "mem-rfm-facts50": 0.887,
+      "mem-rfm-trunc300-top10": 0.849,
+      "mem-rfm-trunc300": 0.83,
+      "mem-rfm": 0.868
+    },
+    "single-session-assistant": {
+      "n": 22,
+      "hindsight": 0.955,
+      "hybrid-search": 1.0,
+      "mem-rfm-facts": 1.0,
+      "mem-rfm-facts50": 0.955,
+      "mem-rfm-trunc300-top10": 1.0,
+      "mem-rfm-trunc300": 0.409,
+      "mem-rfm": 1.0
+    },
+    "single-session-preference": {
+      "n": 12,
+      "hindsight": 0.75,
+      "hybrid-search": 0.833,
+      "mem-rfm-facts": 0.667,
+      "mem-rfm-facts50": 0.833,
+      "mem-rfm-trunc300-top10": 0.667,
+      "mem-rfm-trunc300": 0.5,
+      "mem-rfm": 0.667
+    },
+    "single-session-user": {
+      "n": 28,
+      "hindsight": 0.964,
+      "hybrid-search": 0.964,
+      "mem-rfm-facts": 0.929,
+      "mem-rfm-facts50": 1.0,
+      "mem-rfm-trunc300-top10": 0.929,
+      "mem-rfm-trunc300": 0.929,
+      "mem-rfm": 1.0
+    },
+    "temporal-reasoning": {
+      "n": 53,
+      "hindsight": 0.925,
+      "hybrid-search": 0.491,
+      "mem-rfm-facts": 0.925,
+      "mem-rfm-facts50": 0.943,
+      "mem-rfm-trunc300-top10": 0.906,
+      "mem-rfm-trunc300": 0.962,
+      "mem-rfm": 0.868
+    }
+  },
+  "context_tokens": {
+    "hindsight": 46430.9,
+    "hybrid-search": 26023.8,
+    "mem-rfm-facts": 23625.5,
+    "mem-rfm-facts50": 24077.8,
+    "mem-rfm-trunc300-top10": 24352.1,
+    "mem-rfm-trunc300": 24443.3,
+    "mem-rfm": 23415.3
+  },
+  "published_accuracy_same_qids": {
+    "hindsight": 0.9799,
+    "hybrid-search": 0.7387
+  }
+}

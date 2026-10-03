@@ -1,0 +1,181 @@
+usable instances 43, cli 2.1.251 (Claude Code)
+CLAUDE.md: removed CLAUDE.md block
+=== 1 [control] (3q) ===
+    answered 3/3 delivered 0 wall=35s
+=== 1 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=33s
+=== 2 [control] (3q) ===
+    answered 3/3 delivered 0 wall=36s
+=== 2 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=38s
+=== 3 [control] (1q) ===
+    answered 1/1 delivered 0 wall=16s
+=== 3 [perturn] (1q) ===
+    answered 1/1 delivered 1 wall=22s
+=== 4 [control] (1q) ===
+    answered 1/1 delivered 0 wall=37s
+=== 4 [perturn] (1q) ===
+    answered 1/1 delivered 1 wall=5s
+=== 5 [control] (3q) ===
+usable instances 43, cli 2.1.251 (Claude Code)
+CLAUDE.md: removed CLAUDE.md block
+=== 5 [control] (3q) ===
+    answered 3/3 delivered 0 wall=49s
+=== 5 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=65s
+=== bootstrap_darkmode_crisis [control] (5q) ===
+    answered 5/5 delivered 0 wall=108s
+=== bootstrap_darkmode_crisis [perturn] (5q) ===
+    answered 5/5 delivered 1 wall=108s
+=== browser_use_timeout_crisis [control] (5q) ===
+    answered 5/5 delivered 0 wall=108s
+=== browser_use_timeout_crisis [perturn] (5q) ===
+    answered 5/5 delivered 1 wall=105s
+=== kaggle_sdk_crisis [control] (5q) ===
+    answered 5/5 delivered 0 wall=126s
+=== kaggle_sdk_crisis [perturn] (5q) ===
+    answered 5/5 delivered 0 wall=107s
+=== langflow_composio_crisis [control] (3q) ===
+    answered 3/3 delivered 0 wall=72s
+=== langflow_composio_crisis [perturn] (3q) ===
+    answered 3/3 delivered 0 wall=63s
+=== nemo_run_cli_crisis [control] (5q) ===
+    answered 5/5 delivered 0 wall=163s
+=== nemo_run_cli_crisis [perturn] (5q) ===
+    answered 5/5 delivered 2 wall=191s
+=== plexe_autoscroll_crisis [control] (4q) ===
+    answered 4/4 delivered 0 wall=138s
+=== plexe_autoscroll_crisis [perturn] (4q) ===
+    answered 4/4 delivered 0 wall=132s
+=== pw_1 [control] (1q) ===
+    answered 1/1 delivered 0 wall=32s
+=== pw_1 [perturn] (1q) ===
+    answered 1/1 delivered 1 wall=38s
+=== pw_2 [control] (4q) ===
+    answered 4/4 delivered 0 wall=59s
+=== pw_2 [perturn] (4q) ===
+    answered 4/4 delivered 1 wall=64s
+=== pydantic_typeddict_crisis [control] (4q) ===
+usable instances 43, cli 2.1.251 (Claude Code)
+CLAUDE.md: removed CLAUDE.md block
+=== pydantic_typeddict_crisis [control] (4q) ===
+    answered 4/4 delivered 0 wall=133s
+=== pydantic_typeddict_crisis [perturn] (4q) ===
+    answered 4/4 delivered 3 wall=117s
+=== vg_1 [control] (3q) ===
+    answered 3/3 delivered 0 wall=52s
+=== vg_1 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=75s
+=== vg_10 [control] (3q) ===
+    answered 3/3 delivered 0 wall=62s
+=== vg_10 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=93s
+=== vg_11 [control] (3q) ===
+    answered 3/3 delivered 0 wall=76s
+=== vg_11 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=56s
+=== vg_12 [control] (3q) ===
+    answered 3/3 delivered 0 wall=62s
+=== vg_12 [perturn] (3q) ===
+    answered 3/3 delivered 2 wall=42s
+=== vg_13 [control] (3q) ===
+    answered 3/3 delivered 0 wall=57s
+=== vg_13 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=45s
+=== vg_15 [control] (3q) ===
+    answered 3/3 delivered 0 wall=67s
+=== vg_15 [perturn] (3q) ===
+    answered 3/3 delivered 2 wall=43s
+=== vg_16 [control] (3q) ===
+    answered 3/3 delivered 0 wall=51s
+=== vg_16 [perturn] (3q) ===
+    answered 3/3 delivered 2 wall=49s
+=== vg_17 [control] (3q) ===
+    answered 3/3 delivered 0 wall=13s
+=== vg_17 [perturn] (3q) ===
+    answered 3/3 delivered 1 wall=8s
+=== vg_18 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_18 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_19 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_19 [perturn] (3q) ===
+    answered 3/3 delivered 2 wall=8s
+=== vg_2 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_2 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_20 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_20 [perturn] (3q) ===
+    answered 3/3 delivered 1 wall=8s
+=== vg_21 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_21 [perturn] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_22 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_22 [perturn] (3q) ===
+    answered 3/3 delivered 1 wall=8s
+=== vg_23 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_23 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_24 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_24 [perturn] (3q) ===
+    answered 3/3 delivered 2 wall=8s
+=== vg_25 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_25 [perturn] (3q) ===
+    answered 3/3 delivered 2 wall=8s
+=== vg_26 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_26 [perturn] (3q) ===
+    answered 3/3 delivered 2 wall=8s
+=== vg_27 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_27 [perturn] (3q) ===
+    answered 3/3 delivered 2 wall=8s
+=== vg_28 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_28 [perturn] (3q) ===
+    answered 3/3 delivered 1 wall=8s
+=== vg_29 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_29 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_3 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_3 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_32 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_32 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_4 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_4 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_5 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_5 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_6 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_6 [perturn] (3q) ===
+    answered 3/3 delivered 1 wall=8s
+=== vg_7 [control] (3q) ===
+    answered 3/3 delivered 0 wall=9s
+=== vg_7 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_8 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_8 [perturn] (3q) ===
+    answered 3/3 delivered 3 wall=8s
+=== vg_9 [control] (3q) ===
+    answered 3/3 delivered 0 wall=8s
+=== vg_9 [perturn] (3q) ===
+    answered 3/3 delivered 2 wall=8s
+CLAUDE.md: added outcome-loop block to /Users/andrewgoodchild/.claude/CLAUDE.md (restored)

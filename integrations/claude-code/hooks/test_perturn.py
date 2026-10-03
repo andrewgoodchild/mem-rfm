@@ -80,7 +80,7 @@ DASK = ("dask is not installed in this venv.", VECS["dask"], 2, 0.0, 0)
 store([GLUTEN, DASK])
 top = ups.retrieve("Recommend restaurants in Rome")   # rome ~ gluten axis
 check("relevant memory retrieved on matching turn",
-      any("gluten" in c.lower() for _s, _sim, _m, c in top), str(len(top)))
+      any("gluten" in c.lower() for _s, _sim, _m, c, _t in top), str(len(top)))
 
 # 2. An unrelated turn surfaces nothing (relevance floor).
 top = ups.retrieve("Tell me a joke")                   # zero vector
@@ -88,7 +88,7 @@ check("relevance floor: unrelated turn retrieves nothing", top == [])
 
 # 3. The wrong-topic memory is not surfaced for a different topic.
 top = ups.retrieve("How do I run the dask tests")      # dask axis
-ids = [m for _s, _sim, m, _c in top]
+ids = [m for _s, _sim, m, _c, _t in top]
 check("topic match: dask turn gets dask memory, not gluten",
       ids == [2], str(ids))
 

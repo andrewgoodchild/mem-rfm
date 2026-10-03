@@ -23,3 +23,24 @@ integrations/claude-code/ab/ab_sessions.jsonl
 *.db-shm
 /*.log
 bench-quality/data/terminalbench/
+# AMB replay: contexts/answers/judgments quote dataset text (LoCoMo is
+# CC BY-NC) and are regenerable; only the metrics report is committed.
+bench-quality/results-amb*/*/contexts-*.json
+bench-quality/results-amb*/*/answers.jsonl
+bench-quality/results-amb*/*/judgments*.jsonl
+bench-quality/results-amb*/*/facts.jsonl
+# Live A/B run byproducts: hook staging files (empty), archived built-in
+# agent memory between arms, synthesis/working state, per-run stores and
+# the Track 20 repo cache (446 MB) -- regenerable, not evidence.
+bench-quality/live-ab/*/pending-memories.md
+bench-quality/live-ab/*/builtin-archive/
+bench-quality/live-ab/*/synthesis-state/
+bench-quality/live-ab/track20/repocache/
+bench-quality/live-ab/track20/stores/
+bench-quality/live-ab/track22/work/
+# Carry dataset text, which THIRD_PARTY_NOTICES says is never
+# redistributed: MEMTRACK timeline content (Track 20's dropped actions,
+# Track 21b's judged memories) and LoCoMo turns (the Track 12 cache).
+bench-quality/live-ab/track20/rfm-log.jsonl
+bench-quality/live-ab/track21b/judged_map.json
+bench-quality/results-track12/importance.jsonl

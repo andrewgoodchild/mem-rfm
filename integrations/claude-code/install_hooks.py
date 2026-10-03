@@ -48,35 +48,26 @@ import shutil
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harnesses  # noqa: E402
 PYTHON = os.path.join(HERE, ".venv", "bin", "python")
-SETTINGS = os.path.expanduser("~/.claude/settings.json")
 CLAUDE_MD = os.path.expanduser("~/.claude/CLAUDE.md")
 SKILL_SRC = os.path.join(HERE, "skills", "memory-review")
 SKILL_DST = os.path.expanduser("~/.claude/skills/memory-review")
 
-HOOKS = {
-    "SessionStart": os.path.join(HERE, "hooks", "session_start.py"),
-    "SessionEnd": os.path.join(HERE, "hooks", "session_end.py"),
-    # Struggle-triggered synthesis (REVALIDATION.md Track 5). Registered
-    # always, INERT unless RFM_SYNTHESIS=1 — it is a registered experiment,
-    # not a default. Matched to Bash: this fires per tool call, and a Python
-    # spawn on every Read/Edit/Grep would add latency to the very sessions
-    # whose cost the experiment measures.
-    "PostToolUse": os.path.join(HERE, "hooks", "post_tool_use.py"),
-    # Per-turn query-conditioned retrieval (RFM_PERTURN=1). Registered
-    # always, INERT unless the flag is set — a registered experiment
-    # (Track 21b), not a default, on the same footing as the PostToolUse
-    # synthesis/JIT capabilities.
-    "UserPromptSubmit": os.path.join(HERE, "hooks", "user_prompt_submit.py"),
-}
-MATCHERS = {"PostToolUse": "Bash"}
-# Per-tool-call hooks need a short leash; session hooks can take longer.
-# UserPromptSubmit runs an optional applicability judge (RFM_PERTURN_JUDGE),
-# a nested LLM call that overruns the 30s default; 150s lets it complete.
-# That a per-turn hook needs 150s is itself the finding that live
-# judge-in-hook retrieval is impractical in production — measured, not
-# hidden (REVALIDATION.md Track 21b).
-TIMEOUTS = {"PostToolUse": 10, "UserPromptSubmit": 150}
+# Every event, script, matcher and timeout comes from the harness registry
+# (harnesses.py), the same table the hooks resolve their payload fields and
+# transcript reader from — so what gets installed and what runs cannot
+# drift apart. The rationale for each entry lives with its row there.
+HARNESS = harnesses.HARNESSES[harnesses.DEFAULT]
+SETTINGS = os.path.expanduser(HARNESS.settings)
+if HARNESS.config_style != "nested":
+    raise NotImplementedError(f"config style {HARNESS.config_style!r}")
+HOOKS = {h.event: os.path.join(HERE, "hooks", h.script)
+         for h in HARNESS.hooks.values()}
+MATCHERS = {h.event: h.matcher for h in HARNESS.hooks.values() if h.matcher}
+TIMEOUTS = {h.event: harnesses.host_timeout(HARNESS, h.timeout)
+            for h in HARNESS.hooks.values()}
 
 # Sentinel-fenced so re-runs replace rather than append, and --remove can
 # strip it cleanly. Everything outside the fence is never touched.

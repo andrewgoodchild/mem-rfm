@@ -1,0 +1,179 @@
+usable instances 43 of 46, questions 134, cli 2.1.251 (Claude Code)
+CLAUDE.md: removed CLAUDE.md block
+=== 1 [control] (3 q) ===
+    exact 3/3 wall=16s
+=== 1 [rfm] (3 q) ===
+    exact 3/3 wall=17s
+=== 2 [control] (3 q) ===
+    exact 3/3 wall=12s
+=== 2 [rfm] (3 q) ===
+    exact 3/3 wall=16s
+=== 3 [control] (1 q) ===
+    exact 0/1 wall=14s
+=== 3 [rfm] (1 q) ===
+    exact 0/1 wall=17s
+=== 4 [control] (1 q) ===
+    exact 0/1 wall=13s
+=== 4 [rfm] (1 q) ===
+    exact 0/1 wall=14s
+=== 5 [control] (3 q) ===
+    exact 0/3 wall=19s
+=== 5 [rfm] (3 q) ===
+    exact 0/3 wall=24s
+=== bootstrap_darkmode_crisis [control] (5 q) ===
+    exact 4/5 wall=62s
+=== bootstrap_darkmode_crisis [rfm] (5 q) ===
+    exact 4/5 wall=65s
+=== browser_use_timeout_crisis [control] (5 q) ===
+    exact 5/5 wall=64s
+=== browser_use_timeout_crisis [rfm] (5 q) ===
+    exact 5/5 wall=82s
+=== kaggle_sdk_crisis [control] (5 q) ===
+    exact 3/5 wall=62s
+=== kaggle_sdk_crisis [rfm] (5 q) ===
+    exact 3/5 wall=67s
+=== langflow_composio_crisis [control] (3 q) ===
+    exact 3/3 wall=21s
+=== langflow_composio_crisis [rfm] (3 q) ===
+    exact 3/3 wall=19s
+=== nemo_run_cli_crisis [control] (5 q) ===
+    exact 2/5 wall=102s
+=== nemo_run_cli_crisis [rfm] (5 q) ===
+    exact 2/5 wall=93s
+=== plexe_autoscroll_crisis [control] (4 q) ===
+    exact 3/4 wall=99s
+=== plexe_autoscroll_crisis [rfm] (4 q) ===
+    exact 3/4 wall=76s
+=== pw_1 [control] (1 q) ===
+    exact 0/1 wall=21s
+=== pw_1 [rfm] (1 q) ===
+    exact 0/1 wall=38s
+=== pw_2 [control] (4 q) ===
+    exact 0/4 wall=33s
+=== pw_2 [rfm] (4 q) ===
+    exact 0/4 wall=40s
+=== pydantic_typeddict_crisis [control] (4 q) ===
+    exact 3/4 wall=40s
+=== pydantic_typeddict_crisis [rfm] (4 q) ===
+    exact 3/4 wall=33s
+=== vg_1 [control] (3 q) ===
+    exact 0/3 wall=20s
+=== vg_1 [rfm] (3 q) ===
+    exact 0/3 wall=23s
+=== vg_10 [control] (3 q) ===
+    exact 0/3 wall=26s
+=== vg_10 [rfm] (3 q) ===
+    exact 0/3 wall=30s
+=== vg_11 [control] (3 q) ===
+    exact 0/3 wall=18s
+=== vg_11 [rfm] (3 q) ===
+    exact 0/3 wall=20s
+=== vg_12 [control] (3 q) ===
+    exact 0/3 wall=28s
+=== vg_12 [rfm] (3 q) ===
+    exact 0/3 wall=19s
+=== vg_13 [control] (3 q) ===
+    exact 0/3 wall=15s
+=== vg_13 [rfm] (3 q) ===
+    exact 0/3 wall=15s
+=== vg_15 [control] (3 q) ===
+    exact 1/3 wall=16s
+=== vg_15 [rfm] (3 q) ===
+    exact 1/3 wall=17s
+=== vg_16 [control] (3 q) ===
+    exact 1/3 wall=16s
+=== vg_16 [rfm] (3 q) ===
+    exact 1/3 wall=16s
+=== vg_17 [control] (3 q) ===
+    exact 0/3 wall=16s
+=== vg_17 [rfm] (3 q) ===
+    exact 0/3 wall=18s
+=== vg_18 [control] (3 q) ===
+    exact 0/3 wall=22s
+=== vg_18 [rfm] (3 q) ===
+    exact 0/3 wall=18s
+=== vg_19 [control] (3 q) ===
+    exact 0/3 wall=24s
+=== vg_19 [rfm] (3 q) ===
+    exact 0/3 wall=17s
+=== vg_2 [control] (3 q) ===
+    exact 0/3 wall=17s
+=== vg_2 [rfm] (3 q) ===
+    exact 0/3 wall=19s
+=== vg_20 [control] (3 q) ===
+    exact 0/3 wall=26s
+=== vg_20 [rfm] (3 q) ===
+    exact 0/3 wall=28s
+=== vg_21 [control] (3 q) ===
+    exact 0/3 wall=16s
+=== vg_21 [rfm] (3 q) ===
+    exact 0/3 wall=16s
+=== vg_22 [control] (3 q) ===
+    exact 0/3 wall=16s
+=== vg_22 [rfm] (3 q) ===
+    exact 0/3 wall=18s
+=== vg_23 [control] (3 q) ===
+    exact 0/3 wall=14s
+=== vg_23 [rfm] (3 q) ===
+    exact 0/3 wall=21s
+=== vg_24 [control] (3 q) ===
+    exact 0/3 wall=18s
+=== vg_24 [rfm] (3 q) ===
+    exact 0/3 wall=17s
+=== vg_25 [control] (3 q) ===
+    exact 0/3 wall=17s
+=== vg_25 [rfm] (3 q) ===
+    exact 0/3 wall=19s
+=== vg_26 [control] (3 q) ===
+    exact 0/3 wall=17s
+=== vg_26 [rfm] (3 q) ===
+    exact 0/3 wall=22s
+=== vg_27 [control] (3 q) ===
+    exact 0/3 wall=21s
+=== vg_27 [rfm] (3 q) ===
+    exact 0/3 wall=21s
+=== vg_28 [control] (3 q) ===
+    exact 0/3 wall=22s
+=== vg_28 [rfm] (3 q) ===
+    exact 0/3 wall=15s
+=== vg_29 [control] (3 q) ===
+    exact 0/3 wall=16s
+=== vg_29 [rfm] (3 q) ===
+    exact 0/3 wall=15s
+=== vg_3 [control] (3 q) ===
+usable instances 43 of 46, questions 134, cli 2.1.251 (Claude Code)
+resuming: 70 recorded
+CLAUDE.md: removed CLAUDE.md block
+=== vg_3 [control] (3 q) ===
+    exact 0/3 wall=14s
+=== vg_3 [rfm] (3 q) ===
+    exact 0/3 wall=17s
+=== vg_32 [control] (3 q) ===
+    exact 0/3 wall=19s
+=== vg_32 [rfm] (3 q) ===
+    exact 0/3 wall=19s
+=== vg_4 [control] (3 q) ===
+    exact 0/3 wall=28s
+=== vg_4 [rfm] (3 q) ===
+    exact 0/3 wall=26s
+=== vg_5 [control] (3 q) ===
+    exact 0/3 wall=20s
+=== vg_5 [rfm] (3 q) ===
+    exact 0/3 wall=28s
+=== vg_6 [control] (3 q) ===
+    exact 0/3 wall=18s
+=== vg_6 [rfm] (3 q) ===
+    exact 0/3 wall=21s
+=== vg_7 [control] (3 q) ===
+    exact 0/3 wall=18s
+=== vg_7 [rfm] (3 q) ===
+    exact 0/3 wall=21s
+=== vg_8 [control] (3 q) ===
+    exact 0/3 wall=18s
+=== vg_8 [rfm] (3 q) ===
+    exact 0/3 wall=20s
+=== vg_9 [control] (3 q) ===
+    exact 0/3 wall=19s
+=== vg_9 [rfm] (3 q) ===
+    exact 0/3 wall=18s
+CLAUDE.md: added outcome-loop block to /Users/andrewgoodchild/.claude/CLAUDE.md (restored)

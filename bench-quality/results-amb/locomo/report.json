@@ -1,0 +1,75 @@
+{
+  "dataset": "locomo",
+  "n": 200,
+  "answer_model": "sonnet",
+  "judge_model": "haiku",
+  "arms": {
+    "hindsight": [
+      0.925,
+      0.885,
+      0.96
+    ],
+    "hybrid-search": [
+      0.805,
+      0.75,
+      0.86
+    ],
+    "mem-rfm": [
+      0.935,
+      0.9,
+      0.965
+    ]
+  },
+  "paired": {
+    "mem-rfm - hindsight": [
+      0.01,
+      -0.015,
+      0.035
+    ],
+    "mem-rfm - hybrid-search": [
+      0.13,
+      0.075,
+      0.185
+    ],
+    "hybrid-search - hindsight": [
+      -0.12,
+      -0.175,
+      -0.065
+    ]
+  },
+  "by_category": {
+    "multi-hop": {
+      "n": 12,
+      "hindsight": 0.917,
+      "hybrid-search": 0.833,
+      "mem-rfm": 1.0
+    },
+    "open-domain": {
+      "n": 109,
+      "hindsight": 0.963,
+      "hybrid-search": 0.908,
+      "mem-rfm": 0.954
+    },
+    "single-hop": {
+      "n": 37,
+      "hindsight": 0.865,
+      "hybrid-search": 0.838,
+      "mem-rfm": 0.919
+    },
+    "temporal": {
+      "n": 42,
+      "hindsight": 0.881,
+      "hybrid-search": 0.5,
+      "mem-rfm": 0.881
+    }
+  },
+  "context_tokens": {
+    "hindsight": 31119.1,
+    "hybrid-search": 19231.5,
+    "mem-rfm": 23249.0
+  },
+  "published_accuracy_same_qids": {
+    "hindsight": 0.915,
+    "hybrid-search": 0.795
+  }
+}

@@ -1,0 +1,56 @@
+usable instances 43 of 46, questions 134, cli 2.1.246 (Claude Code)
+  [1] 36 events -> 9 memories (2 promoted), 4 calls
+  [2] 36 events -> 9 memories (3 promoted), 4 calls
+  [3] 15 events -> 3 memories (2 promoted), 2 calls
+  [4] 15 events -> 3 memories (2 promoted), 2 calls
+  [5] 24 events -> 7 memories (1 promoted), 3 calls
+  [bootstrap_darkmode_crisis] 91 events -> 6 memories (3 promoted), 10 calls
+  [browser_use_timeout_crisis] 53 events -> 6 memories (4 promoted), 6 calls
+  [kaggle_sdk_crisis] 115 events -> 14 memories (6 promoted), 12 calls
+  [langflow_composio_crisis] 45 events -> 5 memories (3 promoted), 5 calls
+  [nemo_run_cli_crisis] 33 events -> 4 memories (2 promoted), 4 calls
+  [plexe_autoscroll_crisis] 16 events -> 3 memories (1 promoted), 2 calls
+  [pw_1] 10 events -> 3 memories (0 promoted), 1 calls
+  [pw_2] 18 events -> 4 memories (1 promoted), 2 calls
+  [pydantic_typeddict_crisis] 32 events -> 4 memories (3 promoted), 4 calls
+  [vg_1] 33 events -> 4 memories (2 promoted), 4 calls
+  [vg_10] 38 events -> 4 memories (4 promoted), 4 calls
+  [vg_11] 37 events -> 6 memories (3 promoted), 4 calls
+  [vg_12] 19 events -> 3 memories (1 promoted), 2 calls
+  [vg_13] 23 events -> 4 memories (1 promoted), 3 calls
+  [vg_15] 36 events -> 10 memories (2 promoted), 4 calls
+  [vg_16] 47 events -> 8 memories (3 promoted), 5 calls
+  [vg_17] 50 events -> 7 memories (3 promoted), 5 calls
+  [vg_18] 40 events -> 6 memories (4 promoted), 4 calls
+  [vg_19] 36 events -> 5 memories (2 promoted), 4 calls
+  [vg_2] 31 events -> 7 memories (3 promoted), 4 calls
+  [vg_20] 30 events -> 4 memories (3 promoted), 3 calls
+  [vg_21] 33 events -> 5 memories (4 promoted), 4 calls
+  [vg_22] 45 events -> 7 memories (2 promoted), 5 calls
+  [vg_23] 68 events -> 10 memories (5 promoted), 7 calls
+  [vg_24] 49 events -> 9 memories (4 promoted), 5 calls
+  [vg_25] 37 events -> 6 memories (4 promoted), 4 calls
+  [vg_26] 38 events -> 6 memories (3 promoted), 4 calls
+  [vg_27] 36 events -> 6 memories (3 promoted), 4 calls
+  [vg_28] 34 events -> 5 memories (4 promoted), 4 calls
+  [vg_29] 33 events -> 6 memories (2 promoted), 4 calls
+  [vg_3] 29 events -> 5 memories (2 promoted), 3 calls
+  [vg_32] 97 events -> 17 memories (7 promoted), 10 calls
+  [vg_4] 31 events -> 5 memories (3 promoted), 4 calls
+  [vg_5] 32 events -> 7 memories (2 promoted), 4 calls
+  [vg_6] 37 events -> 6 memories (3 promoted), 4 calls
+  [vg_7] 32 events -> 7 memories (2 promoted), 4 calls
+  [vg_8] 23 events -> 5 memories (1 promoted), 3 calls
+  [vg_9] 22 events -> 4 memories (2 promoted), 3 calls
+store build calls: 183
+usable instances 43 of 46, questions 134, cli 2.1.251 (Claude Code)
+CLAUDE.md: removed CLAUDE.md block
+=== 1 [control] (3 q) ===
+    exact 3/3 wall=20s
+=== 1 [rfm] (3 q) ===
+    exact 3/3 wall=20s
+=== 2 [control] (3 q) ===
+    exact 3/3 wall=18s
+=== 2 [rfm] (3 q) ===
+    exact 3/3 wall=21s
+CLAUDE.md: added outcome-loop block to /Users/andrewgoodchild/.claude/CLAUDE.md (restored)

@@ -1,0 +1,619 @@
+== facts extract (gaps) + retrieve
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  3258 cached, 318 to run
+    25/318
+    50/318
+    75/318
+    100/318
+    125/318
+    150/318
+    175/318
+    200/318
+    225/318
+    250/318
+    275/318
+    300/318
+  facts: 47867 over 14301 sessions
+  unit 1/301 (738 turns)
+  unit 2/301 (692 turns)
+  unit 3/301 (761 turns)
+  unit 4/301 (642 turns)
+  unit 5/301 (671 turns)
+  unit 6/301 (658 turns)
+  unit 7/301 (661 turns)
+  unit 8/301 (675 turns)
+  unit 9/301 (691 turns)
+  unit 10/301 (621 turns)
+  unit 11/301 (669 turns)
+  unit 12/301 (649 turns)
+  unit 13/301 (628 turns)
+  unit 14/301 (632 turns)
+  unit 15/301 (690 turns)
+  unit 16/301 (693 turns)
+  unit 17/301 (590 turns)
+  unit 18/301 (688 turns)
+  unit 19/301 (714 turns)
+  unit 20/301 (653 turns)
+  unit 21/301 (702 turns)
+  unit 22/301 (621 turns)
+  unit 23/301 (607 turns)
+  unit 24/301 (636 turns)
+  unit 25/301 (679 turns)
+  unit 26/301 (625 turns)
+  unit 27/301 (675 turns)
+  unit 28/301 (627 turns)
+  unit 29/301 (647 turns)
+  unit 30/301 (657 turns)
+  unit 31/301 (649 turns)
+  unit 32/301 (646 turns)
+  unit 33/301 (671 turns)
+  unit 34/301 (655 turns)
+  unit 35/301 (666 turns)
+  unit 36/301 (734 turns)
+  unit 37/301 (669 turns)
+  unit 38/301 (619 turns)
+  unit 39/301 (705 turns)
+  unit 40/301 (641 turns)
+  unit 41/301 (649 turns)
+  unit 42/301 (686 turns)
+  unit 43/301 (634 turns)
+  unit 44/301 (637 turns)
+  unit 45/301 (668 turns)
+  unit 46/301 (618 turns)
+  unit 47/301 (638 turns)
+  unit 48/301 (649 turns)
+  unit 49/301 (653 turns)
+  unit 50/301 (622 turns)
+  unit 51/301 (660 turns)
+  unit 52/301 (628 turns)
+  unit 53/301 (645 turns)
+  unit 54/301 (623 turns)
+  unit 55/301 (649 turns)
+  unit 56/301 (628 turns)
+  unit 57/301 (640 turns)
+  unit 58/301 (668 turns)
+  unit 59/301 (653 turns)
+  unit 60/301 (685 turns)
+  unit 61/301 (654 turns)
+  unit 62/301 (711 turns)
+  unit 63/301 (655 turns)
+  unit 64/301 (615 turns)
+  unit 65/301 (652 turns)
+  unit 66/301 (713 turns)
+  unit 67/301 (565 turns)
+  unit 68/301 (628 turns)
+  unit 69/301 (672 turns)
+  unit 70/301 (636 turns)
+  unit 71/301 (643 turns)
+  unit 72/301 (619 turns)
+  unit 73/301 (652 turns)
+  unit 74/301 (701 turns)
+  unit 75/301 (647 turns)
+  unit 76/301 (652 turns)
+  unit 77/301 (633 turns)
+  unit 78/301 (662 turns)
+  unit 79/301 (696 turns)
+  unit 80/301 (644 turns)
+  unit 81/301 (645 turns)
+  unit 82/301 (677 turns)
+  unit 83/301 (683 turns)
+  unit 84/301 (648 turns)
+  unit 85/301 (633 turns)
+  unit 86/301 (620 turns)
+  unit 87/301 (672 turns)
+  unit 88/301 (661 turns)
+  unit 89/301 (670 turns)
+  unit 90/301 (637 turns)
+  unit 91/301 (675 turns)
+  unit 92/301 (717 turns)
+  unit 93/301 (653 turns)
+  unit 94/301 (652 turns)
+  unit 95/301 (657 turns)
+  unit 96/301 (608 turns)
+  unit 97/301 (576 turns)
+  unit 98/301 (622 turns)
+  unit 99/301 (657 turns)
+  unit 100/301 (669 turns)
+  unit 101/301 (673 turns)
+  unit 102/301 (729 turns)
+  unit 103/301 (663 turns)
+  unit 104/301 (604 turns)
+  unit 105/301 (653 turns)
+  unit 106/301 (674 turns)
+  unit 107/301 (717 turns)
+  unit 108/301 (655 turns)
+  unit 109/301 (666 turns)
+  unit 110/301 (655 turns)
+  unit 111/301 (673 turns)
+  unit 112/301 (610 turns)
+  unit 113/301 (640 turns)
+  unit 114/301 (639 turns)
+  unit 115/301 (713 turns)
+  unit 116/301 (591 turns)
+  unit 117/301 (658 turns)
+  unit 118/301 (629 turns)
+  unit 119/301 (612 turns)
+  unit 120/301 (613 turns)
+  unit 121/301 (667 turns)
+  unit 122/301 (664 turns)
+  unit 123/301 (586 turns)
+  unit 124/301 (556 turns)
+  unit 125/301 (627 turns)
+  unit 126/301 (628 turns)
+  unit 127/301 (612 turns)
+  unit 128/301 (620 turns)
+  unit 129/301 (683 turns)
+  unit 130/301 (626 turns)
+  unit 131/301 (684 turns)
+  unit 132/301 (663 turns)
+  unit 133/301 (634 turns)
+  unit 134/301 (733 turns)
+  unit 135/301 (673 turns)
+  unit 136/301 (627 turns)
+  unit 137/301 (648 turns)
+  unit 138/301 (638 turns)
+  unit 139/301 (634 turns)
+  unit 140/301 (706 turns)
+  unit 141/301 (679 turns)
+  unit 142/301 (685 turns)
+  unit 143/301 (639 turns)
+  unit 144/301 (705 turns)
+  unit 145/301 (601 turns)
+  unit 146/301 (662 turns)
+  unit 147/301 (705 turns)
+  unit 148/301 (620 turns)
+  unit 149/301 (656 turns)
+  unit 150/301 (682 turns)
+  unit 151/301 (659 turns)
+  unit 152/301 (628 turns)
+  unit 153/301 (670 turns)
+  unit 154/301 (630 turns)
+  unit 155/301 (609 turns)
+  unit 156/301 (645 turns)
+  unit 157/301 (595 turns)
+  unit 158/301 (688 turns)
+  unit 159/301 (700 turns)
+  unit 160/301 (727 turns)
+  unit 161/301 (659 turns)
+  unit 162/301 (668 turns)
+  unit 163/301 (582 turns)
+  unit 164/301 (676 turns)
+  unit 165/301 (585 turns)
+  unit 166/301 (628 turns)
+  unit 167/301 (617 turns)
+  unit 168/301 (626 turns)
+  unit 169/301 (646 turns)
+  unit 170/301 (657 turns)
+  unit 171/301 (649 turns)
+  unit 172/301 (648 turns)
+  unit 173/301 (720 turns)
+  unit 174/301 (654 turns)
+  unit 175/301 (589 turns)
+  unit 176/301 (622 turns)
+  unit 177/301 (611 turns)
+  unit 178/301 (628 turns)
+  unit 179/301 (620 turns)
+  unit 180/301 (700 turns)
+  unit 181/301 (730 turns)
+  unit 182/301 (628 turns)
+  unit 183/301 (626 turns)
+  unit 184/301 (613 turns)
+  unit 185/301 (669 turns)
+  unit 186/301 (647 turns)
+  unit 187/301 (658 turns)
+  unit 188/301 (637 turns)
+  unit 189/301 (640 turns)
+  unit 190/301 (635 turns)
+  unit 191/301 (649 turns)
+  unit 192/301 (653 turns)
+  unit 193/301 (616 turns)
+  unit 194/301 (634 turns)
+  unit 195/301 (659 turns)
+  unit 196/301 (704 turns)
+  unit 197/301 (625 turns)
+  unit 198/301 (679 turns)
+  unit 199/301 (665 turns)
+  unit 200/301 (646 turns)
+  unit 201/301 (652 turns)
+  unit 202/301 (707 turns)
+  unit 203/301 (634 turns)
+  unit 204/301 (639 turns)
+  unit 205/301 (736 turns)
+  unit 206/301 (659 turns)
+  unit 207/301 (649 turns)
+  unit 208/301 (613 turns)
+  unit 209/301 (662 turns)
+  unit 210/301 (602 turns)
+  unit 211/301 (685 turns)
+  unit 212/301 (643 turns)
+  unit 213/301 (583 turns)
+  unit 214/301 (672 turns)
+  unit 215/301 (607 turns)
+  unit 216/301 (679 turns)
+  unit 217/301 (765 turns)
+  unit 218/301 (670 turns)
+  unit 219/301 (691 turns)
+  unit 220/301 (642 turns)
+  unit 221/301 (570 turns)
+  unit 222/301 (676 turns)
+  unit 223/301 (684 turns)
+  unit 224/301 (715 turns)
+  unit 225/301 (675 turns)
+  unit 226/301 (707 turns)
+  unit 227/301 (685 turns)
+  unit 228/301 (655 turns)
+  unit 229/301 (686 turns)
+  unit 230/301 (651 turns)
+  unit 231/301 (648 turns)
+  unit 232/301 (636 turns)
+  unit 233/301 (624 turns)
+  unit 234/301 (671 turns)
+  unit 235/301 (668 turns)
+  unit 236/301 (659 turns)
+  unit 237/301 (596 turns)
+  unit 238/301 (612 turns)
+  unit 239/301 (663 turns)
+  unit 240/301 (632 turns)
+  unit 241/301 (687 turns)
+  unit 242/301 (665 turns)
+  unit 243/301 (671 turns)
+  unit 244/301 (631 turns)
+  unit 245/301 (685 turns)
+  unit 246/301 (629 turns)
+  unit 247/301 (659 turns)
+  unit 248/301 (687 turns)
+  unit 249/301 (641 turns)
+  unit 250/301 (592 turns)
+  unit 251/301 (661 turns)
+  unit 252/301 (645 turns)
+  unit 253/301 (646 turns)
+  unit 254/301 (694 turns)
+  unit 255/301 (606 turns)
+  unit 256/301 (618 turns)
+  unit 257/301 (630 turns)
+  unit 258/301 (650 turns)
+  unit 259/301 (706 turns)
+  unit 260/301 (594 turns)
+  unit 261/301 (621 turns)
+  unit 262/301 (688 turns)
+  unit 263/301 (688 turns)
+  unit 264/301 (605 turns)
+  unit 265/301 (614 turns)
+  unit 266/301 (685 turns)
+  unit 267/301 (683 turns)
+  unit 268/301 (632 turns)
+  unit 269/301 (626 turns)
+  unit 270/301 (573 turns)
+  unit 271/301 (681 turns)
+  unit 272/301 (629 turns)
+  unit 273/301 (721 turns)
+  unit 274/301 (642 turns)
+  unit 275/301 (599 turns)
+  unit 276/301 (612 turns)
+  unit 277/301 (611 turns)
+  unit 278/301 (683 turns)
+  unit 279/301 (649 turns)
+  unit 280/301 (631 turns)
+  unit 281/301 (645 turns)
+  unit 282/301 (677 turns)
+  unit 283/301 (629 turns)
+  unit 284/301 (616 turns)
+  unit 285/301 (663 turns)
+  unit 286/301 (638 turns)
+  unit 287/301 (757 turns)
+  unit 288/301 (706 turns)
+  unit 289/301 (669 turns)
+  unit 290/301 (671 turns)
+  unit 291/301 (765 turns)
+  unit 292/301 (718 turns)
+  unit 293/301 (670 turns)
+  unit 294/301 (668 turns)
+  unit 295/301 (712 turns)
+  unit 296/301 (656 turns)
+  unit 297/301 (684 turns)
+  unit 298/301 (671 turns)
+  unit 299/301 (675 turns)
+  unit 300/301 (629 turns)
+  unit 301/301 (668 turns)
+== answer pass 1
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  192 cached, 1012 to run
+    25/1012
+    50/1012
+    75/1012
+    100/1012
+    125/1012
+    150/1012
+    175/1012
+    200/1012
+    225/1012
+    250/1012
+    275/1012
+    300/1012
+    325/1012
+    350/1012
+    375/1012
+    400/1012
+    425/1012
+    450/1012
+    475/1012
+    500/1012
+    525/1012
+    550/1012
+    575/1012
+    600/1012
+    625/1012
+    650/1012
+    675/1012
+    700/1012
+    725/1012
+    750/1012
+    775/1012
+    800/1012
+    825/1012
+    850/1012
+    875/1012
+    900/1012
+    925/1012
+    950/1012
+    975/1012
+    1000/1012
+== judge pass 1
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  192 cached, 1012 to run
+    25/1012
+    50/1012
+    75/1012
+    100/1012
+    125/1012
+    150/1012
+    175/1012
+    200/1012
+    225/1012
+    250/1012
+    275/1012
+    300/1012
+    325/1012
+    350/1012
+    375/1012
+    400/1012
+    425/1012
+    450/1012
+    475/1012
+    500/1012
+    525/1012
+    550/1012
+    575/1012
+    600/1012
+    625/1012
+    650/1012
+    675/1012
+    700/1012
+    725/1012
+    750/1012
+    775/1012
+    800/1012
+    825/1012
+    850/1012
+    875/1012
+    900/1012
+    925/1012
+    950/1012
+    975/1012
+    1000/1012
+== audit pass 1
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  0 cached, 602 to run
+    25/602
+    50/602
+    75/602
+    100/602
+    125/602
+    150/602
+    175/602
+    200/602
+    225/602
+    250/602
+    275/602
+    300/602
+    325/602
+    350/602
+    375/602
+    400/602
+    425/602
+    450/602
+    475/602
+    500/602
+    525/602
+    550/602
+    575/602
+    600/602
+== answer pass 2
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  1204 cached, 0 to run
+== judge pass 2
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  1204 cached, 0 to run
+== audit pass 2
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  602 cached, 0 to run
+== answer pass 3
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  1204 cached, 0 to run
+== judge pass 3
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  1204 cached, 0 to run
+== audit pass 3
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+  602 cached, 0 to run
+== report
+longmemeval: 301 questions (of 500 with published contexts for both baselines)
+{
+  "dataset": "longmemeval",
+  "n": 301,
+  "answer_model": "sonnet",
+  "judge_model": "haiku",
+  "arms": {
+    "hindsight": [
+      0.9037,
+      0.8703,
+      0.9369
+    ],
+    "hybrid-search": [
+      0.7807,
+      0.7342,
+      0.8272
+    ],
+    "mem-rfm-facts": [
+      0.9003,
+      0.8671,
+      0.9336
+    ],
+    "mem-rfm": [
+      0.9037,
+      0.8704,
+      0.9369
+    ]
+  },
+  "paired": {
+    "mem-rfm-facts - hindsight": [
+      -0.0033,
+      -0.0332,
+      0.0266
+    ],
+    "mem-rfm-facts - hybrid-search": [
+      0.1196,
+      0.0698,
+      0.1694
+    ],
+    "mem-rfm - hindsight": [
+      0.0,
+      -0.0299,
+      0.0299
+    ],
+    "mem-rfm - hybrid-search": [
+      0.1229,
+      0.0797,
+      0.1694
+    ],
+    "hybrid-search - hindsight": [
+      -0.1229,
+      -0.1728,
+      -0.0764
+    ],
+    "mem-rfm-facts - mem-rfm": [
+      -0.0033,
+      -0.0332,
+      0.0266
+    ]
+  },
+  "by_category": {
+    "knowledge-update": {
+      "n": 47,
+      "hindsight": 0.957,
+      "hybrid-search": 0.809,
+      "mem-rfm-facts": 0.915,
+      "mem-rfm": 0.936
+    },
+    "multi-session": {
+      "n": 80,
+      "hindsight": 0.887,
+      "hybrid-search": 0.875,
+      "mem-rfm-facts": 0.875,
+      "mem-rfm": 0.875
+    },
+    "single-session-assistant": {
+      "n": 34,
+      "hindsight": 1.0,
+      "hybrid-search": 1.0,
+      "mem-rfm-facts": 1.0,
+      "mem-rfm": 1.0
+    },
+    "single-session-preference": {
+      "n": 18,
+      "hindsight": 0.222,
+      "hybrid-search": 0.444,
+      "mem-rfm-facts": 0.333,
+      "mem-rfm": 0.5
+    },
+    "single-session-user": {
+      "n": 42,
+      "hindsight": 1.0,
+      "hybrid-search": 0.976,
+      "mem-rfm-facts": 0.952,
+      "mem-rfm": 0.976
+    },
+    "temporal-reasoning": {
+      "n": 80,
+      "hindsight": 0.95,
+      "hybrid-search": 0.55,
+      "mem-rfm-facts": 0.975,
+      "mem-rfm": 0.925
+    }
+  },
+  "context_tokens": {
+    "hindsight": 43679.4,
+    "hybrid-search": 23211.6,
+    "mem-rfm-facts": 24323.1,
+    "mem-rfm": 23544.2
+  },
+  "published_accuracy_same_qids": {
+    "hindsight": 0.9236,
+    "hybrid-search": 0.7409
+  },
+  "mcnemar": {
+    "mem-rfm-facts - hindsight": {
+      "x_only": 10,
+      "y_only": 11,
+      "p": 1.0
+    },
+    "mem-rfm-facts - hybrid-search": {
+      "x_only": 49,
+      "y_only": 13,
+      "p": 0.0
+    },
+    "mem-rfm - hindsight": {
+      "x_only": 11,
+      "y_only": 11,
+      "p": 1.0
+    },
+    "mem-rfm - hybrid-search": {
+      "x_only": 46,
+      "y_only": 9,
+      "p": 0.0
+    },
+    "hybrid-search - hindsight": {
+      "x_only": 10,
+      "y_only": 47,
+      "p": 0.0
+    },
+    "mem-rfm-facts - mem-rfm": {
+      "x_only": 11,
+      "y_only": 12,
+      "p": 1.0
+    }
+  },
+  "audit": {
+    "model": "sonnet",
+    "n": 301,
+    "arms": {
+      "mem-rfm-facts": 0.9568,
+      "hindsight": 0.9568
+    },
+    "paired": {
+      "mem-rfm-facts - hindsight": [
+        0.0,
+        -0.0233,
+        0.0233
+      ]
+    },
+    "mcnemar": {
+      "mem-rfm-facts - hindsight": {
+        "x_only": 6,
+        "y_only": 6,
+        "p": 1.0
+      }
+    }
+  }
+}
+== DONE

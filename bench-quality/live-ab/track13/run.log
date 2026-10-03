@@ -1,0 +1,35 @@
+preflight ok: 8 tasks x 2 arms = 16 sessions, model claude-haiku-4-5-20251001
+CLAUDE.md: removed CLAUDE.md block
+=== sphinx-doc__sphinx-7462 [none] (<15 min fix) ===
+    resolved=False wall=58s 2 failed, 2 warnings in 0.10s
+=== sphinx-doc__sphinx-7462 [verbatim] (<15 min fix) ===
+    resolved=False wall=85s 2 failed, 2 warnings in 0.10s
+=== sphinx-doc__sphinx-7757 [none] (15 min - 1 hour) ===
+    resolved=True wall=112s 1 passed, 2 warnings in 0.08s
+=== sphinx-doc__sphinx-7757 [verbatim] (15 min - 1 hour) ===
+    resolved=True wall=195s 1 passed, 2 warnings in 0.08s
+=== sphinx-doc__sphinx-7889 [none] (<15 min fix) ===
+    resolved=False wall=81s 1 failed, 2 warnings in 0.05s
+=== sphinx-doc__sphinx-7889 [verbatim] (<15 min fix) ===
+    resolved=True wall=100s 1 passed, 2 warnings in 0.02s
+=== sphinx-doc__sphinx-7910 [none] (<15 min fix) ===
+    resolved=True wall=80s 1 passed, 2 warnings in 0.02s
+=== sphinx-doc__sphinx-7910 [verbatim] (<15 min fix) ===
+    resolved=True wall=104s 1 passed, 2 warnings in 0.02s
+=== sphinx-doc__sphinx-8056 [none] (15 min - 1 hour) ===
+    resolved=False wall=211s 1 failed, 2 warnings in 0.07s
+=== sphinx-doc__sphinx-8056 [verbatim] (15 min - 1 hour) ===
+    resolved=False wall=225s 1 failed, 2 warnings in 0.07s
+=== sphinx-doc__sphinx-9281 [none] (<15 min fix) ===
+    resolved=False wall=139s 1 failed in 0.13s
+=== sphinx-doc__sphinx-9281 [verbatim] (<15 min fix) ===
+    resolved=False wall=176s 1 failed in 0.13s
+=== sphinx-doc__sphinx-9320 [none] (<15 min fix) ===
+    resolved=True wall=78s 1 passed in 0.02s
+=== sphinx-doc__sphinx-9320 [verbatim] (<15 min fix) ===
+    resolved=True wall=96s 1 passed in 0.02s
+=== sphinx-doc__sphinx-9367 [none] (<15 min fix) ===
+    resolved=True wall=42s 1 passed in 0.01s
+=== sphinx-doc__sphinx-9367 [verbatim] (<15 min fix) ===
+    resolved=True wall=41s 1 passed in 0.01s
+CLAUDE.md: added outcome-loop block to /Users/andrewgoodchild/.claude/CLAUDE.md (restored)

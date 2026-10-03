@@ -42,6 +42,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", ".."))
 import rfm  # noqa: E402  (repo-root module; scoring engine)
 import log_env  # noqa: E402  (sibling module; shared RFM_LOG contract)
+import secret_scan  # noqa: E402  (sibling module; shared credential redaction)
+import transcripts  # noqa: E402  (sibling module; the one content sanitizer)
 
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 EMBEDDER_ID = os.environ.get("RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
@@ -69,6 +71,8 @@ class SaveResult(BaseModel):
 class SearchHit(BaseModel):
     id: int
     content: str
+    saved: str = Field(description="date the memory was saved (YYYY-MM-DD); "
+                                   "weigh old advice against newer changes")
     score: float = Field(description="similarity x rfm_prior, the ranking score")
 
 
@@ -344,11 +348,9 @@ def _sanitize(content: str) -> str:
     injected lines), defuse the marker prefix (prevents spoofing A/B
     attribution — format contract with hooks/session_start.py's injection
     marker and ab/ab_stats.py MARKER_RE) and the hook's close tag (prevents
-    breaking out of its <memories> data block)."""
-    content = "".join(ch if ch.isprintable() else " " for ch in content)
-    content = content.replace("[rfm-memory:", "[rfm-memory ")
-    content = content.replace("</memories>", "(/memories)")
-    return " ".join(content.split())
+    breaking out of its <memories> data block). One implementation, shared
+    with the sweep's writes and every hook's display: transcripts.flatten."""
+    return transcripts.flatten(content)
 
 
 def _check(content: str) -> str:
@@ -356,6 +358,9 @@ def _check(content: str) -> str:
     {"error": ...} inside a success envelope reads as success to the model,
     which then does not retry; MCP requires isError so it can self-correct."""
     content = _sanitize(content.strip())
+    content, kinds = secret_scan.redact(content)
+    if kinds:
+        log("secret_redacted", kinds=kinds)
     if not content:
         raise ValueError("empty content")
     if len(content) > MAX_CONTENT:
@@ -442,9 +447,13 @@ def _get(memory_id: int) -> MemoryRow:
     if r is None:
         raise ValueError(f"no memory with id {memory_id}")
     return MemoryRow(id=r[0], content=r[1],
-                     created=time.strftime("%Y-%m-%d", time.localtime(r[2])),
+                     created=_day(r[2]),
                      accesses=r[3], value=round(r[4], 3), outcomes=r[5],
                      score=round(r[6], 4), scope=r[7])
+
+
+def _day(ts: float) -> str:
+    return time.strftime("%Y-%m-%d", time.localtime(ts))
 
 
 def _search(query: str, limit: int = 5, scope: str | None = None,
@@ -463,8 +472,9 @@ def _search(query: str, limit: int = 5, scope: str | None = None,
         # factors can be logged separately — the arithmetic and the ordering
         # are unchanged.
         rows = d.execute(
-            f"""SELECT id, content, sim, prior, sim * prior AS score, last_access FROM (
-                   SELECT id, content, last_access,
+            f"""SELECT id, content, sim, prior, sim * prior AS score, last_access,
+                      created_at FROM (
+                   SELECT id, content, last_access, created_at,
                           max(1.0 - vec_distance_cosine(embedding, ?), 0) AS sim,
                           rfm_prior(id) AS prior
                    FROM rfm_memories WHERE embedding IS NOT NULL {_scope_sql(scope)})
@@ -510,7 +520,8 @@ def _search(query: str, limit: int = 5, scope: str | None = None,
                 order_changed=got != sim_only,
                 accesses_recorded=len(fresh), accesses_suppressed=len(rows) - len(fresh),
                 sim_only=sim_only)
-    return [SearchHit(id=r[0], content=r[1], score=round(r[4], 4)) for r in rows]
+    return [SearchHit(id=r[0], content=r[1], saved=_day(r[6]), score=round(r[4], 4))
+            for r in rows]
 
 
 @serialized
@@ -591,7 +602,7 @@ def _list(limit: int = 20, offset: int = 0) -> ListResult:
     # A bare list gives a paging agent no stopping condition.
     return ListResult(
         items=[MemoryRow(id=r[0], content=r[1],
-                         created=time.strftime("%Y-%m-%d", time.localtime(r[2])),
+                         created=_day(r[2]),
                          accesses=r[3], value=round(r[4], 3), outcomes=r[5],
                          score=round(r[6], 4), scope=r[7]) for r in rows],
         total=total, has_more=offset + len(rows) < total)
@@ -625,7 +636,7 @@ def _export() -> str:
     lines = ["# mem-rfm export", ""]
     used = 0
     for mid, content, created, acc, val, score, mscope in rows:
-        day = time.strftime("%Y-%m-%d", time.localtime(created))
+        day = _day(created)
         scope_tag = f", scope {mscope}" if mscope else ""
         line = (f"- [{mid}] ({day}, {acc} uses, value {val:+.2f}, "
                 f"score {score:.3f}{scope_tag}) {content}")

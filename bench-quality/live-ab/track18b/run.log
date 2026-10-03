@@ -1,0 +1,18 @@
+tee: track18b/run.log: No such file or directory
+sweep: 50 transcript(s), db /Users/andrewgoodchild/code/mem-rfm/bench-quality/live-ab/track18b/rfm-memory.db
+Fetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 5 files:  20%|██        | 1/5 [00:00<00:02,  1.75it/s]Fetching 5 files:  80%|████████  | 4/5 [00:00<00:00,  6.57it/s]Fetching 5 files: 100%|██████████| 5/5 [00:06<00:00,  1.21s/it]
+  5/50
+  10/50
+  15/50
+  20/50
+  25/50
+  30/50
+  35/50
+  40/50
+  45/50
+  50/50
+sweep done: store has 13 memories
+preflight ok: 50 transcripts (30 rfm-arm), store /Users/andrewgoodchild/code/mem-rfm/bench-quality/live-ab/track18b/rfm-memory.db
+
+[exited with code 1]
