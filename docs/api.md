@@ -1,12 +1,13 @@
 # API reference
 
-`rfm.py` (repo root, stdlib-only) registers scalar SQL functions on a
-sqlite3 connection. Registering it is the only setup:
+`mem_rfm` (`pip install mem-rfm`; `mem_rfm.py` at the repo root,
+stdlib-only) registers scalar SQL functions on a sqlite3 connection.
+Registering it is the only setup:
 
 ```python
-import sqlite3, rfm
+import sqlite3, mem_rfm
 db = sqlite3.connect("memories.db")
-rfm.register(db)
+mem_rfm.register(db)
 db.execute("SELECT rfm_init()")
 ```
 
@@ -353,7 +354,9 @@ query at all, capped at 1,500 characters.
 ## Repository layout
 
 ```
-rfm.py                    the scoring engine (registers the rfm_* SQL functions)
+mem_rfm.py                the scoring engine (registers the rfm_* SQL functions);
+                          published to PyPI as mem-rfm
+rfm.py                    repo-only alias so in-repo `import rfm` keeps working
 rfm_schema.sql            standalone schema
 tests/                    engine unit + SQL-surface tests (python3 tests/test_rfm.py)
 bench-quality/            all evidence: retrieval evals, live A/B, throughput, RESULTS.md
