@@ -12,7 +12,7 @@ import sqlite3
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-import rfm  # noqa: E402
+import mem_rfm as rfm  # noqa: E402  (the published module; no repo alias needed)
 
 D = 0.5
 FAILED = []

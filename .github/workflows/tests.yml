@@ -23,3 +23,34 @@ jobs:
       - run: python integrations/claude-code/test_dates.py
       - run: python integrations/claude-code/test_harnesses.py
       - run: python integrations/claude-code/test_feedback_loop.py
+  package:
+    # What gets published: the wheel ships mem_rfm alone (never the repo's
+    # rfm.py alias), its metadata and README render on PyPI, the unpacked
+    # sdist passes the engine tests, and the installed module coexists with
+    # the unrelated `rfm` package on PyPI, which owns the top-level name rfm.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - name: wheel ships mem_rfm only
+        run: |
+          python - <<'PY'
+          import glob, zipfile
+          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          mods = [n for n in names if "/" not in n]
+          assert mods == ["mem_rfm.py"], mods
+          PY
+      - name: sdist passes the engine tests
+        run: |
+          mkdir sdist && tar xzf dist/*.tar.gz -C sdist
+          cd sdist/* && python tests/test_rfm.py
+      - name: installs beside PyPI's rfm package
+        run: |
+          python -m venv /tmp/v
+          /tmp/v/bin/pip install dist/*.whl rfm==1.0.9
+          cd /tmp && /tmp/v/bin/python -c "import sqlite3, mem_rfm, rfm; assert not hasattr(rfm, 'register'); db = sqlite3.connect(':memory:'); mem_rfm.register(db); db.execute('SELECT rfm_init()')"
