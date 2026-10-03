@@ -1,0 +1,195 @@
+{
+  "dataset": "longmemeval",
+  "n": 199,
+  "answer_model": "sonnet",
+  "judge_model": "haiku",
+  "arms": {
+    "hindsight": [
+      0.9347,
+      0.8995,
+      0.9648
+    ],
+    "hybrid-search": [
+      0.794,
+      0.7387,
+      0.8492
+    ],
+    "mem-rfm-facts": [
+      0.9095,
+      0.8693,
+      0.9447
+    ],
+    "mem-rfm-facts50": [
+      0.9347,
+      0.8995,
+      0.9648
+    ],
+    "mem-rfm-trunc300-top10": [
+      0.8995,
+      0.8543,
+      0.9397
+    ],
+    "mem-rfm-trunc300": [
+      0.8342,
+      0.7839,
+      0.8844
+    ],
+    "mem-rfm": [
+      0.9045,
+      0.8643,
+      0.9447
+    ]
+  },
+  "paired": {
+    "mem-rfm-facts - hindsight": [
+      -0.0251,
+      -0.0653,
+      0.0101
+    ],
+    "mem-rfm-facts - hybrid-search": [
+      0.1156,
+      0.0553,
+      0.1759
+    ],
+    "mem-rfm-facts50 - hindsight": [
+      0.0,
+      -0.0352,
+      0.0352
+    ],
+    "mem-rfm-facts50 - hybrid-search": [
+      0.1407,
+      0.0754,
+      0.206
+    ],
+    "mem-rfm-trunc300-top10 - hindsight": [
+      -0.0352,
+      -0.0754,
+      0.005
+    ],
+    "mem-rfm-trunc300-top10 - hybrid-search": [
+      0.1055,
+      0.0452,
+      0.1658
+    ],
+    "mem-rfm-trunc300 - hindsight": [
+      -0.1005,
+      -0.1508,
+      -0.0503
+    ],
+    "mem-rfm-trunc300 - hybrid-search": [
+      0.0402,
+      -0.0302,
+      0.1106
+    ],
+    "mem-rfm - hindsight": [
+      -0.0302,
+      -0.0754,
+      0.0151
+    ],
+    "mem-rfm - hybrid-search": [
+      0.1106,
+      0.0503,
+      0.1709
+    ],
+    "hybrid-search - hindsight": [
+      -0.1407,
+      -0.201,
+      -0.0804
+    ],
+    "mem-rfm-facts - mem-rfm": [
+      0.005,
+      -0.0452,
+      0.0553
+    ],
+    "mem-rfm-facts50 - mem-rfm": [
+      0.0302,
+      -0.0151,
+      0.0754
+    ],
+    "mem-rfm-trunc300-top10 - mem-rfm": [
+      -0.005,
+      -0.0452,
+      0.0352
+    ],
+    "mem-rfm-trunc300 - mem-rfm": [
+      -0.0704,
+      -0.1256,
+      -0.0151
+    ]
+  },
+  "by_category": {
+    "knowledge-update": {
+      "n": 31,
+      "hindsight": 1.0,
+      "hybrid-search": 0.871,
+      "mem-rfm-facts": 0.968,
+      "mem-rfm-facts50": 0.968,
+      "mem-rfm-trunc300-top10": 0.968,
+      "mem-rfm-trunc300": 0.968,
+      "mem-rfm": 0.968
+    },
+    "multi-session": {
+      "n": 53,
+      "hindsight": 0.925,
+      "hybrid-search": 0.868,
+      "mem-rfm-facts": 0.868,
+      "mem-rfm-facts50": 0.887,
+      "mem-rfm-trunc300-top10": 0.849,
+      "mem-rfm-trunc300": 0.83,
+      "mem-rfm": 0.868
+    },
+    "single-session-assistant": {
+      "n": 22,
+      "hindsight": 0.955,
+      "hybrid-search": 1.0,
+      "mem-rfm-facts": 1.0,
+      "mem-rfm-facts50": 0.955,
+      "mem-rfm-trunc300-top10": 1.0,
+      "mem-rfm-trunc300": 0.409,
+      "mem-rfm": 1.0
+    },
+    "single-session-preference": {
+      "n": 12,
+      "hindsight": 0.75,
+      "hybrid-search": 0.833,
+      "mem-rfm-facts": 0.667,
+      "mem-rfm-facts50": 0.833,
+      "mem-rfm-trunc300-top10": 0.667,
+      "mem-rfm-trunc300": 0.5,
+      "mem-rfm": 0.667
+    },
+    "single-session-user": {
+      "n": 28,
+      "hindsight": 0.964,
+      "hybrid-search": 0.964,
+      "mem-rfm-facts": 0.929,
+      "mem-rfm-facts50": 1.0,
+      "mem-rfm-trunc300-top10": 0.929,
+      "mem-rfm-trunc300": 0.929,
+      "mem-rfm": 1.0
+    },
+    "temporal-reasoning": {
+      "n": 53,
+      "hindsight": 0.925,
+      "hybrid-search": 0.491,
+      "mem-rfm-facts": 0.925,
+      "mem-rfm-facts50": 0.943,
+      "mem-rfm-trunc300-top10": 0.906,
+      "mem-rfm-trunc300": 0.962,
+      "mem-rfm": 0.868
+    }
+  },
+  "context_tokens": {
+    "hindsight": 46430.9,
+    "hybrid-search": 26023.8,
+    "mem-rfm-facts": 23625.5,
+    "mem-rfm-facts50": 24077.8,
+    "mem-rfm-trunc300-top10": 24352.1,
+    "mem-rfm-trunc300": 24443.3,
+    "mem-rfm": 23415.3
+  },
+  "published_accuracy_same_qids": {
+    "hindsight": 0.9799,
+    "hybrid-search": 0.7387
+  }
+}

@@ -30,15 +30,25 @@ sys.path.insert(0, os.path.join(HERE, "hooks"))
 sys.path.insert(0, os.path.join(HERE, "..", ".."))
 import session_end as se  # noqa: E402  (parse, events, corrections, acted_on)
 import rfm                # noqa: E402
+import secret_scan        # noqa: E402
+import harnesses          # noqa: E402
+import transcripts        # noqa: E402
+import log_env            # noqa: E402
 
 CONFIG = json.load(open(os.path.join(HERE, "sweep-config.json")))
 DB_PATH = os.path.expanduser(
     os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 STATE = os.path.join(os.path.dirname(DB_PATH), "sweep-state.json")
-LOG = os.path.join(os.path.dirname(DB_PATH), "rfm-log.jsonl")
+# The same RFM_LOG / RFM_LOG_CONTENT contract as the server and hooks:
+# RFM_LOG=0 means nothing is written, and content fields are redacted.
+LOG_ENABLED, LOG = log_env.resolve_log(
+    os.environ.get("RFM_LOG", "1"), os.path.dirname(DB_PATH))
+LOG_CONTENT = log_env.content_enabled(os.environ.get("RFM_LOG_CONTENT", "1"))
 
 
 def _log(fields):
+    if not LOG_ENABLED:
+        return
     try:
         os.makedirs(os.path.dirname(LOG), exist_ok=True)
         with open(LOG, "a") as f:
@@ -175,28 +185,60 @@ def similarity(a, b):
     return len(ta & tb) / len(ta | tb)
 
 
-def material_of(records, events):
+def material_of(sess):
     parts = []
-    for c in se.corrections(events)[:4]:
+    for c in se.corrections(sess.events)[:4]:
         parts.append(f"FAILED: {c['failed']}\nERROR: {c['error']}\n"
                      f"FIXED BY: {c['fixed']}")
-    prose = []
-    for r in records:
-        if r.get("type") != "assistant":
-            continue
-        c = (r.get("message") or {}).get("content")
-        if isinstance(c, list):
-            for b in c:
-                if isinstance(b, dict) and b.get("type") == "text":
-                    t = (b.get("text") or "").strip()
-                    if len(t) >= 200:
-                        prose.append(t)
+    # Reader prose arrives with our own injected blocks already stripped
+    # (transcripts.strip_injected): extracting from the session's echo of a
+    # memory would be the store confirming itself.
+    prose = [t for t in sess.prose if len(t) >= 200]
     parts.extend(prose[-3:])
     return "\n\n".join(parts)[:6000]
 
 
-def admit(db, mem, cmds, src):
-    """Dedupe-as-frequency, provenance, quarantine — then insert or bump."""
+def best_match(text, rows):
+    """(id, similarity) of the stored row closest to `text` when it clears
+    the dedupe threshold, else (None, best similarity). The one matching
+    rule shared by admission, self-sighting and the in-play judge."""
+    best, best_sim = None, 0.0
+    for mid, existing in rows:
+        s = similarity(text, existing)
+        if s > best_sim:
+            best, best_sim = mid, s
+    if best_sim >= CONFIG["dedupe_threshold"]:
+        return best, best_sim
+    return None, best_sim
+
+
+def exposed_ids(db, sess):
+    """Store ids of the memories this session was shown (injected, or read
+    through any memory tool: sess.seen), matched by SIMILARITY for the same reason judge_in_play
+    matches that way: transcript ids belong to whatever store ran the
+    session."""
+    rows = db.execute("SELECT id, content FROM rfm_memories").fetchall()
+    matched = (best_match(c, rows)[0] for c in sess.seen.values())
+    return {mid for mid in matched if mid is not None}
+
+
+def _classes(condition):
+    return {c for c in (condition or "").split(",") if c}
+
+
+def admit(db, mem, cmds, src, exposed=frozenset(), touched=None):
+    """Dedupe-as-frequency, provenance, quarantine — then insert or bump.
+
+    A near-duplicate bumps sightings — the quarantine's evidence that a
+    second independent session learned the same thing — only when it is
+    independent, so none of these count:
+      `exposed`   store ids this session was shown (injected, or read via
+                  any memory tool): restating what it was told;
+      `touched`   ids this session already inserted or bumped: two
+                  paraphrases from one session are one sighting;
+      a match across condition classes: a different lesson that happens to
+                  embed nearby is not the same lesson seen again.
+    (test_feedback_loop.py)"""
     content = (mem.get("content") or "").strip()
     cond = (mem.get("condition_class") or "").strip()
     if not content or not cond:
@@ -206,17 +248,36 @@ def admit(db, mem, cmds, src):
         at = tokens(action)
         if not at or not any(
                 len(at & tokens(c)) / len(at) >= 0.6 for c in cmds):
-            _log({"op": "sweep_provenance_drop", "action": action[:80],
-                  "src": src})
+            _log({"op": "sweep_provenance_drop", "src": src,
+                  "action": log_env.redact(secret_scan.redact(action[:80])[0],
+                                           LOG_CONTENT)})
             action = ""
     text = content if not action else f"{content} Command: `{action}`"
-    best, best_sim = None, 0.0
-    for mid, existing in db.execute(
-            "SELECT id, content FROM rfm_memories").fetchall():
-        s = similarity(text, existing)
-        if s > best_sim:
-            best, best_sim = mid, s
-    if best is not None and best_sim >= CONFIG["dedupe_threshold"]:
+    # Same sanitizing as a server save: this row is injected later.
+    text = transcripts.flatten(text)
+    text, kinds = secret_scan.redact(text)
+    if kinds:
+        _log({"op": "secret_redacted", "kinds": kinds, "src": src})
+    best, best_sim = best_match(
+        text, db.execute("SELECT id, content FROM rfm_memories").fetchall())
+    condition = se.derive_condition(text) or cond.lower()
+    touched = set() if touched is None else touched
+    if best is not None:
+        why = None
+        if best in exposed:
+            why = "sweep_self_sighting"
+        elif best in touched:
+            why = "sweep_same_session"
+        else:
+            row = db.execute("SELECT condition_class, sightings FROM rfm_memories "
+                             "WHERE id = ?", (best,)).fetchone()
+            if row[1] is not None and not (_classes(row[0]) & _classes(condition)):
+                why = "sweep_cross_condition"
+        if why:
+            _log({"op": why, "id": best, "similarity": round(best_sim, 3),
+                  "src": src})
+            return best
+        touched.add(best)
         db.execute("SELECT rfm_record_access(?)", (best,))
         db.execute("UPDATE rfm_memories SET sightings = "
                    "COALESCE(sightings, 1) + 1 WHERE id = ?", (best,))
@@ -226,7 +287,8 @@ def admit(db, mem, cmds, src):
     cur = db.execute(
         "INSERT INTO rfm_memories (content, created_at, condition_class,"
         " sightings) VALUES (?, ?, ?, 1)",
-        (text, time.time(), se.derive_condition(text) or cond.lower()))
+        (text, time.time(), condition))
+    touched.add(cur.lastrowid)
     _log({"op": "sweep_admit", "id": cur.lastrowid, "condition": cond,
           "action_provenance": "quoted" if action else "none", "src": src})
     return cur.lastrowid
@@ -243,29 +305,20 @@ def outcome_of(v):
     return None
 
 
-def judge_in_play(db, records, events, fired, src):
+def judge_in_play(db, sess, fired, src):
     # Transcript-parsed in-play content, matched to this store's rows by
     # SIMILARITY, never by id: transcript ids belong to whatever store
     # ran that session, and rehydrating them against this one collides
     # (Track 18's vacuous P3 — wrong content, dead signatures, silent
     # skips). A similarity match also recovers the full text that
     # injection truncation cut from the transcript line.
-    mems = se.in_play_memories(records)
     rows = db.execute("SELECT id, content FROM rfm_memories").fetchall()
-    for _tid, (tcontent, first_idx) in mems.items():
-        target, best_sim = None, 0.0
-        for mid, existing in rows:
-            s = similarity(tcontent, existing)
-            if s > best_sim:
-                target, best_sim = mid, s
-        content = tcontent
-        if target is not None and best_sim >= CONFIG["dedupe_threshold"]:
-            content = next(c for m, c in rows if m == target)
-        else:
-            target = None
+    for _tid, (tcontent, first_idx) in sess.exposures.items():
+        target, _sim = best_match(tcontent, rows)
+        content = tcontent if target is None else dict(rows)[target]
         sig = se._signature(content)
         acted = []
-        for e in events[first_idx:]:
+        for e in sess.events[first_idx:]:
             if se.acted_on(sig, e.cmd):
                 acted.append(f"$ {e.cmd.splitlines()[0][:160]}\n"
                              f"  -> {'ERROR' if e.is_err else 'ok'}: "
@@ -309,23 +362,30 @@ def evict(db):
 
 
 def sweep_one(db, tp):
-    records = se._parse_transcript(tp)
-    events = se.load_events(records)
-    if not events and not records:
+    harness = harnesses.current()
+    sess = transcripts.read(tp, harness.reader)
+    src = os.path.basename(tp)
+    if not sess.readable:
+        _log({"op": "sweep_unreadable", "harness": harness.name, "src": src})
         return
+    events = sess.events
     fired = se.fired_classes(events)
     cmds = [e.cmd for e in events if e.cmd]
-    src = os.path.basename(tp)
-    mat = material_of(records, events)
+    mat = material_of(sess)
     if mat.strip():
         out = parse_json(llm(EXTRACT.format(
             instruction=CONFIG["instruction"],
             ontology=", ".join(CONFIG["ontology"]),
             max_per_session=CONFIG["max_per_session"], material=mat)))
-        for mem in (out or [])[:CONFIG["max_per_session"]]:
-            if isinstance(mem, dict):
-                admit(db, mem, cmds, src)
-    judge_in_play(db, records, events, fired, src)
+        mems = [m for m in (out or [])[:CONFIG["max_per_session"]]
+                if isinstance(m, dict)]
+        # Matched before any admission, and only when there is something
+        # to admit: the scan is O(exposures x rows).
+        exposed = exposed_ids(db, sess) if mems else set()
+        touched = set()
+        for mem in mems:
+            admit(db, mem, cmds, src, exposed, touched)
+    judge_in_play(db, sess, fired, src)
     evict(db)
     db.commit()
 
@@ -357,7 +417,15 @@ def main():
     for i, tp in enumerate(paths, 1):
         if not os.path.exists(tp):
             continue
-        sweep_one(db, tp)
+        try:
+            sweep_one(db, tp)
+        except Exception as e:
+            # One transcript must not abort the sweep — in discover mode an
+            # abort also skips the state write, so the same file would kill
+            # every later run. Roll back its partial writes and move on.
+            db.rollback()
+            _log({"op": "sweep_error", "src": os.path.basename(tp),
+                  "error": f"{type(e).__name__}: {e}"[:200]})
         if i % 5 == 0:
             print(f"  {i}/{len(paths)}", flush=True)
     if not a.replay:

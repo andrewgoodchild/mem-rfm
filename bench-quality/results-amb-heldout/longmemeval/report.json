@@ -1,0 +1,168 @@
+{
+  "dataset": "longmemeval",
+  "n": 301,
+  "answer_model": "sonnet",
+  "judge_model": "haiku",
+  "arms": {
+    "hindsight": [
+      0.9037,
+      0.8703,
+      0.9369
+    ],
+    "hybrid-search": [
+      0.7807,
+      0.7342,
+      0.8272
+    ],
+    "mem-rfm-facts": [
+      0.9003,
+      0.8671,
+      0.9336
+    ],
+    "mem-rfm": [
+      0.9037,
+      0.8704,
+      0.9369
+    ]
+  },
+  "paired": {
+    "mem-rfm-facts - hindsight": [
+      -0.0033,
+      -0.0332,
+      0.0266
+    ],
+    "mem-rfm-facts - hybrid-search": [
+      0.1196,
+      0.0698,
+      0.1694
+    ],
+    "mem-rfm - hindsight": [
+      0.0,
+      -0.0299,
+      0.0299
+    ],
+    "mem-rfm - hybrid-search": [
+      0.1229,
+      0.0797,
+      0.1694
+    ],
+    "hybrid-search - hindsight": [
+      -0.1229,
+      -0.1728,
+      -0.0764
+    ],
+    "mem-rfm-facts - mem-rfm": [
+      -0.0033,
+      -0.0332,
+      0.0266
+    ]
+  },
+  "by_category": {
+    "knowledge-update": {
+      "n": 47,
+      "hindsight": 0.957,
+      "hybrid-search": 0.809,
+      "mem-rfm-facts": 0.915,
+      "mem-rfm": 0.936
+    },
+    "multi-session": {
+      "n": 80,
+      "hindsight": 0.887,
+      "hybrid-search": 0.875,
+      "mem-rfm-facts": 0.875,
+      "mem-rfm": 0.875
+    },
+    "single-session-assistant": {
+      "n": 34,
+      "hindsight": 1.0,
+      "hybrid-search": 1.0,
+      "mem-rfm-facts": 1.0,
+      "mem-rfm": 1.0
+    },
+    "single-session-preference": {
+      "n": 18,
+      "hindsight": 0.222,
+      "hybrid-search": 0.444,
+      "mem-rfm-facts": 0.333,
+      "mem-rfm": 0.5
+    },
+    "single-session-user": {
+      "n": 42,
+      "hindsight": 1.0,
+      "hybrid-search": 0.976,
+      "mem-rfm-facts": 0.952,
+      "mem-rfm": 0.976
+    },
+    "temporal-reasoning": {
+      "n": 80,
+      "hindsight": 0.95,
+      "hybrid-search": 0.55,
+      "mem-rfm-facts": 0.975,
+      "mem-rfm": 0.925
+    }
+  },
+  "context_tokens": {
+    "hindsight": 43679.4,
+    "hybrid-search": 23211.6,
+    "mem-rfm-facts": 24323.1,
+    "mem-rfm": 23544.2
+  },
+  "published_accuracy_same_qids": {
+    "hindsight": 0.9236,
+    "hybrid-search": 0.7409
+  },
+  "mcnemar": {
+    "mem-rfm-facts - hindsight": {
+      "x_only": 10,
+      "y_only": 11,
+      "p": 1.0
+    },
+    "mem-rfm-facts - hybrid-search": {
+      "x_only": 49,
+      "y_only": 13,
+      "p": 0.0
+    },
+    "mem-rfm - hindsight": {
+      "x_only": 11,
+      "y_only": 11,
+      "p": 1.0
+    },
+    "mem-rfm - hybrid-search": {
+      "x_only": 46,
+      "y_only": 9,
+      "p": 0.0
+    },
+    "hybrid-search - hindsight": {
+      "x_only": 10,
+      "y_only": 47,
+      "p": 0.0
+    },
+    "mem-rfm-facts - mem-rfm": {
+      "x_only": 11,
+      "y_only": 12,
+      "p": 1.0
+    }
+  },
+  "audit": {
+    "model": "sonnet",
+    "n": 301,
+    "arms": {
+      "mem-rfm-facts": 0.9568,
+      "hindsight": 0.9568
+    },
+    "paired": {
+      "mem-rfm-facts - hindsight": [
+        0.0,
+        -0.0233,
+        0.0233
+      ]
+    },
+    "mcnemar": {
+      "mem-rfm-facts - hindsight": {
+        "x_only": 6,
+        "y_only": 6,
+        "p": 1.0
+      }
+    }
+  }
+}

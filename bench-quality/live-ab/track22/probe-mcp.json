@@ -1,0 +1,1 @@
+{"mcpServers": {"track22-events": {"command": "<repo>/integrations/claude-code/.venv/bin/python", "args": ["<repo>/bench-quality/live-ab/events_mcp_server.py"], "env": {"TRACK22_EVENTS_DB": "<repo>/bench-quality/live-ab/track22/data/1.db", "TRACK22_CAP": "5"}}}}

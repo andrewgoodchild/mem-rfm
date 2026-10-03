@@ -200,7 +200,7 @@ MCP client.
 | tool | notes |
 |---|---|
 | `memory_save` | one self-contained fact; identical content de-duplicates; optional `scope` |
-| `memory_search` | `limit`, `scope`, `min_score`. **Not read-only** — retrieval counts as usage |
+| `memory_search` | `limit`, `scope`, `min_score`. **Not read-only** — retrieval counts as usage. Each hit carries its `saved` date |
 | `memory_feedback` | signed outcome; optional `score` in [-1,1] and a `note` for the log |
 | `memory_update` | rewrite content, keep accumulated usage and value |
 | `memory_get` | read one memory back by id |
@@ -268,7 +268,33 @@ Environment:
 | `RFM_LOG` | log path (`0`/`off` disables; `1`/`on`/`true` keep the default path beside the DB) |
 | `RFM_LOG_CONTENT` | `0` logs lengths and ids but not query/memory text |
 | `RFM_ACCESS_WINDOW` | seconds before a repeat retrieval re-counts as usage (default 60; `0` disables) |
+| `RFM_SECRET_SCAN` | `0` turns off credential redaction on write (default on) — see below |
 | `RFM_PRUNE_DAYS` | retention window for the SessionEnd prune pass — idle past this AND never useful is deleted (default 30; `<= 0` disables) |
+
+### Credentials and dates
+
+Every write path — `memory_save`, `memory_update`, the transcript sweep's
+admission, and the SessionEnd candidate file — passes content through
+`secret_scan.py` first. Vendor-format keys (GitHub, GitLab, OpenAI,
+Anthropic, AWS, Google, Hugging Face, npm, PyPI, Slack, Stripe, Sentry),
+PEM and PGP private keys, JWTs, bearer and Authorization tokens,
+passwords in URLs, CLI password flags (`mysql -p…`, `docker login -p`,
+`curl -u user:pass`), .netrc entries and literal values assigned to
+secret-named variables become `[REDACTED:<kind>]`; the rest of the memory is
+kept, because "npm ci 401s until `NPM_TOKEN` is exported" is still worth
+remembering without the token. References (`$GITHUB_TOKEN`, `${API_KEY}`,
+`$(gh auth token)`, `<your-token>`) and code that produces a secret at run
+time (`os.environ["API_KEY"]`, `get_token(repo)`, `OpenAI(api_key=OPENAI_API_KEY)`)
+are left alone; the accepted cost is that a passphrase written like an
+identifier (`correct_horse_battery`) is not redacted. Each redaction logs its kinds, never the
+value. Rows stored before the scan existed are not rewritten.
+
+Memories surface with the date they were saved: search hits carry
+`saved`, and injected lines read `- [id, saved YYYY-MM-DD] content`. The
+date is `created_at`, so a memory rewritten with `memory_update` keeps its
+original date. The benchmark case for dates is in
+`bench-quality/RESULTS.md` (AMB head-to-head): dated memories answered
+temporal questions at 87–88% where undated chunks managed 49–50%.
 
 ### Checking it works
 
@@ -334,5 +360,10 @@ bench-quality/            all evidence: retrieval evals, live A/B, throughput, R
 integrations/claude-code/ MCP server, hooks, A/B kit — the live measurement harness
   sweep.py                the ungated formation sweep (config: sweep-config.json;
                           acceptance audit: test_sweep.py; see lifecycle.md)
+  harnesses.py            the harness registry: lifecycle events, scripts,
+                          timeouts and transcript reader per coding agent;
+                          install_hooks.py and the hooks both read it
+  transcripts.py          the normalized session (command events, memories
+                          shown, prose) and one reader per harness
 docs/                     the writeups
 ```
