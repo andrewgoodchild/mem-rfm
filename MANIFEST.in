@@ -1,0 +1,3 @@
+# The standalone schema: useful on its own, and tests/test_rfm.py checks it
+# agrees with the schema mem_rfm.py creates, so the sdist must carry it.
+include rfm_schema.sql

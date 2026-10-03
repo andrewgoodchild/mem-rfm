@@ -1,0 +1,45 @@
+name: publish
+# Release by pushing a tag that matches mem_rfm.VERSION, e.g. v0.3.0.
+# Uploads use PyPI trusted publishing (OIDC): no API token is stored
+# anywhere. One-time setup on pypi.org: add a pending publisher for project
+# mem-rfm, owner andrewgoodchild, repository mem-rfm, workflow publish.yml,
+# environment pypi.
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python tests/test_rfm.py
+      - name: tag matches mem_rfm.VERSION
+        run: |
+          v=$(python -c "import mem_rfm; print(mem_rfm.VERSION)")
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME does not match mem_rfm.VERSION v$v"; exit 1
+          fi
+      - run: python -m pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/mem-rfm
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

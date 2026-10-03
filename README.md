@@ -25,7 +25,7 @@ helped-when-used being faked too: an agent copies a suggested command,
 the copy succeeds, and the ledger inflates. So a positive outcome now
 counts only in sessions where the condition the memory names actually
 fired. Helped-when-*needed* is the signal.
-**[The full model →](docs/theory.md)**
+**[The full model →](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/theory.md)**
 
 ## How it works
 
@@ -90,7 +90,7 @@ Replayed over the transcripts that once built a fake 17-outcome ledger,
 it captured the right facts, consolidated 22 paraphrases into 2 rows,
 and awarded that ledger zero credits (RESULTS.md, Tracks 18b–19).
 
-**[The full lifecycle, and who decides at each stage →](docs/lifecycle.md)**
+**[The full lifecycle, and who decides at each stage →](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/lifecycle.md)**
 
 ## What it's for, and what it costs
 
@@ -106,7 +106,7 @@ workarounds, are already written down in the repository the agent can
 open and read. A stored note is competing with a source the agent can
 simply consult. That difference is what decides whether memory pays
 here, and it is the finding this project spent its live program
-measuring ([memory-types.md](docs/memory-types.md) maps the full
+measuring ([memory-types.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/memory-types.md) maps the full
 taxonomy). Two questions follow.
 
 **Does the ranking surface the right memory?** Yes, where the work
@@ -143,10 +143,10 @@ agent smart enough" but "can my agent already reach this information?"
 
 Every number, every pre-registered prediction, the buys table, the
 acquisition measurement, and the full 13-row registered results table
-are in **[findings.md](docs/findings.md)**; the complete per-track ledger
+are in **[findings.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/findings.md)**; the complete per-track ledger
 is `bench-quality/RESULTS.md`.
 
-**[All findings, and everything that died along the way →](docs/findings.md)**
+**[All findings, and everything that died along the way →](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/findings.md)**
 
 ## Status
 
@@ -166,10 +166,14 @@ model runs. Ranking never calls a model at all.
 
 Python 3.10+ with its bundled sqlite3 (≥ 3.35), nothing to compile:
 
+```sh
+pip install mem-rfm            # one stdlib-only module; imports as mem_rfm
+```
+
 ```python
-import sqlite3, time, rfm      # rfm.py, repo root, stdlib-only
+import sqlite3, time, mem_rfm
 db = sqlite3.connect("memories.db")
-rfm.register(db)
+mem_rfm.register(db)
 db.execute("SELECT rfm_init()")
 
 db.execute("INSERT INTO rfm_memories (content, created_at) VALUES (?, ?)",
@@ -201,20 +205,20 @@ claude mcp add -s user rfm-memory -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py
 
 Every save, search, and outcome is logged to `rfm-log.jsonl` beside the
 database; `log_stats.py` turns the log into the numbers that decide
-whether it is working for you. **[Full API and configuration →](docs/api.md)**
+whether it is working for you. **[Full API and configuration →](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/api.md)**
 
 ## Documentation
 
 | | |
 |---|---|
-| [theory.md](docs/theory.md) | the model: Belady, ACT-R, and the outcome axis |
-| [memory-types.md](docs/memory-types.md) | the taxonomy, what ChatGPT users actually meet, and what an agent needs |
-| [lifecycle.md](docs/lifecycle.md) | formation to retention: who decides at each stage, and why |
-| [findings.md](docs/findings.md) | when memory helps and when it doesn't, in full |
-| [landscape.md](docs/landscape.md) | how this compares to the other memory systems, dated |
-| [api.md](docs/api.md) | functions, config, schema, MCP server, repo layout |
-| [methodology.md](docs/methodology.md) | pre-registration, corrections, known limits |
-| [team-memory.md](docs/team-memory.md) | the team exploration, and why it stopped |
+| [theory.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/theory.md) | the model: Belady, ACT-R, and the outcome axis |
+| [memory-types.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/memory-types.md) | the taxonomy, what ChatGPT users actually meet, and what an agent needs |
+| [lifecycle.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/lifecycle.md) | formation to retention: who decides at each stage, and why |
+| [findings.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/findings.md) | when memory helps and when it doesn't, in full |
+| [landscape.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/landscape.md) | how this compares to the other memory systems, dated |
+| [api.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/api.md) | functions, config, schema, MCP server, repo layout |
+| [methodology.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/methodology.md) | pre-registration, corrections, known limits |
+| [team-memory.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/team-memory.md) | the team exploration, and why it stopped |
 
 Also: `PROTOCOL.md` (pre-registrations, amendments 1–16c),
 `bench-quality/live-ab/REVALIDATION.md` (the registered live tracks), and
@@ -222,6 +226,6 @@ Also: `PROTOCOL.md` (pre-registrations, amendments 1–16c),
 
 ## License
 
-[Apache-2.0](LICENSE). Datasets are downloaded, never redistributed;
-provenance and terms in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+[Apache-2.0](https://github.com/andrewgoodchild/mem-rfm/blob/main/LICENSE). Datasets are downloaded, never redistributed;
+provenance and terms in [THIRD_PARTY_NOTICES.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/THIRD_PARTY_NOTICES.md)
 (note LoCoMo is CC BY-NC).
