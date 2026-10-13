@@ -55,4 +55,8 @@ paths that appear there are already public). `validation*.jsonl` records
 three environment-pin iterations (v1 → v2 → final); the run gates on the
 final file — see RESULTS.md "Corrections" for why all three are kept.
 Session transcripts (`sessions/`) and memory DBs stay untracked; a redacted
-store audit is committed as `memory-audit.md`.
+store audit is committed as `memory-audit.md`. Committed run logs are passed
+through `redact_logs.py` (home path → `~`, repo path → `<repo>`, session IDs →
+stable `session-<hash>` pseudonyms, credentials → `[REDACTED:…]`); the
+`.githooks/pre-commit` hook runs `redact_logs.py --check` on staged live-ab
+files — enable it per clone with `git config core.hooksPath .githooks`.

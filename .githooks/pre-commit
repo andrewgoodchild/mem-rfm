@@ -1,0 +1,7 @@
+#!/bin/sh
+# Block commits whose live-A/B logs still carry the home path, session IDs or
+# credentials. Enable once per clone: git config core.hooksPath .githooks
+files=$(git diff --cached --name-only --diff-filter=ACM -- bench-quality/live-ab)
+[ -z "$files" ] && exit 0
+# shellcheck disable=SC2086
+exec python3 bench-quality/live-ab/redact_logs.py --check $files
