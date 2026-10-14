@@ -45,6 +45,8 @@ EMBEDDER_ID = "sentence-transformers/all-MiniLM-L6-v2"
 
 
 def embed_stores():
+    # No Hugging Face Hub telemetry; read when huggingface_hub is imported.
+    os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     from fastembed import TextEmbedding
     import math
     model = TextEmbedding(model_name=EMBEDDER_ID)
@@ -93,6 +95,8 @@ def precompute_judged():
     import math
     import re as _re
     import struct as _struct
+    # No Hugging Face Hub telemetry; read when huggingface_hub is imported.
+    os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     from fastembed import TextEmbedding
     model = TextEmbedding(model_name=EMBEDDER_ID)
     model.model.tokenizer.enable_truncation(max_length=256)

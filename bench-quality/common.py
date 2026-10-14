@@ -40,6 +40,8 @@ def get_embedder():
     so every committed benchmark number holds under either. The difference is
     install weight — 137MB against 988MB, because sentence-transformers pulls
     torch (505MB on its own)."""
+    # No Hugging Face Hub telemetry; read when huggingface_hub is imported.
+    os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     if os.environ.get("RFM_EMBED_BACKEND", "fastembed") == "fastembed":
         try:
             from fastembed import TextEmbedding

@@ -240,6 +240,8 @@ def _load_embedder():
     the mismatch is invisible on short text -- the backends agree to
     1.000000 below the cut -- but silently halves anything longer."""
     fastembed_err = None
+    # No Hugging Face Hub telemetry; read when huggingface_hub is imported.
+    os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     if os.environ.get("RFM_EMBED_BACKEND", "fastembed") == "fastembed":
         try:
             from fastembed import TextEmbedding

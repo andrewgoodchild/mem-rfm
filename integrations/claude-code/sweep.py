@@ -154,6 +154,8 @@ def _embed(text):
     if not _EMB["tried"]:
         _EMB["tried"] = True
         try:
+            # No Hugging Face Hub telemetry; read when huggingface_hub is imported.
+            os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
             from fastembed import TextEmbedding
             _EMB["model"] = TextEmbedding()
         except Exception:

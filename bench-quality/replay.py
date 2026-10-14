@@ -49,6 +49,8 @@ def parse_ts(s: str) -> float:
 
 
 def get_embedder():
+    # No Hugging Face Hub telemetry; read when huggingface_hub is imported.
+    os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     from sentence_transformers import SentenceTransformer
     return SentenceTransformer("all-MiniLM-L6-v2")
 
