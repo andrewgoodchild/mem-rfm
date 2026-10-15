@@ -65,6 +65,11 @@ check("condition fired -> the conditioned memory is shown",
       [m["id"] for m in hit["memories"]] == [SHIM_ID], hit)
 check("fired classes are reported",
       set(hit["fired"]) == {"modulenotfounderror", "pkg_resources"}, hit)
+other = bridge({"op": "match", "output":
+               "ModuleNotFoundError: No module named 'dask'"})
+check("generic class with no shared key -> not shown (signature_match)",
+      other["memories"] == [] and "modulenotfounderror" in other["fired"],
+      other)
 
 print("outcome")
 start = time.time() - 60

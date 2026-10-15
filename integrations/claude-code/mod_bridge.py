@@ -20,6 +20,8 @@ One JSON request on stdin, one JSON answer on stdout:
       it spawns Python only for output that can fire a condition)
   {"op": "match", "output": "..."}
       -> {"fired": [classes], "memories": [{"id", "content", "classes"}]}
+      (memories chosen by session_end.signature_match, as the
+      show-on-error hook chooses them)
   {"op": "outcome", "id": 12, "command": "...", "is_error": false,
    "output": "...", "fired": [classes], "session_start": 1790000000.0}
       -> {"acted": bool, "outcome": 1.0 | -1.0 | null, "recorded": bool}
@@ -68,14 +70,20 @@ def match(req):
             f"{quarantine}ORDER BY s DESC").fetchall()
     finally:
         db.close()
-    hits = []
-    for mid, content, cond, _s in rows:
-        classes = [c for c in cond.split(",") if c in fired]
-        if classes:
-            hits.append({"id": mid, "content": content, "classes": classes})
-        if len(hits) == MATCH_K:
-            break
-    return {"fired": fired, "memories": hits}
+    # The show-on-error hook's rule (post_tool_use.jit_inject): a memory
+    # must share a class with the failure, and a generic class (path,
+    # command not found, ...) also a key — the missing module, path or
+    # program. Best key overlap first, then the prior.
+    sig = SE.error_signature(req.get("output"))
+    ranked = []
+    for mid, content, cond, score in rows:
+        m = SE.signature_match(sig, content, cond)
+        if m is not None:
+            shared = sorted(SE._classes(cond) & set(sig["classes"]))
+            ranked.append(((m, score), {"id": mid, "content": content,
+                                        "classes": shared}))
+    ranked.sort(key=lambda r: r[0], reverse=True)
+    return {"fired": fired, "memories": [h for _, h in ranked[:MATCH_K]]}
 
 
 def outcome(req):
