@@ -44,6 +44,7 @@ import rfm  # noqa: E402  (repo-root module; scoring engine)
 import log_env  # noqa: E402  (sibling module; shared RFM_LOG contract)
 import secret_scan  # noqa: E402  (sibling module; shared credential redaction)
 import transcripts  # noqa: E402  (sibling module; the one content sanitizer)
+import transient  # noqa: E402  (sibling module; ephemera markers, logged only)
 
 DB_PATH = os.path.expanduser(os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 EMBEDDER_ID = os.environ.get("RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
@@ -391,8 +392,13 @@ def _save(content: str, scope: str | None = None) -> SaveResult:
             "VALUES (?, ?, ?, ?)",
             (content, time.time(), vec, scope))
         d.commit()
+    # Transient markers are logged, not enforced: on the labelled pilot
+    # data a hard filter dropped good memories at least as often as bad
+    # ones (bench-quality/live-ab/transient_filter_eval.py). The log is
+    # how live use gets measured before anything stricter ships.
     log("save", id=cur.lastrowid, status="saved", chars=len(content),
-        scope=scope, content=_redact(content))
+        scope=scope, transient=transient.markers(content),
+        content=_redact(content))
     return SaveResult(id=cur.lastrowid, status="saved")
 
 
@@ -654,9 +660,11 @@ def _export() -> str:
 @mcp.tool(annotations=_ann("Save a memory", idempotent=True))
 def memory_save(content: str, scope: str | None = None) -> SaveResult:
     """Store a durable memory: user preferences, project facts, decisions,
-    hard-won debugging lessons. One self-contained fact per call. Don't store
-    ephemera (current task state) or anything derivable from the repo.
-    Saving identical content twice returns the existing memory.
+    hard-won debugging lessons. One self-contained fact per call. Save only
+    what will still be true and useful in 30 days. Never save ephemera:
+    commit SHAs, PR/issue numbers, CI or build status, the current branch or
+    task state, or anything derivable from the repo or its git history. Saving identical content twice returns the
+    existing memory.
 
     `scope` confines a memory to one project or context (a repo name, say).
     Leave it unset for facts that should apply everywhere, like preferences:

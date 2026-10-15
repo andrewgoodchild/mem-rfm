@@ -9,6 +9,8 @@ installer wires both halves of the loop:
 
   SessionStart  hooks/session_start.py  inject top memories by rfm_score
   SessionEnd    hooks/session_end.py    stage correction-pair candidates
+  PreToolUse    hooks/pre_tool_use.py   deny memory writes from subagents
+  (plus PostToolUse / UserPromptSubmit, registered but inert unless flagged)
 
 It also maintains a marked block in ~/.claude/CLAUDE.md with the outcome-loop
 instructions (memory_feedback after acting on a memory). This is the twin
@@ -50,7 +52,9 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import harnesses  # noqa: E402
-PYTHON = os.path.join(HERE, ".venv", "bin", "python")
+# RFM_PYTHON overrides the interpreter the hooks are registered with (a venv
+# outside the checkout; setup.py --python). Default: this checkout's .venv.
+PYTHON = os.environ.get("RFM_PYTHON") or os.path.join(HERE, ".venv", "bin", "python")
 CLAUDE_MD = os.path.expanduser("~/.claude/CLAUDE.md")
 SKILL_SRC = os.path.join(HERE, "skills", "memory-review")
 SKILL_DST = os.path.expanduser("~/.claude/skills/memory-review")
@@ -85,6 +89,10 @@ MD_BLOCK = f"""{MD_BEGIN}
   the session automatically and staged for /memory-review. "remember this"
   from the user still means `memory_save` (durable operational facts only,
   scoped to the repo name); "forget that" means `memory_delete`.
+- Save only what will matter in 30 days: never commit SHAs, PR/issue
+  numbers, CI/build status, or branch/task state.
+- Subagents: never call memory_save/feedback/update/delete — put the lesson
+  in your report to the main session instead.
 - `memory_update` when a stored fact is outdated but still worth keeping —
   it preserves the memory's earned usage record; delete-then-save does not.
 - To review staged memory candidates from past sessions, run /memory-review.
@@ -95,13 +103,12 @@ def _marker(script):
     return f"# rfm-memory-hook:{os.path.basename(script)}"
 
 
-def hook_entry(script):
+def hook_entry(script, event):
     # shlex.quote: the command is run through a shell, and a checkout under
     # a path with a space (common under /Users/First Last/...) would
     # otherwise word-split into a hook that silently never launches.
     # The trailing marker is a harmless shell comment ('#' and everything
     # after it is ignored) that mentions() below matches on.
-    event = next((e for e, s in HOOKS.items() if s == script), None)
     return {"type": "command",
             "command": f"{shlex.quote(PYTHON)} {shlex.quote(script)}  {_marker(script)}",
             "timeout": TIMEOUTS.get(event, 30)}
@@ -142,7 +149,7 @@ def install(settings, remove=False):
             if not hooks[event]:
                 del hooks[event]
             continue
-        desired = hook_entry(script)
+        desired = hook_entry(script, event)
         if not ours:
             group = {"hooks": [desired]}
             if event in MATCHERS:
@@ -200,7 +207,7 @@ def sync_skill(dry=False, remove=False):
             shutil.rmtree(SKILL_DST)
         return [f"removed {SKILL_DST}"]
     if not os.path.exists(os.path.join(SKILL_SRC, "SKILL.md")):
-        sys.exit(f"skill source missing: {os.path.join(SKILL_SRC, 'SKILL.md')}")
+        raise InstallError("SKILL_SOURCE_MISSING", f"skill source missing: {os.path.join(SKILL_SRC, 'SKILL.md')}")
 
     def tree(root):
         """{relative path: contents} for every file under root."""
@@ -224,24 +231,41 @@ def sync_skill(dry=False, remove=False):
     return [f"installed skill -> {SKILL_DST}"]
 
 
-def main():
-    dry, remove = "--dry-run" in sys.argv, "--remove" in sys.argv
-    if not os.path.exists(PYTHON):
-        sys.exit(f"venv python not found at {PYTHON} — create the venv first")
-    for script in HOOKS.values():
-        if not os.path.exists(script):
-            sys.exit(f"hook script missing: {script}")
+class InstallError(Exception):
+    """A precondition failed; `code` is setup.py's machine-readable name."""
+    def __init__(self, code, msg):
+        super().__init__(msg)
+        self.code = code
 
+
+def load_settings():
     try:
         with open(SETTINGS) as f:
-            settings = json.load(f)
+            return json.load(f)
     except FileNotFoundError:
-        settings = {}
+        return {}
     except json.JSONDecodeError as e:
         # A malformed settings.json silently disables EVERY setting in it;
         # editing on top would bless the corruption. Stop and say so.
-        sys.exit(f"{SETTINGS} is not valid JSON ({e}) — fix it first")
+        raise InstallError("SETTINGS_INVALID",
+                           f"{SETTINGS} is not valid JSON ({e}) — fix it first")
 
+
+def apply(dry=False, remove=False, python_planned=False):
+    """Every change, as human-readable lines (empty = already up to date).
+    Raises InstallError instead of exiting, so setup.py can map it to a
+    code; main() below keeps the old exit-with-message behaviour.
+    python_planned: a dry run whose caller would create PYTHON first
+    (setup --dry-run on a fresh checkout) plans the wiring anyway."""
+    if not remove and not os.path.exists(PYTHON) \
+            and not (dry and python_planned):
+        raise InstallError("VENV_MISSING",
+                           f"venv python not found at {PYTHON} — create the venv first")
+    for script in HOOKS.values():
+        if not os.path.exists(script):
+            raise InstallError("HOOK_SCRIPT_MISSING", f"hook script missing: {script}")
+
+    settings = load_settings()
     changes = install(settings, remove=remove)
     if changes and not dry:
         if os.path.exists(SETTINGS):
@@ -256,7 +280,15 @@ def main():
 
     changes += sync_claude_md(dry=dry, remove=remove)
     changes += sync_skill(dry=dry, remove=remove)
+    return changes
 
+
+def main():
+    dry, remove = "--dry-run" in sys.argv, "--remove" in sys.argv
+    try:
+        changes = apply(dry=dry, remove=remove)
+    except InstallError as e:
+        sys.exit(str(e))
     if not changes:
         print("already up to date, nothing written")
         return

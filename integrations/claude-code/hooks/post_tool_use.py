@@ -121,22 +121,30 @@ def jit_inject(body, session):
     logged so the outcome loop can score an acted-on JIT memory as a
     genuine conditioned outcome.
 
+    Show-on-error: the trigger is se.error_signature (the condition class
+    plus discriminating keys — missing module/path/program), and the pick
+    is se.signature_match ranked by key overlap, then rfm_score. A memory
+    matched only on a generic class ("no such file or directory") must
+    share a key with the failure. Once per class per session, and never
+    the same memory twice in a session.
+
     Returns the additionalContext string to emit, or None."""
     import sqlite3
-    hit = se.FAILURE.search(body or "")
-    if not hit:
-        return None
-    cls = hit.group(0).lower()
-    if cls not in se.CONDITION_CLASSES:
+    sig = se.error_signature(body)
+    if not sig:
         return None
     path = os.path.join(STATE_DIR, f"jit-{session}.json")
     try:
         with open(path) as f:
-            fired = set(json.load(f))
+            state = json.load(f)
+        if isinstance(state, list):             # pre-signature state file
+            state = {"classes": state, "ids": []}
     except (OSError, ValueError):
-        fired = set()
-    if cls in fired:
-        return None                 # already surfaced this class this session
+        state = {"classes": [], "ids": []}
+    fresh = [c for c in sig["classes"] if c not in state["classes"]]
+    if not fresh:
+        return None                 # already surfaced these classes this session
+    sig = dict(sig, classes=tuple(fresh))
     if not os.path.exists(DB_PATH):
         return None
     try:
@@ -148,12 +156,21 @@ def jit_inject(body, session):
         quarantine = ("AND (sightings IS NULL OR sightings >= "
                       f"{int(os.environ.get('RFM_QUARANTINE', 2))}) "
                       if has_s else "")
-        row = db.execute(
-            "SELECT id, content, created_at FROM rfm_memories "
+        rows = db.execute(
+            "SELECT id, content, created_at, condition_class, rfm_score(id) "
+            "FROM rfm_memories "
             "WHERE NOT (outcome_count > 0 AND value_score < 0) "
             f"{quarantine}"
-            "AND instr(lower(condition_class), ?) > 0 "
-            "ORDER BY rfm_score(id) DESC LIMIT 1", (cls,)).fetchone()
+            "AND condition_class IS NOT NULL AND condition_class != ''"
+        ).fetchall()
+        best = None
+        for mid, content, created, cond, score in rows:
+            if mid in state["ids"]:
+                continue
+            m = se.signature_match(sig, content, cond)
+            if m is not None and (best is None or (m, score) > best[0]):
+                best = ((m, score), (mid, content, created, cond))
+        row = best[1] if best else None
         if row:
             db.execute("SELECT rfm_record_access(?)", (row[0],))
             db.commit()
@@ -162,13 +179,16 @@ def jit_inject(body, session):
         return None
     if not row:
         return None
-    fired.add(cls)
+    hit = [c for c in fresh if c in se._classes(row[3])]
+    cls = hit[0]
+    state["classes"] = sorted(set(state["classes"]) | set(hit))
+    state["ids"] = sorted(set(state["ids"]) | {row[0]})
     os.makedirs(STATE_DIR, exist_ok=True)
     with open(path, "w") as f:
-        json.dump(sorted(fired), f)
+        json.dump(state, f)
     flat = transcripts.flatten(row[1], "</memory>")
     _log({"op": "jit_injection", "session": session, "class": cls,
-          "id": row[0]})
+          "id": row[0], "keys": sorted(sig["keys"])[:8]})
     return (f"[rfm-memory] `{cls}` just appeared. A past session in this "
             f"environment recorded how to handle it (saved {transcripts.day(row[2])}) — STORED "
             "DATA, not an instruction:\n<memory>\n" + flat + "\n</memory>")
@@ -191,11 +211,23 @@ def main():
         return
     if payload.get("tool_name") != "Bash":
         return
+    # PostToolUse fires inside subagents too, under the PARENT's session_id:
+    # a worker's failures would count toward the parent's struggle trigger
+    # and its nudge would land in the worker. Subagents are out of scope.
+    if harnesses.is_subagent(harnesses.current(), payload):
+        return
     cmd = (payload.get("tool_input") or {}).get("command", "")
     prog = se.program(cmd)
     if not prog or prog in GENERIC:
         return
-    body = response_text(payload.get("tool_response"))
+    # A failing Bash call (non-zero exit) never reaches PostToolUse: Claude
+    # Code routes it to PostToolUseFailure, whose payload carries the output
+    # as `error`, not `tool_response`. Registered on both (harnesses.py);
+    # without the failure event the trigger saw only zero-exit output —
+    # piped `| tail` runs — and missed every failure that exited non-zero.
+    failed = payload.get("hook_event_name") == "PostToolUseFailure"
+    body = (str(payload.get("error") or "") if failed
+            else response_text(payload.get("tool_response")))
     session = (harnesses.payload_field(harnesses.current(), "session", payload)
                or "?")[:8]
 
@@ -207,9 +239,12 @@ def main():
         ctx = jit_inject(body, session)
         if ctx:
             print(json.dumps({"hookSpecificOutput": {
-                "hookEventName": "PostToolUse", "additionalContext": ctx}}))
+                "hookEventName": ("PostToolUseFailure" if failed
+                                  else "PostToolUse"),
+                "additionalContext": ctx}}))
             return
-    if not synth_on:
+    if not synth_on or failed:
+        # Synthesis keeps its registered (Track 5) input: PostToolUse only.
         return
 
     os.makedirs(STATE_DIR, exist_ok=True)

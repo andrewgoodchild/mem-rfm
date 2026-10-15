@@ -114,5 +114,67 @@ row = db.execute("SELECT condition_class FROM rfm_memories "
 check("stamp: explicit stamp survives re-run", row == "pkg_resources")
 db.close()
 
+# Show-on-error signature: the trigger is the condition class, the keys
+# only choose among memories that share it.
+sig = se.error_signature(
+    "Traceback (most recent call last):\n  ...\n"
+    "ModuleNotFoundError: No module named 'sphinxcontrib.applehelp'")
+check("signature: class extracted",
+      sig is not None and sig["classes"] == ("modulenotfounderror",))
+check("signature: module and its top package are keys",
+      sig and {"sphinxcontrib.applehelp", "sphinxcontrib"} <= sig["keys"],
+      str(sig and sorted(sig["keys"])))
+check("signature: no condition class -> no signature",
+      se.error_signature("AssertionError: 3 != 4\n1 failed") is None)
+path_sig = se.error_signature(
+    "ls: /tmp/sphinx_type_hint_links/stubs: No such file or directory")
+check("signature: missing path and basename are keys",
+      path_sig and {"/tmp/sphinx_type_hint_links/stubs", "stubs"}
+      <= path_sig["keys"], str(path_sig and sorted(path_sig["keys"])))
+check("signature: every class in the output, not just the first error",
+      set(se.error_signature("zsh: no matches found: *.whl\n"
+                             "pkg_resources is not importable")["classes"])
+      == {"pkg_resources"})
+vre = se.error_signature("VersionRequirementError: sphinxcontrib.applehelp "
+                         "needs Sphinx>=5")
+check("match: specific class surfaces a memory without a shared key",
+      se.signature_match(vre, FLAGSHIP) is not None)
+check("match: memory naming no class never matches",
+      se.signature_match(vre, "Run tox -e py39 for tests.") is None)
+check("match: stamped condition_class wins over derivation",
+      se.signature_match(vre, FLAGSHIP, "pkg_resources") is None)
+generic = se.error_signature(
+    "cat: /tmp/foo/report.txt: No such file or directory")
+check("match: generic class without a shared key is refused",
+      se.signature_match(generic, "The build dir is missing (no such file "
+                         "or directory); run make docs first.") is None)
+check("match: generic class with a shared key surfaces",
+      (se.signature_match(generic, "report.txt is written by `make report`"
+                          " -- no such file or directory until it runs.")
+       or 0) >= 1)
+
+tail = se.error_signature("collecting ...\n" + "." * 20000
+                          + "\nModuleNotFoundError: No module named 'dask'")
+check("signature: error at the end of long output is found",
+      tail and "dask" in tail["keys"], str(tail))
+perm = se.error_signature("bash: ./run.sh: Permission denied")
+check("signature: permission denied names the path as a key",
+      perm and "run.sh" in perm["keys"], str(perm and sorted(perm["keys"])))
+check("match: permission-denied memory sharing the path surfaces",
+      se.signature_match(perm, "run.sh loses its exec bit on checkout "
+                         "(permission denied): chmod +x run.sh") is not None)
+eng = se.error_signature("This package requires Python>=3.10\n"
+                         "ModuleNotFoundError: No module named 'foo'")
+check("signature: English before 'requires' is not a key",
+      eng and "package" not in eng["keys"] and "this" not in eng["keys"],
+      str(eng and sorted(eng["keys"])))
+six = se.error_signature("ModuleNotFoundError: No module named 'six'")
+check("match: keys match whole tokens only ('six' not in 'sixty')",
+      se.signature_match(six, "ModuleNotFoundError after sixty retries: "
+                         "pin the mirror") is None)
+check("match: stamps compare case- and space-insensitively",
+      se.signature_match(six, "pip install six fixes it",
+                         "ModuleNotFoundError, pkg_resources") is not None)
+
 print(f"\n{'PASS' if not failures else 'FAIL: ' + ', '.join(failures)}")
 sys.exit(1 if failures else 0)

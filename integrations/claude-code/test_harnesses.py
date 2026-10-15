@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The harness registry and degraded operation. No LLM calls. Exit 0 = pass.
 
-1. Registry: every harness declares all four lifecycle stages, with hook
+1. Registry: every harness declares all lifecycle stages, with hook
    scripts that exist, and the installer's tables are exactly the
    registry's — the installed wiring and the runtime read one declaration.
 2. Degraded mode (a harness whose transcript mem-rfm cannot read): the
@@ -39,7 +39,7 @@ def check(name, ok, detail=""):
 
 print("registry")
 for name, h in harnesses.HARNESSES.items():
-    check(f"{name}: all four stages declared",
+    check(f"{name}: every lifecycle stage declared",
           set(h.hooks) == set(harnesses.STAGES), str(sorted(h.hooks)))
     missing = [s.script for s in h.hooks.values()
                if not os.path.exists(os.path.join(HERE, "hooks", s.script))]
@@ -63,7 +63,7 @@ check("installer events and scripts are the registry's",
       ih.HOOKS == {s.event: os.path.join(HERE, "hooks", s.script)
                    for s in reg.hooks.values()})
 check("installer timeouts are the registry's",
-      all(ih.hook_entry(ih.HOOKS[s.event])["timeout"] == s.timeout
+      all(ih.hook_entry(ih.HOOKS[s.event], s.event)["timeout"] == s.timeout
           for s in reg.hooks.values()))
 check("installer matchers are the registry's",
       ih.MATCHERS == {s.event: s.matcher for s in reg.hooks.values() if s.matcher})
