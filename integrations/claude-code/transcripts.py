@@ -278,8 +278,18 @@ def claude_readable(records):
                for d in records)
 
 
+def main_thread(records):
+    """Drop subagent records. Claude Code (2.1.x) writes a subagent's turns
+    to <session>/subagents/agent-*.jsonl, every record isSidechain=true, and
+    the main transcript carries none (0 of 17,523 local main transcripts) —
+    but a transcript in the older inline layout, or one a tool concatenated,
+    would otherwise feed a worker's commands into correction mining and
+    outcome inference as if the main session had run them."""
+    return [d for d in records if d.get("isSidechain") is not True]
+
+
 def read_claude_code(path, prose=True):
-    records = parse_jsonl(path)
+    records = main_thread(parse_jsonl(path))
     exposures, seen = claude_exposures(records)
     return Session(
         events=claude_events(records),

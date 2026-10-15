@@ -32,6 +32,7 @@ import session_end as se  # noqa: E402  (parse, events, corrections, acted_on)
 import rfm                # noqa: E402
 import secret_scan        # noqa: E402
 import harnesses          # noqa: E402
+import similarity as _similarity  # noqa: E402
 import transcripts        # noqa: E402
 import log_env            # noqa: E402
 
@@ -138,53 +139,18 @@ def ensure_schema(db):
         pass
 
 
-def tokens(s):
-    return set(re.findall(r"[a-z0-9_./-]{3,}", (s or "").lower()))
+tokens = _similarity.tokens
 
 
 # Embedding similarity, as the design specified (Track 18 measured the
 # token-Jaccard shortcut failing on paraphrase: 22 rewordings of one
-# fact, zero merges). fastembed when importable (the integration venv
-# has it); Jaccard as the degraded fallback, which near-verbatim pairs
-# still clear.
-_EMB = {"model": None, "tried": False, "cache": {}}
-
-
-def _embed(text):
-    if not _EMB["tried"]:
-        _EMB["tried"] = True
-        try:
-            # No Hugging Face Hub telemetry; read when huggingface_hub is imported.
-            os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
-            from fastembed import TextEmbedding
-            _EMB["model"] = TextEmbedding()
-        except Exception:
-            _EMB["model"] = None
-            # Loud, once: token Jaccard is keyword matching, and Track 18
-            # measured it failing on paraphrase (22 rewordings, 0 merges).
-            # Degraded mode merges only near-verbatim duplicates.
-            print("sweep: WARNING — fastembed unavailable, similarity "
-                  "degraded to token overlap; run under the integration "
-                  "venv for real dedupe", file=sys.stderr)
-            _log({"op": "sweep_degraded_similarity"})
-    if _EMB["model"] is None:
-        return None
-    key = text[:1000]
-    if key not in _EMB["cache"]:
-        _EMB["cache"][key] = list(_EMB["model"].embed([key]))[0]
-    return _EMB["cache"][key]
-
-
-def similarity(a, b):
-    ea, eb = _embed(a), _embed(b)
-    if ea is not None and eb is not None:
-        num = float((ea * eb).sum())
-        den = float((ea * ea).sum()) ** 0.5 * float((eb * eb).sum()) ** 0.5
-        return max(0.0, num / den) if den else 0.0
-    ta, tb = tokens(a), tokens(b)
-    if not ta or not tb:
-        return 0.0
-    return len(ta & tb) / len(ta | tb)
+# fact, zero merges). similarity.py owns the model and the degraded
+# Jaccard fallback — shared with session_end's reconcile step so the two
+# formation paths cannot drift; the sweep adds only its audit line when
+# the fallback engages.
+similarity = _similarity.similarity
+_similarity.on_degraded.append(
+    lambda: _log({"op": "sweep_degraded_similarity"}))
 
 
 def material_of(sess):

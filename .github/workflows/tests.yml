@@ -23,6 +23,9 @@ jobs:
       - run: python integrations/claude-code/test_dates.py
       - run: python integrations/claude-code/test_harnesses.py
       - run: python integrations/claude-code/test_feedback_loop.py
+      - run: python integrations/claude-code/test_subagent.py
+      # setup/doctor against a temporary HOME with a stub `claude`.
+      - run: python integrations/claude-code/test_setup.py
   package:
     # What gets published: the wheel ships mem_rfm alone (never the repo's
     # rfm.py alias), its metadata and README render on PyPI, the unpacked

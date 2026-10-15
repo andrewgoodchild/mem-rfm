@@ -15,7 +15,10 @@ a gotcha the session paid for, in exactly the category our A/B says
 transfers (operational knowledge). Candidates are *staged, never saved*
 (`pending-memories.md`, ratified by /memory-review): every vendor that
 auto-captured content into a long-lived store found unreviewed accumulation
-made things worse (arXiv:2602.11988).
+made things worse (arXiv:2602.11988). Each staged candidate carries a
+reconcile line — its nearest stored memories and pending candidates, with
+similarity and provenance — so review can skip or merge a restatement
+instead of saving it again (see RECONCILE below).
 
 OUTCOMES — the M in RFM, and the loop the tool-call path never closes
 reliably. Three deterministic steps:
@@ -51,11 +54,14 @@ Install (settings.json):
 Reads the hook payload on stdin; writes candidates to
 $RFM_MEMORY_DB's directory as `pending-memories.md` and outcomes to the DB.
 """
+import contextlib
 import json
 import os
 import re
+import signal
 import sqlite3
 import sys
+import threading
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -66,6 +72,11 @@ import log_env  # noqa: E402  (server.py's sibling; shared RFM_LOG contract)
 import secret_scan  # noqa: E402  (server.py's sibling; credential redaction)
 import harnesses  # noqa: E402  (server.py's sibling; lifecycle registry)
 import transcripts  # noqa: E402  (server.py's sibling; normalized session)
+import similarity  # noqa: E402  (server.py's sibling; shared with sweep.py)
+
+# Inside a 30 s hook the embedder loads from the local cache or not at all
+# (token similarity instead); a first-run download belongs to the sweep.
+similarity.LOCAL_ONLY = True
 
 DB_PATH = os.path.expanduser(
     os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
@@ -140,6 +151,99 @@ def derive_condition(content):
     firing."""
     text = str(content).lower()
     return ",".join(c for c in CONDITION_CLASSES if c in text)
+
+
+# Show-on-error retrieval (RFM_JIT; hooks/post_tool_use.py::jit_inject) reads
+# memories by the same condition vocabulary the outcome gate uses, so a
+# memory surfaced at a failure is exactly one that can earn a conditioned +1
+# there. Some classes name their cause outright; others ("no such file or
+# directory", "command not found", ...) fire constantly and incidentally
+# (Track 19: the path class fired in 10 of 21 sessions, never as the
+# memory's problem), so a memory matched only on one of those must also
+# share a discriminating key with the failure — the missing module, path or
+# program — before it may be surfaced.
+SPECIFIC_CLASSES = frozenset((
+    "bad interpreter", "extensionerror", "versionrequirementerror",
+    "distributionnotfound", "pkg_resources"))
+_SIG_KEYS = (
+    re.compile(r"no module named ['\"]?([A-Za-z_][\w.]*)", re.I),
+    re.compile(r"cannot import name ['\"]?([A-Za-z_]\w*)", re.I),
+    re.compile(r"([\w.+-]+): command not found", re.I),
+    re.compile(r"command not found: ([\w.+-]+)", re.I),
+    re.compile(r"([^\s'\":]+)['\"]?: no such file or directory", re.I),
+    re.compile(r"no such file or directory: ['\"]?([^\s'\"]+)", re.I),
+    re.compile(r"([^\s'\":]+)['\"]?: permission denied", re.I),
+    re.compile(r"permission denied: ['\"]?([^\s'\"]+)", re.I),
+    re.compile(r"\b([A-Z]\w*(?:Error|Exception|NotFound))\b"),
+    re.compile(r"\b([A-Za-z][\w.-]+) (?:needs|requires) ", re.I),
+)
+_SIG_STOP = {"error", "exception", "python", "python3", "bash", "zsh", "sh",
+             "tmp", "usr", "bin", "lib", "dev", "null", "line",
+             # English the "needs|requires" pattern catches ahead of the verb
+             "this", "that", "which", "package", "module", "version",
+             "project", "it", "also", "now", "still", "who", "one"}
+# Output is scanned at both ends: a traceback or a pytest summary puts the
+# error last, a shell puts it first.
+_SIG_SPAN = 8000
+
+
+def _key_re(k):
+    """A key matches as a whole token, never inside a longer word ('six'
+    must not match 'sixty'); '.', '-', '/' and '_' bind to the token."""
+    return re.compile(r"(?<![\w./-])" + re.escape(k) + r"(?![\w-])")
+
+
+def _classes(stamp):
+    """A condition stamp as a set: case- and space-insensitive, since a
+    host-owned stamp may be written by hand ('ModuleNotFoundError, x')."""
+    return {c.strip().lower() for c in (stamp or "").split(",") if c.strip()}
+
+
+def error_signature(body):
+    """Structural signature of a tool result: the condition classes it
+    exhibits (fired_classes' matching, one result at a time) plus
+    discriminating keys — missing module (and its top package), missing
+    path (and its basename), missing program, exception class names.
+    None when no condition class appears: the trigger is the class, the
+    keys only choose among memories that share it."""
+    body = body or ""
+    text = body if len(body) <= 2 * _SIG_SPAN \
+        else body[:_SIG_SPAN] + "\n" + body[-_SIG_SPAN:]
+    low = text.lower()
+    classes = tuple(c for c in CONDITION_CLASSES if c in low)
+    if not classes:
+        return None
+    keys = set()
+    for pat in _SIG_KEYS:
+        for m in pat.finditer(text):
+            k = m.group(1).strip("'\"`.,;:()").lower()
+            for part in (k, k.rsplit("/", 1)[-1], k.split(".")[0]):
+                # A class name is the trigger, not a discriminator: as a
+                # key it would match every memory stamped with that class.
+                if (len(part) >= 3 and part not in _SIG_STOP
+                        and part not in CONDITION_CLASSES):
+                    keys.add(part)
+    return {"classes": classes, "keys": frozenset(keys)}
+
+
+def signature_match(sig, content, condition_class=None):
+    """How well a stored memory answers this failure: None if it must not
+    be surfaced, else the count of signature keys its text names (higher is
+    better). The memory's condition_class (stamped, else derived from its
+    content) must share a class with the failure; a match on a generic
+    class additionally needs at least one shared key."""
+    if not sig:
+        return None
+    cond = derive_condition(content) if condition_class is None \
+        else condition_class
+    shared = _classes(cond) & set(sig["classes"])
+    if not shared:
+        return None
+    text = str(content).lower()
+    overlap = sum(1 for k in sig["keys"] if _key_re(k).search(text))
+    if not overlap and not (shared & SPECIFIC_CLASSES):
+        return None
+    return overlap
 
 
 def ensure_conditions(db):
@@ -259,10 +363,227 @@ def corrections(events):
                     "failed": head_a,
                     "fixed": head_b,
                     "error": reason.group(0).lower(),
+                    # Provenance: indices into the session's Bash events
+                    # (transcripts.claude_events order), failed -> fixed.
+                    "events": (i, j),
                 })
                 used.add(j)
                 break
     return out
+
+
+def candidate_line(c):
+    """The staged line for one correction pair. The candidate file is
+    plaintext on disk and the source of memory_save calls, so it is
+    scrubbed like the store is."""
+    line, kinds = secret_scan.redact(
+        f"- In this project, `{c['failed']}` fails ({c['error']}); "
+        f"use `{c['fixed']}` instead.")
+    if kinds:
+        _log({"op": "secret_redacted", "kinds": kinds})
+    return line
+
+
+# RECONCILE — the "reconcile sheet". Each staged candidate is followed by
+# one metadata line naming its nearest existing memories (store ids) and
+# nearest still-unreviewed candidates, with similarity, a likely-duplicate
+# mark, the condition class they share, and where in the transcript the
+# pair came from. /memory-review uses it to offer skip / merge / supersede
+# instead of saving a near-duplicate — and the store's save path only
+# dedupes on EXACT content, which never fired on a staged candidate in any
+# recorded run (0 "already stored" of 29 ratified; 13 of those 29 restated
+# a lesson already in the store, bench-quality/live-ab/reconcile_replay.py).
+# Advisory only: nothing is dropped or merged here — the reviewer decides.
+#
+# Thresholds are per similarity mode (similarity.py: embedding cosine, or
+# token Jaccard when fastembed is absent — different scales). Replayed on
+# the 29 recorded candidates (13 known duplicates) and the 65-row Track 18
+# sweep store (41): embedding 0.80 flagged 13/13 and 33/41, marking 1 of
+# 35 non-duplicates against an unrelated row (7 more against a same-
+# condition sibling — arguably the merge case); 0.85 flagged 10/13 and
+# 23/41 with no unrelated flags. Jaccard 0.40 flagged 9/13 of the
+# command-shaped candidates and 1/41 paraphrases: degraded mode catches
+# re-mined commands, not reworded lessons. Chosen on these same small
+# sets — a starting point, not a calibration.
+RECONCILE = os.environ.get("RFM_RECONCILE", "1") != "0"
+DUPLICATE_AT = {"embedding": 0.80, "tokens": 0.40}
+NEAREST_FLOOR = {"embedding": 0.70, "tokens": 0.20}
+NEAREST_K = 3
+# Newest rows only: bounds the hook's embedding cost (~6 ms/row batched,
+# ~1 s model load) on a large store; staged lessons recur near-term.
+RECONCILE_MAX_ROWS = 500
+# Unreviewed candidates compared against: the newest, same reasoning.
+RECONCILE_MAX_PENDING = 200
+# SessionEnd has 30 s. Reconcile is advisory, so it gets a slice of that
+# and is abandoned (candidates staged without hints) when it overruns;
+# outcomes are recorded before staging so they never wait on it.
+RECONCILE_BUDGET_S = float(os.environ.get("RFM_RECONCILE_BUDGET_S", 10))
+META = "  <!-- rfm-reconcile: "
+
+
+def pending_entries(path):
+    """[(ref, content)] for candidates already staged and not yet reviewed.
+    Same "- " predicate as session_start's count and ratify_staged's load;
+    the ref comes from the candidate's metadata line when it has one."""
+    try:
+        with open(path) as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return []
+    out = []
+    for k, line in enumerate(lines):
+        if not line.startswith("- "):
+            continue
+        nxt = lines[k + 1] if k + 1 < len(lines) else ""
+        m = re.search(r"ref=(\S+)", nxt) if nxt.startswith(META) else None
+        out.append((m.group(1) if m else f"pending-{len(out) + 1}",
+                    line[2:].strip()))
+    return out
+
+
+def store_rows(limit=RECONCILE_MAX_ROWS):
+    """[(id, content, scope)] newest first, read-only. Empty on any trouble:
+    reconcile is advisory and must never block staging."""
+    if not os.path.exists(DB_PATH):
+        return []
+    try:
+        db = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=5.0)
+    except sqlite3.Error:
+        return []
+    try:
+        try:
+            return db.execute("SELECT id, content, scope FROM rfm_memories "
+                              "ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        except sqlite3.OperationalError:          # pre-scope schema
+            return [(i, c, None) for i, c in db.execute(
+                "SELECT id, content FROM rfm_memories "
+                "ORDER BY id DESC LIMIT ?", (limit,))]
+    except sqlite3.Error:
+        return []
+    finally:
+        db.close()
+
+
+def _classes_of(text):
+    return {c for c in derive_condition(text).split(",") if c}
+
+
+def reconcile(new, rows, pending):
+    """For each new (ref, text), in order: its nearest store rows and
+    nearest pending candidates — earlier candidates of this same batch
+    included, since two sessions' worth of one lesson usually meet in the
+    pending file before they meet in the store. Returns one
+    {"mode", "nearest": [...]} per new candidate."""
+    if not new:
+        return []
+    similarity.prime([t for _, t in new] + [c for _, c, _ in rows]
+                     + [c for _, c in pending])
+    mode = similarity.mode()
+    earlier, out = list(pending), []
+    for ref, text in new:
+        cond = _classes_of(text)
+        near = [{"ref": f"#{mid}", "sim": similarity.similarity(text, content),
+                 "scope": scope, "shared": sorted(cond & _classes_of(content))}
+                for mid, content, scope in rows]
+        near += [{"ref": pref, "sim": similarity.similarity(text, content),
+                  "scope": None, "shared": sorted(cond & _classes_of(content))}
+                 for pref, content in earlier]
+        near = sorted((n for n in near if n["sim"] >= NEAREST_FLOOR[mode]),
+                      key=lambda n: -n["sim"])[:NEAREST_K]
+        for n in near:
+            n["duplicate"] = n["sim"] >= DUPLICATE_AT[mode]
+        out.append({"mode": mode, "nearest": near})
+        earlier.append((ref, text))
+    return out
+
+
+def meta_line(ref, rec, transcript, events_ij):
+    """The metadata line under a candidate. Indented and comment-wrapped so
+    every "- " reader (session_start's count, ratify_staged, the review
+    skill's candidate list) still sees exactly one line per candidate."""
+    parts = [f"ref={ref}"]
+    if rec is not None:
+        items = []
+        for n in rec["nearest"]:
+            s = f"{n['ref']} {n['sim']:.2f}"
+            if n["duplicate"]:
+                s += " likely-duplicate"
+            if n["shared"]:
+                s += f" condition={','.join(n['shared'])}"
+            if n["scope"]:
+                s += f" scope={n['scope']}"
+            items.append(s)
+        parts.append(f"nearest[{rec['mode']}]=" +
+                     ("; ".join(items) if items else "none"))
+    i, j = events_ij
+    # Last: a transcript path may contain spaces.
+    parts.append(f"from=bash#{i}->#{j} of {transcript}")
+    return META + " ".join(parts).replace("-->", "->") + " -->"
+
+
+class _Overrun(Exception):
+    pass
+
+
+@contextlib.contextmanager
+def _deadline(seconds):
+    """Raise _Overrun in the main thread after `seconds` (POSIX timer; a
+    no-op where SIGALRM is unavailable or off the main thread)."""
+    if not hasattr(signal, "SIGALRM") or \
+            threading.current_thread() is not threading.main_thread():
+        yield
+        return
+
+    def _fire(*_):
+        raise _Overrun(f"reconcile exceeded {seconds:g}s")
+    old = signal.signal(signal.SIGALRM, _fire)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, old)
+
+
+def stage(found, session, transcript):
+    """Append this session's candidates, each followed by its reconcile
+    metadata line. Reconcile failure degrades to provenance-only lines."""
+    cands = found[:MAX_CANDIDATES]
+    lines = [candidate_line(c) for c in cands]
+    pending = pending_entries(OUT)
+    # A resumed session (same id, SessionEnd again) or a missing id ('?')
+    # would reuse refs already in the file; a stage suffix keeps each unique.
+    taken = {ref for ref, _ in pending}
+    prefix, n = session, 1
+    while any(r.startswith(prefix + ".") for r in taken):
+        n += 1
+        prefix = f"{session}~{n}"
+    refs = [f"{prefix}.{k + 1}" for k in range(len(cands))]
+    recs = [None] * len(cands)
+    if RECONCILE:
+        try:
+            with _deadline(RECONCILE_BUDGET_S):
+                recs = reconcile(list(zip(refs, (l[2:] for l in lines))),
+                                 store_rows(), pending[-RECONCILE_MAX_PENDING:])
+        except Exception as e:                  # advisory: never block staging
+            _log({"op": "reconcile_failed",
+                  "error": f"{type(e).__name__}: {e}"[:200]})
+            recs = [None] * len(cands)
+    for ref, rec in zip(refs, recs):
+        if rec is not None:
+            _log({"op": "reconcile", "ref": ref, "mode": rec["mode"],
+                  "nearest": [[n["ref"], round(n["sim"], 3)]
+                              for n in rec["nearest"]],
+                  "duplicate": any(n["duplicate"] for n in rec["nearest"])})
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    with open(OUT, "a") as f:
+        f.write(f"\n## Candidates from session {session}\n")
+        f.write("<!-- Proposed, not saved. Review, then keep the useful ones\n"
+                "     with memory_save. -->\n\n")
+        for c, line, ref, rec in zip(cands, lines, refs, recs):
+            f.write(line + "\n")
+            f.write(meta_line(ref, rec, transcript, c["events"]) + "\n")
+    return len(cands)
 
 
 def rehydrate(mems):
@@ -454,6 +775,13 @@ def main():
     except Exception:
         payload = {}
     harness = harnesses.current()
+    # Subagent gate. Claude Code fires SubagentStop, not SessionEnd, for a
+    # worker today, so this is defence in depth: if a host ever does run
+    # SessionEnd inside a subagent, its slice of the task must neither stage
+    # candidates nor grade memories (see hooks/pre_tool_use.py).
+    if harnesses.is_subagent(harness, payload):
+        _log({"op": "session_end", "skipped": "subagent"})
+        return
     transcript = harnesses.payload_field(harness, "transcript", payload)
     if not transcript or not os.path.exists(transcript):
         return
@@ -462,28 +790,17 @@ def main():
     session = (harnesses.payload_field(harness, "session", payload) or "?")[:8]
     notes = []
 
-    found = corrections(events)
-    staged = min(len(found), MAX_CANDIDATES)
-    if found:
-        os.makedirs(os.path.dirname(OUT), exist_ok=True)
-        with open(OUT, "a") as f:
-            f.write(f"\n## Candidates from session {session}\n")
-            f.write("<!-- Proposed, not saved. Review, then keep the useful ones\n"
-                    "     with memory_save. -->\n\n")
-            for c in found[:MAX_CANDIDATES]:
-                # The candidate file is plaintext on disk and the source of
-                # memory_save calls, so it is scrubbed like the store is.
-                line, kinds = secret_scan.redact(
-                    f"- In this project, `{c['failed']}` fails ({c['error']}); "
-                    f"use `{c['fixed']}` instead.")
-                if kinds:
-                    _log({"op": "secret_redacted", "kinds": kinds})
-                f.write(line + "\n")
-        notes.append(f"staged {staged} memory candidate(s) in {OUT}")
-
+    # Outcomes first: staging's reconcile step is the slow part of this
+    # hook, and a host timeout must not cost the session's outcomes.
     mems = rehydrate(dict(sess.exposures))
     fired = fired_classes(events)
     recorded = record_outcomes(infer_outcomes(mems, events), sess.start, fired)
+
+    found = corrections(events)
+    staged = 0
+    if found:
+        staged = stage(found, session, transcript)
+        notes.append(f"staged {staged} memory candidate(s) in {OUT}")
     if recorded:
         notes.append(f"recorded {recorded} inferred outcome(s)")
     pruned = prune(PRUNE_DAYS)

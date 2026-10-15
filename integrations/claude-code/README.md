@@ -7,6 +7,23 @@ local — no API keys, one SQLite file.
 
 ## Setup
 
+One command (needs `claude` and `uv` on PATH; idempotent, backs up every
+file it changes to `<file>.bak-rfm`, `--dry-run` prints the plan):
+
+```sh
+python3 integrations/claude-code/mem_rfm_cli.py setup    # venv, store, hooks, MCP, smoke test
+python3 integrations/claude-code/mem_rfm_cli.py doctor   # read-only; READY or FAILED <CODE>
+```
+
+Both end in `READY` or `FAILED <CODE>` (`HOST_BINARY_MISSING`,
+`UV_MISSING`, `VENV_MISSING`, `DEPS_MISSING`, `STORE_NOT_WRITABLE`,
+`SETTINGS_INVALID`, `HOOKS_STALE`, `MCP_MISSING`, `MCP_INVALID`,
+`MCP_REGISTER_FAILED`, `PREFLIGHT_FAILED`). The MCP server is registered
+through `claude mcp add`, never by editing `~/.claude.json` directly.
+`test_setup.py` exercises it against a temporary HOME with a stub `claude`.
+
+The same steps by hand:
+
 ```sh
 cd integrations/claude-code
 uv venv --python 3.12 .venv
@@ -75,9 +92,19 @@ block in `~/.claude/CLAUDE.md`, and installs the `/memory-review` skill.
   (`bench-quality/live-ab/eval_selection.py`); query-similarity ranking was
   evaluated there and rejected — it anti-selects the memories that
   transfer.
+- `hooks/pre_tool_use.py` denies `memory_save`/`feedback`/`update`/`delete`
+  when called from a subagent (hook input carries `agent_id` only there):
+  a worker sees a slice of the task, so its lessons and verdicts are about
+  the slice. Searches stay allowed. Subagent turns live in separate
+  transcripts (`<session>/subagents/`) that `session_end` never reads, and
+  the transcript reader drops `isSidechain` records in case one does.
 - `hooks/session_end.py` mines the transcript for failed→fixed command
   pairs and stages them to `pending-memories.md` (ratified by
-  `/memory-review`, never auto-saved), and infers outcomes for memories the
+  `/memory-review`, never auto-saved) — each with a reconcile line naming
+  its nearest stored memories and pending candidates (similarity,
+  likely-duplicate mark) and the transcript range it came from, so review
+  can skip or merge a restated lesson (`RFM_RECONCILE=0` turns it off) —
+  and infers outcomes for memories the
   session acted on — so routine feedback costs no model turns; explicit
   `memory_feedback` is reserved for what inference cannot see.
 
