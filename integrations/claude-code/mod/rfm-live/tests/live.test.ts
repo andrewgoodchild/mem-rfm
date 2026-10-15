@@ -47,7 +47,7 @@ test('error shows the memory once; the fix it drives is sent as an outcome', asy
   expect(calls.some(c => c.op === 'match')).toBe(false)
 
   const failed = await $.tool.call({ tool: 'Bash', command: 'python -c "import xarray"' })
-  expect((failed.context ?? []).join('\n')).toContain('#1:')
+  expect((failed.context ?? []).join('\n')).toContain('<memory id="1">')
 
   const again = await $.tool.call({ tool: 'Bash', command: 'python -c "import xarray"' })
   expect(again.context ?? []).toEqual([])

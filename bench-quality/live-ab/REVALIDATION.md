@@ -1224,3 +1224,83 @@ Registered predictions:
         actually about source-reachability and the Track 22 mechanism
         reading is wrong.
 Reported as an effect curve, not a pass/fail on P2's magnitude.
+
+## Track 23 — show-on-error, live (registered 2026-10-15, before any scored session)
+
+Track 19 delivered the era memory at SessionStart into every sweep-arm
+session: the agent almost never met the condition (P1: 1 of 20) and paid
++25% wall for carrying it (P4, significant). Show-on-error inverts the
+delivery. Nothing is shown until the condition appears in a Bash result;
+then the matching memory is attached beside that result, once, and the
+first later command drawn from it records +1 or -1 live. A session that
+never meets the condition carries nothing. This track asks whether that
+delivery helps when the condition binds, and whether it avoids the tax.
+
+**Delivery is the rfm-live mod** (integrations/claude-code/mod/rfm-live,
+loaded with --plugin-dir in the show arm only; every judgement is
+mod_bridge.py's, which reuses session_end.py: condition classes,
+signature_match, acted_on, the ambiguity abstention, the conditioned
+ledger). Neither arm has global hooks, SessionStart injection or the MCP
+server: both run ab-claude's empty MCP config, so the mod is the only
+difference. The store is a copy of Track 19's end-of-run store (the era
+memory, 26 sightings, 0 outcomes), copied once; the mod's live outcomes
+accumulate in it across the run, as they would in use.
+
+**Three deviations from Track 19, disclosed:**
+1. The condition is made to bind. The prompt adds: "Your fix counts as
+   verified only when `python -m pytest -q <files>` runs without
+   errors", naming the task's existing fail-to-pass test FILES (the
+   test patch is applied only at scoring). The LLM-free probe
+   (run_track23.py --validate) ran those files bare, before any fix,
+   on Track 19's 21-task pool: the era class appears on **19**
+   (validation-track23.jsonl). Pool = those 19, chronological.
+2. The era break is restored before every session. Found while
+   building this track: run_stream.prepare only ever adds to an arm's
+   venv, and the shared sphinx control venv had been left with
+   era-compatible plugins (sphinxcontrib-applehelp 1.0.2) — a session
+   that "fixes" the environment fixes it for every later session of
+   that arm. reset_env upgrades the six era packages to their latest
+   releases and removes any sitecustomize/usercustomize shim before
+   each session and the probe; installed versions are stamped per
+   record. Whether this contamination contributed to Track 19's P1 is
+   not tested here.
+3. Model claude-fable-5-1 (current), CLI stamped per record.
+
+Per-session hygiene as Track 19 (tmp globs, built-in memory archived),
+control first per pair. Transcripts are copied into track23/transcripts/
+when each session ends (Claude Code's 30-day cleanup deleted every
+earlier track's). Metric of record: Bash events before the first pytest
+run naming a required test file whose output shows a clean summary
+(passes, no failures or errors) — "first verified"; never verified ranks
+below any count. Read from the output, not the exit code: in the smoke
+pair (sphinx-8721, outside the pool) the agents piped pytest through
+`tail`, so failing runs exited 0 and the error text was cut. The same
+cut can hide the condition from the mod, which sees only what the agent
+printed; that is the deployed behaviour and is not worked around.
+Scored by score_track23.py.
+
+Registered predictions:
+  T23-P1 (liveness, the gate): in >= 60% of CONTROL sessions the first
+        run of the required files is not clean — the era break binds.
+        Era text visible in output is reported alongside. If P1 fails,
+        P3 is read as condition-absent, as in Track 19.
+  T23-P2 (delivery): the memory is shown in >= 80% of show-arm sessions
+        where era text was visible in output, and in 0 control sessions.
+  T23-P3 (benefit, the claim): show beats control on first-verified,
+        one-sided sign p <= 0.05 over decided pairs (>= 14 of 19 if
+        none tie).
+  T23-P4 (no harm): show-arm total wall within +15% of control,
+        per-task distribution reported before the total.
+  T23-P5 (ledger honesty): every outcome the mod records falls in a
+        show-arm session where the era class fired; the end-of-run
+        ledger is reported, with the mod's outcomes compared against
+        session_end's offline inference on the same transcripts
+        (agreement reported, no bar).
+
+Interpretation fixed in advance: P1 + P2 PASS with P3 FAIL means a cure
+delivered at the moment of need does not help a frontier agent even when
+the friction binds — the strongest negative for condition-triggered
+delivery on this workload class. P3 PASS is the first causal benefit for
+memory on a code workload with the source readable. P4 is read on its
+own: show-on-error was built to remove Track 19's tax, so a P4 FAIL
+falsifies that design claim whatever P3 does.
