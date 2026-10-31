@@ -627,7 +627,10 @@ one: output tokens tied until the note, then ran 61% over control in 13 of
 It also found a bug in the instrument the project depends on. Outcome
 inference credited none of those uses, because the memory's command held
 a placeholder path no real command reproduces. So a memory can change
-behaviour in 11 sessions and leave no trace in the ledger.
+behaviour in 11 sessions and leave no trace in the ledger. Track 24 fixed
+that offline, and the replay shows the harder problem behind it: all 10
+recovered outcomes are +1, on a memory the same data found no benefit
+from.
 [Full entry](../bench-quality/RESULTS.md).
 
 ## The cost of memory, itemized

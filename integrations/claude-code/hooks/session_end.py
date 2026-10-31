@@ -608,6 +608,10 @@ def rehydrate(mems):
     return mems
 
 
+PLACEHOLDER = re.compile(r"/path/to/\S*|<[A-Za-z][\w -]*>")
+HOLE = "\0"
+
+
 def _signature(mem_content):
     """(backtick spans, program-tokens) for a memory's content, computed
     once and reused against every candidate command — acted_on's inputs
@@ -616,15 +620,65 @@ def _signature(mem_content):
     return re.findall(r"`([^`]{8,})`", mem_content), tokens(mem_content)
 
 
+def _holes(span):
+    """The span with its placeholders marked, or None if it has none."""
+    held = PLACEHOLDER.sub(HOLE, span)
+    return held if held != span or "..." in span.split() else None
+
+
+def _template(span):
+    """A backtick span with placeholders as [(kind, text), ...] to match
+    word by word, or None when it has no placeholder or is too generic to
+    credit (Track 24): it needs an anchored word (`KEY=<value>`), or three
+    literal words after the first, or `python -m pytest <tests>` would
+    credit every test run."""
+    held = _holes(span)
+    if held is None:
+        return None
+    words = []
+    for w in held.split():
+        if w == "...":
+            continue
+        head = w.split(HOLE)[0]
+        words.append(("literal", w) if HOLE not in w else
+                     ("anchored", head) if head else ("any", ""))
+    kinds = [k for k, _ in words]
+    if "anchored" in kinds or kinds.count("literal") > 3:
+        return words
+    return None
+
+
+def _fills(kind, text, word):
+    if kind == "any":
+        return True
+    if kind == "anchored":
+        return word.startswith(text) and \
+            re.search(r"[A-Za-z0-9]", word[len(text):]) is not None
+    return word == text or (text.endswith("/") and word.startswith(text))
+
+
+def _fills_template(words, cmd):
+    """The template's words appear in order; others may sit between."""
+    have = iter(cmd.split("<<")[0].split())
+    return all(any(_fills(k, t, w) for w in have) for k, t in words)
+
+
 def acted_on(sig, cmd):
     """Did this command come from the memory this signature was built for?
     Precision over recall: a backtick-quoted span reproduced verbatim, or
-    the command's tokens drawn from the memory with its program named
-    there."""
+    filled in if it is a template, or, for a memory with no template, the
+    command's tokens drawn from the memory with its program named there.
+    Token share would credit bare `python -m pytest` to a template that
+    needs an override."""
     spans, mt = sig
     for span in spans:
         if span in cmd:
             return True
+        words = _template(span)
+        if words and _fills_template(words, cmd):
+            return True
+    if any(_holes(span) for span in spans):
+        return False
     prog = program(cmd)
     if not prog or prog not in mt:
         return False

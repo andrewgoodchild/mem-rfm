@@ -2972,3 +2972,46 @@ class fired in 14 show sessions and was shown in all 14.
 **Other scorer changes after the run, disclosed.** score_track23.py as
 registered never computed P5's session_end comparison. Added here, with
 the unregistered lines above printed under an "unregistered" label.
+
+## Track 24 — template commands in acted_on (2026-10-31) — the defect is fixed offline; P3 failed, and a wider false positive is on record
+
+Registered in live-ab/REVALIDATION.md before the matcher changed, with an
+amendment registered before its own change. Offline on Track 23's 38
+transcripts: **no live session has exercised this**. Score with
+`live-ab/score_track24.py`.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| T24-P1 recall | credited in >= 9 of 10 sessions that ran pytest under an override | 10 of 10 | **PASS** |
+| T24-P2 specificity | 0 of 19 control, 0 of 3 noted no-shim | 0 and 0 | **PASS** |
+| T24-P3 fixtures | every case passes | first scoring: 9 refusals wrongly credited. After the amendment: **19 of 20** | **FAIL** |
+| T24-P4 no regression | 0 differences on memories with no template | 0 over 384,608 pairs, 404 memories | **PASS** |
+| T24-P5 ledger effect | none, reported | 10 outcomes, all +1 | see below |
+| T24b-P1 | P1-P4 all pass on the same data | P3 fails | **FAIL** |
+| T24b-P2 | none, reported | 9 template memories: credit added on 192 pairs, removed on 0 | reported |
+
+P2 and P4 were the registered merge blockers and passed, so the change
+ships. P1's positives were found before the rule was written, so it says
+the defect is fixed, not that the rule generalizes.
+
+**P3 found a false positive older than this work.** All 9 refusals in the
+first scoring were also credited by the old matcher. Its token-share rule
+credits any short command made of the memory's words, so bare `python -m
+pytest tests/` earned credit for a shim memory it never used. Real
+sessions mostly escaped by accident: `2>&1 | tail` dilutes the share. The
+amendment closes this for template memories only.
+
+**The last failing case is a defect in the registration.** The fixture
+refusing `alabaster<0.7.13` for a plain memory contradicts P4, which
+requires plain memories to keep the old rule. P4 is the binding bar, so
+the case now pins the behaviour as an open false positive, a disclosed
+edit after scoring. The fallback for plain memories remains open.
+
+**The ledger now says +10 for a memory Track 23 found no benefit from.**
+Every decided outcome is +1, and only 6 of the 10 deciding runs were clean:
+agents pipe through `tail`, so the exit is 0, -1 cannot fire, and a run
+with 21 failures reads as success. Some of those are defensible, since the
+shim did get tests running. The point stands: fixing recall gives a
+helped-when-needed ledger that reads positive where a registered causal
+test read null. Condition-gating is necessary, and it does not make an
+outcome causal. Reading exit codes through pipes is not fixed here.
