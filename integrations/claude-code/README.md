@@ -108,6 +108,16 @@ block in `~/.claude/CLAUDE.md`, and installs the `/memory-review` skill.
   session acted on — so routine feedback costs no model turns; explicit
   `memory_feedback` is reserved for what inference cannot see.
 
+## The rfm-live mod (prototype)
+
+`mod/rfm-live` shows a memory beside the error that matches it and records
+the outcome live, through `mod_bridge.py`. It is a research prototype, not
+part of the install: nothing above registers it, and its only use is
+loading it with `--plugin-dir` for an experiment. Track 23 tested it and
+it did not help (`bench-quality/RESULTS.md`): +22.4% wall, no benefit, and
+0 outcomes recorded, because `acted_on` cannot match a memory whose command
+is a template. Don't read it as a working outcome path.
+
 ## Configuration
 
 | env | default | |

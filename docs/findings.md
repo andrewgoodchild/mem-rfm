@@ -78,6 +78,7 @@ cost/safety bounds, the rest tested benefit.
 | does the best earned memory beat no-memory at home? (sphinx) | token-matched, four content forms, on its home tasks | **FAIL** — ties; 79% of its ledger earned condition-silent (Track 11 + C4) |
 | does it at least help a weaker model? (haiku) | condition gate, then sign consistency | **FAIL** — 0 wins of 5 pairs, +27.6% wall: a measured tax (Track 13) |
 | does the full ungated lifecycle help where friction is forced? | a pool where verification dies without the workaround | **FAIL at the gate** — agent met the condition in 1/20 control sessions and worked around it; +25% wall (Track 19) |
+| is the cure useful if it arrives at the moment of need? (show-on-error) | memory attached beside the error only, friction made to bind | **FAIL** — friction bound 19/19 and the memory was followed (11/14 built its workaround, control 0/19), yet first-verified tied 8–8 and wall rose +22.4%; live capture recorded 0 outcomes (Track 23) |
 | **does memory help when the control CANNOT read the source?** | organizational questions, both arms no code execution and only a budget-limited query tool | **PASS** — control 80, memory **95** of ~130, up on 13 / down on 1, **sign p = 0.001**, 13% fewer queries (Track 22) — the one condition under which memory helped |
 
 The table reads as a boundary, not a verdict. The benefit predictions on
@@ -606,6 +607,27 @@ always present and the negatives above stand unchanged. What it buys the
 project is a boundary rather than a verdict: not "memory does not help,"
 but "memory helps precisely where the source is expensive, rate-limited,
 or withheld — and nowhere a capable agent can just read the environment."
+
+### The cure, delivered and followed (Track 23)
+
+Track 19's agent never met the condition and paid for carrying the
+memory anyway. Track 23 inverted the delivery: nothing is shown until the
+error appears, and then only the matching memory, once. It also made the
+friction bind, in 19 of 19 control sessions. This was the best case for
+memory on repository coding, and it was registered in advance as the
+strongest available negative if it failed.
+
+It failed, and not because the memory was ignored. 11 of the 14 sessions
+that saw it built its workaround; no control did. They reached a verified
+fix no sooner (8 wins, 8 losses, 3 ties), and the arm cost +22.4% wall,
+so show-on-error did not remove the tax it was built to remove. That cost
+appeared in sessions with no note too (+19.6%, n=5) and is unexplained.
+
+It also found a bug in the instrument the project depends on. Outcome
+inference credited none of those uses, because the memory's command held
+a placeholder path no real command reproduces. So a memory can change
+behaviour in 11 sessions and leave no trace in the ledger.
+[Full entry](../bench-quality/RESULTS.md).
 
 ## The cost of memory, itemized
 

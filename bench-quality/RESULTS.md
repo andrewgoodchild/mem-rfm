@@ -2891,3 +2891,76 @@ incomplete facts were deleted and rebuilt, and answering, judging and the
 audit were re-run until nothing remained (all 1,204 answers, 1,204
 judgments, 602 audit judgments). Final extraction: 47,867 facts over all
 14,301 held-out sessions. Run logs: results-amb-heldout/run.log, run2.log.
+
+## Track 23 — show-on-error, live (run 2026-10-16, scored 2026-10-31) — 2/5: the cure was delivered and followed, and it did not help
+
+Registered in live-ab/REVALIDATION.md before any scored session (commit
+e473ba1): 19 sphinx pairs, claude-fable-5-1, the rfm-live mod loaded in
+the show arm only. Score with `live-ab/score_track23.py`. Transcripts stay
+local (gitignored; they carry the machine's global instructions), so the
+per-session numbers here are reproducible only from this machine.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| T23-P1 liveness | first required-file run not clean in >= 60% of control | 19/19 (100%); era text visible in 13/19 | **PASS** |
+| T23-P2 delivery | shown in >= 80% of show sessions where era text was visible; 0 control | 9/11 (82%); 0 control | **PASS** |
+| T23-P3 benefit | show beats control on first-verified, sign p <= 0.05 | show 8, control 8, tied 3; p = 0.598 | **FAIL** |
+| T23-P4 no harm | show wall within +15% of control | 7,138s vs 5,833s, **+22.4%**; slower on 15 of 19, sign p = 0.010 | **FAIL** |
+| T23-P5 ledger honesty | every mod outcome falls where the class fired; agreement with session_end reported | 0 mod outcomes, 0 from session_end on the same transcripts | **NOT TRIGGERED** |
+
+Resolution tied at 18/19 per arm.
+
+**The registered reading applies as written.** P1 + P2 PASS with P3 FAIL
+is "a cure delivered at the moment of need does not help a frontier agent
+even when the friction binds — the strongest negative for
+condition-triggered delivery on this workload class." The P4 FAIL
+falsifies the design claim whatever P3 does: show-on-error was built to
+remove Track 19's +25% tax and did not.
+
+The rest of this entry was computed after the run and is not registered.
+
+**The memory was followed, which makes the negative stronger.** Of the 14
+show sessions that got the note, 11 wrote a sitecustomize.py, the
+memory's workaround, and 10 ran pytest under a PYTHONPATH override.
+Control wrote one in 0 of 19. So P3 does not read as "the agent ignored
+it": the memory changed which workaround was used, and first-verified did
+not move.
+
+**That exposes a defect: live outcome capture missed all of it.** 0
+commands were credited by acted_on in 38 sessions, so P5's 0 is the
+matcher never engaging, not abstention. The stored command is
+`PYTHONPATH=/path/to/shim python -m pytest tests/`, a placeholder: its
+quoted span cannot match a real path, and real commands such as
+`PYTHONPATH=/tmp/sphinx_shim python -m pytest -q tests/test_ext_...` share
+4-9% of their tokens with the memory against a 60% bar. Session_end shares
+the same function, so this is a false negative in the shipped path too,
+for any memory whose command is a template. It is an instance of the
+"convicted backtick heuristic" and the judge-coverage seam already on
+record, not a new class. **The mod has never recorded an outcome in a
+scored session, so live capture is built, and unvalidated.** The ledger
+stayed at zero, which also means the track says nothing about whether
+outcomes would have demoted the memory. Fixing the matcher is not done
+here; it would change what a future run credits, so it needs its own
+registration.
+
+**P4's cost is not attributable to the note.** Wall by whether a note
+arrived: shown (n=14) 4,682 -> 5,761s, +23.0%; never shown (n=5) 1,151 ->
+1,377s, +19.6%, with output tokens +29.6% and +14.2%. Across all pairs
+output tokens rose +26.8% against +9% assistant turns and +4% Bash calls.
+Startup is excluded (wall matches transcript span in both arms) and time
+inside Bash calls did not rise (518s vs 566s, measured ad hoc), though
+that span may not include the mod's own hook time, which was not
+instrumented. n=5 is small, and control ran first in every pair. The
+tax's source stays unexplained, as Track 3's did.
+
+**Two scope limits.** One memory, one error class, one repo, and a
+memory whose command needed adapting. A retest with a runnable memory is
+a new registration, not a repair of this one. And 5 notes landed in
+sessions where the scorer's era regex saw no era text while 2 fired
+sessions got none; P2's denominator comes from that regex, and the
+mismatch was not investigated.
+
+**Scorer change after the run, disclosed.** score_track23.py as registered
+never computed P5's session_end comparison. Added here, with the
+unregistered lines above printed under an "unregistered" label; P1-P4
+output is unchanged.

@@ -13,10 +13,12 @@ through tail, which makes every run exit 0 and can cut the error text.
 Usage: score_track23.py [--dir track23-smoke]
 """
 import collections
+import datetime
 import json
 import math
 import os
 import re
+import sqlite3
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -24,9 +26,13 @@ sys.path.insert(0, HERE)
 import formation_study as F  # noqa: E402
 import run_track23 as T      # noqa: E402
 
+se = F.se
+
 ERA = re.compile(r"VersionRequirementError|ExtensionError", re.I)
 NOTE = "[rfm-memory]"
 SUMMARY = re.compile(r"\b\d+ (?:passed|failed|errors?)\b")
+SHIM_WRITE = re.compile(r"(>|tee|cat\s*>).{0,60}sitecustomize")
+PATH_PYTEST = re.compile(r"PYTHONPATH=\S+.*pytest")
 
 
 def sign_p(wins, decided):
@@ -54,6 +60,89 @@ def notes_in(tp):
                     shown.append([int(i) for i in
                                   re.findall(r'<memory id="(\d+)">', c)])
     return shown
+
+
+def note_positions(tp):
+    """{memory id: index of the first Bash event after its note}. Mod notes
+    are not an exposure format transcripts.read knows, so the offline
+    comparison places them here; the note follows the result it answered,
+    and matching starts at the memory's first appearance."""
+    seen, out = set(), {}
+    for line in open(tp):
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        for b in (d.get("message") or {}).get("content") or []:
+            if isinstance(b, dict) and b.get("type") == "tool_use" and \
+                    b.get("name") == "Bash":
+                seen.add(b["id"])
+        a = d.get("attachment") or {}
+        if d.get("type") == "attachment" and \
+                a.get("type") == "hook_additional_context":
+            for c in a.get("content") or []:
+                if str(c).startswith(NOTE):
+                    for mid in re.findall(r'<memory id="(\d+)">', c):
+                        out.setdefault(int(mid), len(seen))
+    return out
+
+
+def offline_outcomes(tp, events, store):
+    """session_end.infer_outcomes over the same transcript, given where the
+    mod showed each memory: what the SessionEnd path would have recorded."""
+    mems = {mid: (store[mid], idx) for mid, idx in note_positions(tp).items()}
+    return se.infer_outcomes(mems, events)
+
+
+def acted_commands(tp, events, store):
+    """Commands acted_on credits to a shown memory, whatever their result:
+    0 means the matcher never engaged, not that outcomes were abstained."""
+    n = 0
+    for mid, idx in note_positions(tp).items():
+        sig = se._signature(store[mid])
+        n += sum(1 for e in events[idx:] if se.acted_on(sig, e.cmd))
+    return n
+
+
+def timing(tp):
+    """(output tokens deduplicated by message id, transcript span in s)."""
+    tokens, stamps = {}, []
+    for line in open(tp):
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("timestamp"):
+            stamps.append(d["timestamp"])
+        m = d.get("message") or {}
+        if d.get("type") == "assistant":
+            tokens[m.get("id")] = (m.get("usage") or {}).get("output_tokens", 0)
+    span = 0.0
+    if stamps:
+        at = lambda t: datetime.datetime.fromisoformat(t.replace("Z", "+00:00"))
+        span = (at(stamps[-1]) - at(stamps[0])).total_seconds()
+    return sum(tokens.values()), span
+
+
+def built_shim(tp):
+    """Did the session write a sitecustomize.py, the memory's workaround?
+    acted_on cannot see this: the stored command has a placeholder path."""
+    for line in open(tp):
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        for b in (d.get("message") or {}).get("content") or []:
+            if not (isinstance(b, dict) and b.get("type") == "tool_use"):
+                continue
+            i = b.get("input") or {}
+            if b.get("name") in ("Write", "Edit") and \
+                    "sitecustomize" in str(i.get("file_path")):
+                return True
+            if b.get("name") == "Bash" and \
+                    SHIM_WRITE.search(i.get("command") or ""):
+                return True
+    return False
 
 
 def required_runs(events, files):
@@ -100,6 +189,12 @@ def main():
     print(f"sessions {len(res)}   complete pairs {len(pairs)}   "
           f"incomplete: {[k for k, v in by.items() if len(v) < 2] or 'none'}")
 
+    db = sqlite3.connect(os.path.join(out, "rfm-memory.db"))
+    store = dict(db.execute("SELECT id, content FROM rfm_memories"))
+    recorded = db.execute("SELECT COUNT(*) FROM rfm_accesses "
+                          "WHERE outcome IS NOT NULL").fetchone()[0]
+    db.close()
+
     S = {}
     for iid, arms in pairs.items():
         files = T.test_files(by_id[iid])
@@ -109,7 +204,14 @@ def main():
                 S[(iid, arm)] = None
                 continue
             evs = F.events_of(tp)
+            toks, span = timing(tp)
             S[(iid, arm)] = {
+                "shim": built_shim(tp),
+                "shim_runs": sum(1 for e in evs if PATH_PYTEST.search(e.cmd)),
+                "tokens": toks,
+                "span": span,
+                "offline": offline_outcomes(tp, evs, store),
+                "acted": acted_commands(tp, evs, store),
                 "bound": bound(evs, files),
                 "fired": sum(1 for e in evs
                              if e.got and ERA.search(e.body or "")),
@@ -168,6 +270,29 @@ def main():
     print(f"resolved: control {rc}/{n}, show {rsv}/{n}")
     last = res[-1].get("ledger") if res else None
     print(f"P5 ledger (id, outcomes, value) at end: {last}")
+    shows = [S[(i, "show")] for i in pairs if S.get((i, "show"))]
+    offline = [o for x in shows for o in x["offline"]]
+    print(f"P5 mod outcomes recorded: {recorded}; session_end inference on "
+          f"the same transcripts: {len(offline)} {offline or ''}; commands "
+          f"acted_on credited: {sum(x['acted'] for x in shows)}")
+
+    # Unregistered description of P3 and P4, added after the run.
+    noted = [x for x in shows if x["notes"]]
+    print(f"\nunregistered: shown the memory {len(noted)}/{len(shows)}; of "
+          f"those, built the shim {sum(x['shim'] for x in noted)}, ran pytest "
+          f"with PYTHONPATH {sum(x['shim_runs'] > 0 for x in noted)}; control "
+          f"built it {sum(S[(i, 'control')]['shim'] for i in pairs)}/{n}")
+    print("\nunregistered: where P4's wall went, by whether a note arrived")
+    for label, keep in (("note shown", True), ("no note", False)):
+        ids = [i for i in pairs if bool(S[(i, "show")]["notes"]) == keep]
+        sum_of = lambda k, arm: sum(S[(i, arm)][k] for i in ids)
+        wc = sum(pairs[i]["control"]["wall_s"] for i in ids)
+        ws = sum(pairs[i]["show"]["wall_s"] for i in ids)
+        print(f"  {label:<11}n={len(ids):<3}wall {wc} -> {ws} "
+              f"({100 * (ws - wc) / max(wc, 1):+.1f}%)  transcript span "
+              f"{sum_of('span', 'control'):.0f} -> {sum_of('span', 'show'):.0f}"
+              f"  output tokens {sum_of('tokens', 'control')} -> "
+              f"{sum_of('tokens', 'show')}")
 
 
 if __name__ == "__main__":
