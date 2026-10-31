@@ -98,11 +98,11 @@ def outcome(req):
     cmd = req.get("command") or ""
     if not SE.acted_on(SE._signature(row[0]), cmd):
         return {"acted": False, "outcome": None, "recorded": False}
-    is_err = bool(req.get("is_error"))
-    if not is_err and SE.FAILURE.search(req.get("output") or ""):
-        # Zero-exit but error-shaped: infer_outcomes' abstention, kept.
+    value = SE.verdict(row[0], cmd, bool(req.get("is_error")),
+                       req.get("output"),
+                       SE.condition_stamps([req["id"]]).get(req["id"]))
+    if value is None:
         return {"acted": True, "outcome": None, "recorded": False}
-    value = -1.0 if is_err else 1.0
     done = SE.record_outcomes(
         [{"id": req["id"], "outcome": value, "cmd": cmd.split("\n")[0][:200]}],
         req.get("session_start"), frozenset(req.get("fired") or ()))

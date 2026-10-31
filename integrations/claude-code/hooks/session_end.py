@@ -128,6 +128,7 @@ CONDITION_CLASSES = (
     "extensionerror", "versionrequirementerror", "distributionnotfound",
     "pkg_resources")
 CONDITIONED = os.environ.get("RFM_CONDITIONED_OUTCOMES", "1") != "0"
+TEST_SUMMARY = re.compile(r"\b\d+ (?:passed|failed|errors?)\b")
 
 
 def fired_classes(events):
@@ -139,7 +140,7 @@ def fired_classes(events):
     for e in events:
         if not e.got:
             continue
-        body = (e.body or "").lower()
+        body = (e.full or e.body or "").lower()
         fired.update(c for c in CONDITION_CLASSES if c in body)
     return fired
 
@@ -666,10 +667,10 @@ def _fills_template(words, cmd):
 def acted_on(sig, cmd):
     """Did this command come from the memory this signature was built for?
     Precision over recall: a backtick-quoted span reproduced verbatim, or
-    filled in if it is a template, or, for a memory with no template, the
-    command's tokens drawn from the memory with its program named there.
-    Token share would credit bare `python -m pytest` to a template that
-    needs an override."""
+    filled in if it is a template. A memory with no quoted command has only
+    token share: the command's tokens drawn from the memory, its program
+    named there. With a quoted command token share credits any test run to
+    any test memory (Track 25: 1,288 credits, against 264 span matches)."""
     spans, mt = sig
     for span in spans:
         if span in cmd:
@@ -677,13 +678,60 @@ def acted_on(sig, cmd):
         words = _template(span)
         if words and _fills_template(words, cmd):
             return True
-    if any(_holes(span) for span in spans):
+    if spans:
         return False
     prog = program(cmd)
     if not prog or prog not in mt:
         return False
     ct = tokens(cmd)
     return bool(ct) and len(ct & mt) / len(ct) >= 0.6
+
+
+def piped(cmd):
+    """Does a pipe hide this command's exit code? Quoted bars, || and
+    pipefail do not."""
+    bare = re.sub(r"'[^']*'|\"[^\"]*\"", "", cmd.split("<<")[0])
+    return "pipefail" not in bare and \
+        re.search(r"(?<!\|)\|(?!\|)", bare) is not None
+
+
+def verdict(content, cmd, is_err, output, stamp=None):
+    """The outcome of an acted-on command: 1.0, -1.0, or None to abstain.
+    A pipe's exit code is its last stage's, and 389 of 396 pytest runs in
+    Track 23 were piped, so a piped command is judged from its output: its
+    memory's condition still there is -1, a clean test summary +1, and
+    anything else abstains. A failed summary abstains too: with a working
+    workaround, the failures may be the code under test."""
+    if is_err:
+        return -1.0
+    output = output or ""
+    if not piped(cmd):
+        return None if FAILURE.search(output) else 1.0
+    low = output.lower()
+    if any(c in low for c in _classes(stamp or derive_condition(content))):
+        return -1.0
+    if FAILURE.search(output):
+        return None
+    lines = [l for l in output.splitlines() if TEST_SUMMARY.search(l)]
+    if lines and "passed" in lines[-1] and \
+            not re.search(r"failed|error", lines[-1]):
+        return 1.0
+    return None
+
+
+def condition_stamps(ids):
+    """{memory id: stored condition_class}, or {} if the store has none."""
+    if not ids or not os.path.exists(DB_PATH):
+        return {}
+    try:
+        db = sqlite3.connect(DB_PATH, timeout=10.0)
+        marks = ",".join("?" * len(ids))
+        rows = db.execute("SELECT id, condition_class FROM rfm_memories "
+                          f"WHERE id IN ({marks})", list(ids)).fetchall()
+        db.close()
+        return dict(rows)
+    except sqlite3.Error:
+        return {}
 
 
 def infer_outcomes(mems, events):
@@ -696,6 +744,7 @@ def infer_outcomes(mems, events):
     arrived decides nothing, and a zero-exit command whose output still
     looks error-shaped is ambiguous — no outcome beats a wrong one."""
     out = []
+    stamps = condition_stamps(list(mems))
     for mid, (content, first_idx) in mems.items():
         sig = _signature(content)
         for e in events[first_idx:]:
@@ -703,10 +752,11 @@ def infer_outcomes(mems, events):
                 continue
             if not e.got:
                 break                 # result never arrived: verdict unknown
-            if not e.is_err and FAILURE.search(e.body):
-                break                 # zero-exit but error-shaped: ambiguous
-            out.append({"id": mid, "outcome": -1.0 if e.is_err else 1.0,
-                        "cmd": e.cmd.split("\n")[0][:200]})
+            value = verdict(content, e.cmd, e.is_err, e.full or e.body,
+                            stamps.get(mid))
+            if value is not None:
+                out.append({"id": mid, "outcome": value,
+                            "cmd": e.cmd.split("\n")[0][:200]})
             break
     return out
 

@@ -42,7 +42,7 @@ REFUSE = [
     (STASH, "python -m pytest tests/a.py"),
 ]
 
-# A span with no placeholder: verbatim, then the token-share rule as before.
+# A span with no placeholder: verbatim only.
 PLAIN = "`pip install 'alabaster<0.7.12'`"
 NEAR = "pip install 'alabaster<0.7.13'"
 
@@ -57,16 +57,13 @@ def test_refuses():
         assert not SE.acted_on(SE._signature(mem), cmd), (mem, cmd)
 
 
-def test_plain_span_keeps_token_share():
-    """NEAR should not earn credit, and as registered this asserted so. It
-    failed T24-P3, and T24-P4 requires it: plain memories keep the old
-    rule. Pinned as the open false positive, so a fix has to say so."""
+def test_plain_span_stays_verbatim():
     assert SE.acted_on(SE._signature(PLAIN), "pip install 'alabaster<0.7.12'")
-    assert SE.acted_on(SE._signature(PLAIN), NEAR)
+    assert not SE.acted_on(SE._signature(PLAIN), NEAR)
 
 
 if __name__ == "__main__":
     test_credits()
     test_refuses()
-    test_plain_span_keeps_token_share()
+    test_plain_span_stays_verbatim()
     print("ok")
