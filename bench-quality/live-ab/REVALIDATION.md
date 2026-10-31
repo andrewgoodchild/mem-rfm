@@ -1376,3 +1376,54 @@ Registered, scored by the same score_track24.py:
   T24b-P2 (reported, no bar): pairs where old and new matchers differ on
         template memories, split into credit added and credit removed.
 
+## Track 25 — outcome honesty, then a live run (registered 2026-10-31, before any of these changes)
+
+Track 24's replay gave 10 outcomes, all +1, 4 on runs that were not clean,
+on a memory Track 23 found no benefit from. Measured on Track 23's
+transcripts while designing this: 389 of 396 pytest runs were piped, none
+with pipefail, so the exit code says nothing about nearly every test run.
+Token share gave 1,288 credits on memories that hold a quoted command
+against 264 span matches, and all 8 sampled were false (pytest-repo
+memories credited for sphinx test runs). It gave 2 on prose memories.
+
+**Change A, verdict on a piped command.** Outcome inference and mod_bridge
+share one verdict. is_error is -1. A command not piped keeps today's rule.
+A piped command (an unquoted `|` that is not `||`, no pipefail) that exits
+0: -1 if the output names the memory's own condition class, the cure did
+not clear it; else abstain if the output is error-shaped (FAILURE); else +1
+only if the last test summary shows passes and no failures or errors; else
+abstain. A failed test summary abstains, not -1: under a working shim,
+failures may be the code under test.
+
+**Change B, the 800-character cut.** Event gains the whole result. Fired
+classes and the verdict read it. Candidate mining keeps reading the cut
+body, so what gets staged does not change.
+
+**Change C, token share.** It applies only to memories with no backtick
+span. A memory with a quoted command is credited through its spans alone.
+Prose memories keep it: they have no other route to an outcome. Its 2
+hits here were both false, so that residual is known and stays.
+
+Registered predictions, offline on the 38 Track 23 transcripts:
+  T25-P1 (A): +1 falls only on clean deciding runs. Of the 10 outcomes,
+        the 4 unclean become abstentions and the 6 clean stay +1.
+  T25-P2 (A, C): every case in hooks/test_outcomes.py passes, as committed
+        here. test_acted_on.py's pin on token share flips to a refusal,
+        which is the edit that pin exists to force.
+  T25-P3 (B): session_end's fired classes equal the mod's on 38 of 38
+        sessions. corrections() is unchanged on 38 of 38.
+  T25-P4 (C): span and template credit is unchanged on all pairs; token
+        credit on spanned memories falls to 0; no pair gains credit.
+
+Any failure among P1-P4 stops the live run.
+
+**Live run.** 4 show-arm sessions, no control: this tests capture, not
+benefit, so no benefit can be read from it. Pool's first 4 tasks in order
+(sphinx-7440, 7748, 7985, 8035), mod loaded, a fresh copy of the Track 23
+seed store, otherwise Track 23's harness. Prediction fixed here:
+  T25-P5 (live capture): the mod records an outcome in >= 2 of 4 sessions.
+  T25-P6 (agreement): every mod outcome equals session_end's inference on
+        the same transcript, with 0 disagreements.
+P5 failing means live capture is still unproven. Results of this run are
+not pooled with Track 23.
+
