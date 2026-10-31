@@ -11,14 +11,14 @@ mem_rfm.register(db)
 db.execute("SELECT rfm_init()")
 ```
 
-`rfm_init()` creates the tables and indexes and is idempotent — it also
-migrates older databases by adding columns introduced later.
+`rfm_init()` creates the tables and indexes and is idempotent. It does not
+add columns to an existing table; hosts own their migrations.
 
 ## Functions
 
 | function | returns |
 |---|---|
-| `rfm_init()` | creates/migrates schema; `'ok'` |
+| `rfm_init()` | creates the schema; `'ok'` |
 | `rfm_record_access(id)` | logs a retrieval; returns the new activation |
 | `rfm_record_outcome(id, o)` | records feedback `o ∈ [−1,1]` against the latest access; returns the new value EWMA |
 | `rfm_prior(id)` | `(1−β) + β·rfm_score(id)` — the bounded multiplier to compose with similarity |
@@ -30,7 +30,7 @@ migrates older databases by adding columns introduced later.
 | `rfm_compact(before_ts)` | delete resolved access-log rows older than `before_ts`; each memory's latest row (the outcome slot) and every unresolved row survive, so scoring is unaffected — what you spend is replayability of the pruned span |
 | `rfm_prior_of(access_count, created_at, last_access, bla_cache, value_score, outcome_count)` | same number as `rfm_prior(id)`, without the row lookup |
 | `rfm_config(key[, value])` | read or set a per-connection setting |
-| `rfm_version()` | engine version — `rfm_init()` migrates schemas, so hosts can check what they loaded |
+| `rfm_version()` | engine version, so hosts can check what they loaded |
 
 ### Three ways to compute the same number
 
@@ -132,14 +132,20 @@ rfm_accesses(memory_id, accessed_at, outcome)
 You own `content` and any columns you add — an `embedding BLOB` for
 sqlite-vec, tags, scopes, whatever. The engine only touches its own.
 
-The Claude Code integration adds two host-owned columns of its own:
+The Claude Code integration's columns and tables live in
+`integrations/claude-code/store.py`, the one migration path, stamped in
+`PRAGMA user_version`. They are `scope`, `embedding`, `era` (a version bound
+the sweep recorded; stored, not yet used in ranking), `origins` (below),
+`rfm_memory_history` (text replaced by `memory_update`; deleting a memory
+deletes it) and `rfm_host_meta` (the embedder a store was built with), plus
 `condition_class` (the condition classes a memory's text names, stamped
 by derivation at session end — a positive inferred outcome only lands
 when one of them actually fired that session; `RFM_CONDITIONED_OUTCOMES=0`
 disables the gate) and `sightings` (maintained by `sweep.py`: how many
-independent sessions produced this lesson; injection requires
-`>= RFM_QUARANTINE`, default 2, with NULL — explicit saves — always
-injectable).
+independent origins produced this lesson, listed in `origins`; injection and
+search require `>= RFM_QUARANTINE`, default 2, with NULL — explicit saves —
+always eligible). A session that saw the condition fire is its own origin;
+everything read rather than observed shares one origin per repository.
 
 ## Retention
 
@@ -207,7 +213,7 @@ MCP client.
 | `memory_get` | read one memory back by id |
 | `memory_list` | ranked, with `total` and `has_more` |
 | `memory_delete` | permanent, including access history |
-| `memory_export` | markdown dump |
+| `memory_export` | capped markdown view; `mem_rfm_cli.py export` is the lossless backup |
 
 All nine declare an `outputSchema` and return structured content, and all
 carry explicit annotations. This matters more than it sounds: the MCP
@@ -222,9 +228,12 @@ wrapped in a success envelope.
 
 One database across many projects otherwise means one pool: a build quirk
 from one repository competing for rank in every other. `scope` is a free
-string (a repo name works) set on save; a search passing that scope sees its
-own scope **plus everything unscoped**. So project facts stay put while
-preferences saved without a scope remain visible everywhere.
+string (the repo name is the convention) set on save; a search passing that
+scope sees its own scope **plus everything unscoped**. Every automatic
+delivery path applies the same rule with the session's repository, case
+folded: session-start injection, per-turn retrieval, show-on-error and the
+mod. So project facts stay put while preferences saved without a scope remain
+visible everywhere. `memory_search` with no `scope` still searches everything.
 
 ### Retrieval and usage accounting
 
@@ -263,7 +272,7 @@ Environment:
 | variable | meaning |
 |---|---|
 | `RFM_MEMORY_DB` | database path (default `~/.sqlite-rfm/claude-code.db`) |
-| `RFM_EMBEDDER` | embedding model id (default `sentence-transformers/all-MiniLM-L6-v2`); must be in fastembed's registry unless the sentence-transformers backend is installed |
+| `RFM_EMBEDDER` | embedding model id (default `sentence-transformers/all-MiniLM-L6-v2`); must be in fastembed's registry unless the sentence-transformers backend is installed. A store records its model and refuses another: run `mem_rfm_cli.py reembed` after a swap. The sweep's dedupe uses its own pinned model (`similarity.MODEL`) |
 | `RFM_EMBED_BACKEND` | `fastembed` (default) or `sentence-transformers` — the latter needs a separate `pip install sentence-transformers`; the documented install ships fastembed only |
 | `RFM_MAX_TOKENS` | truncation length, default 256 — see below |
 | `RFM_LOG` | log path (`0`/`off` disables; `1`/`on`/`true` keep the default path beside the DB) |

@@ -8,7 +8,8 @@ ledger is about while the session runs: a command's output names a
 memory's condition class -> the mod shows that memory beside the error ->
 the next command drawn from it (acted_on) succeeds or fails -> the outcome
 is recorded. The memory was shown BECAUSE its condition fired, so a
-positive outcome here is helped-when-needed by construction.
+positive outcome here means it worked when used in a session that hit the
+condition. Whether it was needed takes a control (Track 25).
 
 Every judgement is session_end.py's own (CONDITION_CLASSES, acted_on,
 FAILURE, record_outcomes), so the two paths cannot drift; record_outcomes

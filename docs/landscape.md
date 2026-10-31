@@ -6,19 +6,33 @@ ranking loop shipping in only two others.
 default, rating answers rather than task outcomes.
 [Codex](https://github.com/openai/codex) has a real one — citing a memory
 bumps a usage counter that drives both consolidation ordering and retention —
-but at whole-session granularity, with no decay and no negative signal.
-[ReMe](https://github.com/agentscope-ai/ReMe) uses outcome utility only to
-prune. [MemOS](https://github.com/MemTensor/MemOS)'s `add_feedback` does
+but at whole-session granularity, with no negative signal.
+[ReMe](https://github.com/agentscope-ai/ReMe) used outcome utility only to
+prune, and no longer has those operations. [MemOS](https://github.com/MemTensor/MemOS)'s `add_feedback` does
 target the exact memories a retrieval returned, via `retrieved_memory_ids`
 — but to *correct* their content, which is what `memory_update` does here,
 not to score them.
 
-So this appears to be the only system where outcome feedback is a default-on
-term in the retrieval score, attributed to the individual memory retrieved,
-with negative outcomes carrying weight, composed with similarity under a
-bound frozen by experiment — and the only one shipped as an embeddable
-primitive rather than a service. Concurrent 2026 research is converging on
-the same loop ([RoMeRL](https://arxiv.org/abs/2608.02508),
+That survey missed one, and an earlier version of this page wrongly called
+mem-rfm the only system with this design.
+[Reflect](https://docs.starlight-search.com/guides/memories.md) has shipped a
+default-on outcome term since April 2026, by its docs: it blends similarity
+with a per-memory value updated from reviewed runs, with a failed run scoring
+zero. Its server is closed, and it credits every memory retrieved in a run
+equally, with no check that a memory's condition occurred. Single-file peers
+also exist ([sqlite-memory](https://github.com/sqliteai/sqlite-memory),
+[TAIPANBOX Engram](https://github.com/TAIPANBOX/Engram)), so mem-rfm is not
+the only embeddable primitive either.
+
+As of November 2026 we have not found another open-source system that scores
+retrieved memories with signed, automatically inferred outcomes in its
+default ranking, and credits a success only when the memory's named condition
+fired. That is a claim about what we looked at, not about every project.
+GitHub Copilot's memory now votes automatically on whether a memory is still
+valid, and upvoted memories are more likely to be sent: products score
+whether a memory is still valid, mem-rfm scores whether acting on it worked,
+and it publishes its failures. Concurrent 2026 research is converging on the
+same loop ([RoMeRL](https://arxiv.org/abs/2608.02508),
 [Chen & Cheng](https://arxiv.org/abs/2606.12945)).
 
 Formation splits the other way: an August 2026 survey of formation
@@ -27,9 +41,9 @@ research systems on outcomes — none shipped does the latter — and only two
 published LLM-free miners, which is the family the SessionEnd
 correction-pair miner here belongs to.
 
-Checked against current sources on 2026-08-15 (retrieval) and 2026-08-17
-(formation), and dated because this
-landscape moves quickly — Mem0 v2 was a breaking change whose MCP servers
+Checked against current sources on 2026-08-15 (retrieval), 2026-08-17
+(formation) and 2026-11-01 (the outcome claims above; counts stay August's),
+and dated because this landscape moves quickly — Mem0 v2 was a breaking change whose MCP servers
 are now archived, and Zep v3 removed its `memory.*` namespace and fact
 ratings within the same window.
 

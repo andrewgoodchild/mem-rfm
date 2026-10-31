@@ -19,11 +19,12 @@ re-derives or reads it from the repo, while carrying it costs
 wall-clock. But in a venue where the source is genuinely **unreachable**
 — the agent given no code execution and only a budget-limited query tool
 — the same digested memory produced a large, significant benefit
-(control 68, memory 82 of 98 correct, p = 0.002; "the boundary" below).
-So the one-line rule is exact: **memory helps a frontier agent when, and
-only when, the environment does not already hand it the answer.** The
-repo is the memory where the repo is readable; where it isn't, the
-memory is.
+(control 80, memory 95 of 113 correct, p = 0.001; "the boundary" below).
+It did not reach significance on a stronger model, whose control already
+answered 89 of 113 (89 vs 94, p = 0.113). So the one-line rule: **memory
+helps a frontier agent when the environment does not already hand it the
+answer and the agent has headroom to be helped.** The repo is the memory
+where the repo is readable; where it isn't, the memory can be.
 
 The scoring prior's reliable jobs turned out to be **safety and
 maintenance** rather than raw ranking quality: keeping a usage prior
@@ -79,7 +80,7 @@ cost/safety bounds, the rest tested benefit.
 | does it at least help a weaker model? (haiku) | condition gate, then sign consistency | **FAIL** — 0 wins of 5 pairs, +27.6% wall: a measured tax (Track 13) |
 | does the full ungated lifecycle help where friction is forced? | a pool where verification dies without the workaround | **FAIL at the gate** — agent met the condition in 1/20 control sessions and worked around it; +25% wall (Track 19) |
 | is the cure useful if it arrives at the moment of need? (show-on-error) | memory attached beside the error only, friction made to bind | **FAIL** — friction bound 19/19 and the memory was followed (11/14 built its workaround, control 0/19), yet first-verified went 7–9 with 3 ties and wall rose +22.4%; live capture recorded 0 outcomes (Track 23) |
-| **does memory help when the control CANNOT read the source?** | organizational questions, both arms no code execution and only a budget-limited query tool | **PASS** — control 80, memory **95** of ~130, up on 13 / down on 1, **sign p = 0.001**, 13% fewer queries (Track 22) — the one condition under which memory helped |
+| **does memory help when the control CANNOT read the source?** | organizational questions, both arms no code execution and only a budget-limited query tool | **PASS** — control 80, memory **95** of 113, up on 13 / down on 1, **sign p = 0.001**, 13% fewer queries (Track 22) — the one condition under which memory helped |
 
 The table reads as a boundary, not a verdict. The benefit predictions on
 repository coding all failed — the agents do not pay the costs the
@@ -193,12 +194,13 @@ seconds per session, dominated by embedding-model startup — irrelevant in a
 **Independently replicated.** An ETH Zurich study
 ([arXiv:2602.11988](https://arxiv.org/abs/2602.11988)) tested context files
 across SWE-Bench Lite and 138 tasks in 12 repositories with four models:
-LLM-generated context files **reduced** success by ~3% while raising cost
-over 20%; developer-written ones helped only ~4%, still costing up to 19%
-more. Value appeared only when repository documentation was stripped — the
-benefit was redundant pre-caching. Different group, different tasks, same
-conclusion as the A/B below. Our negative result was not a quirk of our
-setup.
+context files did not generally improve task success while raising
+inference cost by over 20% on average, for both LLM-generated and
+developer-committed files (abstract of v3, 2026-09-29). Different group,
+different tasks, same conclusion as the A/B below. Our negative result was
+not a quirk of our setup. [VibeMemBench](https://arxiv.org/abs/2609.23570)
+later found 11 of 12 solver-system pairings no better than memory off on real
+repositories, though it excluded proprietary frontier models.
 
 **What this comparison was and wasn't.** The control arm had *no memory*, not
 Claude Code's built-in memory. We have never run mem-rfm head-to-head against
@@ -461,14 +463,19 @@ defective instrument is a fact about both.
 
 ### When the harness already ships memory
 
-Claude Code, Cursor, Devin and Windsurf all ship native memory — no
-attachment tax, better transcript access, the default slot. We measured
+Claude Code, GitHub Copilot and OpenAI Codex ship native memory — no
+attachment tax, better transcript access, the default slot. Cursor removed
+its Memories feature, and Devin Desktop's docs now describe only rules. We
+measured
 the overlap directly: in our own live pilots, the harness's built-in
 memory silently captured the same operational lesson as our store, in
 both arms. Running mem-rfm alongside a native memory adds cost without a
 measured marginal benefit. What survives the overlap is what native
-memory doesn't do: an outcome ledger with signed negatives, auditable
-staleness demotion, a store that travels across harnesses.
+memory doesn't do: an auditable ledger of whether acting on a memory worked,
+and a store you can export whole. Copilot now downvotes memories
+automatically, on whether they are still valid, and does not show the
+counts. Only Claude Code is implemented here, so "travels across harnesses"
+is a design intent, not something this repository does.
 
 ### What the live program cost
 
@@ -591,15 +598,18 @@ query* — which is why the enforced version grants no code execution at
 all and a hard query budget.
 
 With the source genuinely unreachable, the digested memory **helped**:
-control answered 68 of 98 questions correctly, the memory arm 82; up on
-12 instances, down on 1; sign p = 0.002; and the memory arm spent 13%
+control answered 80 of 113 questions correctly, the memory arm 95; up on
+13 instances, down on 1; sign p = 0.001; and the memory arm spent 13%
 fewer queries getting there, because the digest supplied what the budget
 could not reach. This is the program's one demonstrated causal benefit,
 and it lands exactly where the thesis said it would.
 
-So the finding is complete on both signs. **Memory helps a frontier
-agent when, and only when, the environment does not already hand it the
-answer.** The honest scope: the query budget is an engineered parameter
+The registered replication on a stronger model failed its bar (89 vs 94 of
+113, p = 0.113): the mechanism repeated, with 15% fewer queries, but that
+model's control spent the budget better and left less to supply. So the
+finding has two conditions. **Memory helps a frontier agent when the
+environment does not already hand it the answer and the agent has headroom
+to be helped.** The honest scope: the query budget is an engineered parameter
 (a looser one shrinks the effect, a tighter one grows it), the scoring is
 LLM-adjudicated, and this is organizational knowledge behind a limited
 retrieval interface — not repository coding, where the substrate is
@@ -686,4 +696,5 @@ Reported at the same length as the successes, in
   telemetry (`bench-quality/live-ab/eval_selection.py`).
 - **One published number that was wrong**, caught in pre-publication review
   and corrected in place, with the error disclosed. See "Corrections" in
-  RESULTS.md.
+  RESULTS.md, which also records a wrong denominator on Track 22 and
+  preliminary numbers that outlived it here.

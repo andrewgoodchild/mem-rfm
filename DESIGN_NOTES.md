@@ -404,11 +404,16 @@ exposure** is a poison that injects but is never acted on (pure context
 cost, no bad action) or one the judge never recognizes as harm.
 
 Hardening owed before default-on ingestion, in priority order:
- 1. **Source-distinct sightings** — count DISTINCT ORIGINS, not distinct
-    sessions. A persistent single source should accrue ONE sighting,
-    which alone defeats scenario B. Requires the extractor to attribute
-    each memory to the artifact it came from (file/issue/url), which the
-    sweep does not yet track — a real design item, not a config flag.
+ 1. **Source-distinct sightings** — DONE 2026-11-01 (`sweep.origin_of`),
+    with one change from the plan here. Asking the extractor to attribute
+    a memory would trust the text under judgment, which could name a new
+    source each time. Instead the session's events decide: a session where
+    the condition fired is its own origin, and anything else shares one
+    origin per repository. Scenario B now blocks. Two costs. Poison
+    naming a condition the sessions really hit still promotes (scenario
+    B2), as does a source read in two repositories. And a true lesson
+    that is only ever read, in one repository, stays in quarantine; the
+    yield loss on a real sweep is unmeasured.
  2. **Origin-tagged provenance** — extend the composed-action drop to
     refuse imperative actions extracted from untrusted-origin text.
  3. Keep `RFM_QUARANTINE >= 2` and never let injection ignore
