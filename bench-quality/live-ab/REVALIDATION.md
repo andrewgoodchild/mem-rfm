@@ -1355,3 +1355,24 @@ Registered predictions, scored by score_track24.py:
 P2 or P4 failing means the change is not merged, whatever P1 says. Passing
 does not validate live capture: that needs a live run, which this track
 does not do.
+
+### Track 24 amendment (registered 2026-10-31, after the first scoring, before this change)
+
+First scoring of the rule above: P1 10/10, P2 0 and 0, P4 0 differences,
+**T24-P3 FAIL**: 9 of 11 refusal fixtures credited. The 9 are also
+credited by the old matcher, so the template rule did not introduce them.
+They are a standing false positive in acted_on's token-share fallback: a
+short command drawn from the memory's words passes the 60% bar, so bare
+`python -m pytest tests/` earns credit for a shim memory it did not use.
+That P3 result stands as scored. The fixtures are not edited.
+
+**Change:** a memory with any template span is credited only through its
+template spans, eligible or not; the token-share rule no longer applies to
+it. Memories with no template span are untouched. The change can only
+remove credit, beyond what the template rule adds.
+
+Registered, scored by the same score_track24.py:
+  T24b-P1: all of P1-P4 above pass, P3 unchanged, on the same data.
+  T24b-P2 (reported, no bar): pairs where old and new matchers differ on
+        template memories, split into credit added and credit removed.
+
