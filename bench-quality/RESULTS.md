@@ -3015,3 +3015,40 @@ shim did get tests running. The point stands: fixing recall gives a
 helped-when-needed ledger that reads positive where a registered causal
 test read null. Condition-gating is necessary, and it does not make an
 outcome causal. Reading exit codes through pipes is not fixed here.
+
+## Track 25 — outcome honesty and a live run (2026-10-31) — 6/6: live capture works, and an outcome is still not a causal claim
+
+Registered in live-ab/REVALIDATION.md before any of these changes, with
+fixtures committed first. Three changes to what the ledger credits, then
+4 live show-arm sessions. Score with `live-ab/score_track25.py`.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| T25-P1 pipes | +1 only on clean deciding runs: 6, and 0 unclean | 6 and 0; the 4 unclean abstain | **PASS** |
+| T25-P2 fixtures | every case passes | all pass; Track 24's pin flipped to a refusal | **PASS** |
+| T25-P3 whole output | fired classes equal the mod's on 38 of 38; mining unchanged on 38 of 38 | 38 and 38 | **PASS** |
+| T25-P4 token share | no span credit lost, no pair gains | 0 and 0; 1,288 token credits removed, 2 prose credits left | **PASS** |
+| T25-P5 live capture | mod records in >= 2 of 4 sessions | 3 of 4 | **PASS** |
+| T25-P6 agreement | every mod outcome equals session_end's inference | 3 of 3, 0 disagreements | **PASS** |
+
+**Live capture now works in real sessions**, for the first time: three +1s
+written by the mod as the sessions ran, matching session_end's inference
+on the same transcripts. The fourth session (7748) abstained, as the rule
+requires when the deciding run is not a clean pass. All 4 sessions
+resolved. There was no control arm, so these numbers carry no benefit
+claim and do not pool with Track 23.
+
+**What this does not fix.** The ledger for this memory now reads three of
+three positive, and Track 23's registered test found no benefit from it. A
+clean run under the workaround proves the workaround ran, not that the
+agent needed it: control got there at the same rate without it. So the
+changes remove false credit but do not make a positive outcome causal, and
+no matcher can, because an outcome has no counterfactual. Read the ledger
+as "worked when used", and test benefit with a control. -1 did not fire
+live; it is covered by fixtures only. A prose memory's token share is the
+known residual (2 hits here, both false).
+
+The first live outcome attached to an open access from the seed store,
+dated August, which is record_outcomes' intended behaviour. Rerunning
+score_track23.py now prints session_end inference under the current
+matcher, 6 rather than the 0 of the Track 23 run.

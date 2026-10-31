@@ -115,9 +115,9 @@ the outcome live, through `mod_bridge.py`. It is a research prototype, not
 part of the install: nothing above registers it, and its only use is
 loading it with `--plugin-dir` for an experiment. Track 23 tested it and
 it did not help (`bench-quality/RESULTS.md`): +22.4% wall and no benefit.
-It recorded 0 outcomes because `acted_on` could not match a memory whose
-command is a template. Track 24 fixed that offline, but no live session
-has exercised the fix, so don't read this as a working outcome path.
+Outcome capture works since Track 25 (3 of 4 live sessions, matching
+`session_end`), but an outcome says the memory worked when used, not that
+it was needed.
 
 ## Configuration
 
