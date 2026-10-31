@@ -2902,13 +2902,22 @@ per-session numbers here are reproducible only from this machine.
 
 | prediction | bar | result | verdict |
 |---|---|---|---|
-| T23-P1 liveness | first required-file run not clean in >= 60% of control | 19/19 (100%); era text visible in 13/19 | **PASS** |
-| T23-P2 delivery | shown in >= 80% of show sessions where era text was visible; 0 control | 9/11 (82%); 0 control | **PASS** |
-| T23-P3 benefit | show beats control on first-verified, sign p <= 0.05 | show 8, control 8, tied 3; p = 0.598 | **FAIL** |
+| T23-P1 liveness | first required-file run not clean in >= 60% of control | 19/19 (100%); era text visible in 17/19 | **PASS** |
+| T23-P2 delivery | shown in >= 80% of show sessions where era text was visible; 0 control | 14/16 (88%); 0 control | **PASS** |
+| T23-P3 benefit | show beats control on first-verified, sign p <= 0.05 | show 7, control 9, tied 3; p = 0.773 | **FAIL** |
 | T23-P4 no harm | show wall within +15% of control | 7,138s vs 5,833s, **+22.4%**; slower on 15 of 19, sign p = 0.010 | **FAIL** |
 | T23-P5 ledger honesty | every mod outcome falls where the class fired; agreement with session_end reported | 0 mod outcomes, 0 from session_end on the same transcripts | **NOT TRIGGERED** |
 
 Resolution tied at 18/19 per arm.
+
+**Scorer defect, corrected (2026-10-31).** The numbers above read the
+whole Bash result. The scorer as registered read transcripts'
+claude_events body, which keeps only the first 800 characters, and
+pytest's summary comes last: 84 of 197 required runs were longer than
+that. The registration defines the metric on the output, so the fix
+implements the registered metric rather than changing it. The first
+reading was P1 19/19, P2 9/11, P3 8-8-3 (p = 0.598), still printed by the
+scorer. No verdict changes.
 
 **The registered reading applies as written.** P1 + P2 PASS with P3 FAIL
 is "a cure delivered at the moment of need does not help a frontier agent
@@ -2939,28 +2948,27 @@ for any memory whose command is a template. It is an instance of the
 record, not a new class. **The mod has never recorded an outcome in a
 scored session, so live capture is built, and unvalidated.** The ledger
 stayed at zero, which also means the track says nothing about whether
-outcomes would have demoted the memory. Fixing the matcher is not done
-here; it would change what a future run credits, so it needs its own
-registration.
+outcomes would have demoted the memory.
 
-**P4's cost is not attributable to the note.** Wall by whether a note
-arrived: shown (n=14) 4,682 -> 5,761s, +23.0%; never shown (n=5) 1,151 ->
-1,377s, +19.6%, with output tokens +29.6% and +14.2%. Across all pairs
-output tokens rose +26.8% against +9% assistant turns and +4% Bash calls.
-Startup is excluded (wall matches transcript span in both arms) and time
-inside Bash calls did not rise (518s vs 566s, measured ad hoc), though
-that span may not include the mod's own hook time, which was not
-instrumented. n=5 is small, and control ran first in every pair. The
-tax's source stays unexplained, as Track 3's did.
+**P4's cost is reasoning after the note.** All the extra wall is model
+generation: output tokens +26.8%, while time in Bash fell, first-turn
+context matched (24,806 vs 24,810 tokens), throughput matched, and a
+bridge spawn costs 0.02s, so hooks, context and API speed are out. Split
+each pair at the Bash call where the note arrived: before it, show 136,471
+vs control 149,027 tokens (higher on 5 of 14, p = 0.91); after it,
+**290,688 vs 180,681 (higher on 13 of 14, p = 0.0009)**. So the note
+costs: agents reason about adopting the workaround and building it. The
+5 no-note sessions were also slower (+19.6% wall), but on 4 of 5, p =
+0.188, which does not separate from noise at that n. Show-on-error
+removes the cost of carrying a memory and keeps the cost of using one.
 
 **Two scope limits.** One memory, one error class, one repo, and a
 memory whose command needed adapting. A retest with a runnable memory is
-a new registration, not a repair of this one. And 5 notes landed in
-sessions where the scorer's era regex saw no era text while 2 fired
-sessions got none; P2's denominator comes from that regex, and the
-mismatch was not investigated.
+a new registration, not a repair of this one. And the 2 P2 misses are
+correct behaviour: those sessions showed ExtensionError only, which the
+memory's condition class (versionrequirementerror) does not cover. Its own
+class fired in 14 show sessions and was shown in all 14.
 
-**Scorer change after the run, disclosed.** score_track23.py as registered
-never computed P5's session_end comparison. Added here, with the
-unregistered lines above printed under an "unregistered" label; P1-P4
-output is unchanged.
+**Other scorer changes after the run, disclosed.** score_track23.py as
+registered never computed P5's session_end comparison. Added here, with
+the unregistered lines above printed under an "unregistered" label.

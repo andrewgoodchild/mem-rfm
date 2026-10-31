@@ -10,6 +10,11 @@ verified"); a session that never gets one ranks below any that does.
 "Clean" is read from the output, not the exit code: agents pipe pytest
 through tail, which makes every run exit 0 and can cut the error text.
 
+Output means the whole Bash result. transcripts.claude_events keeps only
+its first 800 characters and pytest's summary comes last, so the scorer as
+registered misread long runs; full_bodies restores them, and the 800-char
+reading is still printed for comparison.
+
 Usage: score_track23.py [--dir track23-smoke]
 """
 import collections
@@ -25,10 +30,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import formation_study as F  # noqa: E402
 import run_track23 as T      # noqa: E402
+sys.path.insert(0, os.path.join(HERE, "..", "..", "integrations", "claude-code"))
+import transcripts as X      # noqa: E402
 
 se = F.se
+CUT = 800
 
 ERA = re.compile(r"VersionRequirementError|ExtensionError", re.I)
+CLASS = re.compile(r"VersionRequirementError", re.I)   # the memory's class
 NOTE = "[rfm-memory]"
 SUMMARY = re.compile(r"\b\d+ (?:passed|failed|errors?)\b")
 SHIM_WRITE = re.compile(r"(>|tee|cat\s*>).{0,60}sitecustomize")
@@ -145,31 +154,77 @@ def built_shim(tp):
     return False
 
 
+def full_bodies(tp):
+    """Each Bash event's whole result, in claude_events' order."""
+    pending, out = {}, []
+    for d in X.main_thread(X.parse_jsonl(tp)):
+        content = (d.get("message") or {}).get("content")
+        if not isinstance(content, list):
+            continue
+        for b in content:
+            if not isinstance(b, dict):
+                continue
+            if X.is_bash_call(b):
+                pending[b.get("id")] = len(out)
+                out.append("")
+            elif b.get("type") == "tool_result":
+                i = pending.pop(b.get("tool_use_id"), None)
+                if i is not None:
+                    out[i] = X._result_text(b.get("content")) or ""
+    return out
+
+
+def tokens_at_bash(tp):
+    """(cumulative output tokens at each Bash call, session total)."""
+    seen, marks = {}, []
+    for line in open(tp):
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if d.get("type") != "assistant":
+            continue
+        m = d.get("message") or {}
+        seen[m.get("id")] = (m.get("usage") or {}).get("output_tokens", 0)
+        for b in m.get("content") or []:
+            if isinstance(b, dict) and b.get("type") == "tool_use" and \
+                    b.get("name") == "Bash":
+                marks.append(sum(seen.values()))
+    return marks, sum(seen.values())
+
+
+def split_at(tp, k):
+    """Output tokens before and after the k-th Bash call."""
+    marks, total = tokens_at_bash(tp)
+    before = marks[k - 1] if 0 < k <= len(marks) else total if k else 0
+    return before, total - before
+
+
 def required_runs(events, files):
     return [(i, e) for i, e in enumerate(events)
             if e.got and "pytest" in e.cmd and any(f in e.cmd for f in files)]
 
 
-def clean(e):
+def clean(e, body):
     """A visible pytest summary with passes and no failures or errors,
     and no non-zero exit."""
-    lines = [l for l in (e.body or "").splitlines() if SUMMARY.search(l)]
+    lines = [l for l in (body or "").splitlines() if SUMMARY.search(l)]
     if e.is_err or not lines:
         return False
     last = lines[-1]
     return "passed" in last and not re.search(r"failed|error", last)
 
 
-def first_verified(events, files):
-    return next((i for i, e in required_runs(events, files) if clean(e)),
-                None)
+def first_verified(events, files, bodies):
+    return next((i for i, e in required_runs(events, files)
+                 if clean(e, bodies[i])), None)
 
 
-def bound(events, files):
+def bound(events, files, bodies):
     """The friction bound: the session's first required-file run was not
     clean (the era break is in place until the agent works around it)."""
     runs = required_runs(events, files)
-    return bool(runs) and not clean(runs[0][1])
+    return bool(runs) and not clean(runs[0][1], bodies[runs[0][0]])
 
 
 def rank(x):
@@ -205,6 +260,8 @@ def main():
                 continue
             evs = F.events_of(tp)
             toks, span = timing(tp)
+            full = full_bodies(tp)
+            cut = [b[:CUT] for b in full]
             S[(iid, arm)] = {
                 "shim": built_shim(tp),
                 "shim_runs": sum(1 for e in evs if PATH_PYTEST.search(e.cmd)),
@@ -212,18 +269,20 @@ def main():
                 "span": span,
                 "offline": offline_outcomes(tp, evs, store),
                 "acted": acted_commands(tp, evs, store),
-                "bound": bound(evs, files),
-                "fired": sum(1 for e in evs
-                             if e.got and ERA.search(e.body or "")),
+                "bound": bound(evs, files, full),
+                "fired": sum(1 for e, b in zip(evs, full)
+                             if e.got and ERA.search(b)),
+                "fired_vr": any(CLASS.search(b) for b in full),
                 "notes": notes_in(tp),
-                "verified": first_verified(evs, files),
+                "verified": first_verified(evs, files, full),
+                "verified_cut": first_verified(evs, files, cut),
                 "green": F.first_green_corrected(evs),
             }
 
     fmt = lambda x: "never" if x is None else str(x)
     print(f"\n{'task':<8}{'fired c/s':>10}{'shown':>6}{'ctl ver':>8}"
           f"{'show ver':>9}{'ctl wall':>9}{'show wall':>10}{'verdict':>9}")
-    wins = losses = ties = 0
+    wins = losses = ties = cut_wins = cut_losses = cut_ties = 0
     slower = faster = 0
     ctl_bound = ctl_fired = show_fired = shown_when_fired = 0
     contaminated = []
@@ -244,6 +303,10 @@ def main():
         wins += verdict == "show"
         losses += verdict == "control"
         ties += verdict == "tie"
+        cc, cs = rank(c["verified_cut"]), rank(s["verified_cut"])
+        cut_wins += cs < cc
+        cut_losses += cc < cs
+        cut_ties += cc == cs
         slower += sw > cw
         faster += sw < cw
         print(f"{iid[-6:]:<8}{c['fired']:>5}/{s['fired']:<4}"
@@ -263,6 +326,9 @@ def main():
           f"sessions with a note: {len(contaminated)} (must be 0)")
     print(f"P3 benefit: show {wins} / control {losses} / tied {ties}; "
           f"one-sided sign p = {sign_p(wins, wins + losses):.3f} (bar 0.05)")
+    print(f"   as first registered (800-char bodies): show {cut_wins} / "
+          f"control {cut_losses} / tied {cut_ties}; sign p = "
+          f"{sign_p(cut_wins, cut_wins + cut_losses):.3f}")
     print(f"P4 no harm: show wall {ts}s vs control {tc}s "
           f"({100 * (ts - tc) / max(tc, 1):+.1f}%; bar +15%); slower on "
           f"{slower}, faster on {faster}; sign p (slower) = "
@@ -276,12 +342,37 @@ def main():
           f"the same transcripts: {len(offline)} {offline or ''}; commands "
           f"acted_on credited: {sum(x['acted'] for x in shows)}")
 
-    # Unregistered description of P3 and P4, added after the run.
+    # Unregistered description of P2, P3 and P4, added after the run.
+    with_class = [x for x in shows if x["fired_vr"]]
+    print(f"\nunregistered: the memory's own class fired in {len(with_class)} "
+          f"show sessions, shown in {sum(bool(x['notes']) for x in with_class)}")
     noted = [x for x in shows if x["notes"]]
     print(f"\nunregistered: shown the memory {len(noted)}/{len(shows)}; of "
           f"those, built the shim {sum(x['shim'] for x in noted)}, ran pytest "
           f"with PYTHONPATH {sum(x['shim_runs'] > 0 for x in noted)}; control "
           f"built it {sum(S[(i, 'control')]['shim'] for i in pairs)}/{n}")
+    pre, post = [], []
+    for i in pairs:
+        k = min(note_positions(os.path.join(HERE, pairs[i]["show"]["transcript"]))
+                .values(), default=None)
+        if k is None:
+            continue
+        sb, sa = split_at(os.path.join(HERE, pairs[i]["show"]["transcript"]), k)
+        cb, ca = split_at(os.path.join(HERE, pairs[i]["control"]["transcript"]), k)
+        pre.append((sb, cb))
+        post.append((sa, ca))
+    for label, rows in (("before the note", pre), ("after the note", post)):
+        up, down = sum(a > b for a, b in rows), sum(a < b for a, b in rows)
+        print(f"  output tokens {label}, split at the same Bash index: show "
+              f"{sum(a for a, _ in rows)} vs control "
+              f"{sum(b for _, b in rows)}; show higher {up}, lower {down}, "
+              f"sign p = {sign_p(up, up + down):.4f}")
+    nn = [i for i in pairs if not S[(i, "show")]["notes"]]
+    up = sum(pairs[i]["show"]["wall_s"] > pairs[i]["control"]["wall_s"]
+             for i in nn)
+    print(f"  no-note sessions slower on {up} of {len(nn)}, sign p = "
+          f"{sign_p(up, len(nn)):.3f}")
+
     print("\nunregistered: where P4's wall went, by whether a note arrived")
     for label, keep in (("note shown", True), ("no note", False)):
         ids = [i for i in pairs if bool(S[(i, "show")]["notes"]) == keep]
