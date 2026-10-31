@@ -42,7 +42,8 @@ Event = collections.namedtuple("Event", "cmd is_err body got full",
 BODY_CAP = 800
 
 Session = collections.namedtuple(
-    "Session", "events exposures seen prose start readable")
+    "Session", "events exposures seen prose start readable cwd",
+    defaults=(None,))
 """exposures: {memory_id: (content, first_event_idx)} -- memories injected
 by a hook or returned by memory_search, the ones outcome inference credits.
 seen: {memory_id: content} -- every memory the session was shown by any
@@ -274,6 +275,12 @@ def claude_start(records):
     return best
 
 
+def claude_cwd(records):
+    """The directory the session started in, or None."""
+    return next((d["cwd"] for d in records
+                 if isinstance(d.get("cwd"), str) and d["cwd"]), None)
+
+
 def claude_readable(records):
     """Does this look like a Claude Code transcript at all? A foreign or
     empty file parses to records carrying none of its message/attachment
@@ -303,6 +310,7 @@ def read_claude_code(path, prose=True):
         prose=claude_prose(records) if prose else [],
         start=claude_start(records),
         readable=claude_readable(records),
+        cwd=claude_cwd(records),
     )
 
 

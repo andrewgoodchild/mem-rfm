@@ -45,6 +45,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))
 sys.path.insert(0, os.path.join(HERE, ".."))
 sys.path.insert(0, HERE)
 import log_env  # noqa: E402
+import store  # noqa: E402
 import harnesses  # noqa: E402
 import transcripts  # noqa: E402
 import session_end as se  # noqa: E402  (FAILURE vocabulary + program())
@@ -108,14 +109,14 @@ def response_text(resp):
     return ""
 
 
-def jit_inject(body, session):
+def jit_inject(body, session, cwd=None):
     """Condition-triggered just-in-time retrieval (RFM_JIT=1). The reason
     the synthesis nudge and this share a trigger: the condition class is
     both when a memory should be WRITTEN (struggle→resolution) and when a
     stored memory should be READ (the disease just appeared). SessionStart
     injects blindly once; this injects the RIGHT memory at the moment its
     condition fires — the retrieval side of the condition gate. Same
-    gates as the SessionStart query (negative floor, quarantine), once
+    gates as the SessionStart query (negative floor, quarantine, scope), once
     per class per session (re-injecting on every occurrence would be the
     context-tax vector this design exists to avoid), and the injection is
     logged so the outcome loop can score an acted-on JIT memory as a
@@ -151,18 +152,14 @@ def jit_inject(body, session):
         db = sqlite3.connect(DB_PATH)
         se.rfm.register(db)
         se.ensure_conditions(db)
-        has_s = any(r[1] == "sightings"
-                    for r in db.execute("PRAGMA table_info(rfm_memories)"))
-        quarantine = ("AND (sightings IS NULL OR sightings >= "
-                      f"{int(os.environ.get('RFM_QUARANTINE', 2))}) "
-                      if has_s else "")
+        scoped, scope_args = store.in_scope(store.project(cwd))
         rows = db.execute(
             "SELECT id, content, created_at, condition_class, rfm_score(id) "
             "FROM rfm_memories "
             "WHERE NOT (outcome_count > 0 AND value_score < 0) "
-            f"{quarantine}"
-            "AND condition_class IS NOT NULL AND condition_class != ''"
-        ).fetchall()
+            f"AND {store.released()} AND {scoped} "
+            "AND condition_class IS NOT NULL AND condition_class != ''",
+            scope_args).fetchall()
         best = None
         for mid, content, created, cond, score in rows:
             if mid in state["ids"]:
@@ -236,7 +233,8 @@ def main():
     # both capabilities are enabled (retrieval-at-need beats a formation
     # nudge that will get another chance).
     if jit_on:
-        ctx = jit_inject(body, session)
+        ctx = jit_inject(body, session, harnesses.payload_field(
+            harnesses.current(), "cwd", payload))
         if ctx:
             print(json.dumps({"hookSpecificOutput": {
                 "hookEventName": ("PostToolUseFailure" if failed
