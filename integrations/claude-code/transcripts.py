@@ -35,7 +35,11 @@ import time
 # contain failure words). `got` distinguishes a clean exit from a command
 # whose result never arrived (session ended mid-flight) — an unknown result
 # is not a success.
-Event = collections.namedtuple("Event", "cmd is_err body got")
+# body is cut to BODY_CAP, which is what mining reads. full is the whole
+# result: errors and test summaries tend to come last.
+Event = collections.namedtuple("Event", "cmd is_err body got full",
+                               defaults=("",))
+BODY_CAP = 800
 
 Session = collections.namedtuple(
     "Session", "events exposures seen prose start readable")
@@ -152,13 +156,14 @@ def claude_events(records):
             if is_bash_call(b):
                 cmd = (b.get("input") or {}).get("command", "")
                 pending[b.get("id")] = len(raw)
-                raw.append([cmd, False, "", False])
+                raw.append([cmd, False, "", False, ""])
             elif b.get("type") == "tool_result":
                 idx = pending.pop(b.get("tool_use_id"), None)
                 if idx is None:
                     continue
-                body = (_result_text(b.get("content")) or "")[:800]
-                raw[idx][2] = body
+                body = _result_text(b.get("content")) or ""
+                raw[idx][2] = body[:BODY_CAP]
+                raw[idx][4] = body
                 raw[idx][1] = bool(b.get("is_error"))
                 raw[idx][3] = True
     return [Event(*r) for r in raw]

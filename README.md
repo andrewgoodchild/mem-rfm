@@ -142,7 +142,7 @@ capable agent. So the question to ask before adopting this is not "is my
 agent smart enough" but "can my agent already reach this information?"
 
 Every number, every pre-registered prediction, the buys table, the
-acquisition measurement, and the full 13-row registered results table
+acquisition measurement, and the full 14-row registered results table
 are in **[findings.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/findings.md)**; the complete per-track ledger
 is `bench-quality/RESULTS.md`.
 

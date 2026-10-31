@@ -24,6 +24,8 @@ jobs:
       - run: python integrations/claude-code/test_harnesses.py
       - run: python integrations/claude-code/test_feedback_loop.py
       - run: python integrations/claude-code/test_subagent.py
+      - run: python integrations/claude-code/hooks/test_acted_on.py
+      - run: python integrations/claude-code/hooks/test_outcomes.py
       # setup/doctor against a temporary HOME with a stub `claude`.
       - run: python integrations/claude-code/test_setup.py
   package:

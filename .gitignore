@@ -38,6 +38,11 @@ bench-quality/live-ab/*/synthesis-state/
 bench-quality/live-ab/track20/repocache/
 bench-quality/live-ab/track20/stores/
 bench-quality/live-ab/track22/work/
+# Session transcripts copied out of ~/.claude/projects (which prunes them
+# after 30 days) so a run stays rescorable. Local evidence only: they carry
+# the machine's global instructions and paths. Smoke runs are plumbing.
+bench-quality/live-ab/*/transcripts/
+bench-quality/live-ab/track23-smoke/
 # Carry dataset text, which THIRD_PARTY_NOTICES says is never
 # redistributed: MEMTRACK timeline content (Track 20's dropped actions,
 # Track 21b's judged memories) and LoCoMo turns (the Track 12 cache).

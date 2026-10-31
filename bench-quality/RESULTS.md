@@ -2891,3 +2891,164 @@ incomplete facts were deleted and rebuilt, and answering, judging and the
 audit were re-run until nothing remained (all 1,204 answers, 1,204
 judgments, 602 audit judgments). Final extraction: 47,867 facts over all
 14,301 held-out sessions. Run logs: results-amb-heldout/run.log, run2.log.
+
+## Track 23 — show-on-error, live (run 2026-10-16, scored 2026-10-31) — 2/5: the cure was delivered and followed, and it did not help
+
+Registered in live-ab/REVALIDATION.md before any scored session (commit
+e473ba1): 19 sphinx pairs, claude-fable-5-1, the rfm-live mod loaded in
+the show arm only. Score with `live-ab/score_track23.py`. Transcripts stay
+local (gitignored; they carry the machine's global instructions), so the
+per-session numbers here are reproducible only from this machine.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| T23-P1 liveness | first required-file run not clean in >= 60% of control | 19/19 (100%); era text visible in 17/19 | **PASS** |
+| T23-P2 delivery | shown in >= 80% of show sessions where era text was visible; 0 control | 14/16 (88%); 0 control | **PASS** |
+| T23-P3 benefit | show beats control on first-verified, sign p <= 0.05 | show 7, control 9, tied 3; p = 0.773 | **FAIL** |
+| T23-P4 no harm | show wall within +15% of control | 7,138s vs 5,833s, **+22.4%**; slower on 15 of 19, sign p = 0.010 | **FAIL** |
+| T23-P5 ledger honesty | every mod outcome falls where the class fired; agreement with session_end reported | 0 mod outcomes, 0 from session_end on the same transcripts | **NOT TRIGGERED** |
+
+Resolution tied at 18/19 per arm.
+
+**Scorer defect, corrected (2026-10-31).** The numbers above read the
+whole Bash result. The scorer as registered read transcripts'
+claude_events body, which keeps only the first 800 characters, and
+pytest's summary comes last: 84 of 197 required runs were longer than
+that. The registration defines the metric on the output, so the fix
+implements the registered metric rather than changing it. The first
+reading was P1 19/19, P2 9/11, P3 8-8-3 (p = 0.598), still printed by the
+scorer. No verdict changes.
+
+**The registered reading applies as written.** P1 + P2 PASS with P3 FAIL
+is "a cure delivered at the moment of need does not help a frontier agent
+even when the friction binds — the strongest negative for
+condition-triggered delivery on this workload class." The P4 FAIL
+falsifies the design claim whatever P3 does: show-on-error was built to
+remove Track 19's +25% tax and did not.
+
+The rest of this entry was computed after the run and is not registered.
+
+**The memory was followed, which makes the negative stronger.** Of the 14
+show sessions that got the note, 11 wrote a sitecustomize.py, the
+memory's workaround, and 10 ran pytest under a PYTHONPATH override.
+Control wrote one in 0 of 19. So P3 does not read as "the agent ignored
+it": the memory changed which workaround was used, and first-verified did
+not move.
+
+**That exposes a defect: live outcome capture missed all of it.** 0
+commands were credited by acted_on in 38 sessions, so P5's 0 is the
+matcher never engaging, not abstention. The stored command is
+`PYTHONPATH=/path/to/shim python -m pytest tests/`, a placeholder: its
+quoted span cannot match a real path, and real commands such as
+`PYTHONPATH=/tmp/sphinx_shim python -m pytest -q tests/test_ext_...` share
+4-9% of their tokens with the memory against a 60% bar. Session_end shares
+the same function, so this is a false negative in the shipped path too,
+for any memory whose command is a template. It is an instance of the
+"convicted backtick heuristic" and the judge-coverage seam already on
+record, not a new class. **The mod has never recorded an outcome in a
+scored session, so live capture is built, and unvalidated.** The ledger
+stayed at zero, which also means the track says nothing about whether
+outcomes would have demoted the memory.
+
+**P4's cost is reasoning after the note.** All the extra wall is model
+generation: output tokens +26.8%, while time in Bash fell, first-turn
+context matched (24,806 vs 24,810 tokens), throughput matched, and a
+bridge spawn costs 0.02s, so hooks, context and API speed are out. Split
+each pair at the Bash call where the note arrived: before it, show 136,471
+vs control 149,027 tokens (higher on 5 of 14, p = 0.91); after it,
+**290,688 vs 180,681 (higher on 13 of 14, p = 0.0009)**. So the note
+costs: agents reason about adopting the workaround and building it. The
+5 no-note sessions were also slower (+19.6% wall), but on 4 of 5, p =
+0.188, which does not separate from noise at that n. Show-on-error
+removes the cost of carrying a memory and keeps the cost of using one.
+
+**Two scope limits.** One memory, one error class, one repo, and a
+memory whose command needed adapting. A retest with a runnable memory is
+a new registration, not a repair of this one. And the 2 P2 misses are
+correct behaviour: those sessions showed ExtensionError only, which the
+memory's condition class (versionrequirementerror) does not cover. Its own
+class fired in 14 show sessions and was shown in all 14.
+
+**Other scorer changes after the run, disclosed.** score_track23.py as
+registered never computed P5's session_end comparison. Added here, with
+the unregistered lines above printed under an "unregistered" label.
+
+## Track 24 — template commands in acted_on (2026-10-31) — the defect is fixed offline; P3 failed, and a wider false positive is on record
+
+Registered in live-ab/REVALIDATION.md before the matcher changed, with an
+amendment registered before its own change. Offline on Track 23's 38
+transcripts: **no live session has exercised this**. Score with
+`live-ab/score_track24.py`.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| T24-P1 recall | credited in >= 9 of 10 sessions that ran pytest under an override | 10 of 10 | **PASS** |
+| T24-P2 specificity | 0 of 19 control, 0 of 3 noted no-shim | 0 and 0 | **PASS** |
+| T24-P3 fixtures | every case passes | first scoring: 9 refusals wrongly credited. After the amendment: **19 of 20** | **FAIL** |
+| T24-P4 no regression | 0 differences on memories with no template | 0 over 384,608 pairs, 404 memories | **PASS** |
+| T24-P5 ledger effect | none, reported | 10 outcomes, all +1 | see below |
+| T24b-P1 | P1-P4 all pass on the same data | P3 fails | **FAIL** |
+| T24b-P2 | none, reported | 9 template memories: credit added on 192 pairs, removed on 0 | reported |
+
+P2 and P4 were the registered merge blockers and passed, so the change
+ships. P1's positives were found before the rule was written, so it says
+the defect is fixed, not that the rule generalizes.
+
+**P3 found a false positive older than this work.** All 9 refusals in the
+first scoring were also credited by the old matcher. Its token-share rule
+credits any short command made of the memory's words, so bare `python -m
+pytest tests/` earned credit for a shim memory it never used. Real
+sessions mostly escaped by accident: `2>&1 | tail` dilutes the share. The
+amendment closes this for template memories only.
+
+**The last failing case is a defect in the registration.** The fixture
+refusing `alabaster<0.7.13` for a plain memory contradicts P4, which
+requires plain memories to keep the old rule. P4 is the binding bar, so
+the case now pins the behaviour as an open false positive, a disclosed
+edit after scoring. The fallback for plain memories remains open.
+
+**The ledger now says +10 for a memory Track 23 found no benefit from.**
+Every decided outcome is +1, and only 6 of the 10 deciding runs were clean:
+agents pipe through `tail`, so the exit is 0, -1 cannot fire, and a run
+with 21 failures reads as success. Some of those are defensible, since the
+shim did get tests running. The point stands: fixing recall gives a
+helped-when-needed ledger that reads positive where a registered causal
+test read null. Condition-gating is necessary, and it does not make an
+outcome causal. Reading exit codes through pipes is not fixed here.
+
+## Track 25 — outcome honesty and a live run (2026-10-31) — 6/6: live capture works, and an outcome is still not a causal claim
+
+Registered in live-ab/REVALIDATION.md before any of these changes, with
+fixtures committed first. Three changes to what the ledger credits, then
+4 live show-arm sessions. Score with `live-ab/score_track25.py`.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| T25-P1 pipes | +1 only on clean deciding runs: 6, and 0 unclean | 6 and 0; the 4 unclean abstain | **PASS** |
+| T25-P2 fixtures | every case passes | all pass; Track 24's pin flipped to a refusal | **PASS** |
+| T25-P3 whole output | fired classes equal the mod's on 38 of 38; mining unchanged on 38 of 38 | 38 and 38 | **PASS** |
+| T25-P4 token share | no span credit lost, no pair gains | 0 and 0; 1,288 token credits removed, 2 prose credits left | **PASS** |
+| T25-P5 live capture | mod records in >= 2 of 4 sessions | 3 of 4 | **PASS** |
+| T25-P6 agreement | every mod outcome equals session_end's inference | 3 of 3, 0 disagreements | **PASS** |
+
+**Live capture now works in real sessions**, for the first time: three +1s
+written by the mod as the sessions ran, matching session_end's inference
+on the same transcripts. The fourth session (7748) abstained, as the rule
+requires when the deciding run is not a clean pass. All 4 sessions
+resolved. There was no control arm, so these numbers carry no benefit
+claim and do not pool with Track 23.
+
+**What this does not fix.** The ledger for this memory now reads three of
+three positive, and Track 23's registered test found no benefit from it. A
+clean run under the workaround proves the workaround ran, not that the
+agent needed it: control got there at the same rate without it. So the
+changes remove false credit but do not make a positive outcome causal, and
+no matcher can, because an outcome has no counterfactual. Read the ledger
+as "worked when used", and test benefit with a control. -1 did not fire
+live; it is covered by fixtures only. A prose memory's token share is the
+known residual (2 hits here, both false).
+
+The first live outcome attached to an open access from the seed store,
+dated August, which is record_outcomes' intended behaviour. Rerunning
+score_track23.py now prints session_end inference under the current
+matcher, 6 rather than the 0 of the Track 23 run.

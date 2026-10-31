@@ -1224,3 +1224,206 @@ Registered predictions:
         actually about source-reachability and the Track 22 mechanism
         reading is wrong.
 Reported as an effect curve, not a pass/fail on P2's magnitude.
+
+## Track 23 — show-on-error, live (registered 2026-10-15, before any scored session)
+
+Track 19 delivered the era memory at SessionStart into every sweep-arm
+session: the agent almost never met the condition (P1: 1 of 20) and paid
++25% wall for carrying it (P4, significant). Show-on-error inverts the
+delivery. Nothing is shown until the condition appears in a Bash result;
+then the matching memory is attached beside that result, once, and the
+first later command drawn from it records +1 or -1 live. A session that
+never meets the condition carries nothing. This track asks whether that
+delivery helps when the condition binds, and whether it avoids the tax.
+
+**Delivery is the rfm-live mod** (integrations/claude-code/mod/rfm-live,
+loaded with --plugin-dir in the show arm only; every judgement is
+mod_bridge.py's, which reuses session_end.py: condition classes,
+signature_match, acted_on, the ambiguity abstention, the conditioned
+ledger). Neither arm has global hooks, SessionStart injection or the MCP
+server: both run ab-claude's empty MCP config, so the mod is the only
+difference. The store is a copy of Track 19's end-of-run store (the era
+memory, 26 sightings, 0 outcomes), copied once; the mod's live outcomes
+accumulate in it across the run, as they would in use.
+
+**Three deviations from Track 19, disclosed:**
+1. The condition is made to bind. The prompt adds: "Your fix counts as
+   verified only when `python -m pytest -q <files>` runs without
+   errors", naming the task's existing fail-to-pass test FILES (the
+   test patch is applied only at scoring). The LLM-free probe
+   (run_track23.py --validate) ran those files bare, before any fix,
+   on Track 19's 21-task pool: the era class appears on **19**
+   (validation-track23.jsonl). Pool = those 19, chronological.
+2. The era break is restored before every session. Found while
+   building this track: run_stream.prepare only ever adds to an arm's
+   venv, and the shared sphinx control venv had been left with
+   era-compatible plugins (sphinxcontrib-applehelp 1.0.2) — a session
+   that "fixes" the environment fixes it for every later session of
+   that arm. reset_env upgrades the six era packages to their latest
+   releases and removes any sitecustomize/usercustomize shim before
+   each session and the probe; installed versions are stamped per
+   record. Whether this contamination contributed to Track 19's P1 is
+   not tested here.
+3. Model claude-fable-5-1 (current), CLI stamped per record.
+
+Per-session hygiene as Track 19 (tmp globs, built-in memory archived),
+control first per pair. Transcripts are copied into track23/transcripts/
+when each session ends (Claude Code's 30-day cleanup deleted every
+earlier track's). Metric of record: Bash events before the first pytest
+run naming a required test file whose output shows a clean summary
+(passes, no failures or errors) — "first verified"; never verified ranks
+below any count. Read from the output, not the exit code: in the smoke
+pair (sphinx-8721, outside the pool) the agents piped pytest through
+`tail`, so failing runs exited 0 and the error text was cut. The same
+cut can hide the condition from the mod, which sees only what the agent
+printed; that is the deployed behaviour and is not worked around.
+Scored by score_track23.py.
+
+Registered predictions:
+  T23-P1 (liveness, the gate): in >= 60% of CONTROL sessions the first
+        run of the required files is not clean — the era break binds.
+        Era text visible in output is reported alongside. If P1 fails,
+        P3 is read as condition-absent, as in Track 19.
+  T23-P2 (delivery): the memory is shown in >= 80% of show-arm sessions
+        where era text was visible in output, and in 0 control sessions.
+  T23-P3 (benefit, the claim): show beats control on first-verified,
+        one-sided sign p <= 0.05 over decided pairs (>= 14 of 19 if
+        none tie).
+  T23-P4 (no harm): show-arm total wall within +15% of control,
+        per-task distribution reported before the total.
+  T23-P5 (ledger honesty): every outcome the mod records falls in a
+        show-arm session where the era class fired; the end-of-run
+        ledger is reported, with the mod's outcomes compared against
+        session_end's offline inference on the same transcripts
+        (agreement reported, no bar).
+
+Interpretation fixed in advance: P1 + P2 PASS with P3 FAIL means a cure
+delivered at the moment of need does not help a frontier agent even when
+the friction binds — the strongest negative for condition-triggered
+delivery on this workload class. P3 PASS is the first causal benefit for
+memory on a code workload with the source readable. P4 is read on its
+own: show-on-error was built to remove Track 19's tax, so a P4 FAIL
+falsifies that design claim whatever P3 does.
+
+## Track 24 — template commands in acted_on (registered 2026-10-31, before any change to the matcher)
+
+Track 23: 11 sessions built a memory's workaround and acted_on credited
+none, because the memory's command is a template
+(`PYTHONPATH=/path/to/shim python -m pytest tests/`). Its verbatim-span
+rule cannot match a real path, and the token-share rule fails at 4-9%.
+acted_on is the shipped path (session_end, sweep, mod_bridge), so a looser
+rule is a ledger change: credit is the thing this project has been fooled
+by before. A false credit is worse than a miss, so every choice below
+prefers abstaining.
+
+**The rule, fixed here.** Only a backtick span holding a placeholder is
+affected: `/path/to/...`, `<name>`, or a `...` word. All other spans keep
+verbatim matching, byte for byte. A template span's words split into:
+- wildcard: a word that is entirely placeholder, matching any one word;
+  a `...` word matches nothing and is dropped.
+- anchored: a word with a literal prefix before its placeholder
+  (`PYTHONPATH=/path/to/shim`, `--grep=<keyword>`); matches a word starting
+  with that prefix whose remainder holds a letter or digit, so
+  `PYTHONPATH=.` does not match.
+- literal: everything else, matching itself, or as a prefix if it ends in
+  `/`.
+The words must appear in order in the command, other words allowed
+between them. A template is eligible only with at least one anchored
+word, or at least 3 literal words besides the first. That refuses
+`python -m pytest <tests>`, which would credit every test run.
+
+Corpus: the 38 Track 23 transcripts (local, gitignored) and every memory
+in the local live-ab stores. **These are development data for P1 and P2:
+the positives were found before this rule was written, so a pass says the
+defect is fixed, not that the rule generalizes.** No session is run.
+
+Registered predictions, scored by score_track24.py:
+  T24-P1 (recall): memory 1 is credited in >= 9 of the 10 noted sessions
+        that ran pytest under a PYTHONPATH override.
+  T24-P2 (specificity): 0 credits in the 19 control transcripts, with the
+        memory's signature tested from event 0, and 0 credits in the 3
+        noted sessions that built no shim.
+  T24-P3 (fixtures, written before the rule is implemented): every case in
+        hooks/test_acted_on.py passes. Its templates are the real spans
+        found in the local stores.
+  T24-P4 (no regression): over all events of the 38 transcripts and every
+        stored memory with no template span, new and old acted_on agree
+        on every pair, 0 differences allowed.
+  T24-P5 (ledger effect, no bar): outcomes and signs infer_outcomes then
+        gives on Track 23's show transcripts, reported.
+
+P2 or P4 failing means the change is not merged, whatever P1 says. Passing
+does not validate live capture: that needs a live run, which this track
+does not do.
+
+### Track 24 amendment (registered 2026-10-31, after the first scoring, before this change)
+
+First scoring of the rule above: P1 10/10, P2 0 and 0, P4 0 differences,
+**T24-P3 FAIL**: 9 of 11 refusal fixtures credited. The 9 are also
+credited by the old matcher, so the template rule did not introduce them.
+They are a standing false positive in acted_on's token-share fallback: a
+short command drawn from the memory's words passes the 60% bar, so bare
+`python -m pytest tests/` earns credit for a shim memory it did not use.
+That P3 result stands as scored. The fixtures are not edited.
+
+**Change:** a memory with any template span is credited only through its
+template spans, eligible or not; the token-share rule no longer applies to
+it. Memories with no template span are untouched. The change can only
+remove credit, beyond what the template rule adds.
+
+Registered, scored by the same score_track24.py:
+  T24b-P1: all of P1-P4 above pass, P3 unchanged, on the same data.
+  T24b-P2 (reported, no bar): pairs where old and new matchers differ on
+        template memories, split into credit added and credit removed.
+
+## Track 25 — outcome honesty, then a live run (registered 2026-10-31, before any of these changes)
+
+Track 24's replay gave 10 outcomes, all +1, 4 on runs that were not clean,
+on a memory Track 23 found no benefit from. Measured on Track 23's
+transcripts while designing this: 389 of 396 pytest runs were piped, none
+with pipefail, so the exit code says nothing about nearly every test run.
+Token share gave 1,288 credits on memories that hold a quoted command
+against 264 span matches, and all 8 sampled were false (pytest-repo
+memories credited for sphinx test runs). It gave 2 on prose memories.
+
+**Change A, verdict on a piped command.** Outcome inference and mod_bridge
+share one verdict. is_error is -1. A command not piped keeps today's rule.
+A piped command (an unquoted `|` that is not `||`, no pipefail) that exits
+0: -1 if the output names the memory's own condition class, the cure did
+not clear it; else abstain if the output is error-shaped (FAILURE); else +1
+only if the last test summary shows passes and no failures or errors; else
+abstain. A failed test summary abstains, not -1: under a working shim,
+failures may be the code under test.
+
+**Change B, the 800-character cut.** Event gains the whole result. Fired
+classes and the verdict read it. Candidate mining keeps reading the cut
+body, so what gets staged does not change.
+
+**Change C, token share.** It applies only to memories with no backtick
+span. A memory with a quoted command is credited through its spans alone.
+Prose memories keep it: they have no other route to an outcome. Its 2
+hits here were both false, so that residual is known and stays.
+
+Registered predictions, offline on the 38 Track 23 transcripts:
+  T25-P1 (A): +1 falls only on clean deciding runs. Of the 10 outcomes,
+        the 4 unclean become abstentions and the 6 clean stay +1.
+  T25-P2 (A, C): every case in hooks/test_outcomes.py passes, as committed
+        here. test_acted_on.py's pin on token share flips to a refusal,
+        which is the edit that pin exists to force.
+  T25-P3 (B): session_end's fired classes equal the mod's on 38 of 38
+        sessions. corrections() is unchanged on 38 of 38.
+  T25-P4 (C): span and template credit is unchanged on all pairs; token
+        credit on spanned memories falls to 0; no pair gains credit.
+
+Any failure among P1-P4 stops the live run.
+
+**Live run.** 4 show-arm sessions, no control: this tests capture, not
+benefit, so no benefit can be read from it. Pool's first 4 tasks in order
+(sphinx-7440, 7748, 7985, 8035), mod loaded, a fresh copy of the Track 23
+seed store, otherwise Track 23's harness. Prediction fixed here:
+  T25-P5 (live capture): the mod records an outcome in >= 2 of 4 sessions.
+  T25-P6 (agreement): every mod outcome equals session_end's inference on
+        the same transcript, with 0 disagreements.
+P5 failing means live capture is still unproven. Results of this run are
+not pooled with Track 23.
+

@@ -1,0 +1,6 @@
+{
+  "name": "rfm-live",
+  "version": "0.1.0",
+  "description": "mem-rfm live outcomes: show a memory when its condition fires, record whether acting on it helped",
+  "types": "./types/index.d.ts"
+}
