@@ -1304,3 +1304,54 @@ delivery on this workload class. P3 PASS is the first causal benefit for
 memory on a code workload with the source readable. P4 is read on its
 own: show-on-error was built to remove Track 19's tax, so a P4 FAIL
 falsifies that design claim whatever P3 does.
+
+## Track 24 — template commands in acted_on (registered 2026-10-31, before any change to the matcher)
+
+Track 23: 11 sessions built a memory's workaround and acted_on credited
+none, because the memory's command is a template
+(`PYTHONPATH=/path/to/shim python -m pytest tests/`). Its verbatim-span
+rule cannot match a real path, and the token-share rule fails at 4-9%.
+acted_on is the shipped path (session_end, sweep, mod_bridge), so a looser
+rule is a ledger change: credit is the thing this project has been fooled
+by before. A false credit is worse than a miss, so every choice below
+prefers abstaining.
+
+**The rule, fixed here.** Only a backtick span holding a placeholder is
+affected: `/path/to/...`, `<name>`, or a `...` word. All other spans keep
+verbatim matching, byte for byte. A template span's words split into:
+- wildcard: a word that is entirely placeholder, matching any one word;
+  a `...` word matches nothing and is dropped.
+- anchored: a word with a literal prefix before its placeholder
+  (`PYTHONPATH=/path/to/shim`, `--grep=<keyword>`); matches a word starting
+  with that prefix whose remainder holds a letter or digit, so
+  `PYTHONPATH=.` does not match.
+- literal: everything else, matching itself, or as a prefix if it ends in
+  `/`.
+The words must appear in order in the command, other words allowed
+between them. A template is eligible only with at least one anchored
+word, or at least 3 literal words besides the first. That refuses
+`python -m pytest <tests>`, which would credit every test run.
+
+Corpus: the 38 Track 23 transcripts (local, gitignored) and every memory
+in the local live-ab stores. **These are development data for P1 and P2:
+the positives were found before this rule was written, so a pass says the
+defect is fixed, not that the rule generalizes.** No session is run.
+
+Registered predictions, scored by score_track24.py:
+  T24-P1 (recall): memory 1 is credited in >= 9 of the 10 noted sessions
+        that ran pytest under a PYTHONPATH override.
+  T24-P2 (specificity): 0 credits in the 19 control transcripts, with the
+        memory's signature tested from event 0, and 0 credits in the 3
+        noted sessions that built no shim.
+  T24-P3 (fixtures, written before the rule is implemented): every case in
+        hooks/test_acted_on.py passes. Its templates are the real spans
+        found in the local stores.
+  T24-P4 (no regression): over all events of the 38 transcripts and every
+        stored memory with no template span, new and old acted_on agree
+        on every pair, 0 differences allowed.
+  T24-P5 (ledger effect, no bar): outcomes and signs infer_outcomes then
+        gives on Track 23's show transcripts, reported.
+
+P2 or P4 failing means the change is not merged, whatever P1 says. Passing
+does not validate live capture: that needs a live run, which this track
+does not do.
