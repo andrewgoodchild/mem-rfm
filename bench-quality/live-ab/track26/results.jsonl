@@ -1,0 +1,4 @@
+{"session": 1, "before": [[1, 0, 0.0]], "after": [[1, 0, 0.0]], "transcript": "1.jsonl", "gate": [[1], [1]], "model": "claude-sonnet-5-5"}
+{"session": 2, "before": [[1, 0, 0.0]], "after": [[1, 0, 0.0]], "transcript": "2.jsonl", "gate": [[1], [1]], "model": "claude-sonnet-5-5"}
+{"session": 3, "before": [[1, 0, 0.0]], "after": [[1, 0, 0.0]], "transcript": "3.jsonl", "gate": [[1], [1]], "model": "claude-sonnet-5-5"}
+{"session": 4, "before": [[1, 0, 0.0]], "after": [[1, 0, 0.0]], "transcript": "4.jsonl", "gate": [[1], [1]], "model": "claude-sonnet-5-5"}

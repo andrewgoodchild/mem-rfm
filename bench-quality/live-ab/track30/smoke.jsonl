@@ -1,0 +1,1 @@
+{"task": "boltons-budget-001", "arm": "raw", "rep": 1, "model": "claude-sonnet-5-5", "corrections": 1, "solved": true, "cost": 0.1898, "turns": 12, "wall_s": 33, "errors": [], "session": "6bb88b13-1ddd-4b41-a0df-2977f7e727f7", "tail": ["4 passed in 0.02s"], "delivered": {"first_own": true, "prompts": 2, "first": ["boltons-budget-001/gold", "boltons-budget-001/gold"]}}

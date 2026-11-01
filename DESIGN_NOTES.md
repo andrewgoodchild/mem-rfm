@@ -391,7 +391,10 @@ the shipped injection query). Three scenarios:
   across many sessions): **promotes at sighting 2 and injects.** The
   quarantine is a one-session delay against recurrence, not a filter.
   This is expected and is why the floor matters.
-- **C — recovery under harm: the real defense holds.** A promoted
+- **C — recovery under harm: the floor holds in simulation.** (Track 26: live,
+  a -1 lands only if the agent runs the harm and it fails visibly; agents
+  skipped a legible harm 4 of 4, and harm that exits zero earns nothing. Not
+  "the" defense.) A promoted
   poison that is ever acted-on-and-harmful earns a −1, which drives
   value_score negative, and the injection floor
   (`NOT (outcome_count>0 AND value_score<0)`) excludes it immediately —
