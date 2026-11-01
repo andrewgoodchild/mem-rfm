@@ -15,7 +15,9 @@ an acted-on per-turn memory scores as a normal outcome. Off by default
 (RFM_PERTURN=1), A/B-gated, inert under RFM_HOOKS_OFF.
 
 Config: RFM_PERTURN_K (default 2), RFM_PERTURN_FLOOR (cosine, default
-0.35), RFM_QUARANTINE (default 2). Scoped like SessionStart. Embedding: MiniLM via fastembed,
+0.35), RFM_QUARANTINE (default 2), RFM_PERTURN_GROUP=1 (K counts sources, and
+each brings every memory of its conversation, latest first: Track 28), and
+RFM_PERTURN_BUDGET (characters; default 2400 grouped, otherwise 1200). Scoped like SessionStart. Embedding: MiniLM via fastembed,
 truncation matched to the server (256 tokens); if fastembed is absent
 the hook no-ops loudly rather than injecting on a degraded signal.
 """
@@ -43,6 +45,9 @@ EMBEDDER_ID = os.environ.get(
     "RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
 MAX_TOKENS = 256
 CHAR_BUDGET = 1200
+GROUP = os.environ.get("RFM_PERTURN_GROUP") == "1"
+BUDGET = int(os.environ.get("RFM_PERTURN_BUDGET",
+                            2400 if GROUP else CHAR_BUDGET))
 LOG_ENABLED, LOG = log_env.resolve_log(
     os.environ.get("RFM_LOG", "1"), os.path.dirname(DB_PATH))
 
@@ -146,6 +151,21 @@ def judge_applicable(prompt, cands):
             and 1 <= k <= len(cands)]
 
 
+def grouped(scored):
+    """The K best sources over the floor, whole, latest first. A memory with
+    no source is its own. scored holds (score, sim, id, content, created,
+    source), best first."""
+    tops = []
+    for row in scored:
+        key = row[5] or row[2]
+        if row[1] >= FLOOR and key not in tops:
+            tops.append(key)
+        if len(tops) == K:
+            break
+    return sorted((r for r in scored if (r[5] or r[2]) in tops),
+                  key=lambda r: -r[4])
+
+
 def retrieve(prompt, cwd=None):
     import sqlite3
     import rfm
@@ -162,34 +182,36 @@ def retrieve(prompt, cwd=None):
         return []
     scoped, args = store.in_scope(store.project(cwd))
     rows = db.execute(
-        "SELECT id, content, embedding, rfm_prior(id) AS prior, created_at "
+        "SELECT id, content, embedding, rfm_prior(id) AS prior, created_at, "
+        "source "
         "FROM rfm_memories "
         "WHERE NOT (outcome_count > 0 AND value_score < 0) "
         f"AND {store.released()} AND {scoped} "
         "AND embedding IS NOT NULL", args).fetchall()
     scored = []
-    for mid, content, blob, prior, created in rows:
+    for mid, content, blob, prior, created, source in rows:
         sim = cosine(qvec, blob)
-        scored.append((sim * prior, sim, mid, content, created))
+        scored.append((sim * prior, sim, mid, content, created, source))
     scored.sort(reverse=True)
 
     if os.environ.get("RFM_PERTURN_JUDGE") == "1":
         # Cosine prefilters (no floor — the gap is too small); the judge
         # selects which prefiltered facts answer the turn.
-        cands = [(mid, content) for _s, _sim, mid, content, _t
-                 in scored[:JUDGE_PREFILTER]]
+        cands = [(row[2], row[3]) for row in scored[:JUDGE_PREFILTER]]
         picked = judge_applicable(prompt, cands) if cands else []
         if picked is not None:
-            simof = {mid: (sim, t) for _s, sim, mid, _c, t in scored}
-            top = [(simof[mid][0], simof[mid][0], mid, c, simof[mid][1])
+            simof = {row[2]: (row[1], row[4]) for row in scored}
+            top = [(simof[mid][0], simof[mid][0], mid, c, simof[mid][1], None)
                    for mid, c in picked[:K] if mid in simof]
         else:                       # judge failed: fall back to cosine floor
             top = [t for t in scored if t[1] >= FLOOR][:K]
+    elif GROUP:
+        top = grouped(scored)
     else:
         top = [t for t in scored if t[1] >= FLOOR][:K]
 
-    for _score, _sim, mid, _c, _t in top:
-        db.execute("SELECT rfm_record_access(?)", (mid,))
+    for row in top:
+        db.execute("SELECT rfm_record_access(?)", (row[2],))
     db.commit()
     db.close()
     return top
@@ -215,14 +237,14 @@ def main():
     session = (harnesses.payload_field(harness, "session", payload) or "?")[:8]
     top = retrieve(prompt, harnesses.payload_field(harness, "cwd", payload))
     _log({"op": "perturn_retrieval", "session": session,
-          "injected": [mid for _s, _sim, mid, _c, _t in top],
-          "sims": [round(sim, 3) for _s, sim, _m, _c, _t in top]})
+          "injected": [row[2] for row in top],
+          "sims": [round(row[1], 3) for row in top]})
     if not top:
         return
     used, lines = 0, []
-    for _score, _sim, mid, content, created in top:
+    for _score, _sim, mid, content, created, _source in top:
         line = transcripts.line_head(mid, created) + sanitize(content)
-        if used + len(line) > CHAR_BUDGET:
+        if used + len(line) > BUDGET:
             break
         lines.append(line)
         used += len(line) + 1

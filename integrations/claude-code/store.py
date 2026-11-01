@@ -19,13 +19,13 @@ import re
 import sqlite3
 import time
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 FORMAT = "mem-rfm-export"
 FORMAT_VERSION = 1
 
 COLUMNS = (("embedding", "BLOB"), ("scope", "TEXT"),
            ("condition_class", "TEXT"), ("sightings", "INTEGER"),
-           ("era", "TEXT"), ("origins", "TEXT"))
+           ("era", "TEXT"), ("origins", "TEXT"), ("source", "TEXT"))
 TABLES = (
     # Text before a memory_update. An edit keeps the ledger on purpose, so
     # a memory can bank a reputation and then be rewritten; this is what

@@ -125,6 +125,15 @@ it was needed.
 |---|---|---|
 | `RFM_MEMORY_DB` | `~/.sqlite-rfm/claude-code.db` | one DB = one memory scope |
 | `RFM_EMBEDDER` | `sentence-transformers/all-MiniLM-L6-v2` | any fastembed-supported id (a sentence-transformers id outside that registry needs `pip install sentence-transformers`, which the install above does not include) |
+| `RFM_PERTURN_GROUP` | off | with `RFM_PERTURN=1`: the 2 best sources, each with every memory of its conversation, latest first. No live gain over flat (Track 30) |
+| `RFM_PERTURN_BUDGET` | `2400` grouped, else `1200` | per-turn delivery's character cap |
+
+`mem_rfm_cli.py decide TRANSCRIPT` forms a conversation's decisions into
+memories, with one LLM call. It runs only when you point it at a transcript, and
+those rows skip quarantine, as a `memory_save` does. Formed memories cut
+corrections from 1.22 to about 0.5 per task on SDE-bench's seeded conversation
+tasks, against 0.88 for raw chat turns; grouping them added nothing measurable
+(Tracks 29 and 30, `bench-quality/RESULTS.md`).
 
 Remove with `claude mcp remove rfm-memory`. The database is plain SQLite —
 inspect it with any sqlite3 client; scoring columns are plain REALs. Session-start
