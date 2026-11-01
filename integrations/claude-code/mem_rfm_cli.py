@@ -356,8 +356,10 @@ def portable(command, path):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("command",
-                    choices=("setup", "doctor", "export", "import", "reembed"))
-    ap.add_argument("file", nargs="?", help="export/import: the JSONL file")
+                    choices=("setup", "doctor", "export", "import", "reembed",
+                             "decide"))
+    ap.add_argument("file", nargs="?",
+                    help="export/import: the JSONL file; decide: a transcript")
     ap.add_argument("--dry-run", action="store_true",
                     help="setup: print every change, write nothing")
     ap.add_argument("--python", default=os.environ.get("RFM_PYTHON") or default_python(),
@@ -371,6 +373,11 @@ def main(argv=None):
         if not args.file:
             ap.error(f"{args.command} needs a FILE")
         return portable(args.command, args.file)
+    if args.command == "decide":
+        if not args.file:
+            ap.error("decide needs a transcript FILE")
+        return subprocess.call([args.python,
+                                os.path.join(HERE, "decisions.py"), args.file])
     if args.command == "reembed":
         # In the venv: the embedder is not stdlib, and server.py owns it.
         return subprocess.call([args.python, SERVER, "--reembed"])
