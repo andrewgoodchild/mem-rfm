@@ -24,7 +24,8 @@ Retrieved-often is cheap to fake, and this project's live program caught
 helped-when-used being faked too: an agent copies a suggested command,
 the copy succeeds, and the ledger inflates. So a positive outcome now
 counts only in sessions where the condition the memory names actually
-fired. Helped-when-*needed* is the signal.
+fired. A positive means it worked when used, in a session where its
+condition fired. Only a control shows it was needed.
 **[The full model →](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/theory.md)**
 
 ## How it works
@@ -41,9 +42,9 @@ value_score:     0.40  (4 outcomes)   <- earned, not assigned at write time
 ```
 
 Retrieval multiplies similarity by that earned prior; every retrieval
-records an access, and the outcome (did it help?) scores it. **Nothing
-calls a model at ranking time:** the prior is one indexed row read, and
-session-start injection ranks on it alone.
+records an access, and the outcome (did it help?) scores it. **No LLM at
+rank time by default:** the prior is one indexed row read, and session-start
+injection ranks on it alone. Search adds a local embedding model.
 
 ```sql
 SELECT id, content,
@@ -80,9 +81,13 @@ Removing the human reviewer means the jobs review was doing have to be
 done structurally. A near-duplicate of an existing memory becomes a
 sightings count on that row rather than a new row, so recurrence is
 captured instead of discarded. A **two-sighting quarantine** replaces
-human judgment as the poisoning defence: a memory is not injectable
-until a second independent session produces it, so one poisoned
-transcript is insufficient by construction. A hard cap bounds the store,
+human judgment as a poisoning defence: a memory is not injectable until a
+second independent origin produces it, so one poisoned transcript is
+insufficient by construction, and neither is a README read in every session
+of one repository. A poisoned source that names a condition the sessions
+really hit still gets through; the outcome floor is what stops that one, and
+its live path is unproven (a `-1` has only fired in fixtures since Track 25).
+A hard cap bounds the store,
 and an outcome judge scores memories only against conditions that
 actually fired.
 
@@ -160,7 +165,7 @@ product.
 key; the store is a local file and the embedding model runs locally. The
 one exception is opt-in: the continuous formation sweep and its outcome
 judge call a cheap LLM, which means transcript excerpts go wherever that
-model runs. Ranking never calls a model at all.
+model runs. Default ranking never calls an LLM.
 
 ## Installation
 
@@ -220,7 +225,7 @@ whether it is working for you. **[Full API and configuration →](https://github
 | [methodology.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/methodology.md) | pre-registration, corrections, known limits |
 | [team-memory.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/team-memory.md) | the team exploration, and why it stopped |
 
-Also: `PROTOCOL.md` (pre-registrations, amendments 1–16c),
+Also: `PROTOCOL.md` (pre-registrations, amendments 1–18),
 `bench-quality/live-ab/REVALIDATION.md` (the registered live tracks), and
 `bench-quality/RESULTS.md` (the complete ledger).
 

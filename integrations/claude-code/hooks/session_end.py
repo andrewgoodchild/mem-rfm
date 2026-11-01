@@ -73,6 +73,7 @@ import secret_scan  # noqa: E402  (server.py's sibling; credential redaction)
 import harnesses  # noqa: E402  (server.py's sibling; lifecycle registry)
 import transcripts  # noqa: E402  (server.py's sibling; normalized session)
 import similarity  # noqa: E402  (server.py's sibling; shared with sweep.py)
+import store  # noqa: E402  (server.py's sibling; host schema)
 
 # Inside a 30 s hook the embedder loads from the local cache or not at all
 # (token similarity instead); a first-run download belongs to the sweep.
@@ -253,10 +254,7 @@ def ensure_conditions(db):
     absent, then stamp any unstamped row by derivation from its content.
     Only NULL rows are stamped, so an explicit stamp is never overwritten;
     '' is a deliberate 'unconditioned' stamp, distinct from NULL."""
-    try:
-        db.execute("ALTER TABLE rfm_memories ADD COLUMN condition_class TEXT")
-    except sqlite3.OperationalError:
-        pass                                   # column already exists
+    store.ensure(db)
     for mid, content in db.execute(
             "SELECT id, content FROM rfm_memories "
             "WHERE condition_class IS NULL").fetchall():

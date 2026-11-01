@@ -4,6 +4,9 @@ checkout to a working install, and one that says exactly what is broken.
 
     python3 mem_rfm_cli.py setup  [--dry-run] [--python PY] [--no-preflight]
     python3 mem_rfm_cli.py doctor [--no-preflight]
+    python3 mem_rfm_cli.py export FILE    every row, ledger included (JSONL)
+    python3 mem_rfm_cli.py import FILE    restore into an empty store
+    python3 mem_rfm_cli.py reembed        re-embed under $RFM_EMBEDDER
 
 setup runs six steps, each idempotent, each skipped when already done:
 
@@ -319,9 +322,42 @@ def doctor(args):
         raise failures[0]
 
 
+def portable(command, path):
+    """export / import: stdlib only, so a backup needs no venv."""
+    import rfm
+    import store
+    target = db_path()
+    if command == "export" and not os.path.exists(target):
+        print(f"FAILED: no store at {target}")
+        return 1
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    conn = sqlite3.connect(target, timeout=10.0)
+    try:
+        rfm.register(conn)
+        store.ensure(conn)
+        if command == "export":
+            # 'x': a backup never replaces an earlier one. 0600: memories
+            # are redacted at write, but they are still private.
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "w") as fh:
+                n = store.export_store(conn, fh)
+        else:
+            with open(path) as fh:
+                n = store.import_store(conn, fh)
+    except (OSError, ValueError, sqlite3.Error) as e:
+        print(f"FAILED: {e}")
+        return 1
+    finally:
+        conn.close()
+    print(f"{command}: {n} rows, {target} {'->' if command == 'export' else '<-'} {path}")
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("command", choices=("setup", "doctor"))
+    ap.add_argument("command",
+                    choices=("setup", "doctor", "export", "import", "reembed"))
+    ap.add_argument("file", nargs="?", help="export/import: the JSONL file")
     ap.add_argument("--dry-run", action="store_true",
                     help="setup: print every change, write nothing")
     ap.add_argument("--python", default=os.environ.get("RFM_PYTHON") or default_python(),
@@ -331,6 +367,13 @@ def main(argv=None):
                     help="skip the smoke test (it loads the embedder)")
     args = ap.parse_args(argv)
     args.python = os.path.abspath(args.python)
+    if args.command in ("export", "import"):
+        if not args.file:
+            ap.error(f"{args.command} needs a FILE")
+        return portable(args.command, args.file)
+    if args.command == "reembed":
+        # In the venv: the embedder is not stdlib, and server.py owns it.
+        return subprocess.call([args.python, SERVER, "--reembed"])
     if os.environ.get("CLAUDE_CONFIG_DIR"):
         print("  warning: CLAUDE_CONFIG_DIR is set; this tool only manages "
               "~/.claude and ~/.claude.json", file=sys.stderr)

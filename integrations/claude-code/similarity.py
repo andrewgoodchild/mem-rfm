@@ -13,6 +13,10 @@ import os
 import re
 import sys
 
+# Named, not fastembed's default: the dedupe thresholds (0.80 here, 0.70 in
+# session_end) were calibrated under this model, and a library upgrade must
+# not move them. Deliberately not RFM_EMBEDDER, which is retrieval's.
+MODEL = "BAAI/bge-small-en-v1.5"
 _EMB = {"model": None, "tried": False, "cache": {}}
 # True: never download the model, use only the local cache (hooks set it).
 LOCAL_ONLY = False
@@ -32,8 +36,8 @@ def _model():
             # No Hugging Face Hub telemetry; read when huggingface_hub is imported.
             os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
             from fastembed import TextEmbedding
-            _EMB["model"] = (TextEmbedding(local_files_only=True)
-                             if LOCAL_ONLY else TextEmbedding())
+            _EMB["model"] = TextEmbedding(model_name=MODEL,
+                                          local_files_only=LOCAL_ONLY)
         except Exception:
             _EMB["model"] = None
             print("rfm: WARNING — fastembed unavailable, similarity "

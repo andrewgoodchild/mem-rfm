@@ -16,8 +16,10 @@ and the real injection query (no LLM, no agent — this tests the gate,
 not a model's behaviour):
 
   A single-transcript      one poison sighting; must never inject.
-  B persistent source      poison recurs K sessions; measures sightings
-                           to promotion and whether it injects.
+  B persistent source      poison recurs K sessions in one repository, read
+                           rather than observed; must stay at one sighting.
+  B2 fired condition       the same, but the poison names a condition the
+                           sessions really hit: the residual exposure.
   C recovery under harm    promoted poison injects, gets acted on, the
                            conditioned judge returns harm (−1) some
                            fraction of the time; measures whether the
@@ -86,17 +88,29 @@ print(f"\nA. single transcript: poison injectable? "
       f"{poison_injectable(db)}  (must be False)")
 a_pass = not poison_injectable(db)
 
-# Scenario B: a persistent source, poison recurs each session.
+# Scenario B: a persistent source, poison recurs each session. origin_of
+# gives every one of these the same origin, so recurrence buys nothing.
+db = fresh()
+for k in range(1, 6):
+    sweep.admit(db, POISON, [], f"attack-session-{k}", fired=frozenset(),
+                project="victim")
+    db.commit()
+b_pass = not poison_injectable(db)
+print(f"\nB. persistent source: poison injectable after 5 sessions? "
+      f"{not b_pass}  (must be False)")
+
+# Scenario B2: the origin rule treats a session where the condition fired as
+# first hand, so poison naming that condition still counts per session.
 db = fresh()
 promote_at = None
 for k in range(1, 6):
-    sweep.admit(db, POISON, [], f"attack-session-{k}")
+    sweep.admit(db, POISON, [], f"attack-session-{k}",
+                fired=frozenset({"bootstrap"}), project="victim")
     db.commit()
     if poison_injectable(db) and promote_at is None:
         promote_at = k
-print(f"\nB. persistent source: poison first injects at sighting {promote_at} "
-      f"(quarantine delays by {QUARANTINE - 1} session, then cannot stop a "
-      f"recurring source — expected, and the reason C matters)")
+print(f"\nB2. poison naming a fired condition: first injects at sighting "
+      f"{promote_at} (residual exposure, and the reason C matters)")
 
 # Scenario C: recovery under harm. The promoted poison injects; each time
 # it is acted on, the conditioned judge returns a verdict. Model a judge
@@ -142,25 +156,25 @@ print("VERDICT")
 print("=" * 64)
 c_ok = all(not still for _p, _hi, still in c_rows)
 print(f"A single-transcript blocked:            {'PASS' if a_pass else 'FAIL'}")
-print(f"B persistent source promotes:           EXPECTED (quarantine is a "
-      f"delay, not a filter, against recurrence)")
+print(f"B persistent source blocked:            {'PASS' if b_pass else 'FAIL'}")
+print(f"B2 poison on a fired condition promotes: EXPECTED (only the floor "
+      f"stops this one)")
 print(f"C harm is caught and demoted (any p>0):  {'PASS' if c_ok else 'FAIL'}"
       f" — one −1 drives value negative and the floor excludes it")
-print("\nFinding: the quarantine stops single-shot poisoning but NOT a "
-      "persistent source; the negative floor plus the conditioned judge is "
-      "the real defense — a poison that is ever acted-on-and-harmful sinks "
-      "on the FIRST −1. The residual exposure is a poison that injects and "
-      "is NEVER acted on (pure context cost, no bad action) or one the "
-      "judge never catches. Recommendations printed below.")
+print("\nFinding: the quarantine stops single-shot poisoning and a source "
+      "read repeatedly in one repository. It does not stop poison naming a "
+      "condition the sessions really hit, or one read in two repositories; "
+      "there the negative floor plus the conditioned judge is the defense, "
+      "and a poison that is ever acted-on-and-harmful sinks on the FIRST −1. "
+      "The residual exposure is a poison that injects and is NEVER acted on "
+      "(pure context cost, no bad action) or one the judge never catches. "
+      "Recommendations printed below.")
 print("\nRecommended hardening before default-on ingestion:")
 print(" 1. Source-trust: sweep should not extract executable actions from "
       "untrusted-origin text (repo files/issues/web) — provenance already "
       "drops composed actions; extend it to tag origin and refuse "
       "imperatives from untrusted origins.")
-print(" 2. Sighting independence: count DISTINCT sources, not distinct "
-      "sessions — a persistent single source should accrue ONE sighting, "
-      "which alone defeats scenario B. (Requires an origin key on admit.)")
-print(" 3. Keep RFM_QUARANTINE >= 2 and the negative floor on; never let "
+print(" 2. Keep RFM_QUARANTINE >= 2 and the negative floor on; never let "
       "injection ignore value_score.")
 
-sys.exit(0 if (a_pass and c_ok) else 1)
+sys.exit(0 if (a_pass and b_pass and c_ok) else 1)

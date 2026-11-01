@@ -59,9 +59,12 @@ configurable LLM extraction per session against an ontology
 near-duplicates merge into an existing row's `sightings` count instead
 of flooding (recurrence captured as frequency, which review used to
 throw away); a **two-sighting quarantine** replaces human judgment as
-the poisoning defense (sweep-created rows are not injectable until a
-second independent session produces the same lesson, so one poisoned
-transcript is insufficient by construction); composed actions are
+a poisoning defense (sweep-created rows are not injectable until a second
+independent origin produces the same lesson: a session that observed the
+condition itself, or another repository. One poisoned transcript is
+insufficient by construction, and so is one source read in every session of
+a repository; poison naming a condition that really fired is not stopped
+here); composed actions are
 dropped unless the transcript actually ran them; and a hard cap with
 grace-period eviction bounds the store. Outcomes in sweep deployments
 can additionally come from a conditioned LLM judge — asked whether the

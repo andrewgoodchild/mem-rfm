@@ -188,6 +188,17 @@ earn outcome scores like any memory). Layered conclusion: manual = day-one
 scaffolding, experience = the diagnosis engine, outcomes = the maintenance
 policy.
 
+## CORRECTIONS (2026-11-01)
+
+**Track 22's denominator and stale summaries.** T22-P2 printed "of ~130"
+(~62% -> ~73%). Recounted from live-ab/track22/judged.jsonl: 113 questions
+per arm, so 71% -> 84%. The counts and p-value were right. docs/findings.md
+still led with the 33-pair preliminary numbers (68 vs 82 of 98, p = 0.002)
+and omitted the failed Opus replication (T22S-P1); both are fixed there. The
+same review replaced that file's ETH figures, which the paper's current
+abstract does not state, and retired the claim that mem-rfm is the only
+system with a default-on outcome term (docs/landscape.md).
+
 ## CORRECTIONS (pre-publication review, 2026-08-03)
 
 1. **Manual-RAG experiment re-run — headline number corrected.** v1 of
@@ -2196,7 +2207,7 @@ completion; disclosed), judge-adjudicated arm-blind.
 **T22-P2: PASS, and it is the program's first causal benefit.**
 (Final, all 38 pairs; the 33-pair preliminary read p=0.002 at 12/1,
 strengthened on completion.)
-- judged correct: control 80, rfm **95** of ~130 (~62% -> ~73%).
+- judged correct: control 80, rfm **95** of 113 (71% -> 84%).
 - per-instance: rfm higher on **13**, control higher on **1**, tied 24;
   one-sided sign **p = 0.001**.
 - mechanism (T22-P3 confirmed descriptively): rfm spent **13% fewer

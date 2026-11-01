@@ -33,6 +33,7 @@ import rfm                # noqa: E402
 import secret_scan        # noqa: E402
 import harnesses          # noqa: E402
 import similarity as _similarity  # noqa: E402
+import store              # noqa: E402
 import transcripts        # noqa: E402
 import log_env            # noqa: E402
 
@@ -93,7 +94,7 @@ and any failed->fixed command pairs. Most of it is about the specific
 task and should be IGNORED — per-task lessons do not transfer. Extract
 at most {max_per_session} durable memories, each standing alone for
 someone who never saw this session (never name the task's own bug,
-function, or file).
+function, or file). This session ran in the repository {project}.
 
 --- BEGIN SESSION MATERIAL ---
 {material}
@@ -102,8 +103,9 @@ function, or file).
 Reply with a JSON list only (possibly empty), each item:
 {{"content": "one self-contained sentence stating condition and remedy",
 "condition_class": "from or extending the ontology", "action": "the
-runnable command if the session ran one, else empty", "scope": "repo or
-context", "era": "version/era bound or empty"}}"""
+runnable command if the session ran one, else empty", "scope": "the
+repository's name if this holds only there, else empty", "era":
+"version/era bound or empty"}}"""
 
 JUDGE = """A coding agent had this stored memory available during a
 session:
@@ -133,10 +135,6 @@ def ensure_schema(db):
     rfm.register(db)
     db.execute("SELECT rfm_init()")
     se.ensure_conditions(db)
-    try:
-        db.execute("ALTER TABLE rfm_memories ADD COLUMN sightings INTEGER")
-    except sqlite3.OperationalError:
-        pass
 
 
 tokens = _similarity.tokens
@@ -194,7 +192,37 @@ def _classes(condition):
     return {c for c in (condition or "").split(",") if c}
 
 
-def admit(db, mem, cmds, src, exposed=frozenset(), touched=None):
+def scope_of(mem, project):
+    """The session's repository, if the extractor bound the memory to it.
+    Anything else stays global: a free-form context ("python", "testing")
+    matches no project, so it would hide the row from every session."""
+    named = str(mem.get("scope") or "").strip().rsplit("/", 1)[-1]
+    return project if project and named.lower() == project.lower() else None
+
+
+def origin_of(condition, fired, project, src):
+    """What one sighting is independent evidence of (DESIGN_NOTES, the
+    quarantine red-team: count distinct origins, not distinct sessions).
+
+    A session whose own commands showed the condition observed it first
+    hand, so each such session is its own origin. Anything else was read,
+    and a README, issue or page the agent reads recurs in every session
+    without being independent evidence once. Those all share one origin per
+    repository. Decided here, from the session's events, and not by asking
+    the extractor where a lesson came from: the text being judged is what an
+    attacker controls, and it could name a new source every time.
+
+    fired=None is a caller with no session to judge; src is then the origin,
+    the old one-session-one-sighting rule."""
+    if fired is None:
+        return src
+    if _classes(condition) & set(fired):
+        return f"session:{src}"
+    return f"repo:{project}"
+
+
+def admit(db, mem, cmds, src, exposed=frozenset(), touched=None, fired=None,
+          project=None):
     """Dedupe-as-frequency, provenance, quarantine — then insert or bump.
 
     A near-duplicate bumps sightings — the quarantine's evidence that a
@@ -205,7 +233,9 @@ def admit(db, mem, cmds, src, exposed=frozenset(), touched=None):
       `touched`   ids this session already inserted or bumped: two
                   paraphrases from one session are one sighting;
       a match across condition classes: a different lesson that happens to
-                  embed nearby is not the same lesson seen again.
+                  embed nearby is not the same lesson seen again;
+      an origin already counted: see origin_of.
+    Matching stays within the memory's scope, as a server save does.
     (test_feedback_loop.py)"""
     content = (mem.get("content") or "").strip()
     cond = (mem.get("condition_class") or "").strip()
@@ -226,9 +256,13 @@ def admit(db, mem, cmds, src, exposed=frozenset(), touched=None):
     text, kinds = secret_scan.redact(text)
     if kinds:
         _log({"op": "secret_redacted", "kinds": kinds, "src": src})
-    best, best_sim = best_match(
-        text, db.execute("SELECT id, content FROM rfm_memories").fetchall())
+    scope = scope_of(mem, project)
+    scoped, scope_args = store.in_scope(scope)
+    best, best_sim = best_match(text, db.execute(
+        f"SELECT id, content FROM rfm_memories WHERE {scoped}",
+        scope_args).fetchall())
     condition = se.derive_condition(text) or cond.lower()
+    origin = origin_of(condition, fired, project, src)
     touched = set() if touched is None else touched
     if best is not None:
         why = None
@@ -237,10 +271,13 @@ def admit(db, mem, cmds, src, exposed=frozenset(), touched=None):
         elif best in touched:
             why = "sweep_same_session"
         else:
-            row = db.execute("SELECT condition_class, sightings FROM rfm_memories "
-                             "WHERE id = ?", (best,)).fetchone()
+            row = db.execute("SELECT condition_class, sightings, origins "
+                             "FROM rfm_memories WHERE id = ?", (best,)).fetchone()
+            origins = json.loads(row[2] or "[]")
             if row[1] is not None and not (_classes(row[0]) & _classes(condition)):
                 why = "sweep_cross_condition"
+            elif origin in origins:
+                why = "sweep_same_origin"
         if why:
             _log({"op": why, "id": best, "similarity": round(best_sim, 3),
                   "src": src})
@@ -248,14 +285,17 @@ def admit(db, mem, cmds, src, exposed=frozenset(), touched=None):
         touched.add(best)
         db.execute("SELECT rfm_record_access(?)", (best,))
         db.execute("UPDATE rfm_memories SET sightings = "
-                   "COALESCE(sightings, 1) + 1 WHERE id = ?", (best,))
+                   "COALESCE(sightings, 1) + 1, origins = ? WHERE id = ?",
+                   (json.dumps(origins + [origin]), best))
         _log({"op": "sweep_dedupe_hit", "id": best,
               "similarity": round(best_sim, 3), "src": src})
         return best
+    era = secret_scan.redact(transcripts.flatten(mem.get("era") or ""))[0]
     cur = db.execute(
         "INSERT INTO rfm_memories (content, created_at, condition_class,"
-        " sightings) VALUES (?, ?, ?, 1)",
-        (text, time.time(), condition))
+        " sightings, scope, era, origins) VALUES (?, ?, ?, 1, ?, ?, ?)",
+        (text, time.time(), condition, scope, era[:80] or None,
+         json.dumps([origin])))
     touched.add(cur.lastrowid)
     _log({"op": "sweep_admit", "id": cur.lastrowid, "condition": cond,
           "action_provenance": "quoted" if action else "none", "src": src})
@@ -340,11 +380,13 @@ def sweep_one(db, tp):
     fired = se.fired_classes(events)
     cmds = [e.cmd for e in events if e.cmd]
     mat = material_of(sess)
+    project = store.project(sess.cwd) if sess.cwd else None
     if mat.strip():
         out = parse_json(llm(EXTRACT.format(
             instruction=CONFIG["instruction"],
             ontology=", ".join(CONFIG["ontology"]),
-            max_per_session=CONFIG["max_per_session"], material=mat)))
+            max_per_session=CONFIG["max_per_session"], material=mat,
+            project=project or "unknown")))
         mems = [m for m in (out or [])[:CONFIG["max_per_session"]]
                 if isinstance(m, dict)]
         # Matched before any admission, and only when there is something
@@ -352,7 +394,7 @@ def sweep_one(db, tp):
         exposed = exposed_ids(db, sess) if mems else set()
         touched = set()
         for mem in mems:
-            admit(db, mem, cmds, src, exposed, touched)
+            admit(db, mem, cmds, src, exposed, touched, fired, project)
     judge_in_play(db, sess, fired, src)
     evict(db)
     db.commit()

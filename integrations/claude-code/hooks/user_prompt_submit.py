@@ -15,7 +15,7 @@ an acted-on per-turn memory scores as a normal outcome. Off by default
 (RFM_PERTURN=1), A/B-gated, inert under RFM_HOOKS_OFF.
 
 Config: RFM_PERTURN_K (default 2), RFM_PERTURN_FLOOR (cosine, default
-0.35), RFM_QUARANTINE (default 2). Embedding: MiniLM via fastembed,
+0.35), RFM_QUARANTINE (default 2). Scoped like SessionStart. Embedding: MiniLM via fastembed,
 truncation matched to the server (256 tokens); if fastembed is absent
 the hook no-ops loudly rather than injecting on a degraded signal.
 """
@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))  # rfm.py
 sys.path.insert(0, os.path.join(HERE, ".."))               # log_env
 sys.path.insert(0, HERE)
 import log_env  # noqa: E402
+import store  # noqa: E402
 import harnesses  # noqa: E402
 import transcripts  # noqa: E402
 
@@ -38,7 +39,6 @@ DB_PATH = os.path.expanduser(
     os.environ.get("RFM_MEMORY_DB", "~/.sqlite-rfm/claude-code.db"))
 K = int(os.environ.get("RFM_PERTURN_K", "2"))
 FLOOR = float(os.environ.get("RFM_PERTURN_FLOOR", "0.35"))
-QUARANTINE = int(os.environ.get("RFM_QUARANTINE", "2"))
 EMBEDDER_ID = os.environ.get(
     "RFM_EMBEDDER", "sentence-transformers/all-MiniLM-L6-v2")
 MAX_TOKENS = 256
@@ -146,7 +146,7 @@ def judge_applicable(prompt, cands):
             and 1 <= k <= len(cands)]
 
 
-def retrieve(prompt):
+def retrieve(prompt, cwd=None):
     import sqlite3
     import rfm
     qvec = embed(prompt)
@@ -154,21 +154,18 @@ def retrieve(prompt):
         return []
     db = sqlite3.connect(DB_PATH)
     rfm.register(db)
-    has_s = any(r[1] == "sightings"
-                for r in db.execute("PRAGMA table_info(rfm_memories)"))
-    has_e = any(r[1] == "embedding"
-                for r in db.execute("PRAGMA table_info(rfm_memories)"))
-    if not has_e:
+    store.ensure(db)
+    clash = store.embedder_clash(db, EMBEDDER_ID, len(qvec))
+    if clash:
+        _log({"op": "perturn_embedder_clash", "error": clash})
         db.close()
         return []
-    quarantine = ("AND (sightings IS NULL OR sightings >= ?) "
-                  if has_s else "")
-    args = ([QUARANTINE] if has_s else [])
+    scoped, args = store.in_scope(store.project(cwd))
     rows = db.execute(
         "SELECT id, content, embedding, rfm_prior(id) AS prior, created_at "
         "FROM rfm_memories "
         "WHERE NOT (outcome_count > 0 AND value_score < 0) "
-        f"{quarantine}"
+        f"AND {store.released()} AND {scoped} "
         "AND embedding IS NOT NULL", args).fetchall()
     scored = []
     for mid, content, blob, prior, created in rows:
@@ -216,7 +213,7 @@ def main():
     if not prompt.strip():
         return
     session = (harnesses.payload_field(harness, "session", payload) or "?")[:8]
-    top = retrieve(prompt)
+    top = retrieve(prompt, harnesses.payload_field(harness, "cwd", payload))
     _log({"op": "perturn_retrieval", "session": session,
           "injected": [mid for _s, _sim, mid, _c, _t in top],
           "sims": [round(sim, 3) for _s, sim, _m, _c, _t in top]})

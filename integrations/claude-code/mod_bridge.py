@@ -8,7 +8,8 @@ ledger is about while the session runs: a command's output names a
 memory's condition class -> the mod shows that memory beside the error ->
 the next command drawn from it (acted_on) succeeds or fails -> the outcome
 is recorded. The memory was shown BECAUSE its condition fired, so a
-positive outcome here is helped-when-needed by construction.
+positive outcome here means it worked when used in a session that hit the
+condition. Whether it was needed takes a control (Track 25).
 
 Every judgement is session_end.py's own (CONDITION_CLASSES, acted_on,
 FAILURE, record_outcomes), so the two paths cannot drift; record_outcomes
@@ -34,6 +35,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "hooks"))
 import session_end as SE  # noqa: E402
+import store  # noqa: E402
 
 MATCH_K = int(os.environ.get("RFM_MOD_MATCH_K", 2))
 
@@ -57,17 +59,15 @@ def match(req):
         SE.ensure_conditions(db)
         db.commit()
         # The session_start gates, so the mod never shows what injection
-        # would refuse: no memory the loop has voted against, and no
-        # sweep-formed memory still in quarantine.
-        cols = {r[1] for r in db.execute("PRAGMA table_info(rfm_memories)")}
-        quarantine = ("AND (sightings IS NULL OR sightings >= "
-                      f"{int(os.environ.get('RFM_QUARANTINE', 2))}) "
-                      if "sightings" in cols else "")
+        # would refuse: no memory the loop has voted against, no sweep-formed
+        # memory still in quarantine, and none from another project.
+        scoped, scope_args = store.in_scope(store.project(req.get("cwd")))
         rows = db.execute(
             "SELECT id, content, condition_class, rfm_score(id) AS s "
             "FROM rfm_memories WHERE condition_class != '' "
             "AND NOT (outcome_count > 0 AND value_score < 0) "
-            f"{quarantine}ORDER BY s DESC").fetchall()
+            f"AND {store.released()} AND {scoped} ORDER BY s DESC",
+            scope_args).fetchall()
     finally:
         db.close()
     # The show-on-error hook's rule (post_tool_use.jit_inject): a memory

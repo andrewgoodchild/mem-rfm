@@ -41,6 +41,7 @@ from mcp.types import ToolAnnotations
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", ".."))
 import rfm  # noqa: E402  (repo-root module; scoring engine)
+import store  # noqa: E402  (sibling module; host schema and shared rules)
 import log_env  # noqa: E402  (sibling module; shared RFM_LOG contract)
 import secret_scan  # noqa: E402  (sibling module; shared credential redaction)
 import transcripts  # noqa: E402  (sibling module; the one content sanitizer)
@@ -88,6 +89,9 @@ class MemoryRow(BaseModel):
     scope: str | None = Field(
         default=None, description="scope this memory is confined to; None = "
         "visible everywhere. Surfaced so a wrong-scope save is diagnosable.")
+    era: str | None = Field(
+        default=None, description="version or era the sweep bound this "
+        "memory to; None = no bound recorded.")
 
 
 class ListResult(BaseModel):
@@ -191,21 +195,7 @@ def db():
                 _rfm = rfm.register(conn)
                 conn.execute("SELECT rfm_init()")
                 conn.execute("PRAGMA journal_mode=WAL")
-                cols = [r[1] for r in conn.execute("PRAGMA table_info(rfm_memories)")]
-                for col, ddl in (
-                    ("embedding", "ALTER TABLE rfm_memories ADD COLUMN embedding BLOB"),
-                    ("scope", "ALTER TABLE rfm_memories ADD COLUMN scope TEXT"),
-                ):
-                    if col in cols:
-                        continue
-                    try:
-                        conn.execute(ddl)
-                    except sqlite3.OperationalError as e:
-                        # The store is user-global: two sessions starting at
-                        # once can both see the column missing and race the
-                        # ALTER. Losing that race is success, not failure.
-                        if "duplicate column" not in str(e):
-                            raise
+                store.ensure(conn)
             except BaseException:
                 conn.close()
                 raise
@@ -375,6 +365,7 @@ def _check(content: str) -> str:
 def _save(content: str, scope: str | None = None) -> SaveResult:
     content = _check(content)
     vec = embed(content)                # before _lock: may load the model
+    _embedder_guard(vec)
     with _lock:
         d = db()
         # Dedup within the same scope only (IS is NULL-safe equality). A
@@ -416,13 +407,15 @@ def _update(memory_id: int, content: str) -> UpdateResult:
     ("agents keep needing this fact and it keeps working"), not about the
     exact wording. The trade-off is documented in docs/api.md: it means a
     memory can bank a reputation and then be rewritten, so updates are worth
-    the same scrutiny as saves."""
+    the same scrutiny as saves. The replaced text is kept in
+    rfm_memory_history, so that is visible in an export; deleting the memory
+    deletes it."""
     content = _check(content)
     vec = embed(content)                # before _lock: may load the model
     with _lock:
         d = db()
         row = d.execute(
-            "SELECT access_count, value_score, outcome_count, scope "
+            "SELECT access_count, value_score, outcome_count, scope, content "
             "FROM rfm_memories WHERE id = ?", (memory_id,)).fetchone()
         if row is None:
             raise ValueError(f"no memory with id {memory_id}")
@@ -435,6 +428,9 @@ def _update(memory_id: int, content: str) -> UpdateResult:
         if clash:
             raise ValueError(f"memory {clash[0]} already has that exact content; "
                              f"delete one of the two rather than duplicating")
+        if content != row[4]:
+            d.execute("INSERT INTO rfm_memory_history VALUES (?, ?, ?, ?, ?)",
+                      (memory_id, row[4], time.time(), row[1], row[2]))
         d.execute("UPDATE rfm_memories SET content = ?, embedding = ? WHERE id = ?",
                   (content, vec, memory_id))
         d.commit()
@@ -449,7 +445,7 @@ def _get(memory_id: int) -> MemoryRow:
     d = db()
     r = d.execute(
         """SELECT id, content, created_at, access_count, value_score,
-                  outcome_count, rfm_score(id), scope
+                  outcome_count, rfm_score(id), scope, era
            FROM rfm_memories WHERE id = ?""",
         (memory_id,)).fetchone()
     if r is None:
@@ -457,11 +453,60 @@ def _get(memory_id: int) -> MemoryRow:
     return MemoryRow(id=r[0], content=r[1],
                      created=_day(r[2]),
                      accesses=r[3], value=round(r[4], 3), outcomes=r[5],
-                     score=round(r[6], 4), scope=r[7])
+                     score=round(r[6], 4), scope=r[7], era=r[8])
 
 
 def _day(ts: float) -> str:
     return time.strftime("%Y-%m-%d", time.localtime(ts))
+
+
+# Rows embedded per search. The sweep writes no vectors (it has no reason to
+# load this model), so a row it forms becomes searchable here once it clears
+# quarantine; a large backlog spreads over searches rather than stalling one.
+BACKFILL = 20
+
+
+def _backfill():
+    with _lock:
+        rows = db().execute(
+            "SELECT id, content FROM rfm_memories WHERE embedding IS NULL "
+            f"AND {store.released()} LIMIT ?", (BACKFILL,)).fetchall()
+    vecs = [(embed(content), mid) for mid, content in rows]
+    if vecs:
+        with _lock:
+            db().executemany("UPDATE rfm_memories SET embedding = ? "
+                             "WHERE id = ?", vecs)
+            db().commit()
+    return len(vecs)
+
+
+def _embedder_guard(vec: bytes):
+    """Raise rather than rank against vectors from another model."""
+    with _lock:
+        clash = store.embedder_clash(db(), EMBEDDER_ID, len(vec) // 4)
+    if clash:
+        raise ValueError(f"{clash}; run `mem_rfm_cli.py reembed`, or set "
+                         "RFM_EMBEDDER back")
+
+
+def _reembed() -> int:
+    """Re-embed every row under the current model, the migration a model
+    swap needs. Quarantined rows stay unembedded: the NULL is not what keeps
+    them out of search any more, but they have no use for a vector yet."""
+    with _lock:
+        rows = db().execute("SELECT id, content FROM rfm_memories WHERE "
+                            f"{store.released()}").fetchall()
+    vecs = [(embed(content), mid) for mid, content in rows]
+    with _lock:
+        d = db()
+        d.executemany("UPDATE rfm_memories SET embedding = ? WHERE id = ?",
+                      vecs)
+        d.execute("UPDATE rfm_memories SET embedding = NULL WHERE NOT "
+                  f"{store.released()}")
+        d.commit()
+        if vecs:
+            store.stamp_embedder(d, EMBEDDER_ID, len(vecs[0][0]) // 4)
+    return len(vecs)
 
 
 def _search(query: str, limit: int = 5, scope: str | None = None,
@@ -471,6 +516,8 @@ def _search(query: str, limit: int = 5, scope: str | None = None,
     # recorded an access on every row outside the window.
     limit = max(1, min(int(limit), 200))
     qvec = embed(query)                 # before _lock: may load the model
+    _embedder_guard(qvec)
+    _backfill()
     with _lock:
         d = db()
         # The FROZEN composition (PROTOCOL.md): clamped similarity x bounded
@@ -485,7 +532,8 @@ def _search(query: str, limit: int = 5, scope: str | None = None,
                    SELECT id, content, last_access, created_at,
                           max(1.0 - vec_distance_cosine(embedding, ?), 0) AS sim,
                           rfm_prior(id) AS prior
-                   FROM rfm_memories WHERE embedding IS NOT NULL {_scope_sql(scope)})
+                   FROM rfm_memories WHERE embedding IS NOT NULL
+                   AND {store.released()} {_scope_sql(scope)})
                WHERE score >= ? ORDER BY score DESC LIMIT ?""",
             (qvec, *_scope_args(scope), min_score, limit)).fetchall()
 
@@ -514,7 +562,7 @@ def _search(query: str, limit: int = 5, scope: str | None = None,
             # snapshot the main query saw.
             sim_only = [r[0] for r in d.execute(
                 f"""SELECT id FROM rfm_memories WHERE embedding IS NOT NULL
-                    {_scope_sql(scope)}
+                    AND {store.released()} {_scope_sql(scope)}
                     ORDER BY max(1.0 - vec_distance_cosine(embedding, ?), 0) DESC
                     LIMIT ?""", (*_scope_args(scope), qvec, limit))]
             got = [r[0] for r in rows]
@@ -603,7 +651,7 @@ def _list(limit: int = 20, offset: int = 0) -> ListResult:
     offset = max(0, int(offset))
     rows = d.execute(
         """SELECT id, content, created_at, access_count, value_score, outcome_count,
-                  rfm_score(id) AS score, scope
+                  rfm_score(id) AS score, scope, era
            FROM rfm_memories ORDER BY score DESC LIMIT ? OFFSET ?""",
         (limit, offset)).fetchall()
     total = d.execute("SELECT count(*) FROM rfm_memories").fetchone()[0]
@@ -612,7 +660,8 @@ def _list(limit: int = 20, offset: int = 0) -> ListResult:
         items=[MemoryRow(id=r[0], content=r[1],
                          created=_day(r[2]),
                          accesses=r[3], value=round(r[4], 3), outcomes=r[5],
-                         score=round(r[6], 4), scope=r[7]) for r in rows],
+                         score=round(r[6], 4), scope=r[7], era=r[8])
+               for r in rows],
         total=total, has_more=offset + len(rows) < total)
 
 
@@ -754,9 +803,13 @@ def memory_delete(memory_id: int) -> DeleteResult:
 @mcp.tool(annotations=_ann("Export all memories", read_only=True))
 def memory_export() -> str:
     """Export every memory as human-readable markdown (id, date, usage, value,
-    content) — for review, backup, or migration."""
+    content) — for review. Capped in size and without the access ledger, so
+    not a backup: `mem_rfm_cli.py export` is the lossless one."""
     return _export()
 
 
 if __name__ == "__main__":
-    mcp.run()
+    if "--reembed" in sys.argv:
+        print(f"re-embedded {_reembed()} memories with {EMBEDDER_ID}")
+    else:
+        mcp.run()

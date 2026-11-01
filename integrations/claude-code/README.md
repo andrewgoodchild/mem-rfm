@@ -130,7 +130,9 @@ Remove with `claude mcp remove rfm-memory`. The database is plain SQLite —
 inspect it with any sqlite3 client; scoring columns are plain REALs. Session-start
 injection is capped at 1,500 characters (token bloat is a leading
 abandonment cause for memory tools); `memory_save` rejects content over
-4,000 characters, and `memory_export` truncates at 80,000.
+4,000 characters, and `memory_export` truncates at 80,000. For a backup,
+`mem_rfm_cli.py export FILE` writes every row, ledger and embeddings included,
+as JSONL, and `mem_rfm_cli.py import FILE` restores it into an empty store.
 
 ## A/B testing vs Claude Code built-in memory
 

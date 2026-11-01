@@ -7,7 +7,7 @@ been decided after the fact.
 
 ## Pre-registration
 
-`PROTOCOL.md` holds the original protocol plus Amendments 1–16c (the
+`PROTOCOL.md` holds the original protocol plus Amendments 1–18 (the
 frozen retrieval evals and the successor-venue evals), and
 `bench-quality/live-ab/REVALIDATION.md` registers the held-out live
 program — Tracks 1–20, each committed before its sessions ran. Each

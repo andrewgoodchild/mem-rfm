@@ -27,7 +27,7 @@ test_harnesses.py rather than a comment:
                 host (Qwen Code) that reads milliseconds, where 30 kills a
                 hook before Python starts; declared, not assumed.
   payload       the host's field names for the transcript path, session id,
-                prompt, and the field that is present only when a hook
+                prompt, working directory, and the field that is present only when a hook
                 fires inside a subagent ("subagent").
 """
 import collections
@@ -55,7 +55,8 @@ HARNESSES = {
         # without agent_id. Checked against Claude Code 2.1.300's hook-input
         # schema.
         payload={"transcript": "transcript_path", "session": "session_id",
-                 "prompt": ("prompt", "user_prompt"), "subagent": "agent_id"},
+                 "prompt": ("prompt", "user_prompt"), "subagent": "agent_id",
+                 "cwd": "cwd"},
         reader="claude-code",
         # Dict order is install order: the order a fresh install writes the
         # events into settings.json, kept as the pre-registry installer had it.

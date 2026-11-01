@@ -36,6 +36,7 @@ CHAR_BUDGET = 1500
 sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))  # repo root: rfm.py
 sys.path.insert(0, os.path.join(HERE, ".."))               # server.py's dir
 import rfm  # noqa: E402  (repo-root module; scoring engine)
+import store  # noqa: E402  (server.py's sibling; schema, scope, quarantine)
 import log_env  # noqa: E402  (server.py's sibling; shared RFM_LOG contract)
 import harnesses  # noqa: E402  (server.py's sibling; lifecycle registry)
 import transcripts  # noqa: E402  (server.py's sibling; injection-line format)
@@ -133,6 +134,7 @@ def main():
     if os.path.exists(DB_PATH):
         db = sqlite3.connect(DB_PATH)
         rfm.register(db)
+        store.ensure(db)
         # Injection floor: a memory whose outcomes have driven its value
         # negative is one the loop has already voted against — re-injecting
         # it spends budget on known distraction. Pilot 2: two demoted
@@ -145,19 +147,19 @@ def main():
         # created by the transcript sweep carry a sightings count and are
         # not injectable until a second independent session has produced
         # the same lesson — one poisoned transcript is insufficient by
-        # construction. Rows without the column or with NULL sightings
-        # (explicit saves, miner-ratified) are unaffected.
-        has_sightings = any(
-            r[1] == "sightings"
-            for r in db.execute("PRAGMA table_info(rfm_memories)"))
-        quarantine = ("AND (sightings IS NULL OR sightings >= "
-                      f"{int(os.environ.get('RFM_QUARANTINE', 2))}) "
-                      if has_sightings else "")
+        # construction. Rows with NULL sightings (explicit saves,
+        # miner-ratified) are unaffected.
+        # Scope gate: one store serves every repository, and this query is
+        # the default delivery path. A memory scoped to another project
+        # costs a slot and the context it fills, and the docs promise it
+        # stays put. Unscoped rows go everywhere.
+        scoped, scope_args = store.in_scope(store.project(
+            harnesses.payload_field(harnesses.current(), "cwd", hook_input)))
         rows = db.execute(
             "SELECT id, content, rfm_score(id) AS s, created_at FROM rfm_memories "
             "WHERE NOT (outcome_count > 0 AND value_score < 0) "
-            f"{quarantine}"
-            "ORDER BY s DESC LIMIT ?", (TOP_K,)).fetchall()
+            f"AND {store.released()} AND {scoped} "
+            "ORDER BY s DESC LIMIT ?", (*scope_args, TOP_K)).fetchall()
     lines, used, truncated = [], 0, []
     budget = CHAR_BUDGET - len(note)  # the note spends injection budget too
     for i, (mid, content, _s, created) in enumerate(rows):
