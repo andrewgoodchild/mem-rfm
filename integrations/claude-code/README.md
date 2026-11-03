@@ -129,11 +129,19 @@ it was needed.
 | `RFM_PERTURN_BUDGET` | `2400` grouped, else `1200` | per-turn delivery's character cap |
 
 `mem_rfm_cli.py decide TRANSCRIPT` forms a conversation's decisions into
-memories, with one LLM call. It runs only when you point it at a transcript, and
-those rows skip quarantine, as a `memory_save` does. Formed memories cut
+memories, with one LLM call per 12,000-character window of the conversation
+(up to the latest 20, so a long session costs up to 20 calls and sends that
+much of the transcript to the model). It runs only when you point it at a transcript,
+and prints what it formed; `--save` stores it, and those rows skip quarantine, as a
+`memory_save` does. Read before saving: on 8 real sessions it formed about 33
+memories each, and a judge rated about a quarter of them both faithful to the
+session and worth keeping (Track 32). Formed memories cut
 corrections from 1.22 to about 0.5 per task on SDE-bench's seeded conversation
 tasks, against 0.88 for raw chat turns; grouping them added nothing measurable
 (Tracks 29 and 30, `bench-quality/RESULTS.md`).
+Decision memories rarely earn outcomes, 11% of runs in Track 31, so the ranking
+does not learn from them and the floor will not demote a stale one: correct or
+delete it yourself.
 
 Remove with `claude mcp remove rfm-memory`. The database is plain SQLite —
 inspect it with any sqlite3 client; scoring columns are plain REALs. Session-start
