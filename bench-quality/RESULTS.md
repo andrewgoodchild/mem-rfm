@@ -3299,3 +3299,78 @@ Post-hoc, no bar: raw beats control 10 to 1, p = 0.012, and flat beats control
   rule. Keep-both, later-first remains untested.
 - The ledger still played no part, and no corpus independent of this one was
   available: VibeMemBench has no public code or data that could be found.
+
+## Track 31 — can the ledger see decision memories? (2026-11-02) — L1, L3, L4 failed: it can't, and reordering has almost no room here
+
+`bench-quality/live-ab/sde_ledger_probe.py`, output in `live-ab/track31/replay.txt`.
+A free replay: no sessions and no LLM calls. It runs the shipped session_end
+inference over the 162 Track 29 and 30 sessions shown formed memories, then the
+18 amended memory runs, as if the hook had been installed. Bars L1 to L3 were
+written before the first run. L4 was added after reading them, before any amended
+transcript was read.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| L1 coverage | own memory earns an outcome on >= 50% of runs shown it | 16 of 144, 11% | **FAIL** |
+| L2 attribution | >= 80% of outcomes land on the task's own memories | 22 of 22 | **PASS** |
+| L3 sign | fewer corrections with +1 than with no outcome | 0.50 (n=16) against 0.47 (n=128) | **FAIL** |
+| L4 demotion | stale memory earns -1 on >= a third of runs shown it | shown on 15, -1 on 0, +1 on 0 | **FAIL** |
+
+- **The ledger is blind to decision memories.** Inference credits a Bash command
+  that reproduces a memory's quoted span or shares its tokens. A decision states a
+  rule, and inference does not read the Edit tool, which 108 of the 162 runs used.
+  All 22 credits came from commands writing a file through Bash, 10 `cat`, 8 `sed`
+  and 4 `python`, that happened to name something the memory quoted, such as
+  `ROUND_HALF_DOWN`.
+- **What it does credit means nothing here.** A +1 did not track corrections, and
+  L2's 100% says only that a span naming the task's own constant matches that task.
+- **It cannot demote a wrong rule.** A stale memory was in front of the agent on 15
+  runs and earned no outcome of any kind. The floor never sees it. In this venue
+  the correction signal is a failing hidden test after the session's last edit,
+  and nothing links that to the memories shown.
+- **Reordering has little to win.** Post-hoc, no bar: runs without the own memory
+  first needed about the same corrections as runs with it: 0.67 against 0.50 flat
+  (9 runs), 0.50 against 0.47 grouped (6 runs). Bringing those runs level would save
+  about 1.5 of 42 corrections on flat. Top-2 cosine already finds the right memory.
+
+The stop rule applies, so the paid repeated-task run was not made: it would measure
+flat priors again. Widening inference to read Edit calls would raise L1 but leave
+L3 and the ceiling where they are, so it isn't worth building for this.
+
+This covers decision memories on seeded tasks with no real competition among
+memories. It does not cover failed-then-fixed lessons, whose outcome capture works
+(Track 25), though that capture has shown no benefit either (Tracks 23 and 25). Across
+Tracks 23 to 31, no result yet shows outcome ranking improving what an agent does.
+Its one working role is the floor, and Track 26 limits that to loud failures.
+
+## Track 32 — `decide` on real sessions (2026-11-04) — W1 and W2 failed: windows matter, and most of what they form is not worth keeping
+
+`bench-quality/live-ab/real_decide_probe.py`. 8 of the operator's own interactive
+Claude Code sessions longer than one window, from 7 projects, drawn with seed 32
+from 41. Formed window by window as `decide` now does: 106 windows, 268 memories.
+A sonnet judge rated each against the window it came from. Outputs quote private
+work and stay out of the repository; only counts are here.
+
+Found first, free: `decide` read only the first 12,000 characters, and 193 of 411
+local sessions run longer, where that is a median 11% of the conversation. It now
+forms every window, cut between turns, up to the latest 20.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| W1 faithful | >= 80% | 161 of 268, 60% | **FAIL** |
+| W2 durable | >= 50% | 82 of 268, 31% | **FAIL** |
+| W3 windows matter | later windows' faithful and durable memories >= the first window's | 20 against 1, on the 5 sessions read whole | **PASS, rescored** |
+
+- **W3 was miscounted as first run.** Three sessions had more than 20 windows, so
+  their first window was never formed and could not score. The bar is unchanged;
+  it is now counted over the 5 sessions read whole. The first count was 74 against 1.
+- **About 9 of 33 memories per session were judged worth keeping.** So `decide` now
+  prints what it formed and stores it only with `--save`.
+- **The judge is not validated.** A spot check of 12 found memories marked
+  unfaithful that read like real decisions, and one marked not durable that looked
+  durable. W1 and W2 may be low for that reason. A grounding check against the
+  source windows was planned after the run, but 5 of the 41 sessions were deleted
+  meanwhile, most likely by Claude Code's transcript cleanup, so the sample could
+  not be redrawn. The probe now keeps each memory's window for that check.
+- The secret scan redacted nothing. One sample, one formation model, no benefit
+  measured: this asks only whether what forms is true and worth keeping.
