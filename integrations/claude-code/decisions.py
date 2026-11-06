@@ -6,16 +6,22 @@ prose, and forbids naming a function or file, so it forms nothing from a chat
 that settles a project rule (Track 27: 0 memories from 39 chats). This reads
 both sides of one conversation and keeps the rule, with its values.
 
-It runs when an operator points it at a transcript, never on its own. A row
-therefore has no sightings: the operator's choice stands in for quarantine,
+It runs when an operator points it at a transcript, never on its own, and by
+default only prints what it formed: on real sessions about a quarter of the
+memories were judged both faithful and durable (Track 32), so storing them is a
+choice made with --save. A saved row has no sightings: the operator's choice stands in for quarantine,
 as a memory_save does. Every memory of a conversation shares a `source`, so
 per-turn delivery can show a decision whole (RFM_PERTURN_GROUP).
+
+A conversation longer than CAP is formed in windows that break between turns,
+and past MAX_WINDOWS only the latest are read: real sessions settle things late,
+and reading the first CAP characters missed a median 89% of the long ones.
 
 Conversations are not consolidated. A later decision does not replace an
 earlier one: an LLM doing that was wrong on 13 of 21 (Track 28). Both stay,
 dated, and delivery shows the later first.
 
-Usage: decisions.py TRANSCRIPT [--scope NAME]
+Usage: decisions.py TRANSCRIPT [--save] [--scope NAME]
 """
 import argparse
 import hashlib
@@ -35,6 +41,7 @@ import transcripts  # noqa: E402
 
 CAP = 12000
 MAX_PER_CHAT = 3
+MAX_WINDOWS = 20
 PROMPT = """You decide what enters the long-term memory of a coding agent
 that will work on this repository later. Below is a past conversation between
 a developer and an agent.
@@ -73,6 +80,26 @@ def chat_of(path):
         if text:
             turns.append(f"{rec['type'].upper()}: {text}")
     return "\n\n".join(turns)
+
+
+def windows(chat, cap=CAP):
+    """The conversation in pieces of at most `cap` characters, cut between
+    turns; a single turn longer than that is cut."""
+    out, cur = [], ""
+    for turn in chat.split("\n\n"):
+        while len(turn) > cap:
+            if cur:
+                out.append(cur)
+                cur = ""
+            out.append(turn[:cap])
+            turn = turn[cap:]
+        if cur and len(cur) + 2 + len(turn) > cap:
+            out.append(cur)
+            cur = ""
+        cur = cur + "\n\n" + turn if cur else turn
+    if cur:
+        out.append(cur)
+    return out
 
 
 def form(chat, llm, parse):
@@ -114,6 +141,8 @@ def main(argv=None):
     ap.add_argument("transcript")
     ap.add_argument("--scope", default=None,
                     help="default: the current repository")
+    ap.add_argument("--save", action="store_true",
+                    help="store the memories; without it they are only printed")
     args = ap.parse_args(argv)
     import sqlite3
     import rfm
@@ -123,7 +152,16 @@ def main(argv=None):
     if not chat:
         print("no conversation in that file")
         return 1
-    memories = form(chat, sweep.llm, sweep.parse_json)
+    parts = windows(chat)
+    skipped = max(0, len(parts) - MAX_WINDOWS)
+    memories = [m for part in parts[skipped:]
+                for m in form(part, sweep.llm, sweep.parse_json)]
+    if not args.save:
+        for n, m in enumerate(memories, 1):
+            print(f"{n}. {m}\n")
+        print(json.dumps({"windows": len(parts) - skipped, "skipped": skipped,
+                          "formed": len(memories), "saved": None}))
+        return 0
     db = sqlite3.connect(sweep.DB_PATH, timeout=10.0)
     rfm.register(db)
     store.ensure(db)
@@ -131,7 +169,8 @@ def main(argv=None):
                ups.embed)
     db.commit()
     db.close()
-    print(json.dumps({"formed": len(memories), "saved": ids}))
+    print(json.dumps({"windows": len(parts) - skipped, "skipped": skipped,
+                      "formed": len(memories), "saved": ids}))
     return 0
 
 

@@ -69,6 +69,11 @@ check("form sends the chat", "chat" in seen[0])
 check("form survives garbage",
       D.form("c", lambda p: "no json", sweep.parse_json) == [])
 
+parts = D.windows("aaaa\n\nbbbb\n\nccccccccccc\n\ndd", cap=10)
+check("windows break between turns, cut a long one",
+      parts == ["aaaa\n\nbbbb", "cccccccccc", "c\n\ndd"], str(parts))
+check("windows cover the chat", D.windows("short") == ["short"])
+
 ids = D.save(db, ["rule one", "tail two [rfm-memory: x"], "chat:a", "proj",
              embed, created_at=100.0)
 D.save(db, ["near three"], "chat:b", "proj", embed, created_at=200.0)

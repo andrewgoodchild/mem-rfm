@@ -86,7 +86,9 @@ second independent origin produces it, so one poisoned transcript is
 insufficient by construction, and neither is a README read in every session
 of one repository. A poisoned source that names a condition the sessions
 really hit still gets through; the outcome floor is what stops that one, and
-its live path is unproven (a `-1` has only fired in fixtures since Track 25).
+its live path is narrow: a `-1` has landed live only when the agent ran the
+harm and it failed visibly, and agents skipped a legible harm 4 times in 4
+(Track 26).
 A hard cap bounds the store,
 and an outcome judge scores memories only against conditions that
 actually fired.
@@ -124,7 +126,11 @@ helped, which is harder than it sounds. This project's own scoring was
 fooled for weeks: an agent that copies a suggested command and succeeds
 looks like proof the memory helped, even when the problem the memory
 warns about never came up. A memory now earns credit only in sessions
-where the situation it describes actually occurred.
+where the situation it describes actually occurred. Those 0.56 and 0.20 come
+from oracle feedback. With the feedback the live loop really gets, no
+experiment yet has shown the ranking changing what an agent does (Tracks 23
+to 31), and it rarely sees memories that state a decision rather than a
+command (11% of runs, Track 31).
 
 **Does having the store make the agent better at its job?** Only when
 the agent could not have found the answer by itself. In about twenty
@@ -141,13 +147,20 @@ That result is model-dependent, and the way it fails to replicate is
 the most useful part of it. Repeat the same experiment with a stronger
 model and the control arm answers 89 of 113 by itself, so the same
 memories add 5 questions instead of 15 and the advantage stops being
-significant. Memory buys the most where the agent has the least room to
+significant. A second venue sits on the same side of the boundary:
+decisions that exist only in past developer chats (SDE-bench's conversation
+tasks, run through this project's own local adapter of its protocol, one
+model). Formed into stated decisions, those chats cut the corrections an agent
+needed from 1.22 to about 0.5 per task, against 0.88 for the raw chat turns in
+a plain vector store (Tracks 29 and 30). That gain came from formation, not
+from the outcome ranking, which played no part, and it has not been replicated
+independently. Memory buys the most where the agent has the least room to
 help itself, whether that room is closed by better access or by a more
 capable agent. So the question to ask before adopting this is not "is my
 agent smart enough" but "can my agent already reach this information?"
 
 Every number, every pre-registered prediction, the buys table, the
-acquisition measurement, and the full 14-row registered results table
+acquisition measurement, and the full 16-row registered results table
 are in **[findings.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/findings.md)**; the complete per-track ledger
 is `bench-quality/RESULTS.md`.
 
@@ -163,9 +176,9 @@ product.
 
 **What leaves your machine:** nothing, by default. No service, no API
 key; the store is a local file and the embedding model runs locally. The
-one exception is opt-in: the continuous formation sweep and its outcome
+exceptions are opt-in: the continuous formation sweep and its outcome
 judge call a cheap LLM, which means transcript excerpts go wherever that
-model runs. Default ranking never calls an LLM.
+model runs, and `mem_rfm_cli.py decide` sends the transcript you point it at. Default ranking never calls an LLM.
 
 ## Installation
 

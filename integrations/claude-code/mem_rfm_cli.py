@@ -365,6 +365,8 @@ def main(argv=None):
     ap.add_argument("--python", default=os.environ.get("RFM_PYTHON") or default_python(),
                     help="interpreter for the server and hooks "
                          "(default: this checkout's .venv)")
+    ap.add_argument("--save", action="store_true",
+                    help="decide: store the memories (default: print them)")
     ap.add_argument("--no-preflight", action="store_true",
                     help="skip the smoke test (it loads the embedder)")
     args = ap.parse_args(argv)
@@ -377,7 +379,8 @@ def main(argv=None):
         if not args.file:
             ap.error("decide needs a transcript FILE")
         return subprocess.call([args.python,
-                                os.path.join(HERE, "decisions.py"), args.file])
+                                os.path.join(HERE, "decisions.py"), args.file]
+                               + (["--save"] if args.save else []))
     if args.command == "reembed":
         # In the venv: the embedder is not stdlib, and server.py owns it.
         return subprocess.call([args.python, SERVER, "--reembed"])

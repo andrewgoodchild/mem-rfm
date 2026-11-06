@@ -28,6 +28,9 @@ jobs:
       - run: python integrations/claude-code/test_decisions.py
       - run: python integrations/claude-code/hooks/test_acted_on.py
       - run: python integrations/claude-code/hooks/test_outcomes.py
+      - run: python integrations/claude-code/hooks/test_perturn.py
+      - run: python integrations/claude-code/hooks/test_conditions.py
+      - run: python integrations/claude-code/hooks/test_reconcile.py
       # setup/doctor against a temporary HOME with a stub `claude`.
       - run: python integrations/claude-code/test_setup.py
   package:

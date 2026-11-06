@@ -1,0 +1,25 @@
+sessions replayed 162, transcripts missing 0, events read, memories shown per run 3.5
+shown own 144/162, own outcomes {1.0: 22}, other outcomes 0
+L1 FAIL coverage 16/144 = 11%
+L2 PASS attribution 22/22 = 100%
+L3 FAIL corrections with +1 0.50 (n=16), with nothing 0.47 (n=128)
+  credited: cat > flagcore/bucket.py <<'EOF'
+  credited: sed -i '' -e 's|"js": "application/javascript"|"js": "text/javascript"|' -e 's|"csv": "application/vnd.ms-exce
+  credited: sed -i '' 's/ROUND_HALF_EVEN/ROUND_HALF_DOWN/g' pay/rounding.py && python -m pytest tests -q 2>&1 | tail -3
+  credited: sed -i '' 's/ROUND_HALF_EVEN/ROUND_HALF_DOWN/g' pay/rounding.py && python -m pytest tests -q 2>&1 | tail -3
+  credited: python - <<'E'
+  credited: sed -i '' 's/ROUND_HALF_EVEN/ROUND_HALF_DOWN/g' pay/rounding.py && python -m pytest tests -q 2>&1 | tail -3
+  credited: sed -i '' 's/ROUND_HALF_EVEN/ROUND_HALF_DOWN/g' pay/rounding.py && python -m pytest tests -q 2>&1 | tail -3
+  credited: python -c "
+  credited: python - <<'E'
+  credited: sed -i '' 's/ROUND_HALF_EVEN/ROUND_HALF_DOWN/g' pay/rounding.py && python -m pytest tests -q 2>&1 | tail -3
+  credited: sed -i '' 's/ROUND_HALF_EVEN/ROUND_HALF_DOWN/g' pay/rounding.py && python -m pytest tests -q 2>&1 | tail -3
+  credited: cat > flagcore/bucket.py <<'EOF'
+L4 FAIL demotion: stale shown on 15 runs, -1 on 0, +1 on 0, nothing on 15
+ceiling, no bar:
+  flat   own first:  72 runs, corrections 0.50
+  flat   not first:   9 runs, corrections 0.67
+  flat   corrections on those runs: 6 of 42
+  memory own first:  75 runs, corrections 0.47
+  memory not first:   6 runs, corrections 0.50
+  memory corrections on those runs: 3 of 38

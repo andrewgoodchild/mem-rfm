@@ -24,10 +24,17 @@ It did not reach significance on a stronger model, whose control already
 answered 89 of 113 (89 vs 94, p = 0.113). So the one-line rule: **memory
 helps a frontier agent when the environment does not already hand it the
 answer and the agent has headroom to be helped.** The repo is the memory
-where the repo is readable; where it isn't, the memory can be.
+where the repo is readable; where it isn't, the memory can be. A second
+venue landed on the same side: decisions that exist only in past developer
+chats, where formed memories cut corrections from 1.22 to 0.47 per task
+(SDE-bench, this project's own adapter, not yet replicated). That gain came
+from formation; the outcome ranking played no part.
 
 The scoring prior's reliable jobs turned out to be **safety and
-maintenance** rather than raw ranking quality: keeping a usage prior
+maintenance** rather than raw ranking quality, and even those are measured
+mostly with oracle feedback: with the live loop's own feedback, no causal
+track yet shows the ranking changing what an agent does (Tracks 23 to 31). Its
+jobs, then: keeping a usage prior
 from eating itself, retiring stale content, refusing unearned credit
 (the condition gate), and making shared stores resistant to abuse.
 Which of its two axes — recency/frequency, or outcome value — is doing
@@ -80,7 +87,9 @@ cost/safety bounds, the rest tested benefit.
 | does it at least help a weaker model? (haiku) | condition gate, then sign consistency | **FAIL** — 0 wins of 5 pairs, +27.6% wall: a measured tax (Track 13) |
 | does the full ungated lifecycle help where friction is forced? | a pool where verification dies without the workaround | **FAIL at the gate** — agent met the condition in 1/20 control sessions and worked around it; +25% wall (Track 19) |
 | is the cure useful if it arrives at the moment of need? (show-on-error) | memory attached beside the error only, friction made to bind | **FAIL** — friction bound 19/19 and the memory was followed (11/14 built its workaround, control 0/19), yet first-verified went 7–9 with 3 ties and wall rose +22.4%; live capture recorded 0 outcomes (Track 23) |
-| **does memory help when the control CANNOT read the source?** | organizational questions, both arms no code execution and only a budget-limited query tool | **PASS** — control 80, memory **95** of 113, up on 13 / down on 1, **sign p = 0.001**, 13% fewer queries (Track 22) — the one condition under which memory helped |
+| **does memory help when the control CANNOT read the source?** | organizational questions, both arms no code execution and only a budget-limited query tool | **PASS** — control 80, memory **95** of 113, up on 13 / down on 1, **sign p = 0.001**, 13% fewer queries (Track 22) |
+| **does memory help when the decision lives only in past chats?** (SDE-bench, own local adapter, one model) | formed decisions delivered per turn cut corrections, sign p < 0.05 over 27 tasks | **PASS** — 1.22 → 0.47 corrections per task, 17 better / 1 worse, p = 0.0001 (Track 29); raw chat turns in a plain vector store 0.88, formed but ungrouped 0.52, so formation carries it (Track 30) |
+| can the live ledger see those memories? | the own memory earns an outcome on ≥ 50% of runs; a stale one earns −1 | **FAIL** — 11% of runs, +1 does not track corrections, a stale memory shown 15 times earned nothing (Track 31, replay) |
 
 The table reads as a boundary, not a verdict. The benefit predictions on
 repository coding all failed — the agents do not pay the costs the
