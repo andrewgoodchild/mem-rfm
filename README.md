@@ -1,31 +1,37 @@
 # mem-rfm
 
-mem-rfm is long-term memory for coding agents that ranks what it
-remembers by whether it actually *helped*. The whole thing is one SQLite
-file and a pure-Python scoring engine; an MCP server and three hooks
-make it drop-in for Claude Code.
+mem-rfm is long-term memory for coding agents, and the measured record
+of when such memory pays. The whole thing is one SQLite file and a
+pure-Python scoring engine; an MCP server and three hooks make it
+drop-in for Claude Code.
 
-The name comes from marketing's **RFM** analysis, which scores customers
-on recency, frequency and **m**onetary value. Marketers keep the third
-axis because the first two come free from any transaction log but
-measure only engagement: someone who orders constantly and returns
-everything looks like a good customer until you price the returns.
-Memories have exactly that blind spot, and mem-rfm answers it the same
-way.
+The answer, from a live program of pre-registered experiments: memory
+pays when the agent cannot reach the answer by itself. On ordinary
+repository work a capable agent reads or re-derives whatever a note
+would tell it, and carrying the note costs wall-clock. Where the source
+is out of reach it paid in both venues tested: organizational questions
+behind a budgeted query tool (95 of 113 correct against 80, p = 0.001,
+on the model that had headroom), and decisions that live only in past
+developer chats, where forming those chats into stated rules cut the
+corrections an agent needed from 1.22 to about 0.5 per task (SDE-bench,
+this project's own adapter, one model, not yet replicated).
 
-Recency and frequency come from **ACT-R**, the cognitive model of human
-memory. Its base-level activation is `ln(Σ tᵢ^−d)`, a sum over every past
-use decaying with age, which makes the two one quantity rather than two
-knobs to tune. And in place of monetary value, mem-rfm puts **measured
-outcomes**: a signed per-memory record of whether acting on the memory
-helped or hurt, fed straight back into the ranking.
+The working part is formation: turning a session into the decisions it
+reached, with their exact values. `mem_rfm_cli.py decide TRANSCRIPT`
+does that for one session and prints what it formed, for you to keep
+with `--save`; the SessionEnd miner stages failed-then-fixed commands for
+review, and the opt-in sweep extracts on its own.
 
-Retrieved-often is cheap to fake, and this project's live program caught
-helped-when-used being faked too: an agent copies a suggested command,
-the copy succeeds, and the ledger inflates. So a positive outcome now
-counts only in sessions where the condition the memory names actually
-fired. A positive means it worked when used, in a session where its
-condition fired. Only a control shows it was needed.
+Under it sits the engine the project is named for. Marketing's **RFM**
+analysis scores customers on recency, frequency and **m**onetary value;
+mem-rfm scores a memory on recency and frequency, which are **ACT-R**'s
+base-level activation `ln(Σ tᵢ^−d)`, and on **measured outcomes**, a
+signed per-memory record of whether acting on it helped or hurt. That
+third axis was the original thesis, and it has earned a narrower place.
+With oracle feedback it retires stale facts well; with the feedback a
+live loop really gets, no experiment has yet shown it changing what an
+agent does. Read it as a floor that keeps a memory which has visibly
+failed from coming back, not as the source of the gains above.
 **[The full model →](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/theory.md)**
 
 ## How it works
@@ -68,7 +74,7 @@ path and a harness-owned path that does the real work:
 
 | stage | you, in-session | the harness, post-hoc |
 |---|---|---|
-| **Formation** | `memory_save` on "remember this" | SessionEnd mines failed→fixed command pairs from the transcript; `/memory-review` ratifies |
+| **Formation** | `memory_save` on "remember this"; `decide TRANSCRIPT` forms a session's decisions, kept with `--save` | SessionEnd mines failed→fixed command pairs from the transcript; `/memory-review` ratifies |
 | **Retrieval** | `memory_search` | SessionStart injects the top-3 by `rfm_score` |
 | **Outcome** | `memory_feedback` when a memory surprises | inferred from what the session acted on, at session end; a `+1` lands only if the memory's named condition fired |
 | **Retention** | `memory_delete` on "forget that" | idle never-useful memories are pruned; proven ones never are |
@@ -116,22 +122,6 @@ here, and it is the finding this project spent its live program
 measuring ([memory-types.md](https://github.com/andrewgoodchild/mem-rfm/blob/main/docs/memory-types.md) maps the full
 taxonomy). Two questions follow.
 
-**Does the ranking surface the right memory?** Yes, where the work
-repeats. The clearest case is a fact that goes stale: revise the eight
-busiest procedures halfway through a 3,000-call support corpus, and
-1,500 calls later the outcome scores have pulled the dead versions down
-to 0.56 hit@1 while plain similarity search is still recommending them
-at 0.20. That result depends on getting honest feedback about what
-helped, which is harder than it sounds. This project's own scoring was
-fooled for weeks: an agent that copies a suggested command and succeeds
-looks like proof the memory helped, even when the problem the memory
-warns about never came up. A memory now earns credit only in sessions
-where the situation it describes actually occurred. Those 0.56 and 0.20 come
-from oracle feedback. With the feedback the live loop really gets, no
-experiment yet has shown the ranking changing what an agent does (Tracks 23
-to 31), and it rarely sees memories that state a decision rather than a
-command (11% of runs, Track 31).
-
 **Does having the store make the agent better at its job?** Only when
 the agent could not have found the answer by itself. In about twenty
 pre-registered experiments on real bug-fixing, memory did not help at
@@ -158,6 +148,22 @@ independently. Memory buys the most where the agent has the least room to
 help itself, whether that room is closed by better access or by a more
 capable agent. So the question to ask before adopting this is not "is my
 agent smart enough" but "can my agent already reach this information?"
+
+**Does the ranking surface the right memory?** Yes, where the work
+repeats. The clearest case is a fact that goes stale: revise the eight
+busiest procedures halfway through a 3,000-call support corpus, and
+1,500 calls later the outcome scores have pulled the dead versions down
+to 0.56 hit@1 while plain similarity search is still recommending them
+at 0.20. That result depends on getting honest feedback about what
+helped, which is harder than it sounds. This project's own scoring was
+fooled for weeks: an agent that copies a suggested command and succeeds
+looks like proof the memory helped, even when the problem the memory
+warns about never came up. A memory now earns credit only in sessions
+where the situation it describes actually occurred. Those 0.56 and 0.20 come
+from oracle feedback. With the feedback the live loop really gets, no
+experiment yet has shown the ranking changing what an agent does (Tracks 23
+to 31), and it rarely sees memories that state a decision rather than a
+command (11% of runs, Track 31).
 
 Every number, every pre-registered prediction, the buys table, the
 acquisition measurement, and the full 16-row registered results table
