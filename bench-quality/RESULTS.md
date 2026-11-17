@@ -3505,7 +3505,7 @@ sweep's haiku, one call per memory.
 | V1 sensitivity | >= 70% of falsified not confirmed | 57 of 100: contradicted 31, unsupported 26, confirmed 43 | **FAIL** |
 | V2 precision of contradicted | <= 10% of unfalsified | 1 of 133, 1% | **PASS** |
 | V3 evidence stands | reported | every contradicted verdict's evidence was in its window; the code's downgrade was not needed (0 quotes missing) | reported |
-| V4 operator reading | >= 80% of first 20 | 1 verdict to read (review.jsonl) | pending |
+| V4 operator reading | >= 80% of first 20 | 1 verdict existed; the operator read it 2026-11-17 and rated it not a contradiction (the quoted turn is the pending test the memory already describes), so 0 of 1 | **FAIL on n=1**, which is V2's one miss seen from the other side |
 
 - **By kind.** Changed numbers: 40 of 75 not confirmed (53%); negations: 17 of
   25 (68%). A small change (by 1 or 2) was caught 27 of 46 times, a larger one 13
@@ -3519,6 +3519,11 @@ sweep's haiku, one call per memory.
   "confirmed" must not be read as "true". Unfalsified memories came back 94
   confirmed, 38 unsupported, 1 contradicted; the 29% unsupported is Track 33's
   37% again under a different prompt.
+- **V4 in words.** The bar was written for twenty verdicts and one existed, so
+  it cannot pass on its own terms, and reading it as "the operator agreed
+  with none of the contradictions on true memories" is the same fact as V2's
+  1 in 133: the single false contradiction was a judge reading a turn about
+  the same value as an override of it. Precision stays the gate's basis.
 - **Consequence.** The gate ships on, per the registration (V2 passed). The
   product text says what a verdict is worth. The next lever is the judge's
   model and prompt (haiku, one pass; a stronger judge or a second pass on
