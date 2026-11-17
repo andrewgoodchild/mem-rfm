@@ -87,8 +87,10 @@ outcomes, never when the ledger has voted it down or its own source
 contradicts it. The last gate is the newest. `mem_rfm_cli.py verify`
 re-reads the transcript a formed memory came from and marks it confirmed,
 contradicted or unsupported, because a rule is rarely acted on through a
-command and the ledger never sees it (Track 31); its verdicts are
-measured in Track 35 before they should be trusted unseen.
+command and the ledger never sees it (Track 31). Track 35 measured the
+verdicts: `contradicted` is worth acting on (one false alarm in 133 true
+memories), `confirmed` is not proof (57 of 100 falsified memories were
+caught), so only `contradicted` gates delivery.
 
 There is also an **ungated alternative** to the review step. `sweep.py`
 runs continuously, from cron or a hook, doing one cheap LLM extraction
