@@ -3882,6 +3882,89 @@ judge picks at most 5 from its prefilter of 8. Nothing else changes; no call had
 been made. The script is `bench-quality/pv4_eval.py`; a run with any scorer but
 the benchmark's is a wiring test and is not reported.
 
+**Track 37 scored (2026-11-17): A4 PASS; A1, A2, A3 FAIL. Neither the judge nor
+the prior beat cosine top-5, and the venue's own full-context number sits below
+its own baseline.**
+
+Run: 30 test users, 4,237 questions, three arms, 12,711 rows; answerer
+`claude-haiku-5.5` through OpenRouter with reasoning off (37c), K = 5 whole
+chats (37b), the benchmark's scorer (Qwen3-Embedding-4B, run locally in bf16).
+Six workers, 3.3 hours. Spend $5.84 reported, $0.53 on the discarded attempt,
+under the $20 stop. Empty answers 110 of 12,711 (0.9%; by arm 38 / 31 / 41; the
+2% warning did not fire). The judge fell back to cosine on 335 of 4,237 (7.9%).
+Disclosure on order: the reported run's first calls went out shortly after
+12:05 local and the script was committed at 13:04 (989c110); the file as
+committed is byte-identical to the one that ran and has not changed since, so
+"committed before the first call" was met in content and missed by an hour in
+time.
+
+| arm | accuracy (n = 4,237) | hard (n = 629) | first half | second half | $ per question |
+|---|---|---|---|---|---|
+| sim | 0.598 | 0.382 | 0.615 | 0.581 | 0.00041 |
+| rfm | 0.600 | 0.377 | 0.604 | 0.596 | 0.00041 |
+| judge | 0.590 | 0.370 | 0.593 | 0.586 | 0.00057 |
+
+Bars (paired bootstrap, 10,000 resamples, seed 7):
+  A1  FAIL. judge − sim on hard: −0.011, CI [−0.045, +0.024], n = 629. Bar
+      ≥ +0.05 with CI excluding 0. Six points short and on the wrong side of
+      zero.
+  A2  FAIL. rfm − sim, second half: +0.015, CI [−0.003, +0.033], n = 2,128.
+      Right direction, interval touching zero: PrefEval's PE-P2 whisper
+      again, at the same size.
+  A3  FAIL. rfm − sim, first half: −0.011, CI [−0.030, +0.007], n = 2,109.
+      Bar: lower bound > −0.01. The point estimate sits at the bar and the
+      interval is three times too wide for it; a no-harm bar at one point
+      needs about nine times the questions. Registered as written, it fails.
+  A4  PASS. judge cost 1.39× sim per question (bar 3×).
+
+Reported, no bar. Normalized gain against sim with a ceiling of 1.0: rfm 0.005,
+judge −0.021. Memorilla's Table 11 on the same split (Qwen3-8B decoder; not
+pooled with ours, a different answerer): closed book 58.30 (hard 31.96), RAG
+top-1 62.21 (38.00), RAG top-5 64.98 (39.27), RAG top-50 65.78 (41.97), full
+context 59.12 (36.57), Mem0 65.07 (44.20), MemoRAG 67.88 (45.95), Memorilla
+66.65 (41.97). Full context is below RAG top-5 by the venue's own measurement,
+so the registered "full context as the ceiling where it is published" resolves
+to: published, and not a ceiling. Two hundred chats run past Qwen3-8B's native
+window (the paper doubles it with YaRN), which is the condition Amendment 19b
+attaches to the third arm; Track 36's full-history arm won because forty
+questions fit. Their RAG top-5 at 64.98 against our sim at 59.8 is a difference
+of answerer and answer style, not of retrieval: both deliver the five
+cosine-nearest chats.
+
+What moved, and where it did not:
+- The prior changed the delivered set against sim on 2,016 of 4,237 questions
+  (48%). On those, rfm alone was right on 191 and sim alone on 164: 27
+  questions, 0.6 points. Per user, rfm beat sim on 13, lost on 14, tied on 3,
+  range −0.056 to +0.086. Hard subset, second half: +0.003, CI [−0.049,
+  +0.052]. With oracle outcomes, which this venue grants and the live one never
+  will, the mechanism's ceiling here is under a point.
+- The judge delivered 3.8 chats a question against sim's 5. Where it ran (3,902
+  questions) it scored 0.593 to sim's 0.604 on the same questions; on the hard
+  subset where it ran (578), 0.374 to 0.389. It never adds, since the budget is
+  already full; it can only remove, and what it removed was needed more often
+  than the removal helped. The registered A1 tests the judge as a filter
+  inside a fixed budget, and as a filter it loses. A judge that re-ranks the
+  prefilter of 8 into exactly 5 would separate selection from pruning; that is
+  a new registration (next-work item 16), not a re-reading of this one.
+- Venue quirks, shared by every arm and removed from the bars by pairing, but
+  a cap on the absolute numbers: 941 of sim's 4,237 answers (22%) hedge ("I
+  don't have any record...") and those score 0.515 against 0.62 for the rest;
+  218 answers across the three arms dispute the question's persona name,
+  because for some users the questions name a persona the chats never use
+  (user 127's questions ask about "Evie"; its chats are "Leo:"). Synthetic
+  data, as disclosed at registration.
+
+Reading. PrefEval said profile retrieval fails on applicability. Track 37 says
+the two tools this project had for applicability do not fix it on a venue
+built for it: a one-call judge inside the budget loses a point, an outcome
+prior with oracle outcomes gains under one. The venue's leaderboard says the
+same from the other side: every published system, trained or not, lands within
+three points of plain top-5 retrieval. The hard subset moved by under a point
+across three arms whose delivered chats differed on half the questions. Track
+37 is closed; PersonalizationV4 stays the applicability venue for the
+re-ranking judge, and no claim about the ledger is made from it.
+
+
 
 ## Track 38 — discretionary saving on a current model (registered 2026-11-17, not run)
 

@@ -220,7 +220,11 @@ Two rules join them (PROTOCOL.md Amendments 19 and 19b): where a track's
 source material is conversations or transcripts, its standard control is a
 search over the raw material, not "no memory"; and where the source fits
 the window, full context is the third standard arm. Track 30 is the
-precedent for the first; Track 36's `icl` arm for the second.
+precedent for the first; Track 36's `icl` arm for the second. The "fits
+the window" clause is load-bearing: on PersonalizationV4 the venue's own
+full-context arm, two hundred chats stretched past the decoder's native
+window, scores below its RAG top-5 (Track 37), so there the third arm is
+a published number, not a ceiling.
 
 ## Known limits
 

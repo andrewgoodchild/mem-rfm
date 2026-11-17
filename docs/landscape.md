@@ -100,6 +100,11 @@ from outcomes, and nothing in their code path runs against an API model.
 Three things were taken (Amendment 19b, methodology.md "Standing
 measures", Track 37): full context as a standard arm, the hard-subset
 measure, and PersonalizationV4 as the applicability venue.
+Its Table 11 (Qwen3-8B decoder, test split) puts PV4 at closed book 58.30,
+RAG top-5 64.98, full context 59.12, Mem0 65.07, MemoRAG 67.88, Memorilla
+66.65: every memory method within three points of plain retrieval, and
+full context below it. Track 37 ran mem-rfm's arms on the same split with a
+Claude answerer and landed in the same place (RESULTS.md).
 
 ## Zep, specifically (added 2026-08-27)
 

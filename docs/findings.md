@@ -44,6 +44,19 @@ thesis in another domain: in its Pokémon runs the memory that paid held
 strategies and tested rules that existed only because the agent wrote them
 down, never what was readable from the screen.
 
+The other half of the retrieval problem, applicability (which memory bears on
+a request that does not resemble it, the PrefEval finding), did not yield to
+the two tools this project had for it. On PersonalizationV4, where every
+question needs two or more facts the user's chats show but never state, a
+one-call judge filtering cosine's top eight chats into at most five scored a
+point below plain cosine top-5 on the hard subset, and the outcome prior with
+oracle outcomes gained 1.5 points on the second half of each user's questions
+with an interval touching zero (Track 37). The venue's own leaderboard says
+the same from the other side: every published system, trained or not, lands
+within three points of plain top-5 retrieval, and full context sits below it
+once two hundred chats outrun the model's native window. Whatever closes that
+gap is not a filter inside the budget and not an outcome prior.
+
 The scoring prior's reliable jobs turned out to be **safety and
 maintenance** rather than raw ranking quality, and even those are measured
 mostly with oracle feedback: with the live loop's own feedback, no causal
@@ -108,6 +121,7 @@ cost/safety bounds, the rest tested benefit.
 | **does memory beat stateless on a task that grades every answer?** (CL-Bench database, Sonnet 5.5, 40 questions with a schema migration) | normalized gain > 0; no harm after the migration | **PASS** — 0.372 → 0.631, gain 0.41; after the migration 0.17 → 0.60; the ledger closed on ~110 real outcomes a run (Track 36) |
 | …and beat full history in context, on reward and cost? | within 0.05 of ICL; cheaper per run | **FAIL** — ICL 0.744 and $0.83 a run against 0.631 and $1.68 with the same caching; the whole run fits in the window (Track 36) |
 | did the outcomes do anything there? | outcomes-on beats outcomes-off after the migration by ≥ 0.05 | **FAIL** — +0.001, CI ±0.07; formation and retrieval did the work, as in Track 29 (Track 36b) |
+| **does an applicability judge fix what PrefEval found?** (PersonalizationV4, 4,237 questions, 629 hard, Haiku 5.5 answering from 5 whole chats) | judge beats cosine top-5 on the hard subset by ≥ 5 points; the outcome prior gains on each user's second half | **1 of 4** — judge −1.1 points on hard (FAIL); prior +1.5 on the second half, CI touching 0 (FAIL); first-half no-harm interval too wide (FAIL); judge cost 1.39× (PASS); the venue's own published full context sits below its RAG top-5 (Track 37) |
 
 The table reads as a boundary, not a verdict. The benefit predictions on
 repository coding all failed — the agents do not pay the costs the
