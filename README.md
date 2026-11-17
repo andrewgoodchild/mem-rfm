@@ -73,6 +73,17 @@ path and a harness-owned path that does the real work:
 | **Outcome** | `memory_feedback` when a memory surprises | inferred from what the session acted on, at session end; a `+1` lands only if the memory's named condition fired |
 | **Retention** | `memory_delete` on "forget that" | idle never-useful memories are pruned; proven ones never are |
 
+Read against Anthropic's five-layer picture of agent memory (transcripts,
+notes, representations, injected context, and an offline "dreaming" pass),
+that table is the promotion rule for the injected layer, made mechanical
+and earned: a memory reaches a session by recency, frequency and signed
+outcomes, never when the ledger has voted it down or its own source
+contradicts it. The last gate is the newest. `mem_rfm_cli.py verify`
+re-reads the transcript a formed memory came from and marks it confirmed,
+contradicted or unsupported, because a rule is rarely acted on through a
+command and the ledger never sees it (Track 31); its verdicts are
+measured in Track 35 before they should be trusted unseen.
+
 There is also an **ungated alternative** to the review step. `sweep.py`
 runs continuously, from cron or a hook, doing one cheap LLM extraction
 per transcript against a configurable ontology.

@@ -262,3 +262,26 @@ def bootstrap_ci(deltas, n=10_000, seed=7):
         return (float("nan"), float("nan"))
     means = rng.choice(arr, size=(n, len(arr)), replace=True).mean(axis=1)
     return (float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5)))
+
+
+def gain(control, memory, best=None, lower_is_better=False):
+    """Normalized gain: the share of the headroom above the control that
+    memory captured, (memory - control) / (best - control). CL-Bench's
+    measure of statefulness (arXiv 2606.05661, section 4), adopted here
+    2026-11-08 so a track reports one number for how much of what was left
+    to win memory won. `best` is the metric's ceiling (1.0 for a rate, the
+    task count for a count); for a cost such as corrections per task, pass
+    lower_is_better=True and best defaults to 0. None when there is no
+    headroom: a control already at the ceiling cannot be helped, which is
+    the Track 22 finding on the stronger model in one number."""
+    if lower_is_better:
+        best = 0.0 if best is None else best
+        room = control - best
+        won = control - memory
+    else:
+        best = 1.0 if best is None else best
+        room = best - control
+        won = memory - control
+    if room <= 0:
+        return None
+    return won / room

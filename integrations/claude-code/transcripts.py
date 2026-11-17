@@ -42,13 +42,15 @@ Event = collections.namedtuple("Event", "cmd is_err body got full",
 BODY_CAP = 800
 
 Session = collections.namedtuple(
-    "Session", "events exposures seen prose start readable cwd",
-    defaults=(None,))
+    "Session", "events exposures seen prose start readable cwd tools",
+    defaults=(None, None))
 """exposures: {memory_id: (content, first_event_idx)} -- memories injected
 by a hook or returned by memory_search, the ones outcome inference credits.
 seen: {memory_id: content} -- every memory the session was shown by any
 route, including memory_list/get/export; what makes a later restatement of
-it not independent evidence (quarantine)."""
+it not independent evidence (quarantine).
+tools: {tool name: calls} -- every tool_use in the session, the denominator
+of the memory-work share (memory_* calls among all calls) session_end logs."""
 
 EMPTY = Session([], {}, {}, [], None, False)
 
@@ -259,6 +261,19 @@ def claude_prose(records):
     return out
 
 
+def claude_tools(records):
+    """{tool name: calls}, every tool_use block in the session."""
+    out = collections.Counter()
+    for d in records:
+        content = (d.get("message") or {}).get("content")
+        if not isinstance(content, list):
+            continue
+        for b in content:
+            if isinstance(b, dict) and b.get("type") == "tool_use":
+                out[str(b.get("name") or "?")] += 1
+    return dict(out)
+
+
 def claude_start(records):
     """Epoch seconds of the earliest transcript timestamp, or None."""
     best = None
@@ -311,6 +326,7 @@ def read_claude_code(path, prose=True):
         start=claude_start(records),
         readable=claude_readable(records),
         cwd=claude_cwd(records),
+        tools=claude_tools(records),
     )
 
 

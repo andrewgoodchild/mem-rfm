@@ -1,0 +1,199 @@
+usage: clbench [-h] [--system SYSTEM] [--task TASK] [--config CONFIG]
+               [--debug] [-v] [--verbosity VERBOSITY] [--dry-run]
+               [--output OUTPUT] [--system-params SYSTEM_PARAMS]
+               [--task-params TASK_PARAMS] [--runs RUNS]
+               [--max-workers MAX_WORKERS]
+               [--run-mode {replicate,resample,permute}]
+               [--verbose-runs | --no-verbose-runs]
+               [--live-dashboard | --no-live-dashboard]
+               [--live-server | --no-live-server]
+               [--run-group-id RUN_GROUP_ID] [--system.args SYSTEM.ARGS]
+               [--system.kwargs SYSTEM.KWARGS] [--task.variant TASK.VARIANT]
+               [--task.schedule TASK.SCHEDULE]
+               [--task.run-index TASK.RUN_INDEX]
+               [--task.rollout-index TASK.ROLLOUT_INDEX]
+               [--task.db-path TASK.DB_PATH]
+               [--task.questions-path TASK.QUESTIONS_PATH]
+               [--task.num-questions TASK.NUM_QUESTIONS]
+               [--task.num-instances TASK.NUM_INSTANCES]
+               [--task.max-queries-per-question TASK.MAX_QUERIES_PER_QUESTION]
+               [--task.seed TASK.SEED]
+               [--task.response-timeout-seconds TASK.RESPONSE_TIMEOUT_SECONDS]
+clbench: error: unrecognized arguments: --system.model openrouter/anthropic/claude-sonnet-5.5 --system.provider_mode litellm_chat
+usage: clbench [-h] [--system SYSTEM] [--task TASK] [--config CONFIG]
+               [--debug] [-v] [--verbosity VERBOSITY] [--dry-run]
+               [--output OUTPUT] [--system-params SYSTEM_PARAMS]
+               [--task-params TASK_PARAMS] [--runs RUNS]
+               [--max-workers MAX_WORKERS]
+               [--run-mode {replicate,resample,permute}]
+               [--verbose-runs | --no-verbose-runs]
+               [--live-dashboard | --no-live-dashboard]
+               [--live-server | --no-live-server]
+               [--run-group-id RUN_GROUP_ID] [--system.model SYSTEM.MODEL]
+               [--system.max-tokens SYSTEM.MAX_TOKENS]
+               [--system.system-prompt SYSTEM.SYSTEM_PROMPT]
+               [--system.name SYSTEM.NAME]
+               [--system.reserve-tokens SYSTEM.RESERVE_TOKENS]
+               [--system.provider-mode SYSTEM.PROVIDER_MODE]
+               [--system.openai-store SYSTEM.OPENAI_STORE]
+               [--system.openai-include-encrypted-reasoning SYSTEM.OPENAI_INCLUDE_ENCRYPTED_REASONING]
+               [--system.anthropic-max-tokens SYSTEM.ANTHROPIC_MAX_TOKENS]
+               [--task.variant TASK.VARIANT] [--task.schedule TASK.SCHEDULE]
+               [--task.run-index TASK.RUN_INDEX]
+               [--task.rollout-index TASK.ROLLOUT_INDEX]
+               [--task.db-path TASK.DB_PATH]
+               [--task.questions-path TASK.QUESTIONS_PATH]
+               [--task.num-questions TASK.NUM_QUESTIONS]
+               [--task.num-instances TASK.NUM_INSTANCES]
+               [--task.max-queries-per-question TASK.MAX_QUERIES_PER_QUESTION]
+               [--task.seed TASK.SEED]
+               [--task.response-timeout-seconds TASK.RESPONSE_TIMEOUT_SECONDS]
+clbench: error: unrecognized arguments: --system.provider_mode litellm_chat
+Running icl_cached on database_exploration...
+System params: {'model': 'openrouter/anthropic/claude-sonnet-5.5', 'system_prompt': '', 'name': 'icl_cached', 'reserve_tokens': 500, 'provider_mode': 'litellm_chat', 'openai_store': True, 'openai_include_encrypted_reasoning': False}
+Task params: {'schedule': 'default', 'db_path': '<repo>/bench-quality/data/clbench/data/database_exploration/products.db', 'questions_path': '<repo>/bench-quality/data/clbench/data/database_exploration/questions.json', 'num_questions': 30, 'max_queries_per_question': 15, 'seed': 42, 'response_timeout_seconds': 60.0, 'expected_num_instances': 40}
+
+Live dashboard: http://127.0.0.1:56064/viewers/single_task_viewer.html?artifact=results/database_exploration/live/2026-11-17T01-18-49.026857Z/manifest.json
+
+Starting 3 run(s) + 40-instance baseline with 12 parallel workers [group 2026-11-17T01-18-49.026857Z, mode=permute]
+  Baseline 1/40 complete (instance #7) - mean so far: 0.8000
+  Baseline 2/40 complete (instance #9) - mean so far: 0.7333
+  Baseline 3/40 complete (instance #6) - mean so far: 0.7556
+  Baseline 4/40 complete (instance #1) - mean so far: 0.7333
+  Baseline 5/40 complete (instance #3) - mean so far: 0.7200
+  Baseline 6/40 complete (instance #4) - mean so far: 0.7111
+  Baseline 7/40 complete (instance #11) - mean so far: 0.7048
+  Baseline 8/40 complete (instance #10) - mean so far: 0.7000
+  Baseline 9/40 complete (instance #8) - mean so far: 0.6815
+  Baseline 10/40 complete (instance #5) - mean so far: 0.6800
+  Baseline 11/40 complete (instance #12) - mean so far: 0.6788
+  Baseline 12/40 complete (instance #14) - mean so far: 0.6889
+  Baseline 13/40 complete (instance #16) - mean so far: 0.6923
+  Baseline 14/40 complete (instance #2) - mean so far: 0.6429
+  Baseline 15/40 complete (instance #13) - mean so far: 0.6445
+  Baseline 16/40 complete (instance #17) - mean so far: 0.6042
+  Baseline 17/40 complete (instance #18) - mean so far: 0.6118
+  Baseline 18/40 complete (instance #19) - mean so far: 0.6222
+  Baseline 19/40 complete (instance #20) - mean so far: 0.6211
+  Baseline 20/40 complete (instance #21) - mean so far: 0.6267
+  Baseline 21/40 complete (instance #23) - mean so far: 0.5968
+  Baseline 22/40 complete (instance #22) - mean so far: 0.5697
+  Baseline 23/40 complete (instance #24) - mean so far: 0.5449
+  Baseline 24/40 complete (instance #25) - mean so far: 0.5528
+  Baseline 25/40 complete (instance #15) - mean so far: 0.5307
+  Baseline 26/40 complete (instance #32) - mean so far: 0.5103
+  Baseline 27/40 complete (instance #28) - mean so far: 0.4914
+  Baseline 28/40 complete (instance #27) - mean so far: 0.4952
+  Baseline 29/40 complete (instance #31) - mean so far: 0.4782
+  Baseline 30/40 complete (instance #26) - mean so far: 0.4622
+  Baseline 31/40 complete (instance #30) - mean so far: 0.4473
+  Baseline 32/40 complete (instance #37) - mean so far: 0.4563
+  Baseline 33/40 complete (instance #39) - mean so far: 0.4606
+  Baseline 34/40 complete (instance #35) - mean so far: 0.4471
+  Baseline 35/40 complete (instance #29) - mean so far: 0.4343
+  Baseline 36/40 complete (instance #34) - mean so far: 0.4222
+  Baseline 37/40 complete (instance #36) - mean so far: 0.4216
+  Baseline 38/40 complete (instance #38) - mean so far: 0.4263
+  Baseline 39/40 complete (instance #33) - mean so far: 0.4154
+  Baseline 40/40 complete (instance #40) - mean so far: 0.4050
+  Run 3/3 complete - score: 0.6967
+  Run 1/3 complete - score: 0.7583
+  Run 2/3 complete - score: 0.7367
+
+================================================================================
+BENCHMARK
+================================================================================
+
+Final cumulative gain: +13.0217
+Final cumulative reward: +29.2218
+Baseline reward total: +16.2001
+Baseline coverage: 40/40
+
+Runs:
+  Run 1: cumulative_gain=+14.1328 total_reward=+30.3329 trace=results/database_exploration/traces/2026-11-17T01-18-49.026857Z/run_0000.json
+  Run 2: cumulative_gain=+13.2662 total_reward=+29.4663 trace=results/database_exploration/traces/2026-11-17T01-18-49.026857Z/run_0001.json
+  Run 3: cumulative_gain=+11.6660 total_reward=+27.8661 trace=results/database_exploration/traces/2026-11-17T01-18-49.026857Z/run_0002.json
+
+================================================================================
+RESULTS
+================================================================================
+
+Legacy score aggregate: mean=0.7305 std=0.0313
+
+Load this in the viewer: results/database_exploration/viewer_artifact_2026-11-17T01-18-49.026857Z_20261117_112603.json.gz
+Full trace JSON files: results/database_exploration/traces/2026-11-17T01-18-49.026857Z
+Live viewer URL: http://127.0.0.1:56064/viewers/single_task_viewer.html?artifact=results/database_exploration/live/2026-11-17T01-18-49.026857Z/manifest.json
+Running icl_cached on database_exploration...
+System params: {'model': 'openrouter/anthropic/claude-sonnet-5.5', 'system_prompt': '', 'name': 'icl_cached', 'reserve_tokens': 500, 'provider_mode': 'litellm_chat', 'openai_store': True, 'openai_include_encrypted_reasoning': False}
+Task params: {'schedule': 'default', 'db_path': '<repo>/bench-quality/data/clbench/data/database_exploration/products.db', 'questions_path': '<repo>/bench-quality/data/clbench/data/database_exploration/questions.json', 'num_questions': 30, 'max_queries_per_question': 15, 'seed': 42, 'response_timeout_seconds': 60.0, 'expected_num_instances': 40}
+
+Live dashboard: http://127.0.0.1:57031/viewers/single_task_viewer.html?artifact=results/database_exploration/live/2026-11-17T01-31-21.351796Z/manifest.json
+
+Starting 3 run(s) + 40-instance baseline with 12 parallel workers [group 2026-11-17T01-31-21.351796Z, mode=permute]
+  Baseline 1/40 complete (instance #6) - mean so far: 0.8000
+  Baseline 2/40 complete (instance #7) - mean so far: 0.7667
+  Baseline 3/40 complete (instance #9) - mean so far: 0.7111
+  Baseline 4/40 complete (instance #4) - mean so far: 0.6833
+  Baseline 5/40 complete (instance #3) - mean so far: 0.6800
+  Baseline 6/40 complete (instance #1) - mean so far: 0.6778
+  Baseline 7/40 complete (instance #11) - mean so far: 0.6762
+  Baseline 8/40 complete (instance #8) - mean so far: 0.6583
+  Baseline 9/40 complete (instance #10) - mean so far: 0.6667
+  Baseline 10/40 complete (instance #12) - mean so far: 0.6733
+  Baseline 11/40 complete (instance #2) - mean so far: 0.6667
+  Baseline 12/40 complete (instance #5) - mean so far: 0.6611
+  Baseline 13/40 complete (instance #14) - mean so far: 0.6667
+  Baseline 14/40 complete (instance #13) - mean so far: 0.6667
+  Baseline 15/40 complete (instance #16) - mean so far: 0.6711
+  Baseline 16/40 complete (instance #17) - mean so far: 0.6292
+  Baseline 17/40 complete (instance #19) - mean so far: 0.6392
+  Baseline 18/40 complete (instance #22) - mean so far: 0.6037
+  Baseline 19/40 complete (instance #20) - mean so far: 0.6000
+  Baseline 20/40 complete (instance #18) - mean so far: 0.6000
+  Baseline 21/40 complete (instance #21) - mean so far: 0.6032
+  Baseline 22/40 complete (instance #25) - mean so far: 0.6091
+  Baseline 23/40 complete (instance #15) - mean so far: 0.5826
+  Baseline 24/40 complete (instance #24) - mean so far: 0.5583
+  Baseline 25/40 complete (instance #23) - mean so far: 0.5360
+  Baseline 26/40 complete (instance #32) - mean so far: 0.5154
+  Baseline 27/40 complete (instance #31) - mean so far: 0.4963
+  Baseline 28/40 complete (instance #27) - mean so far: 0.5000
+  Baseline 29/40 complete (instance #28) - mean so far: 0.4828
+  Baseline 30/40 complete (instance #26) - mean so far: 0.4667
+  Baseline 31/40 complete (instance #29) - mean so far: 0.4516
+  Baseline 32/40 complete (instance #35) - mean so far: 0.4375
+  Baseline 33/40 complete (instance #39) - mean so far: 0.4465
+  Baseline 34/40 complete (instance #37) - mean so far: 0.4549
+  Baseline 35/40 complete (instance #38) - mean so far: 0.4590
+  Baseline 36/40 complete (instance #36) - mean so far: 0.4593
+  Baseline 37/40 complete (instance #30) - mean so far: 0.4468
+  Baseline 38/40 complete (instance #34) - mean so far: 0.4351
+  Baseline 39/40 complete (instance #40) - mean so far: 0.4239
+  Baseline 40/40 complete (instance #33) - mean so far: 0.4133
+  Run 3/3 complete - score: 0.7700
+  Run 2/3 complete - score: 0.7517
+  Run 1/3 complete - score: 0.7100
+
+================================================================================
+BENCHMARK
+================================================================================
+
+Final cumulative gain: +13.2220
+Final cumulative reward: +29.7552
+Baseline reward total: +16.5332
+Baseline coverage: 40/40
+
+Runs:
+  Run 1: cumulative_gain=+11.8664 total_reward=+28.3996 trace=results/database_exploration/traces/2026-11-17T01-31-21.351796Z/run_0000.json
+  Run 2: cumulative_gain=+13.5333 total_reward=+30.0665 trace=results/database_exploration/traces/2026-11-17T01-31-21.351796Z/run_0001.json
+  Run 3: cumulative_gain=+14.2664 total_reward=+30.7996 trace=results/database_exploration/traces/2026-11-17T01-31-21.351796Z/run_0002.json
+
+================================================================================
+RESULTS
+================================================================================
+
+Legacy score aggregate: mean=0.7439 std=0.0307
+
+Load this in the viewer: results/database_exploration/viewer_artifact_2026-11-17T01-31-21.351796Z_20261117_113901.json.gz
+Full trace JSON files: results/database_exploration/traces/2026-11-17T01-31-21.351796Z
+Live viewer URL: http://127.0.0.1:57031/viewers/single_task_viewer.html?artifact=results/database_exploration/live/2026-11-17T01-31-21.351796Z/manifest.json

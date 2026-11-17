@@ -63,9 +63,36 @@ def test_fired_reads_past_the_cut():
     assert "versionrequirementerror" in SE.fired_classes([e])
 
 
+def test_funnel_helpers():
+    """The exposure funnel's two counts session_end logs (2026-11-08)."""
+    E = SE.transcripts.Event
+    mems = {1: (SPANNED, 0), 2: (PROSE, 0), 3: ("Use `make lint` first.", 1)}
+    events = [E("pip install 'alabaster<0.7.12'", False, "ok", True),
+              E("git status", False, "", True)]
+    assert SE.acted_ids(mems, events) == {1, 2}
+    prose = ["Memory [3] says to run `make lint` first; skipping.",
+             "In zsh, status is a read-only variable for git commands, noted."]
+    assert SE.mentioned_ids(mems, prose) == {2, 3}
+    assert SE.mentioned_ids(mems, []) == set()
+
+
+def test_tool_counts():
+    recs = [{"type": "assistant", "message": {"content": [
+                {"type": "tool_use", "name": "Bash", "input": {"command": "ls"}},
+                {"type": "tool_use", "name": "mcp__rfm-memory__memory_search"},
+                {"type": "text", "text": "hi"}]}},
+            {"type": "assistant", "message": {"content": [
+                {"type": "tool_use", "name": "Edit"}]}}]
+    tools = SE.transcripts.claude_tools(recs)
+    assert tools == {"Bash": 1, "mcp__rfm-memory__memory_search": 1, "Edit": 1}
+    assert sum(v for k, v in tools.items() if "memory_" in k) == 1
+
+
 if __name__ == "__main__":
     test_verdicts()
     test_spanned_memory_needs_its_span()
     test_prose_keeps_token_share()
     test_fired_reads_past_the_cut()
+    test_funnel_helpers()
+    test_tool_counts()
     print("ok")

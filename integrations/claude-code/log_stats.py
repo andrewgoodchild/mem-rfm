@@ -15,6 +15,17 @@ usage: whether the loop is closed. Every result in this repository assumes
 outcomes come back. If the client never calls memory_feedback, the value axis
 is inert and you are running cosine similarity with extra steps.
 
+Three standing measures follow, counted from the hooks' own lines
+(2026-11-08, after Anthropic's agent-memory write-up, which reports each):
+
+  exposure funnel    of the memories sessions were shown, how many the
+                     assistant mentioned, acted on, and earned an outcome
+  memory-work share  memory tool calls among all tool calls, the in-session
+                     attention memory costs (their Sonnet 3.7 spent 17
+                     steps reorganizing its notes)
+  formation yield    bytes of memory formed per byte of conversation read,
+                     and the verify pass's verdicts on what was formed
+
 This applies the same rules the benchmark harness does (PROTOCOL.md
 Amendments 11-12): a channel that never varies is reported as DEAD rather
 than quietly averaged, and an exact zero is treated as a bug report.
@@ -163,6 +174,52 @@ def main():
     never = [mid for mid, (p, m) in fb.items() if p + m == 0]
     if never:
         print(f"\n  {len(never)} memories retrieved but never rated")
+
+    # ---- 4. exposure funnel -----------------------------------------------
+    ends = [r for r in recs if r["op"] == "session_end" and r.get("readable")]
+    if ends:
+        in_play = sum(r.get("in_play", 0) for r in ends)
+        mentioned = sum(r.get("mentioned", 0) for r in ends)
+        acted = sum(r.get("acted", 0) for r in ends)
+        outcomes = sum(r.get("outcomes", 0) for r in ends)
+        print("\n--- exposure funnel (per memory shown, over "
+              f"{len(ends)} sessions) ---")
+        print(f"  shown      : {in_play}")
+        for name, n in (("mentioned", mentioned), ("acted on", acted),
+                        ("outcome", outcomes)):
+            print(f"  {name:<11}: {n:>5}  ({n / max(in_play, 1):.0%} of shown)")
+        if in_play and not mentioned and all("mentioned" in r for r in ends):
+            print("  Nothing shown was ever referred to. Either the memories")
+            print("  do not apply to this work, or they are not being read.")
+
+    # ---- 5. memory-work share -------------------------------------------
+    calls = sum(r.get("tool_calls", 0) for r in ends)
+    mem_calls = sum(r.get("memory_calls", 0) for r in ends)
+    if calls:
+        print("\n--- memory-work share ---")
+        print(f"  memory tool calls / all tool calls : {mem_calls}/{calls}"
+              f"  ({mem_calls / calls:.1%})")
+
+    # ---- 6. formation yield ----------------------------------------------
+    decides = [r for r in recs if r["op"] == "decide"]
+    verifies = [r for r in recs if r["op"] == "verify"]
+    if decides or verifies:
+        print("\n--- formation yield ---")
+    if decides:
+        src = sum(r.get("source_chars", 0) for r in decides)
+        formed = sum(r.get("formed_chars", 0) for r in decides)
+        print(f"  conversations formed            : {len(decides)}")
+        print(f"  memories formed / saved         : "
+              f"{sum(r.get('formed', 0) for r in decides)} / "
+              f"{sum(r.get('saved', 0) for r in decides)}")
+        print(f"  store-to-source ratio (bytes)   : {formed / max(src, 1):.3f}")
+        if src and formed / src > 0.5:
+            print("  The memory layer is approaching its source in size, so it")
+            print("  is abstracting little; a transcript search would do.")
+    if verifies:
+        byv = Counter(r.get("verdict") for r in verifies)
+        print("  verify verdicts                 : "
+              + "  ".join(f"{k}={v}" for k, v in sorted(byv.items())))
 
 
 if __name__ == "__main__":

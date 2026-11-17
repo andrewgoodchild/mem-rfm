@@ -5,8 +5,8 @@ store is host-owned, and used to be added by whichever process happened to
 run first (server, session_end, sweep), with no record of what a store was
 built with. ensure() is now the one migration path, stamped in PRAGMA
 user_version, and the rules several delivery paths must share live here
-beside it: which scope a directory is, what scope a session may see, and
-what has cleared quarantine.
+beside it: which scope a directory is, what scope a session may see, what
+has cleared quarantine, and what the verify pass has found contradicted.
 
 export_store / import_store are the lossless round trip. A ledger earned
 over months is the one thing a store holds that cannot be rebuilt, and
@@ -19,13 +19,28 @@ import re
 import sqlite3
 import time
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 FORMAT = "mem-rfm-export"
 FORMAT_VERSION = 1
 
+# quote: the verbatim excerpt of the source a formed memory rests on, kept so
+# the memory can be checked against that source later (verify.py). verified:
+# the last check's verdict, one of VERDICTS, or NULL for never checked;
+# verified_at: when. Rows a person saved by hand have none of the three.
 COLUMNS = (("embedding", "BLOB"), ("scope", "TEXT"),
            ("condition_class", "TEXT"), ("sightings", "INTEGER"),
-           ("era", "TEXT"), ("origins", "TEXT"), ("source", "TEXT"))
+           ("era", "TEXT"), ("origins", "TEXT"), ("source", "TEXT"),
+           ("quote", "TEXT"), ("verified", "TEXT"), ("verified_at", "REAL"))
+# The verify pass's states. Only `contradicted` changes delivery: the source
+# itself overrides the memory, so showing it spends a slot on advice the
+# evidence already voted against. `unsupported` and `source_gone` are
+# information for the operator, not grounds to hide a row.
+VERDICTS = ("confirmed", "contradicted", "unsupported", "source_gone")
+# A verdict is about one wording. Every path that rewrites content runs this
+# first (append its WHERE), so a stamp never outlives the claim it checked;
+# doctrine's EVD-001 found exactly that bug, an attestation surviving a
+# body rewrite and then outranking honest unverified rows.
+CLEAR_VERIFIED = "UPDATE rfm_memories SET verified = NULL, verified_at = NULL"
 TABLES = (
     # Text before a memory_update. An edit keeps the ledger on purpose, so
     # a memory can bank a reputation and then be rewritten; this is what
@@ -121,6 +136,17 @@ def released():
     explicit saves and miner-ratified rows, which never entered it."""
     n = int(os.environ.get("RFM_QUARANTINE", 2))
     return f"(sightings IS NULL OR sightings >= {n})"
+
+
+def not_contradicted():
+    """SQL: the verify pass has not found this row's own source overriding
+    it. Every delivery path applies it beside the negative-value floor: the
+    floor is the ledger voting a memory down, this is its evidence doing so.
+    RFM_VERIFY_GATE=0 shows contradicted rows again (Track 35 measures the
+    verdicts before anyone should trust them unseen)."""
+    if os.environ.get("RFM_VERIFY_GATE", "1") == "0":
+        return "1"
+    return "(verified IS NULL OR verified != 'contradicted')"
 
 
 # ---------------------------------------------------------------- embedder

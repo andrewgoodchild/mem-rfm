@@ -62,12 +62,24 @@ check("chat keeps both sides, drops tools",
       chat == "USER: Seven.\n\nASSISTANT: Set to 7.", repr(chat))
 
 seen = []
-reply = '[{"content": "a"}, {"content": ""}, {"x": 1}, {"content": "b"}]'
-got = D.form("chat", lambda p: seen.append(p) or reply, sweep.parse_json)
-check("form keeps real items", got == ["a", "b"], str(got))
-check("form sends the chat", "chat" in seen[0])
+reply = ('[{"content": "a", "quote": "the chat text"}, '
+         '{"content": "", "quote": "the chat text"}, {"x": 1}, '
+         '{"content": "b", "quote": "not in it at all"}, {"content": "c"}, '
+         '{"content": "d", "quote": "THE   chat text"}]')
+dropped = []
+got = D.form("here is the chat text", lambda p: seen.append(p) or reply,
+             sweep.parse_json, dropped)
+check("form keeps grounded items", got == ["a", "d"], str(got))
+check("form drops an absent or missing quote", dropped == ["b", "c"],
+      str(dropped))
+check("form sends the chat", "the chat text" in seen[0])
 check("form survives garbage",
       D.form("c", lambda p: "no json", sweep.parse_json) == [])
+items = D.form_items("here is the chat text", lambda p: reply,
+                     sweep.parse_json)
+check("form_items keeps the quote",
+      items == [{"content": "a", "quote": "the chat text"},
+                {"content": "d", "quote": "THE   chat text"}], str(items))
 
 parts = D.windows("aaaa\n\nbbbb\n\nccccccccccc\n\ndd", cap=10)
 check("windows break between turns, cut a long one",
@@ -85,6 +97,16 @@ check("sanitized", "[rfm-memory:" not in db.execute(
     "SELECT content FROM rfm_memories WHERE id = ?", (ids[1],)).fetchone()[0])
 check("re-forming adds nothing", D.save(db, ["rule x"], "chat:a", "proj",
                                         embed) == [])
+check("a string memory has no quote and no origin", db.execute(
+    "SELECT quote, origins FROM rfm_memories WHERE id = ?", (ids[0],)
+).fetchone() == (None, None))
+qid = D.save(db, [{"content": "rule five", "quote": "five it is"}], "chat:q",
+             "proj", embed, transcript=path)[0]
+check("a dict memory keeps its quote and transcript", db.execute(
+    "SELECT quote, origins FROM rfm_memories WHERE id = ?", (qid,)
+).fetchone() == ("five it is", json.dumps(
+    [f"transcript:{os.path.abspath(path)}"])))
+db.execute("DELETE FROM rfm_memories WHERE id = ?", (qid,))
 db.commit()
 db.close()
 

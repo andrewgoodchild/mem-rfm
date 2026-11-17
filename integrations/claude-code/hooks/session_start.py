@@ -149,6 +149,11 @@ def main():
         # the same lesson — one poisoned transcript is insufficient by
         # construction. Rows with NULL sightings (explicit saves,
         # miner-ratified) are unaffected.
+        # Verify gate (store.not_contradicted): a row whose own source the
+        # verify pass found overriding it is not shown. The floor is the
+        # ledger voting a memory down; this is the evidence doing so, for
+        # the memories the ledger never sees (Track 31: a stale decision
+        # shown 15 times earned nothing).
         # Scope gate: one store serves every repository, and this query is
         # the default delivery path. A memory scoped to another project
         # costs a slot and the context it fills, and the docs promise it
@@ -158,7 +163,8 @@ def main():
         rows = db.execute(
             "SELECT id, content, rfm_score(id) AS s, created_at FROM rfm_memories "
             "WHERE NOT (outcome_count > 0 AND value_score < 0) "
-            f"AND {store.released()} AND {scoped} "
+            f"AND {store.released()} AND {store.not_contradicted()} "
+            f"AND {scoped} "
             "ORDER BY s DESC LIMIT ?", (*scope_args, TOP_K)).fetchall()
     lines, used, truncated = [], 0, []
     budget = CHAR_BUDGET - len(note)  # the note spends injection budget too

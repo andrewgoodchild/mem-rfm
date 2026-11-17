@@ -1,0 +1,74 @@
+Running mem_rfm on database_exploration...
+System params: {'model': 'openrouter/anthropic/claude-sonnet-5.5', 'name': 'mem_rfm_flat', 'system_prompt': '', 'k': 3, 'floor': 0.0, 'form': True, 'ledger': False, 'max_result_chars': 1500}
+Task params: {'schedule': 'default', 'db_path': '<repo>/bench-quality/data/clbench/data/database_exploration/products.db', 'questions_path': '<repo>/bench-quality/data/clbench/data/database_exploration/questions.json', 'num_questions': 30, 'max_queries_per_question': 15, 'seed': 42, 'response_timeout_seconds': 60.0, 'expected_num_instances': 40}
+
+Live dashboard: http://127.0.0.1:57647/viewers/single_task_viewer.html?artifact=results/database_exploration/live/2026-11-17T01-39-18.285065Z/manifest.json
+
+Starting 3 run(s) + 40-instance baseline with 6 parallel workers [group 2026-11-17T01-39-18.285065Z, mode=permute]
+  Baseline 1/40 complete (instance #2) - mean so far: 0.0000
+  Baseline 2/40 complete (instance #1) - mean so far: 0.3333
+  Baseline 3/40 complete (instance #3) - mean so far: 0.4445
+  Baseline 4/40 complete (instance #6) - mean so far: 0.5333
+  Baseline 5/40 complete (instance #4) - mean so far: 0.5600
+  Baseline 6/40 complete (instance #5) - mean so far: 0.5667
+  Baseline 7/40 complete (instance #7) - mean so far: 0.6000
+  Baseline 8/40 complete (instance #9) - mean so far: 0.6000
+  Baseline 9/40 complete (instance #8) - mean so far: 0.5852
+  Baseline 10/40 complete (instance #10) - mean so far: 0.5934
+  Baseline 11/40 complete (instance #11) - mean so far: 0.6061
+  Baseline 12/40 complete (instance #14) - mean so far: 0.6222
+  Baseline 13/40 complete (instance #13) - mean so far: 0.6308
+  Baseline 14/40 complete (instance #12) - mean so far: 0.6286
+  Baseline 15/40 complete (instance #16) - mean so far: 0.6356
+  Baseline 16/40 complete (instance #17) - mean so far: 0.5958
+  Baseline 17/40 complete (instance #18) - mean so far: 0.6000
+  Baseline 18/40 complete (instance #19) - mean so far: 0.6074
+  Baseline 19/40 complete (instance #15) - mean so far: 0.5754
+  Baseline 20/40 complete (instance #20) - mean so far: 0.5767
+  Baseline 21/40 complete (instance #22) - mean so far: 0.5492
+  Baseline 22/40 complete (instance #21) - mean so far: 0.5242
+  Baseline 23/40 complete (instance #25) - mean so far: 0.5015
+  Baseline 24/40 complete (instance #24) - mean so far: 0.4806
+  Baseline 25/40 complete (instance #23) - mean so far: 0.4613
+  Baseline 26/40 complete (instance #27) - mean so far: 0.4436
+  Baseline 27/40 complete (instance #26) - mean so far: 0.4272
+  Baseline 28/40 complete (instance #28) - mean so far: 0.4119
+  Baseline 29/40 complete (instance #29) - mean so far: 0.3977
+  Baseline 30/40 complete (instance #31) - mean so far: 0.3844
+  Baseline 31/40 complete (instance #32) - mean so far: 0.3720
+  Baseline 32/40 complete (instance #30) - mean so far: 0.3604
+  Baseline 33/40 complete (instance #35) - mean so far: 0.3495
+  Baseline 34/40 complete (instance #34) - mean so far: 0.3392
+  Baseline 35/40 complete (instance #33) - mean so far: 0.3295
+  Baseline 36/40 complete (instance #37) - mean so far: 0.3407
+  Baseline 37/40 complete (instance #38) - mean so far: 0.3441
+  Baseline 38/40 complete (instance #36) - mean so far: 0.3421
+  Baseline 39/40 complete (instance #39) - mean so far: 0.3487
+  Baseline 40/40 complete (instance #40) - mean so far: 0.3400
+  Run 3/3 complete - score: 0.6750
+  Run 1/3 complete - score: 0.6400
+  Run 2/3 complete - score: 0.6300
+
+================================================================================
+BENCHMARK
+================================================================================
+
+Final cumulative gain: +12.3333
+Final cumulative reward: +25.9334
+Baseline reward total: +13.6001
+Baseline coverage: 40/40
+
+Runs:
+  Run 1: cumulative_gain=+11.9998 total_reward=+25.5999 trace=results/database_exploration/traces/2026-11-17T01-39-18.285065Z/run_0000.json
+  Run 2: cumulative_gain=+11.6000 total_reward=+25.2001 trace=results/database_exploration/traces/2026-11-17T01-39-18.285065Z/run_0001.json
+  Run 3: cumulative_gain=+13.4002 total_reward=+27.0003 trace=results/database_exploration/traces/2026-11-17T01-39-18.285065Z/run_0002.json
+
+================================================================================
+RESULTS
+================================================================================
+
+Legacy score aggregate: mean=0.6483 std=0.0236
+
+Load this in the viewer: results/database_exploration/viewer_artifact_2026-11-17T01-39-18.285065Z_20261117_115454.json.gz
+Full trace JSON files: results/database_exploration/traces/2026-11-17T01-39-18.285065Z
+Live viewer URL: http://127.0.0.1:57647/viewers/single_task_viewer.html?artifact=results/database_exploration/live/2026-11-17T01-39-18.285065Z/manifest.json

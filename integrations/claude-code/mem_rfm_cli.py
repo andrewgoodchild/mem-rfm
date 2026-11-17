@@ -7,6 +7,9 @@ checkout to a working install, and one that says exactly what is broken.
     python3 mem_rfm_cli.py export FILE    every row, ledger included (JSONL)
     python3 mem_rfm_cli.py import FILE    restore into an empty store
     python3 mem_rfm_cli.py reembed        re-embed under $RFM_EMBEDDER
+    python3 mem_rfm_cli.py decide T       form a transcript's decisions
+    python3 mem_rfm_cli.py verify [--all] check formed memories against
+                                          their source transcripts
 
 setup runs six steps, each idempotent, each skipped when already done:
 
@@ -357,7 +360,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("command",
                     choices=("setup", "doctor", "export", "import", "reembed",
-                             "decide"))
+                             "decide", "verify"))
     ap.add_argument("file", nargs="?",
                     help="export/import: the JSONL file; decide: a transcript")
     ap.add_argument("--dry-run", action="store_true",
@@ -367,6 +370,8 @@ def main(argv=None):
                          "(default: this checkout's .venv)")
     ap.add_argument("--save", action="store_true",
                     help="decide: store the memories (default: print them)")
+    ap.add_argument("--all", action="store_true",
+                    help="verify: re-check rows already verified")
     ap.add_argument("--no-preflight", action="store_true",
                     help="skip the smoke test (it loads the embedder)")
     args = ap.parse_args(argv)
@@ -381,6 +386,9 @@ def main(argv=None):
         return subprocess.call([args.python,
                                 os.path.join(HERE, "decisions.py"), args.file]
                                + (["--save"] if args.save else []))
+    if args.command == "verify":
+        return subprocess.call([args.python, os.path.join(HERE, "verify.py")]
+                               + (["--all"] if args.all else []))
     if args.command == "reembed":
         # In the venv: the embedder is not stdlib, and server.py owns it.
         return subprocess.call([args.python, SERVER, "--reembed"])

@@ -76,6 +76,31 @@ re-awarded), and live (Track 19: formed, consolidated to 26 sightings,
 quarantine-promoted, delivered 19/20 — with the honest ledger reading
 value 0.00 because nothing ever proved it helped).
 
+**Verification (added 2026-11-08).** The ledger scores a memory by what
+happened when the agent acted on it through a command. A memory that states
+a rule is rarely acted on that way, so the ledger never sees it: in Track 31
+a stale decision sat in front of the agent on 15 runs and earned nothing,
+and nothing demoted it. Anthropic's agent-memory write-up names the missing
+step: an offline pass ("dreaming") that re-reads the transcript a note came
+from and corrects it, the transcript being the one ground truth a note has.
+`decide` now keeps each memory's verbatim quote and the transcript it was
+formed from, and `mem_rfm_cli.py verify` re-reads that transcript, finds the
+quote's window, and asks whether the conversation still supports the memory
+as stated: `confirmed`, `contradicted` (the model must quote the overriding
+turn, and the code checks the quote is really there), `unsupported`, or
+`source_gone` when Claude Code has deleted the transcript. Only
+`contradicted` changes delivery, through the same gate as the negative-value
+floor (`store.not_contradicted`, `RFM_VERIFY_GATE=0` to lift it). Nothing is
+deleted or rewritten: an LLM retiring memories by comparing them with each
+other was wrong 13 of 21 times (Track 28), and a proposed correction is
+printed for the operator, never applied. A content update clears the
+verdict, so a stamp never outlives the wording it checked. Track 35 measured
+it on 100 mechanically falsified memories: precise (1 false contradiction in
+133 true memories) and blind to nearly half of what is wrong (57 of 100
+caught). So a `contradicted` verdict can be acted on and a `confirmed` one
+cannot be read as "true"; the pass retires a wrong rule about half the time
+the ledger never would. It is operator-invoked and prints every verdict.
+
 ## Getting the M
 
 Without outcomes, `rfm_prior` degenerates to recency + frequency — and we
@@ -169,7 +194,14 @@ has value. Worse, when discretion *does* fire it anti-selects — across 70
 live sessions our agent saved 17 sincerely-chosen lessons and **15 of 16
 later outcomes were negative**. Judging durability mid-task means
 predicting the future; post-hoc, "what did we have to learn?" is an
-observation.
+observation. That measurement is dated: July 2026, one model generation
+(the audited runs are in `bench-quality/live-ab/model-audit.jsonl`).
+Anthropic's November 2026 write-up on agent memory reports salience
+judgment improving sharply across model generations, with the newest
+models writing few, tested notes where an older one wrote hundreds, and a
+"record only failures" rule costing the strongest models the most. So the
+rule below holds for the models it was measured on; a retest on a current
+model is registered in `research/next-work.md`.
 
 Post-hoc capture over-produces — that's its known failure mode. Every
 vendor that auto-captured into a long-lived store retreated, and the ETH
@@ -185,13 +217,17 @@ ranking, because it puts each decision where its evidence is.
 Distilled:
 
 1. Never ask an agent mid-task whether something is worth remembering
-   (measured: 15 of 16 wrong).
+   (measured: 15 of 16 wrong, July 2026, one model generation; see above
+   for why this is dated rather than settled).
 2. Capture and record outcomes at deterministic moments the harness owns.
 3. Stage into review; never auto-write to a long-lived store.
 4. Make formation cheap and retention ruthless — which requires the
    outcome axis, because similarity cannot prune.
 5. Expect cold start (Codex ships six empty hours by design); first-session
    value belongs in checked-in files like `CLAUDE.md`/`AGENTS.md`.
+6. Check a formed memory against its own source, because the ledger cannot
+   see a rule (below). Keep verification a separate axis from outcome: a
+   verdict says the source still supports the wording it checked, no more.
 
 ## Sources
 

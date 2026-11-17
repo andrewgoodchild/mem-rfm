@@ -146,6 +146,13 @@ independent origins produced this lesson, listed in `origins`; injection and
 search require `>= RFM_QUARANTINE`, default 2, with NULL — explicit saves —
 always eligible). A session that saw the condition fire is its own origin;
 everything read rather than observed shares one origin per repository.
+Schema version 3 (2026-11-08) adds `quote` (the verbatim excerpt a `decide`
+memory rests on; a `decide` row also records its transcript in `origins` as
+`transcript:<path>`), `verified` (the verify pass's last verdict:
+`confirmed`, `contradicted`, `unsupported`, `source_gone`, or NULL for never
+checked) and `verified_at`. `mem_rfm_cli.py verify` writes them; every
+delivery path skips `contradicted` rows (`RFM_VERIFY_GATE=0` lifts that);
+`memory_update` clears both, since a verdict is about one wording.
 
 ## Retention
 

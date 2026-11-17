@@ -157,7 +157,8 @@ def jit_inject(body, session, cwd=None):
             "SELECT id, content, created_at, condition_class, rfm_score(id) "
             "FROM rfm_memories "
             "WHERE NOT (outcome_count > 0 AND value_score < 0) "
-            f"AND {store.released()} AND {scoped} "
+            f"AND {store.released()} AND {store.not_contradicted()} "
+            f"AND {scoped} "
             "AND condition_class IS NOT NULL AND condition_class != ''",
             scope_args).fetchall()
         best = None
