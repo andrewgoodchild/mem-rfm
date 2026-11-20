@@ -186,7 +186,8 @@ def retrieve(prompt, cwd=None):
         "source "
         "FROM rfm_memories "
         "WHERE NOT (outcome_count > 0 AND value_score < 0) "
-        f"AND {store.released()} AND {scoped} "
+        f"AND {store.released()} AND {store.not_contradicted()} "
+        f"AND {scoped} "
         "AND embedding IS NOT NULL", args).fetchall()
     scored = []
     for mid, content, blob, prior, created, source in rows:

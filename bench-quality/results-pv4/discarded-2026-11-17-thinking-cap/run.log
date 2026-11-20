@@ -1,0 +1,8 @@
+users 30, to run 30, arms ['sim', 'rfm', 'judge'], K=5, model anthropic/claude-haiku-5.5, scorer Qwen/Qwen3-Embedding-4B
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 6080.78it/s]
+user 127 done (1/30): 423 rows, $0.159, 1489s
+user 128 done (2/30): 423 rows, $0.188, 1490s
+user 126 done (3/30): 423 rows, $0.185, 1492s
+/Users/andrewgoodchild/.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

@@ -24,6 +24,14 @@ Bars, written before the first call:
       count missed.
 Also counted, no bar: memories the secret scan redacted.
 
+Track 33, the same probe after the grounding filter (a memory whose quote is
+not in its window is dropped), bars written before its first call:
+  G1  faithful: at least 80% of kept memories, W1's bar.
+  G2  yield: at least 4 faithful and durable memories per session, about half of
+      Track 32's 9.4. The sample is redrawn, since sessions have been deleted
+      since Track 32, so this compares rates, not sessions.
+Also counted, no bar: memories the filter dropped.
+
 Usage: real_decide_probe.py OUT_DIR [--n 8] [--exclude PATH ...]
 """
 import concurrent.futures
@@ -109,9 +117,19 @@ def main():
             jobs.append((s, w, parts[w]))
     whole = {s for s, (_p, chat) in enumerate(sample)
              if len(D.windows(chat)) <= D.MAX_WINDOWS}
+    def form(job):
+        dropped = []
+        kept = D.form(job[2], sweep.llm, sweep.parse_json, dropped)
+        return kept, dropped
     with concurrent.futures.ThreadPoolExecutor(WORKERS) as ex:
-        formed = list(ex.map(
-            lambda j: D.form(j[2], sweep.llm, sweep.parse_json), jobs))
+        results = list(ex.map(form, jobs))
+    formed = [kept for kept, _d in results]
+    n_dropped = sum(len(d) for _k, d in results)
+    with open(os.path.join(out, "dropped.jsonl"), "w") as f:
+        for (s, w, _p), (_k, d) in zip(jobs, results):
+            for m in d:
+                f.write(json.dumps({"session": s, "window": w, "memory": m})
+                        + "\n")
     items = [(s, w, part, m) for (s, w, part), ms in zip(jobs, formed)
              for m in ms]
     with concurrent.futures.ThreadPoolExecutor(WORKERS) as ex:
@@ -123,7 +141,7 @@ def main():
                      "redacted": secret_scan.redact(m)[0] != m,
                      "faithful": v.get("faithful") is True,
                      "durable": v.get("durable") is True})
-    with open(os.path.join(out, "track32.jsonl"), "w") as f:
+    with open(os.path.join(out, "formed.jsonl"), "w") as f:
         for r in rows:
             f.write(json.dumps(r) + "\n")
     total = len(rows) or 1
@@ -143,6 +161,12 @@ def main():
           f"{len(whole)} sessions read whole: first window {first}, later "
           f"windows {later}")
     print(f"redacted by the secret scan: {sum(r['redacted'] for r in rows)}")
+    per = len(good) / max(1, len(whole))
+    print(f"dropped by the grounding filter: {n_dropped} of "
+          f"{n_dropped + len(rows)} formed")
+    print(f"G1 {'PASS' if faithful / total >= 0.8 else 'FAIL'} as W1; "
+          f"G2 {'PASS' if per >= 4 else 'FAIL'} faithful and durable per "
+          f"session read whole {per:.1f}")
 
 
 if __name__ == "__main__":

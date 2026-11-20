@@ -1,0 +1,265 @@
+Running icl on database_exploration...
+System params: {'model': 'openrouter/anthropic/claude-sonnet-5.5', 'system_prompt': '', 'name': 'icl_baseline', 'reserve_tokens': 500, 'provider_mode': 'auto', 'openai_store': True, 'openai_include_encrypted_reasoning': False}
+Task params: {'schedule': 'default', 'db_path': '<repo>/bench-quality/data/clbench/data/database_exploration/products.db', 'questions_path': '<repo>/bench-quality/data/clbench/data/database_exploration/questions.json', 'num_questions': 30, 'max_queries_per_question': 15, 'seed': 42, 'response_timeout_seconds': 60.0, 'expected_num_instances': 40}
+
+Live dashboard: http://127.0.0.1:55735/viewers/single_task_viewer.html?artifact=results/database_exploration/live/2026-11-17T00-36-12.880176Z/manifest.json
+
+Starting 3 run(s) + 40-instance baseline with 12 parallel workers [group 2026-11-17T00-36-12.880176Z, mode=permute]
+failed
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/systems/icl/system.py", line 146, in respond
+    provider_result = self._provider_client.respond_structured(
+        messages=llm_messages,
+        response_schema=query.response_schema,
+    )
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 180, in respond_structured
+    return self._anthropic_structured(messages, response_schema)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 381, in _anthropic_structured
+    return self._call_with_parse_retry(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        messages=messages,
+        ^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        capture_fn=self._capture_anthropic_assistant,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 415, in _call_with_parse_retry
+    response = request_fn()
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 379, in request_fn
+    return self._anthropic_request(payload)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 498, in _anthropic_request
+    raise ValueError("ANTHROPIC_API_KEY must be set for native Anthropic ICL")
+ValueError: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/runs/single.py", line 119, in run_single
+    result = run_task(
+        task,
+    ...<12 lines>...
+        phase=phase,
+    )
+  File "<repo>/bench-quality/data/clbench/src/interface.py", line 681, in run_task
+    return _run_task(
+        task=task,
+    ...<8 lines>...
+        initial_query=initial_query,
+    )
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 354, in run_task
+    ) = _call_system(query)
+        ~~~~~~~~~~~~^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 261, in _call_system
+    response = system.respond(query)
+  File "<repo>/bench-quality/data/clbench/src/systems/icl/system.py", line 156, in respond
+    raise RuntimeError(f"LLM call failed: {e}") from e
+RuntimeError: LLM call failed: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+failed
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/systems/icl/system.py", line 146, in respond
+    provider_result = self._provider_client.respond_structured(
+        messages=llm_messages,
+        response_schema=query.response_schema,
+    )
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 180, in respond_structured
+    return self._anthropic_structured(messages, response_schema)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 381, in _anthropic_structured
+    return self._call_with_parse_retry(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        messages=messages,
+        ^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        capture_fn=self._capture_anthropic_assistant,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 415, in _call_with_parse_retry
+    response = request_fn()
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 379, in request_fn
+    return self._anthropic_request(payload)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 498, in _anthropic_request
+    raise ValueError("ANTHROPIC_API_KEY must be set for native Anthropic ICL")
+ValueError: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/runs/single.py", line 119, in run_single
+    result = run_task(
+        task,
+    ...<12 lines>...
+        phase=phase,
+    )
+  File "<repo>/bench-quality/data/clbench/src/interface.py", line 681, in run_task
+    return _run_task(
+        task=task,
+    ...<8 lines>...
+        initial_query=initial_query,
+    )
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 354, in run_task
+    ) = _call_system(query)
+        ~~~~~~~~~~~~^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 261, in _call_system
+    response = system.respond(query)
+  File "<repo>/bench-quality/data/clbench/src/systems/icl/system.py", line 156, in respond
+    raise RuntimeError(f"LLM call failed: {e}") from e
+RuntimeError: LLM call failed: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+failed
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/systems/icl/system.py", line 146, in respond
+    provider_result = self._provider_client.respond_structured(
+        messages=llm_messages,
+        response_schema=query.response_schema,
+    )
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 180, in respond_structured
+    return self._anthropic_structured(messages, response_schema)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 381, in _anthropic_structured
+    return self._call_with_parse_retry(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        messages=messages,
+        ^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        capture_fn=self._capture_anthropic_assistant,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 415, in _call_with_parse_retry
+    response = request_fn()
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 379, in request_fn
+    return self._anthropic_request(payload)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 498, in _anthropic_request
+    raise ValueError("ANTHROPIC_API_KEY must be set for native Anthropic ICL")
+ValueError: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/runs/single.py", line 119, in run_single
+    result = run_task(
+        task,
+    ...<12 lines>...
+        phase=phase,
+    )
+  File "<repo>/bench-quality/data/clbench/src/interface.py", line 681, in run_task
+    return _run_task(
+        task=task,
+    ...<8 lines>...
+        initial_query=initial_query,
+    )
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 354, in run_task
+    ) = _call_system(query)
+        ~~~~~~~~~~~~^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 261, in _call_system
+    response = system.respond(query)
+  File "<repo>/bench-quality/data/clbench/src/systems/icl/system.py", line 156, in respond
+    raise RuntimeError(f"LLM call failed: {e}") from e
+RuntimeError: LLM call failed: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+Error: Benchmark execution failed.
+  Task: database_exploration
+  System: icl
+  Run group: 2026-11-17T00-36-12.880176Z
+  Config: (none)
+  Live dashboard: http://127.0.0.1:55735/viewers/single_task_viewer.html?artifact=results/database_exploration/live/2026-11-17T00-36-12.880176Z/manifest.json
+  RuntimeError: Run 1/3 failed: [run 1, ID 2026-11-17T00-36-12.880176Z] RuntimeError: LLM call failed: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+Hint: Add --debug for extra CLI setup logs.
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/systems/icl/system.py", line 146, in respond
+    provider_result = self._provider_client.respond_structured(
+        messages=llm_messages,
+        response_schema=query.response_schema,
+    )
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 180, in respond_structured
+    return self._anthropic_structured(messages, response_schema)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 381, in _anthropic_structured
+    return self._call_with_parse_retry(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        messages=messages,
+        ^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        capture_fn=self._capture_anthropic_assistant,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 415, in _call_with_parse_retry
+    response = request_fn()
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 379, in request_fn
+    return self._anthropic_request(payload)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/provider_adapters.py", line 498, in _anthropic_request
+    raise ValueError("ANTHROPIC_API_KEY must be set for native Anthropic ICL")
+ValueError: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/runs/single.py", line 119, in run_single
+    result = run_task(
+        task,
+    ...<12 lines>...
+        phase=phase,
+    )
+  File "<repo>/bench-quality/data/clbench/src/interface.py", line 681, in run_task
+    return _run_task(
+        task=task,
+    ...<8 lines>...
+        initial_query=initial_query,
+    )
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 354, in run_task
+    ) = _call_system(query)
+        ~~~~~~~~~~~~^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 261, in _call_system
+    response = system.respond(query)
+  File "<repo>/bench-quality/data/clbench/src/systems/icl/system.py", line 156, in respond
+    raise RuntimeError(f"LLM call failed: {e}") from e
+RuntimeError: LLM call failed: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "~/.local/share/uv/python/cpython-3.13.3-macos-aarch64-none/lib/python3.13/concurrent/futures/process.py", line 254, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+  File "<repo>/bench-quality/data/clbench/src/runs/single.py", line 228, in run_single
+    raise RuntimeError(
+        f"[{phase} {human_run_number}, ID {run_group_id}] {type(exc).__name__}: {exc}"
+    ) from exc
+RuntimeError: [run 1, ID 2026-11-17T00-36-12.880176Z] RuntimeError: LLM call failed: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/runs/benchmark.py", line 394, in run_benchmark
+    payload = future.result()
+  File "~/.local/share/uv/python/cpython-3.13.3-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.13.3-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+RuntimeError: [run 1, ID 2026-11-17T00-36-12.880176Z] RuntimeError: LLM call failed: ANTHROPIC_API_KEY must be set for native Anthropic ICL
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/cli.py", line 2286, in _cmd_run_impl
+    baseline_info, task_results, run_trace_data_list = run_benchmark(
+                                                       ~~~~~~~~~~~~~^
+        task_class=task_class,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    ...<14 lines>...
+        output_path=Path(args.output) if args.output else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "<repo>/bench-quality/data/clbench/src/runs/benchmark.py", line 405, in run_benchmark
+    raise RuntimeError(f"{label} failed: {exc}") from exc
+RuntimeError: Run 1/3 failed: [run 1, ID 2026-11-17T00-36-12.880176Z] RuntimeError: LLM call failed: ANTHROPIC_API_KEY must be set for native Anthropic ICL

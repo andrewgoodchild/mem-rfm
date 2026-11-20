@@ -49,3 +49,6 @@ bench-quality/live-ab/track23-smoke/
 bench-quality/live-ab/track20/rfm-log.jsonl
 bench-quality/live-ab/track21b/judged_map.json
 bench-quality/results-track12/importance.jsonl
+
+# API keys for the live tracks (OpenRouter); never published
+/.env

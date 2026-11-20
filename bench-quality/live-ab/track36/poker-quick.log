@@ -1,0 +1,142 @@
+Running mem_rfm on exploitable_poker...
+System params: {'model': 'openrouter/anthropic/claude-sonnet-5.5', 'name': 'mem_rfm', 'system_prompt': '', 'k': 3, 'floor': 0.0, 'form': True, 'max_result_chars': 1500}
+Task params: {'num_instances': 5, 'starting_chips': 1000, 'small_blind': 5, 'big_blind': 10, 'seed': 42, 'schedule': 'quick_test', 'expected_num_instances': 5}
+
+Live dashboard: http://127.0.0.1:51315/viewers/single_task_viewer.html?artifact=results/exploitable_poker/live/2026-11-17T00-11-47.426843Z/manifest.json
+
+Starting 1 run(s) + 5-instance baseline with 6 parallel workers [group 2026-11-17T00-11-47.426843Z, mode=permute]
+Transient error (attempt 1/6), retrying in 2.0s: LLM returned empty content
+Transient error (attempt 1/6), retrying in 2.0s: LLM returned empty content
+Transient error (attempt 1/6), retrying in 2.0s: LLM returned empty content
+Transient error (attempt 2/6), retrying in 4.0s: LLM returned empty content
+Transient error (attempt 2/6), retrying in 4.0s: LLM returned empty content
+Transient error (attempt 2/6), retrying in 4.0s: LLM returned empty content
+Transient error (attempt 1/6), retrying in 2.0s: LLM returned empty content
+Transient error (attempt 2/6), retrying in 4.0s: LLM returned empty content
+Transient error (attempt 3/6), retrying in 8.0s: LLM returned empty content
+Transient error (attempt 3/6), retrying in 8.0s: LLM returned empty content
+Transient error (attempt 3/6), retrying in 8.0s: LLM returned empty content
+Transient error (attempt 3/6), retrying in 8.0s: LLM returned empty content
+Transient error (attempt 4/6), retrying in 16.0s: LLM returned empty content
+Transient error (attempt 4/6), retrying in 16.0s: LLM returned empty content
+Transient error (attempt 4/6), retrying in 16.0s: LLM returned empty content
+Transient error (attempt 4/6), retrying in 16.0s: LLM returned empty content
+Transient error (attempt 5/6), retrying in 32.0s: LLM returned empty content
+Transient error (attempt 5/6), retrying in 32.0s: LLM returned empty content
+Transient error (attempt 5/6), retrying in 32.0s: LLM returned empty content
+Transient error (attempt 5/6), retrying in 32.0s: LLM returned empty content
+failed
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/systems/mem_rfm/system.py", line 222, in respond
+    action, usage_event = completion_with_structured_output(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        model=self.model, messages=llm_messages,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        response_schema=query.response_schema)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/structured_output.py", line 277, in completion_with_structured_output
+    raise _EmptyContentError("LLM returned empty content")
+src.systems.utils.structured_output._EmptyContentError: LLM returned empty content
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/runs/single.py", line 119, in run_single
+    result = run_task(
+        task,
+    ...<12 lines>...
+        phase=phase,
+    )
+  File "<repo>/bench-quality/data/clbench/src/interface.py", line 681, in run_task
+    return _run_task(
+        task=task,
+    ...<8 lines>...
+        initial_query=initial_query,
+    )
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 354, in run_task
+    ) = _call_system(query)
+        ~~~~~~~~~~~~^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 261, in _call_system
+    response = system.respond(query)
+  File "<repo>/bench-quality/data/clbench/src/systems/mem_rfm/system.py", line 226, in respond
+    raise RuntimeError(f"LLM call failed: {e}") from e
+RuntimeError: LLM call failed: LLM returned empty content
+Error: Benchmark execution failed.
+  Task: exploitable_poker
+  System: mem_rfm
+  Run group: 2026-11-17T00-11-47.426843Z
+  Config: (none)
+  Live dashboard: http://127.0.0.1:51315/viewers/single_task_viewer.html?artifact=results/exploitable_poker/live/2026-11-17T00-11-47.426843Z/manifest.json
+  RuntimeError: Baseline instance 1/5 failed: LLM call failed: LLM returned empty content
+Hint: Add --debug for extra CLI setup logs.
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/systems/mem_rfm/system.py", line 222, in respond
+    action, usage_event = completion_with_structured_output(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        model=self.model, messages=llm_messages,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        response_schema=query.response_schema)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/systems/utils/structured_output.py", line 277, in completion_with_structured_output
+    raise _EmptyContentError("LLM returned empty content")
+src.systems.utils.structured_output._EmptyContentError: LLM returned empty content
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "~/.local/share/uv/python/cpython-3.13.3-macos-aarch64-none/lib/python3.13/concurrent/futures/process.py", line 254, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+  File "<repo>/bench-quality/data/clbench/src/runs/baseline.py", line 80, in _run_baseline_instance
+    result = run_task(
+        task=task,
+    ...<6 lines>...
+        initial_query=initial_query,
+    )
+  File "<repo>/bench-quality/data/clbench/src/interface.py", line 681, in run_task
+    return _run_task(
+        task=task,
+    ...<8 lines>...
+        initial_query=initial_query,
+    )
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 354, in run_task
+    ) = _call_system(query)
+        ~~~~~~~~~~~~^^^^^^^
+  File "<repo>/bench-quality/data/clbench/src/runtime/runner.py", line 261, in _call_system
+    response = system.respond(query)
+  File "<repo>/bench-quality/data/clbench/src/systems/mem_rfm/system.py", line 226, in respond
+    raise RuntimeError(f"LLM call failed: {e}") from e
+RuntimeError: LLM call failed: LLM returned empty content
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/runs/benchmark.py", line 394, in run_benchmark
+    payload = future.result()
+  File "~/.local/share/uv/python/cpython-3.13.3-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "~/.local/share/uv/python/cpython-3.13.3-macos-aarch64-none/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+RuntimeError: LLM call failed: LLM returned empty content
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<repo>/bench-quality/data/clbench/src/cli.py", line 2286, in _cmd_run_impl
+    baseline_info, task_results, run_trace_data_list = run_benchmark(
+                                                       ~~~~~~~~~~~~~^
+        task_class=task_class,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    ...<14 lines>...
+        output_path=Path(args.output) if args.output else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "<repo>/bench-quality/data/clbench/src/runs/benchmark.py", line 405, in run_benchmark
+    raise RuntimeError(f"{label} failed: {exc}") from exc
+RuntimeError: Baseline instance 1/5 failed: LLM call failed: LLM returned empty content
+  Baseline 1/5 complete (instance #5) - mean so far: -0.5000
+  Baseline 2/5 complete (instance #3) - mean so far: -1.2500

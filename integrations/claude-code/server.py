@@ -431,6 +431,8 @@ def _update(memory_id: int, content: str) -> UpdateResult:
         if content != row[4]:
             d.execute("INSERT INTO rfm_memory_history VALUES (?, ?, ?, ?, ?)",
                       (memory_id, row[4], time.time(), row[1], row[2]))
+            # The verify pass checked the old wording, not this one.
+            d.execute(store.CLEAR_VERIFIED + " WHERE id = ?", (memory_id,))
         d.execute("UPDATE rfm_memories SET content = ?, embedding = ? WHERE id = ?",
                   (content, vec, memory_id))
         d.commit()

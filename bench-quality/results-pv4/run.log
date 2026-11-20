@@ -1,0 +1,49 @@
+users 30, to run 30, arms ['sim', 'rfm', 'judge'], K=5, model anthropic/claude-haiku-5.5, scorer Qwen/Qwen3-Embedding-4B
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 6787.04it/s]
+user 127 done (1/30): 423 rows, $0.174, 2259s
+user 126 done (2/30): 423 rows, $0.206, 2353s
+user 128 done (3/30): 423 rows, $0.207, 2392s
+/Users/andrewgoodchild/.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+users 30, to run 27, arms ['sim', 'rfm', 'judge'], K=5, model anthropic/claude-haiku-5.5, scorer Qwen/Qwen3-Embedding-4B
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 6552.85it/s]
+user 133 done (1/27): 420 rows, $0.186, 3436s
+user 132 done (2/27): 420 rows, $0.177, 3479s
+user 129 done (3/27): 426 rows, $0.209, 3586s
+user 131 done (4/27): 420 rows, $0.197, 3595s
+user 130 done (5/27): 426 rows, $0.194, 3612s
+user 134 done (6/27): 423 rows, $0.206, 3614s
+user 135 done (7/27): 426 rows, $0.184, 5848s
+user 136 done (8/27): 429 rows, $0.188, 5947s
+user 139 done (9/27): 417 rows, $0.179, 5990s
+user 140 done (10/27): 423 rows, $0.219, 6101s
+user 138 done (11/27): 426 rows, $0.199, 6123s
+user 137 done (12/27): 426 rows, $0.222, 6151s
+user 142 done (13/27): 423 rows, $0.181, 7990s
+user 141 done (14/27): 423 rows, $0.193, 7995s
+user 143 done (15/27): 423 rows, $0.187, 8010s
+user 145 done (16/27): 423 rows, $0.184, 8216s
+user 144 done (17/27): 423 rows, $0.195, 8231s
+user 146 done (18/27): 429 rows, $0.202, 8303s
+user 149 done (19/27): 426 rows, $0.201, 10066s
+user 147 done (20/27): 423 rows, $0.192, 10115s
+user 148 done (21/27): 420 rows, $0.210, 10132s
+user 150 done (22/27): 423 rows, $0.190, 10270s
+user 152 done (23/27): 423 rows, $0.186, 10359s
+user 151 done (24/27): 429 rows, $0.192, 10417s
+user 155 done (25/27): 423 rows, $0.196, 11975s
+user 153 done (26/27): 420 rows, $0.192, 12009s
+user 154 done (27/27): 429 rows, $0.197, 12046s
+questions scored: 4237; rows 12711
+  empty answers 110 of 12711; judge fell back to cosine on 335 of 4237 judge rows
+  judge  accuracy 0.590 (n=4237)  hard 0.370 (n=629)  cost/question $0.00057
+  rfm    accuracy 0.600 (n=4237)  hard 0.377 (n=629)  cost/question $0.00041
+  sim    accuracy 0.598 (n=4237)  hard 0.382 (n=629)  cost/question $0.00041
+A1 FAIL: judge - sim on hard -0.011 CI [-0.045, +0.024] n=629 (bar +0.05, CI > 0)
+A2 FAIL: rfm - sim, second half +0.015 CI [-0.003, +0.033] n=2128
+A3 FAIL: rfm - sim, first half -0.011 CI [-0.030, +0.007] n=2109 (bar: lower bound > -0.01)
+A4 PASS: judge/sim cost per question 1.39x (bar 3x)
+normalized gain against sim (ceiling 1.0): rfm=0.005  judge=-0.021
+exit=0

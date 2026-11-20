@@ -1038,3 +1038,47 @@ resamples, seed 7) and exact McNemar p.
 
 **What does not change the verdict.** A failed H1 is published as failed.
 No re-run with another prompt, share or judge on these 301 questions.
+
+
+## Amendment 19 (2026-11-08): the transcript-search control, and four standing measures
+
+**Why.** Anthropic's agent-memory write-up (components-of-agent-memory) treats a
+search over the raw transcripts as the base layer of memory and measures its
+representations against it, not against "no memory". Track 30 had already run
+that arm here: raw chat turns in a plain vector store 0.88 corrections per task,
+formed memories 0.47 to 0.52, no memory 1.22. Without the raw arm, Track 29
+would have credited formation with the whole gain.
+
+**Rule.** Where a track's source material is conversations, transcripts or
+documents the agent could in principle read, its standard control is a
+similarity search over that raw material at the same delivery budget. "No
+memory" stays as a second arm where cost matters. A track that cannot run the
+raw arm says why.
+
+**Standing measures.** Every live track from Track 35 reports the first three
+from the hooks' own log lines; every causal track reports the fourth beside
+its arm means. Definitions in docs/methodology.md, "Standing measures":
+  1. exposure funnel: shown -> mentioned in prose -> acted on -> outcome, per
+     memory shown (session_end's summary line; counts, no judgment);
+  2. memory-work share: memory tool calls / all tool calls;
+  3. store-to-source ratio: bytes of memory formed / bytes of source read;
+  4. normalized gain: (memory - control) / (ceiling - control), `common.gain`,
+     CL-Bench's statefulness measure; None when the control is at the ceiling.
+Computed post hoc for the record: Track 22 gain 0.46 (fable) and 0.21 (opus);
+Track 29 formed 0.62, raw transcript search 0.28.
+
+**What does not change.** No existing verdict is rescored under this amendment;
+Tracks 29 and 30 are reported as run, with the raw arm named as the control it
+should have been.
+
+
+### Amendment 19b (2026-11-17): full context is the third standard arm
+
+Memorilla (arXiv 2610.21375) runs closed-book, RAG top-k and full-context arms
+on every benchmark, and its headline is beating full context on FactKG. Where a
+track's source fits the model's window, a track here runs three standard arms:
+no memory, a similarity search over the raw material, and the whole source in
+context. The third says whether memory is a saving or a selection effect; a
+memory arm that beats full context is selecting, one that only beats search is
+compressing. Track 36's `icl` arm is this already. Tracks 29 and 30 never had
+it, and are reported as run.

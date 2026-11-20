@@ -17,6 +17,15 @@ A conversation longer than CAP is formed in windows that break between turns,
 and past MAX_WINDOWS only the latest are read: real sessions settle things late,
 and reading the first CAP characters missed a median 89% of the long ones.
 
+Each memory carries a quote from the conversation, and a memory whose quote
+is not there verbatim is dropped. That catches the few made up outright, 3% on
+real sessions, and no more: a judge still found 37% of the rest unsupported by
+the window they came from, since a quote shows where a memory came from, not
+that the developer decided it (Tracks 32 and 33). A saved memory keeps its
+quote and the transcript it came from, so `verify.py` can check it against
+that source later, the one check the outcome ledger cannot make for a rule
+(Track 31: a stale decision shown 15 times earned no outcome).
+
 Conversations are not consolidated. A later decision does not replace an
 earlier one: an LLM doing that was wrong on 13 of 21 (Track 28). Both stay,
 dated, and delivery shows the later first.
@@ -57,8 +66,10 @@ state the rule in full, with its exact values.
 {chat}
 --- END CONVERSATION ---
 
-Reply with a JSON list only, at most {limit} items, possibly empty:
-[{{"content": "the memory"}}]"""
+Reply with a JSON list only, at most {limit} items, possibly empty. Each item
+quotes the conversation: a verbatim excerpt of at most 200 characters from the
+turn that settles the decision, so the memory can be checked against it.
+[{{"content": "the memory", "quote": "verbatim excerpt"}}]"""
 
 
 def chat_of(path):
@@ -102,36 +113,72 @@ def windows(chat, cap=CAP):
     return out
 
 
-def form(chat, llm, parse):
-    """The memories in one conversation: `llm` answers a prompt, `parse`
-    reads its JSON."""
-    items = parse(llm(PROMPT.format(chat=chat[:CAP], limit=MAX_PER_CHAT)))
+def _norm(text):
+    return " ".join(text.split()).lower()
+
+
+def grounded(item, chat):
+    """Does the item's quote occur in the chat, whitespace and case aside? A
+    memory whose quote is not there was made up or misread."""
+    quote = item.get("quote")
+    return isinstance(quote, str) and len(_norm(quote)) >= 12 \
+        and _norm(quote) in _norm(chat)
+
+
+def form_items(chat, llm, parse, dropped=None):
+    """The memories in one conversation, each {"content", "quote"}: `llm`
+    answers a prompt, `parse` reads its JSON. A memory whose quote is not in
+    the conversation is dropped, into `dropped` when a list is given."""
+    chat = chat[:CAP]
+    items = parse(llm(PROMPT.format(chat=chat, limit=MAX_PER_CHAT)))
     if not isinstance(items, list):
         return []
-    return [i["content"] for i in items
-            if isinstance(i, dict) and isinstance(i.get("content"), str)
-            and i["content"].strip()][:MAX_PER_CHAT]
+    kept = []
+    for i in items:
+        if not (isinstance(i, dict) and isinstance(i.get("content"), str)
+                and i["content"].strip()):
+            continue
+        if grounded(i, chat):
+            kept.append({"content": i["content"], "quote": i["quote"]})
+        elif dropped is not None:
+            dropped.append(i["content"])
+    return kept[:MAX_PER_CHAT]
+
+
+def form(chat, llm, parse, dropped=None):
+    """form_items, as content strings: what the probes and the Track 34
+    provider read."""
+    return [i["content"] for i in form_items(chat, llm, parse, dropped)]
 
 
 def source_of(chat):
     return "chat:" + hashlib.sha256(chat.encode()).hexdigest()[:16]
 
 
-def save(db, memories, source, scope, embed, created_at=None):
+def save(db, memories, source, scope, embed, created_at=None,
+         transcript=None):
     """Insert a conversation's memories, sanitized as a server save is.
-    Re-forming a conversation adds nothing."""
+    Re-forming a conversation adds nothing. A memory may be a string or a
+    form_items dict; a dict's quote is kept, and `transcript` (a path) goes
+    in `origins` as the source verify.py reads it back from."""
     if db.execute("SELECT 1 FROM rfm_memories WHERE source = ? LIMIT 1",
                   (source,)).fetchone():
         return []
+    origins = json.dumps([f"transcript:{os.path.abspath(transcript)}"]) \
+        if transcript else None
     ids = []
-    for content in memories:
+    for m in memories:
+        content = m["content"] if isinstance(m, dict) else m
+        quote = m.get("quote") if isinstance(m, dict) else None
         text = secret_scan.redact(transcripts.flatten(content))[0]
         vec = embed(text)
         blob = struct.pack(f"{len(vec)}f", *vec) if vec else None
         cur = db.execute(
             "INSERT INTO rfm_memories (content, created_at, embedding, scope,"
-            " source) VALUES (?, ?, ?, ?, ?)",
-            (text, created_at or time.time(), blob, scope, source))
+            " source, quote, origins) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (text, created_at or time.time(), blob, scope, source,
+             secret_scan.redact(quote)[0] if isinstance(quote, str) else None,
+             origins))
         ids.append(cur.lastrowid)
     return ids
 
@@ -155,22 +202,32 @@ def main(argv=None):
     parts = windows(chat)
     skipped = max(0, len(parts) - MAX_WINDOWS)
     memories = [m for part in parts[skipped:]
-                for m in form(part, sweep.llm, sweep.parse_json)]
+                for m in form_items(part, sweep.llm, sweep.parse_json)]
+    # The store-to-source ratio: bytes of memory per byte of conversation
+    # read. A memory layer that approaches its source has abstracted
+    # nothing (Anthropic's dreaming write-up found a wiki at 1.77x its
+    # corpus); on real sessions decide runs near 1%.
+    source_chars = sum(len(p) for p in parts[skipped:])
+    formed_chars = sum(len(m["content"]) for m in memories)
+    summary = {"windows": len(parts) - skipped, "skipped": skipped,
+               "formed": len(memories), "source_chars": source_chars,
+               "formed_chars": formed_chars,
+               "ratio": round(formed_chars / max(1, source_chars), 4)}
     if not args.save:
         for n, m in enumerate(memories, 1):
-            print(f"{n}. {m}\n")
-        print(json.dumps({"windows": len(parts) - skipped, "skipped": skipped,
-                          "formed": len(memories), "saved": None}))
+            print(f"{n}. {m['content']}\n   quote: {m['quote']!r}\n")
+        sweep._log({"op": "decide", **summary, "saved": 0})
+        print(json.dumps({**summary, "saved": None}))
         return 0
     db = sqlite3.connect(sweep.DB_PATH, timeout=10.0)
     rfm.register(db)
     store.ensure(db)
     ids = save(db, memories, source_of(chat), args.scope or store.project(),
-               ups.embed)
+               ups.embed, transcript=args.transcript)
     db.commit()
     db.close()
-    print(json.dumps({"windows": len(parts) - skipped, "skipped": skipped,
-                      "formed": len(memories), "saved": ids}))
+    sweep._log({"op": "decide", **summary, "saved": len(ids)})
+    print(json.dumps({**summary, "saved": ids}))
     return 0
 
 

@@ -47,6 +47,65 @@ and dated because this landscape moves quickly — Mem0 v2 was a breaking change
 are now archived, and Zep v3 removed its `memory.*` namespace and fact
 ratings within the same window.
 
+## Anthropic's five layers (added 2026-11-08)
+
+Anthropic's research write-up on the components of agent memory
+(anthropic.com/research/components-of-agent-memory) names five layers,
+and its vocabulary is likely to become the field's, so here is mem-rfm in
+it. **Transcripts**: the normalized session `transcripts.py` reads is the
+same event log; mem-rfm offers no search over it, and Track 30 measured
+that baseline (raw turns 0.88 corrections per task against formed memories
+0.47 and no memory 1.22). **Memory notes**: the rows. **Representations**:
+none; grouping memories by conversation added nothing live (Track 30) and
+LLM supersession was wrong 13 of 21 times (Track 28), which matches their
+finding that wikis pay only on multi-document judgment. **Injected
+context**: SessionStart's top-3, 1,500 characters, and this is the one
+place the two designs differ in kind. Their top layer is curated by an
+offline pass with no stated rule; mem-rfm's promotion rule is mechanical
+and earned: rank by recency, frequency and signed outcomes, never a row
+the ledger has voted down, never one its own source contradicts.
+**Dreaming**: the sweep, the outcome inference and the prune are an
+offline consolidation pass of that kind, minus the step they put first,
+correcting a note against the transcript it came from. `verify.py` adds
+that step (Track 35 measures it). Where the write-up and this program
+disagree is in-session salience: they report it improving sharply across
+model generations and advise telling a model what memory is for rather
+than how to use it; this program measured discretionary saving
+anti-selecting on one model generation in July 2026 and built around that.
+The claim is now dated in `lifecycle.md`, and a retest is registered.
+
+Two smaller sources read the same week. Ayan Pahwa's from-scratch research
+agent (github.com/iayanpahwa/research-agent-from-scratch, write-up at
+humanbound.ai) records, at n=1 per arm, a note saved from a wrong first run
+being read first and repeated with confidence by the second, "a bad note
+outlives the run that made it": the failure the verify pass exists for,
+illustrated independently. David Lee's doctrine (github.com/davidlee/doctrine,
+its memory layer in RFC 009) keeps verification as an axis separate from
+status, suppresses low-trust high-severity memories from retrieval, and
+records a measured bug (EVD-001) where an attestation survived a rewrite of
+the text it attested; `store.CLEAR_VERIFIED` is the rule that prevents it
+here. Its memory layer is otherwise unmeasured design.
+
+## Memorilla (added 2026-11-17)
+
+Memorilla (Stanford SNAP, arXiv 2610.21375, Apache-2.0) is a trained memory
+module: it compresses a whole document collection into 16 query-dependent
+memory tokens placed in a frozen Qwen3-8B's input embedding space, and on
+FactKG beats giving the model every document (84.33% against 80.43%). A
+second recipe trains the module from game reward alone with GRPO on
+TextWorld, 18.6% to 24.2% solve rate. It belongs beside RoMeRL and Chen &
+Cheng as the convergent direction, memory shaped by outcome, with the
+distinction stated: they train a module from reward, mem-rfm scores rows
+from outcomes, and nothing in their code path runs against an API model.
+Three things were taken (Amendment 19b, methodology.md "Standing
+measures", Track 37): full context as a standard arm, the hard-subset
+measure, and PersonalizationV4 as the applicability venue.
+Its Table 11 (Qwen3-8B decoder, test split) puts PV4 at closed book 58.30,
+RAG top-5 64.98, full context 59.12, Mem0 65.07, MemoRAG 67.88, Memorilla
+66.65: every memory method within three points of plain retrieval, and
+full context below it. Track 37 ran mem-rfm's arms on the same split with a
+Claude answerer and landed in the same place (RESULTS.md).
+
 ## Zep, specifically (added 2026-08-27)
 
 Zep earns its own section because it is the most architecturally

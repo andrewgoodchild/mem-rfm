@@ -1,0 +1,26 @@
+setup ok: mem_rfm registered
+== mem_rfm: clbench run database_exploration --system mem_rfm --schedule default --system.model openrouter/anthropic/claude-sonnet-5.5 --runs 3
+   exit 0; log <repo>/bench-quality/live-ab/track36/database_exploration-mem_rfm.log
+== icl: clbench run database_exploration --system icl --schedule default --system.model openrouter/anthropic/claude-sonnet-5.5 --runs 3
+   exit 1; log <repo>/bench-quality/live-ab/track36/database_exploration-icl.log
+exit=0
+setup ok: mem_rfm, icl_cached registered
+== icl_cached: clbench run database_exploration --system icl_cached --schedule default --system.model openrouter/anthropic/claude-sonnet-5.5 --runs 3 --system.provider_mode litellm_chat
+   exit 2; log <repo>/bench-quality/live-ab/track36/database_exploration-icl_cached.log
+exit=0
+setup ok: mem_rfm, icl_cached registered
+== icl_cached: clbench run database_exploration --system icl_cached --schedule default --system.model openrouter/anthropic/claude-sonnet-5.5 --runs 3 --system.provider_mode litellm_chat
+   exit 2; log <repo>/bench-quality/live-ab/track36/database_exploration-icl_cached.log
+exit=0
+setup ok: mem_rfm, icl_cached registered
+== icl_cached: clbench run database_exploration --system icl_cached --schedule default --system.model openrouter/anthropic/claude-sonnet-5.5 --runs 3
+   exit 0; log <repo>/bench-quality/live-ab/track36/database_exploration-icl_cached.log
+exit=0
+setup ok: mem_rfm, icl_cached registered
+== icl_cached: clbench run database_exploration --system icl_cached --schedule default --system.model openrouter/anthropic/claude-sonnet-5.5 --runs 3
+   exit 0; log <repo>/bench-quality/live-ab/track36/database_exploration-icl_cached.log
+exit=0
+== mem_rfm_flat (Track 36b): ledger off, 3 runs, 6 workers
+   exit 0 (mem_rfm_flat)
+== mem_rfm_cached (Track 36d): cache on, 3 runs, 6 workers
+   exit 0 (mem_rfm_cached)

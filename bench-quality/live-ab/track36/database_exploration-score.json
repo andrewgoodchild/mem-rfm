@@ -1,0 +1,67 @@
+{
+ "arms": {
+  "mem_rfm": {
+   "baseline_mean": 0.37167249999999996,
+   "rollout_mean": 0.6305575,
+   "runs": 3,
+   "normalized_gain": 0.41202239278083486,
+   "gain_ci": [
+    0.19332500000000002,
+    0.32499666666666666
+   ],
+   "post_base": 0.170005,
+   "post_roll": 0.5977816666666667,
+   "cost_per_run": 2.253008,
+   "baseline_cost": 8.13292
+  },
+  "icl_cached": {
+   "baseline_mean": 0.41333000000000003,
+   "rollout_mean": 0.7438808333333333,
+   "runs": 3,
+   "normalized_gain": 0.5634357191152322,
+   "gain_ci": [
+    0.26277750000000005,
+    0.3983283333333334
+   ],
+   "post_base": 0.22666499999999998,
+   "post_roll": 0.7433200000000001,
+   "cost_per_run": 0.8318571,
+   "baseline_cost": 3.1319718
+  },
+  "mem_rfm_flat": {
+   "baseline_mean": 0.3400025,
+   "rollout_mean": 0.6483358333333333,
+   "runs": 3,
+   "normalized_gain": 0.467173486768258,
+   "gain_ci": [
+    0.2416625,
+    0.37555750000000004
+   ],
+   "post_base": 0.103335,
+   "post_roll": 0.5966666666666666,
+   "cost_per_run": 2.2034553333333333,
+   "baseline_cost": 8.210372
+  },
+  "mem_rfm_cached": {
+   "baseline_mean": 0.364995,
+   "rollout_mean": 0.6027783333333333,
+   "runs": 3,
+   "normalized_gain": 0.3744589937612039,
+   "gain_ci": [
+    0.16334333333333334,
+    0.31389333333333336
+   ],
+   "post_base": 0.156665,
+   "post_roll": 0.5622216666666666,
+   "cost_per_run": 1.6759633,
+   "baseline_cost": 4.6085818
+  }
+ },
+ "bars": {
+  "B1": "FAIL",
+  "D1": "PASS",
+  "D2": "PASS",
+  "D3": "FAIL",
+  "D4": "FAIL"
+ }
+}

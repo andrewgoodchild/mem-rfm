@@ -28,7 +28,34 @@ where the repo is readable; where it isn't, the memory can be. A second
 venue landed on the same side: decisions that exist only in past developer
 chats, where formed memories cut corrections from 1.22 to 0.47 per task
 (SDE-bench, this project's own adapter, not yet replicated). That gain came
-from formation; the outcome ranking played no part.
+from formation; the outcome ranking played no part. A third venue, CL-Bench's
+database task with its own verdict as feedback, repeated both halves: memory
+beat the stateless agent (0.37 → 0.63) and the ledger, closing on real
+outcomes for the first time, changed nothing (Track 36b), while a cached
+full history in context beat the memory on reward and on cost at that
+length (Track 36). The right baseline for
+that venue is not "no memory" but a search over the raw transcripts, and
+Track 30 measured it: raw chat turns in a plain vector store reached 0.88,
+so formation won a little over half of what transcript search left on the
+table (normalized gain 0.62 against 0.28). Anthropic's agent-memory
+write-up reaches the same shape on a different corpus, a wiki layered on
+search beating search alone, and independently confirms the substrate
+thesis in another domain: in its Pokémon runs the memory that paid held
+strategies and tested rules that existed only because the agent wrote them
+down, never what was readable from the screen.
+
+The other half of the retrieval problem, applicability (which memory bears on
+a request that does not resemble it, the PrefEval finding), did not yield to
+the two tools this project had for it. On PersonalizationV4, where every
+question needs two or more facts the user's chats show but never state, a
+one-call judge filtering cosine's top eight chats into at most five scored a
+point below plain cosine top-5 on the hard subset, and the outcome prior with
+oracle outcomes gained 1.5 points on the second half of each user's questions
+with an interval touching zero (Track 37). The venue's own leaderboard says
+the same from the other side: every published system, trained or not, lands
+within three points of plain top-5 retrieval, and full context sits below it
+once two hundred chats outrun the model's native window. Whatever closes that
+gap is not a filter inside the budget and not an outcome prior.
 
 The scoring prior's reliable jobs turned out to be **safety and
 maintenance** rather than raw ranking quality, and even those are measured
@@ -90,6 +117,11 @@ cost/safety bounds, the rest tested benefit.
 | **does memory help when the control CANNOT read the source?** | organizational questions, both arms no code execution and only a budget-limited query tool | **PASS** — control 80, memory **95** of 113, up on 13 / down on 1, **sign p = 0.001**, 13% fewer queries (Track 22) |
 | **does memory help when the decision lives only in past chats?** (SDE-bench, own local adapter, one model) | formed decisions delivered per turn cut corrections, sign p < 0.05 over 27 tasks | **PASS** — 1.22 → 0.47 corrections per task, 17 better / 1 worse, p = 0.0001 (Track 29); raw chat turns in a plain vector store 0.88, formed but ungrouped 0.52, so formation carries it (Track 30) |
 | can the live ledger see those memories? | the own memory earns an outcome on ≥ 50% of runs; a stale one earns −1 | **FAIL** — 11% of runs, +1 does not track corrections, a stale memory shown 15 times earned nothing (Track 31, replay) |
+| can a verify pass retire what the ledger cannot see? (100 falsified memories against their own transcripts) | ≥ 70% of falsified memories not confirmed; ≤ 10% of true ones marked contradicted | **1 of 2** — 57 of 100 caught (FAIL), 1 false contradiction in 133 (PASS): precise, not sensitive (Track 35) |
+| **does memory beat stateless on a task that grades every answer?** (CL-Bench database, Sonnet 5.5, 40 questions with a schema migration) | normalized gain > 0; no harm after the migration | **PASS** — 0.372 → 0.631, gain 0.41; after the migration 0.17 → 0.60; the ledger closed on ~110 real outcomes a run (Track 36) |
+| …and beat full history in context, on reward and cost? | within 0.05 of ICL; cheaper per run | **FAIL** — ICL 0.744 and $0.83 a run against 0.631 and $1.68 with the same caching; the whole run fits in the window (Track 36) |
+| did the outcomes do anything there? | outcomes-on beats outcomes-off after the migration by ≥ 0.05 | **FAIL** — +0.001, CI ±0.07; formation and retrieval did the work, as in Track 29 (Track 36b) |
+| **does an applicability judge fix what PrefEval found?** (PersonalizationV4, 4,237 questions, 629 hard, Haiku 5.5 answering from 5 whole chats) | judge beats cosine top-5 on the hard subset by ≥ 5 points; the outcome prior gains on each user's second half | **1 of 4** — judge −1.1 points on hard (FAIL); prior +1.5 on the second half, CI touching 0 (FAIL); first-half no-harm interval too wide (FAIL); judge cost 1.39× (PASS); the venue's own published full context sits below its RAG top-5 (Track 37) |
 
 The table reads as a boundary, not a verdict. The benefit predictions on
 repository coding all failed — the agents do not pay the costs the
@@ -181,7 +213,10 @@ but to stop the mechanism eating itself.
 In the live A/B the agent saved 17 genuinely good debugging lessons, then
 judged retrieved ones irrelevant bug after bug: **15 of 16 recorded outcomes
 were negative.** The system measured its own workload's lesson-transfer rate
-at roughly **6%**, with no oracle telling it so.
+at roughly **6%**, with no oracle telling it so. (July 2026, 54 sessions,
+one model generation. Anthropic's November 2026 write-up finds the quality
+of in-session note-taking model-dependent and improving fast, so this is a
+dated result about those models, not a law about agents.)
 
 That is the mechanism working correctly on a workload with little worth
 remembering. SWE-bench-style tasks deliberately scatter across unrelated

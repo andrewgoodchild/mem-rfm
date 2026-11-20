@@ -3374,3 +3374,636 @@ forms every window, cut between turns, up to the latest 20.
   not be redrawn. The probe now keeps each memory's window for that check.
 - The secret scan redacted nothing. One sample, one formation model, no benefit
   measured: this asks only whether what forms is true and worth keeping.
+
+## Track 33 — `decide` with a grounding filter (2026-11-07) — G1 failed: a quote proves little; the filter drops 3%
+
+`bench-quality/live-ab/real_decide_probe.py`, as Track 32, after `decide` began
+asking for a verbatim quote with each memory and dropping any memory whose quote
+is not in its window. New sample of 8 interactive sessions from 37 (5 of Track
+32's pool had been deleted by Claude Code's transcript cleanup), 97 windows, 198
+formed. Bars written before the first call.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| G1 faithful | >= 80% of kept memories | 121 of 192, 63% | **FAIL** |
+| G2 yield | >= 4 faithful and durable per session read whole | 4.4 | **PASS** |
+| W2 durable, no new bar | >= 50% | 71 of 192, 37% | FAIL, as Track 32 |
+| W3 windows matter | later >= first | 19 against 3, 5 sessions read whole | PASS |
+
+- **The filter dropped 6 of 198.** The model quotes the window for 97% of what
+  it forms, and the judge still calls 37% of the rest unfaithful. A quote shows
+  the memory came from something in the window; it does not show the window
+  decided it. Faithfulness went from 60% to 63%, within what a new sample moves.
+- **The filter stays, as a small, free check** on the memories that are made up
+  outright. It is not a fix for faithfulness and the code says so.
+- **Post hoc, no bar: the judge is not catching made-up detail.** The numbers
+  and backticked names in memories it called unfaithful are in their windows
+  99% of the time, the same as in memories it called faithful. Its verdicts are
+  about whether the developer decided the thing, which a quote cannot settle.
+- **The judge is still unvalidated**, and that now gates everything here. The
+  operator's own rating of 20 Track 32 memories is set up and waiting; until it
+  is done, 60% to 63% faithful may be the judge's strictness about proposals
+  against decisions rather than the formation's error.
+
+## Track 34 — SDE-bench under the official harness (registered 2026-11-07, before any session)
+
+Tracks 29 and 30 ran a local adapter of SDE-bench's protocol, so their numbers do
+not pool with the published runs. This runs mem-rfm through
+agent-memory-benchmark's own runner (`uv run amb run --dataset sdebench --split
+boltons --mode coding`), with the Claude Code agent in the harness's container,
+its model (`claude-sonnet-5`), its prompt, its corrections loop and its Docker
+grading. mem-rfm enters by the harness's generic path for any registered provider:
+ingest the task's corpus, retrieve on the bug report, inject once into the first
+prompt as "Relevant memory (surfaced for you by your memory system)".
+
+The provider (`bench-quality/live-ab/amb_mem_rfm.py`, installed into the harness
+checkout by `run_track34.py`): each conversation document is formed into decision
+memories by `decisions.form` with haiku, cached by content hash so the 140 shared
+decoys form once; commit documents are stored verbatim; retrieval is the shipped
+per-turn rule, cosine times `rfm_prior` with flat priors, K=2 above the 0.35 floor,
+1,200 characters. The harness offers k=10; the product's rule is 2, and that is
+what is tested. Grouping stays off (Track 30).
+
+Arms, `--category conversation` (27 tasks), 3 runs each, memory first: `mem-rfm`,
+and `vanilla` (the harness's own baseline, chats reachable as transcript files but
+never pointed to). The agent image installs the current Claude Code CLI, so the
+published vanilla-claude runs, made months earlier, differ in CLI version; the own
+control is the primary comparison.
+
+Bars:
+  H1  mem-rfm beats the harness's vanilla run on corrections per task, task-level
+      sign test p < 0.05 across 27 tasks.
+  H2  mem-rfm's mean corrections per task is below the published vanilla-claude
+      mean on this stratum (1.42), and the task-level sign test against the
+      published per-task means has p < 0.05.
+  H3  delivery: a memory formed from the task's own deciding chat is in the
+      injected block on at least 60% of memory runs.
+  H4  reported cost per run, memory arm against own vanilla: no more than +15%.
+Reported, no bar: the distance to the published hindsight-claude mean (0.53).
+Stops if reported spend passes $30. Harness differences from Tracks 29 and 30: the
+instructions are in the user prompt, not the system prompt; memory is injected
+once, not per turn; the chats are rendered "Developer:/Assistant:". Formation and
+retrieval run on the host; only the agent runs in Docker. The runner builds an
+answer LLM and a judge at start-up and insists on their keys; the coding mode
+calls neither (a task's result is its pytest grade), so they get placeholders.
+
+
+## Track 35 — the verify pass (registered 2026-11-08, before any call)
+
+`integrations/claude-code/verify.py`, probe `bench-quality/live-ab/verify_probe.py`.
+The ledger scores a memory by what happened when the agent acted on it through a
+command; a rule is rarely acted on that way, so a stale decision shown on 15 runs
+earned nothing and nothing demoted it (Track 31, L4). Anthropic's agent-memory
+write-up names the missing step: re-read the transcript a note came from and
+correct it against it. `decide` now keeps each memory's quote and transcript, and
+`verify` re-reads the transcript, finds the quote's window and asks one LLM call
+whether the conversation still supports the memory as stated: `confirmed`,
+`contradicted` (the model must quote the overriding turn, and the code checks the
+quote is in the window), `unsupported`, or `source_gone`. Only `contradicted`
+changes delivery, through `store.not_contradicted` beside the negative-value
+floor. Nothing is deleted or rewritten (Track 28: an LLM retiring memories by
+comparing them with each other was wrong 13 of 21).
+
+Ground truth is made, not judged: memories are formed from 8 of the operator's own
+interactive sessions as Track 33 did, half are falsified mechanically (a number
+changed, or a rule negated) while keeping their true quote, and every memory is
+verified against its window. A falsified memory passes the quote check by
+construction, so the pass has to read.
+
+Bars, written before the first call:
+  V1  sensitivity: >= 70% of falsified memories are not confirmed.
+  V2  precision of contradicted: <= 10% of unfalsified memories are marked
+      contradicted. These are what the delivery gate hides; a judge called 37% of
+      unfalsified memories unsupported (Track 33), so the bar is on contradicted
+      alone.
+  V3  evidence stands: every contradicted verdict's evidence is a verbatim span of
+      the window. Enforced in code; reported is how often the model needed the
+      downgrade.
+  V4  the operator's reading: of the first 20 contradicted verdicts on unfalsified
+      memories (review.jsonl), the operator agrees the source overrides the memory
+      on >= 80%. Scored by hand after the run; unscored until then.
+Also counted, no bar: contradicted against unsupported among the falsified (did
+the model see the fault, or only withhold belief); proposed corrections that
+restore the original.
+
+What this does not test: whether an unfalsified memory the pass confirms is true
+(the Track 32/33 judge question, still waiting on the operator's 20 ratings), and
+whether hiding contradicted rows changes what an agent does. Cost: about two
+LLM calls per memory on the operator's subscription, outputs outside the
+repository. The gate ships on, operator-invoked, every verdict printed;
+`RFM_VERIFY_GATE=0` lifts it, and a failed V2 turns it off by default.
+
+### Track 35 scored (2026-11-17) — V1 FAIL, V2 PASS: precise, and blind to nearly half of what is wrong
+
+`~/.sqlite-rfm/track35/` (private; counts only here). 8 interactive sessions
+sampled from 35 with seed 35, 96 windows, 233 memories formed, 100 falsified (75
+by a changed number, 25 by a negation) and 133 left as formed. Judge: the
+sweep's haiku, one call per memory.
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| V1 sensitivity | >= 70% of falsified not confirmed | 57 of 100: contradicted 31, unsupported 26, confirmed 43 | **FAIL** |
+| V2 precision of contradicted | <= 10% of unfalsified | 1 of 133, 1% | **PASS** |
+| V3 evidence stands | reported | every contradicted verdict's evidence was in its window; the code's downgrade was not needed (0 quotes missing) | reported |
+| V4 operator reading | >= 80% of first 20 | 1 verdict existed; the operator read it 2026-11-17 and rated it not a contradiction (the quoted turn is the pending test the memory already describes), so 0 of 1 | **FAIL on n=1**, which is V2's one miss seen from the other side |
+
+- **By kind.** Changed numbers: 40 of 75 not confirmed (53%); negations: 17 of
+  25 (68%). A small change (by 1 or 2) was caught 27 of 46 times, a larger one 13
+  of 29: the pass is no better at a big error than a small one.
+- **What it does well.** When it says contradicted it is right: 1 false
+  contradiction in 133, and the gate it drives stays on. In 25 of the 100
+  falsified memories the proposed correction was the original text, exactly.
+- **What it cannot do.** A confirmed verdict is weak evidence: 43 of 100 wrong
+  memories were confirmed against the very window that shows the right value.
+  So verify retires a wrong rule about half the time the ledger never would, and
+  "confirmed" must not be read as "true". Unfalsified memories came back 94
+  confirmed, 38 unsupported, 1 contradicted; the 29% unsupported is Track 33's
+  37% again under a different prompt.
+- **V4 in words.** The bar was written for twenty verdicts and one existed, so
+  it cannot pass on its own terms, and reading it as "the operator agreed
+  with none of the contradictions on true memories" is the same fact as V2's
+  1 in 133: the single false contradiction was a judge reading a turn about
+  the same value as an override of it. Precision stays the gate's basis.
+- **Consequence.** The gate ships on, per the registration (V2 passed). The
+  product text says what a verdict is worth. The next lever is the judge's
+  model and prompt (haiku, one pass; a stronger judge or a second pass on
+  `confirmed` with the falsified value's position in the window pointed at),
+  registered before it is tried. The 100 falsified memories and their verdicts
+  are the fixture for that; they are in the private output, not here.
+
+## Track 36 — CL-Bench 1.0: database exploration and exploitable poker (registered 2026-11-08, before any run)
+
+Continual Learning Bench (arXiv 2606.05661; code github.com/pgasawa/continual-learning-bench,
+Apache-2.0; data on Hugging Face, CC BY 4.0; clone at `bench-quality/data/clbench`,
+never redistributed). Chosen because its database task is this program's staleness
+result in a live venue with real feedback: 40 sequential questions over one SQLite
+database with obfuscated columns, a schema migration after question 20 that makes
+earlier knowledge stale, reward per question `1 - queries/15` when correct and 0
+otherwise, ground truth revealed after every answer, and a stateless run of the same
+system as the built-in control. Its `gain` is `common.gain` (Amendment 19). Its
+poker task is the strategic game-playing domain: 120 heads-up hands against a
+scripted opponent whose style switches five times with notice, reward in big blinds
+per hand. Anthropic's write-up reports the database task per model (Opus 5.5
+stateless 0.655, with memory 0.838); its harness is not this repository's, so no
+number here pools with theirs.
+
+System: `mem_rfm`, a `ContinualLearningSystem` installed into the clone by a runner,
+as Track 34's provider is. Per question the system is stateless plus memory: no
+rolling context (that is `icl`, the field's reference, which the paper reports
+beating every dedicated memory system), the question, and the top-3 memories by
+cosine x `rfm_prior` from one SQLite store, delivered as data under the usual
+marker. On each observation (the feedback carries the truth) one LLM call forms a
+note {condition, rule, evidence} from the question, the queries run, the answer and
+the truth, admitted through the sweep's dedupe-as-sightings path with quarantine
+off (one agent, one source). Outcomes: a memory shown for a question whose named
+table or column appears in that question's queries was acted on; correct -> +1,
+wrong -> -1; shown and not acted on -> nothing. One model for every arm, named in
+the runner before the first run. 3 runs per task per arm, seeds 42-44.
+
+Bars:
+  D1  statefulness: normalized gain > 0 on database_exploration, 95% bootstrap CI
+      over the paired per-question gains (3 runs x 40) excluding 0.
+  D2  staleness: on questions 21-40 mem-rfm's mean reward >= the stateless
+      baseline's; reported beside it, every pre-migration memory acted on and
+      wrong after the migration earns -1 and is not delivered again after its
+      second -1.
+  D3  the field's reference: mem-rfm's aggregate reward >= icl's on the same
+      model minus 0.05.
+  D4  cost: reported dollars per run <= icl's.
+  P1  poker statefulness: normalized gain > 0 over 120 hands, 3 runs, CI as D1.
+  P2  stale opponent: over the first 10 hands after each style switch, mem-rfm's
+      mean reward >= the stateless baseline's (a memory of the last opponent does
+      not hurt against the next).
+Reported, no bar: distance to the leaderboard's icl and claude-code rows; the
+exposure funnel and memory-work share from the system's own log.
+Order and stop rule: `clbench run database_exploration --schedule quick_test`
+first, then the database arms, then poker only if reported spend is under $20;
+stop at $30 (the paper reports $3.3 per database run for Claude Code on Sonnet 4.6,
+poker $1.3-17.5). Data caveat: the products database derives from
+Amazon-Reviews-2023, whose card states no license; nothing from it is committed,
+and THIRD_PARTY_NOTICES gets an entry before any output is.
+
+**Model named 2026-11-17, before any arm:** `openrouter/anthropic/claude-sonnet-5.5`
+(Claude Sonnet 5.5 through OpenRouter, the key the operator supplied; $2/$10 per
+million tokens there). Chosen because Anthropic's write-up reports this very task
+on Sonnet 5.5 (stateless 0.644, with memory 0.833, its own harness, so not pooled),
+and because six database runs with baselines fit the $30 stop rule at this price
+where Opus 5.5 at $4/$20 would not. The same id serves every arm, including `icl`.
+
+**Poker cannot run on this model (2026-11-17).** The quick_test schedule failed
+on its first hands: every call came back `finish_reason=content_filter` with zero
+completion tokens and a provider refusal naming Anthropic's terms on duplicating
+model outputs. Two direct calls with the task's own prompt and response schema
+reproduced it, with or without a larger output cap. The task's `PokerAction`
+schema requires a `thinking` field, "your reasoning about the hand situation", and
+asking a Claude 5.5 model to emit its reasoning as output is what the
+reasoning-extraction classifier declines; the database task's schema has no such
+field and ran. The harness reads the empty answer as transient and retries six
+times, so a run fails after about three minutes. P1 and P2 are not run. Running
+poker on another model would break "the same id serves every arm", so poker is
+dropped from this track rather than moved; a later amendment may register it on a
+model without that classifier. Spend: a few cents, ten baseline hands.
+
+**Built, not yet run (2026-11-08).** `bench-quality/live-ab/clbench_mem_rfm.py`
+(the system), `clbench_mem_rfm_worker.py` (store, embedder and ranking in the
+integration venv), `run_track36.py` (install, smoke, arms, stop rule) and
+`test_clbench_mem_rfm.py`, a wiring test with a scripted model through the real
+task and system: two questions, a note formed from the first, merged with its
+paraphrase from the second, shown on the second, acted on there and scored
+-1 for a wrong answer, usage events recorded, `reset()` emptying the store.
+Passes, no API calls. The harness's own `clbench smoke` got through
+instantiate, reset and retrieval and stopped at the model call: the
+OPENAI_API_KEY in this environment is rejected by OpenAI and no Anthropic key
+is set, so no model has been named and no arm has run. The scoring half of
+`run_track36.py` is written once a real run has shown the result layout.
+
+
+### Track 36 scored (2026-11-17) — D1 PASS, D2 PASS; D3 and D4 not run under the stop rule
+
+`bench-quality/live-ab/run_track36.py --score`, traces in the harness checkout
+(`results/database_exploration/traces/2026-11-17T00-19-14.878341Z/`, not
+committed), summary in `live-ab/track36/database_exploration-score.json`. Model
+`openrouter/anthropic/claude-sonnet-5.5` for every call, including formation.
+Schedule `default`: 20 questions, a schema migration, 20 more. Three memory
+rollouts and the harness's own 40-question stateless baseline of the same system.
+Reward per question is `1 - queries/15` when correct, 0 otherwise; the grader is
+the task's exact-answer check, no judge.
+
+| arm | mean reward | pre-migration (correct, queries) | post-migration (correct, queries) | cost |
+|---|---|---|---|---|
+| stateless baseline | 0.372 | 0.573 (17/20, 5.0) | 0.170 (6/20, 6.4) | $8.13 |
+| mem_rfm run 0 | 0.603 | 0.650 (17/20, 3.6) | 0.557 (15/20, 3.6) | $2.25 |
+| mem_rfm run 1 | 0.657 | 0.647 (17/20, 3.6) | 0.667 (17/20, 3.2) | |
+| mem_rfm run 2 | 0.632 | 0.693 (18/20, 3.6) | 0.570 (14/20, 3.0) | |
+| mem_rfm mean | **0.631** | 0.663 | **0.598** | $2.25/run |
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| D1 statefulness | normalized gain > 0, paired per-question CI excluding 0 | gain 0.41; per-question gain +0.26, 95% CI [+0.19, +0.33] over 120 pairs | **PASS** |
+| D2 staleness | post-migration mean >= baseline's | 0.598 against 0.170 | **PASS** |
+| D3 the field's reference | >= icl's mean - 0.05 | icl_cached 0.744 against 0.631: 0.11 below, twice the bar | **FAIL** |
+| D4 cost | <= icl's per run | with the same cache treatment (36d) memory costs $1.68 a run against icl_cached's $0.83; uncached it was $2.25 | **FAIL** |
+
+Two icl_cached attempts were made; the first's cache never read (below) and
+its reward numbers are kept in the trace files; the second is the one scored.
+
+| arm | mean reward | post-migration | cost | cache |
+|---|---|---|---|---|
+| stateless baseline (first icl attempt) | 0.405 | 0.220 | $6.74 | writes only |
+| icl_cached, first attempt, 3 runs | 0.731 | 0.709 | $9.93/run | 3.9M tokens written, 0.01M read |
+| stateless baseline (second attempt) | 0.413 | 0.227 | $3.13 | within-question hits |
+| icl_cached, second attempt, 3 runs (scored) | **0.744** (0.710, 0.752, 0.770) | **0.743** | **$0.83/run** | 98% of input read from cache |
+
+Per-question gain for the scored icl_cached: +0.33, 95% CI [+0.26, +0.40];
+normalized gain 0.56. Its stateless baselines (0.405, 0.413) against memory's
+(0.372) are three draws of the same agent, and show the run-to-run noise.
+
+- **ICL wins on reward, as the paper found.** Full history in context answers with
+  1.4 to 2.0 queries where memory needs 3 to 4, and gets the same or more right.
+  Its per-question gain CI is [+0.25, +0.40] against memory's [+0.19, +0.33]; the
+  two stateless baselines (0.372 and 0.405, the same agent) show the run-to-run
+  noise. The paper's headline, naive ICL over dedicated memory systems, holds
+  for mem-rfm on this task at this length: 40 questions whose transcripts fit
+  comfortably in a 1M window (the last ICL call carried 69k tokens).
+- **ICL also wins on cost once its cache works**, $0.83 a run against memory's
+  $2.25 with formation included. The first icl_cached attempt cost $9.93
+  because its breakpoint never matched: icl appends the task's feedback and
+  its next prompt as two consecutive user messages, litellm merges them for
+  Anthropic, and the merge moved the boundary the previous breakpoint sat on,
+  so every call wrote its whole prefix at the 1.25x write price and read
+  almost nothing. A replay reproduced it; merging the two messages first
+  restored the hit, and the second attempt read 98% of its input from cache.
+  The comparison is not yet like for like: the memory arm ran with no cache at
+  all, and the same stateless agent cost $8.13 uncached against $3.13 with the
+  breakpoint. 36d (below) gives memory the identical treatment; if its cost
+  lands near $1, D4 is a near tie and the track's result is "loses on reward,
+  ties on cost"; if it stays above $0.83, D4 fails outright. Either way the
+  reward verdict stands: at 40 questions the whole run fits in context, and
+  carrying it beats recalling three notes from it.
+
+- **Memory paid in both stages and most after the migration.** The stateless
+  agent re-explores every question (5 to 6 queries) and, after the migration,
+  gets 6 of 20 right; with memory it uses 3 to 4 queries and gets 14 to 17 right.
+  Formation is included in the memory arm's cost, and the arm still cost a
+  quarter of the stateless baseline per question, because exploration is what
+  costs here.
+- **The ledger closed on real feedback.** Per run: 114 to 117 memories shown (3
+  per question), 110 to 111 acted on (a query used a table or column the memory
+  named), 110 to 111 outcomes recorded, 86 to 100 notes formed, 0 merged by
+  the dedupe threshold; 39 to 44 distinct memories carried outcomes and 6 to 13
+  ended with negative value and left delivery. The most-used memory of run 2
+  took 16 outcomes and ended at -0.02. This is the first venue in the program
+  where the outcome loop ran on a task's own verdict rather than an oracle or a
+  copied command, and closed on almost every exposure.
+- **What it does not show.** Whether the ledger contributed. The arm is
+  formation plus retrieval plus outcomes together; a flat-prior arm (outcomes
+  off) was not registered and is the next ablation (Track 36b, below). One
+  model, one harness route (litellm, no system prompt, structured output by
+  schema), three runs. The notes record what the grader accepted ("the accepted
+  answer counted all rows...") as much as schema facts; that is the task's
+  intended learning signal, and also its ceiling.
+- **Not pooled.** Anthropic's write-up reports Sonnet 5.5 on this task at 0.644
+  stateless and 0.833 with memory in its own harness, a normalized gain of
+  0.53; here 0.372 to 0.631, 0.41. The stateless gap (0.644 against 0.372) says
+  the harnesses differ more than the memories do.
+- **Why icl did not run.** The first attempt failed at its first call: the
+  harness's icl system routes a Claude id to its native Anthropic client, which
+  wants `ANTHROPIC_API_KEY`; the runner now passes `--system.provider_mode
+  litellm_chat` so both arms would take the same path. It was not rerun under
+  the stop rule: $14.89 spent, and the icl arm needs its own stateless baseline
+  (about $8, identical by construction to the one above, but the harness
+  insists) plus full-history rollouts that carry the whole transcript into
+  every call with no prompt caching on this route, tens of dollars per run.
+  With a direct Anthropic key the native path caches and the arm might fit;
+  the operator's decision. Until then D3 and D4 stand unscored and the
+  leaderboard's icl row (Sonnet 4.6, a different reward normalization) is the
+  only reference.
+- Spend: $14.89 on the database task, a few cents on poker.
+
+**36c (2026-11-17): the ceiling is raised to $100 and icl runs as `icl_cached`.**
+The operator's OpenRouter route is a monthly allowance of Anthropic credits that
+comes with their subscription, about $200 a month, so the $30 figure was not the
+constraint it was registered as; the ceiling becomes $100 of reported spend for
+this track, still counted and still reported. The icl arm's cost problem was
+caching, not tokens: through litellm it re-read its whole history uncached on
+every call. A probe on this route with one 2,900-token prompt: $0.0073 to write
+the cache, $0.00034 to read it back, $0.0058 uncached. `icl_cached`
+(`bench-quality/live-ab/clbench_icl_cached.py`) is the harness's `icl` with a
+`cache_control` breakpoint moved to the last message of every request and
+nothing else changed: the model reads the same tokens in the same order. D3 is
+scored against it; D4 compares the costs each arm would really incur, cache
+reads included.
+
+**36d (registered 2026-11-17, before the run; run the same day): cost parity.**
+The memory arm reran as `mem_rfm_cached`, the same system with `cache=true`:
+consecutive same-role messages merged and a `cache_control` breakpoint on the
+last message of every request, including the formation call, the treatment
+`icl_cached` had. Nothing the model reads changes.
+
+| arm | mean reward (runs) | post-migration | calls/run | cache hits | cost/run |
+|---|---|---|---|---|---|
+| stateless baseline (this group's) | 0.365 | 0.157 | | within-question | $4.61 |
+| mem_rfm_cached, 3 runs | 0.603 (0.567, 0.692, 0.550) | 0.562 | 230-244 | 60-63% | **$1.68** |
+| icl_cached, 3 runs (above) | 0.744 | 0.743 | 112-115 | 98% | **$0.83** |
+
+- **D4 fails on like terms.** Caching cut memory's cost from $2.25 to $1.68, not
+  to ICL's $0.83, for two reasons that are the design, not the cache: memory
+  makes twice the calls per question (3 to 4 exploratory queries plus the answer
+  plus one formation call, against ICL's 1 to 2 queries), and its prompts are
+  short, so there is less prefix to serve from cache (60% against 98%). ICL
+  pays for a long context once per question; memory pays for exploration every
+  question. On this task the former is cheaper.
+- **Reward is unchanged by caching**, as it should be: 0.603 against the
+  recorded arm's 0.631 and the flat arm's 0.648. Pooled over the nine memory
+  runs the mean is 0.627; the per-run spread (0.55 to 0.69) is the noise every
+  difference in this track is read against.
+
+**What Track 36 says, in one paragraph.** On a 40-question stateful task with the
+task's own verdict as feedback, mem-rfm's memory makes a frontier model better
+than the same model stateless (gain 0.41, both halves, most after the schema
+change), and the outcome ledger closes on nearly every exposure for the first
+time in this program and changes nothing (B1). Full history in context beats it
+on reward by 0.11 and on cost by half, with caching on both: at this length the
+whole run fits in the window, and the paper's headline, naive ICL over dedicated
+memory, holds here. The result for the thesis is the Track 29 reading again,
+formation and retrieval are the gain and the ranking prior is not, now in the
+venue built for staleness. Where a prior could matter is a run too long for the
+window and a store too large for recency to wash out a wrong note; that is the
+next registration if this venue is revisited, and it is not this one.
+
+**Track 36b (registered 2026-11-17, run the same day): the flat-prior ablation.**
+The same arm with outcomes never recorded (`--system.ledger false`, run as
+`mem_rfm_flat`), 3 runs, same model and schedule, six workers. Bar B1: the full
+arm's mean reward exceeds the flat-prior arm's on the post-migration half by
+>= 0.05 with the paired CI excluding 0; a fail says formation and retrieval did
+the work and the ledger was along for the ride, as in Track 29.
+
+| arm | mean reward | post-migration | cost/run |
+|---|---|---|---|
+| stateless baseline (this group's) | 0.340 | 0.103 | $8.21 |
+| mem_rfm, outcomes on (recorded above) | 0.631 | 0.598 | $2.25 |
+| mem_rfm_flat, outcomes off | 0.648 | 0.597 | $2.20 |
+
+| prediction | bar | result | verdict |
+|---|---|---|---|
+| B1 the ledger helps after the migration | full - flat >= +0.05, paired CI > 0 | +0.001, 95% CI [-0.071, +0.071], 60 pairs | **FAIL** |
+
+- **The outcomes did nothing measurable.** With the ledger off the arm scored the
+  same, a shade higher on the whole run and identical after the migration. The
+  110 real outcomes a run, the 6 to 13 memories voted negative, the top memory
+  demoted to -0.02: none of it moved the reward. Track 29's reading holds in the
+  venue built for staleness: formation and retrieval are the gain, and the
+  ranking prior is along for the ride.
+- **Why, here.** Forty questions form 86 to 100 notes, the store never dedupes
+  (0 merges), and each question retrieves the top 3 of them by cosine: the
+  candidate set is small and the right note is usually near the top on
+  similarity alone, so a prior has little to reorder (the Track 31 finding,
+  "reordering has little room"). After the migration, the fix is not demotion
+  of an old note but formation of new ones from the first post-migration
+  questions; both arms do that equally. Demotion would matter where a wrong
+  note keeps being retrieved and acted on and the store is too large for
+  recency to wash it out, which 40 questions never reach.
+- Three stateless baselines now exist for this agent, 0.340, 0.372, 0.405 and
+  0.413 across the four groups: the run-to-run noise on a 40-question mean is
+  about 0.03, and every arm difference above is read against it.
+
+## Track 37 — PersonalizationV4: the applicability venue (registered 2026-11-17, before any download)
+
+PrefEval (Amendment 15) found profile-scale preference retrieval fails on
+applicability, not ranking: similarity hit@5 24.6%, because a question rarely
+resembles the fact that answers it. The applicability judge (Amendment 16) was the
+follow-on. PersonalizationV4 (Memorilla, arXiv 2610.21375; data
+huggingface.co/datasets/memorilla/PersonalizationV4, CC BY 4.0) is built for that
+case: every question places the user in a new scenario and needs two or more facts
+the user's chats show but never state. Test split: 30 held-out users, 200 two-turn
+chats each, 4,237 questions, of which 629 are `hard` (the untrained Qwen3-4B decoder
+gets them wrong both with no chats and with the single most similar chat), a subset
+defined independently of anything run here. Scoring is the benchmark's own: the
+free-text answer and five candidates are embedded with Qwen3-Embedding-4B and the
+nearest candidate must be the reference. Entirely synthetic, generated with OpenAI
+models from Google's Synthetic-Persona-Chat seeds; disclosed, and the reason this
+venue carries less weight than STAR.
+
+Protocol. One store per user, each chat one dated memory (the LoCoMo unit).
+Questions in a per-user order drawn with seed 37; the store is read-only across a
+user's questions except for the ledger. Delivery budget 1,200 characters, the
+per-turn hook's. Answerer: `claude-haiku-5-5` for every arm (through OpenRouter;
+the prompt is the benchmark's "You are a personalized AI assistant..." line).
+Arms:
+  sim      cosine top-k within the budget, the benchmark's RAG baseline shape;
+  rfm      cosine x rfm_prior, with the scorer's verdict after each question
+           recorded as +1/-1 on the memories delivered for it (oracle outcomes,
+           as in ABCD: the venue has no live outcome, and this measures the
+           ceiling of the mechanism, not its live yield);
+  judge    cosine prefilter of 8, then one haiku call picks the memories that
+           bear on the question (Amendment 16's judge, prompt v2), within the
+           same budget.
+Bars, on the test split:
+  A1  applicability: judge beats sim on the hard subset by >= 5 points of
+      accuracy, paired bootstrap 95% CI (10,000 resamples, seed 7) excluding 0.
+      Falsifies: the judge is not what PrefEval's result pointed at.
+  A2  recurrence: on the second half of each user's question order, rfm beats
+      sim, CI excluding 0. Falsifies: facts a user's questions need do not recur
+      enough for an outcome prior to learn within 133-145 questions.
+  A3  no harm: on the first half, rfm is within 1 point of sim (CI lower bound
+      > -0.01). The bounded blend's promise, in this venue.
+  A4  cost: judge answers per question cost at most 3x sim's.
+Reported, no bar: Memorilla's published RAG top-5 and full-context accuracy on the
+same split, not pooled (a different answerer), and `common.gain` for each arm
+against sim as the control, with full context as the ceiling where it is published.
+The scorer runs locally (Qwen3-Embedding-4B); if it cannot, the track does not run
+rather than switching scorers. Stop at $20 reported spend. Script to be written as
+`bench-quality/pv4_eval.py`, committed before the first call.
+
+**37c (2026-11-17): a first attempt discarded; reasoning off.** Three users had
+finished when a check of the predictions found 81% of answers empty (342 to 344
+of 423 per arm) and accuracy below the 20% chance rate. The cause: the
+benchmark's 256-token answer cap was set for an answerer without thinking, and
+Haiku 5.5 thinks by default, so on the real prompts (five chats and a scenario)
+its thinking consumed the cap and nothing was left for the answer; the judge's
+60-token call failed the same way and fell back to cosine on most questions, so
+the judge arm was silently the sim arm. The scorer itself checked out: the
+reference as prediction scored 40 of 40, a distractor 0 of 40. Fix, before any
+reported call: reasoning disabled on both calls (`reasoning: {enabled: false}`,
+which OpenRouter honours for this model), the answer cap 512 with one retry at
+four times that when an empty answer stops on length, the judge cap 200, and
+every row now records whether its answer was empty and whether the judge fell
+back; `--score` reports both and warns above 2% empties. The 1,269 discarded
+rows are kept under `results-pv4/discarded-2026-11-17-thinking-cap/` and are not
+reported. Spend on them: about $0.55.
+
+**37b (2026-11-17, before the first call): the budget is five whole chats.** The
+test split downloaded shows a median chat of 1,057 characters, so the registered
+1,200-character budget would deliver one chat to a question that needs two facts,
+and every arm would sit on the floor. The budget becomes K = 5 whole chats for
+every arm, the shape of Memorilla's RAG top-5 baseline, which also makes the
+reported comparison to its published number a comparison of like budgets. The
+judge picks at most 5 from its prefilter of 8. Nothing else changes; no call had
+been made. The script is `bench-quality/pv4_eval.py`; a run with any scorer but
+the benchmark's is a wiring test and is not reported.
+
+**Track 37 scored (2026-11-17): A4 PASS; A1, A2, A3 FAIL. Neither the judge nor
+the prior beat cosine top-5, and the venue's own full-context number sits below
+its own baseline.**
+
+Run: 30 test users, 4,237 questions, three arms, 12,711 rows; answerer
+`claude-haiku-5.5` through OpenRouter with reasoning off (37c), K = 5 whole
+chats (37b), the benchmark's scorer (Qwen3-Embedding-4B, run locally in bf16).
+Six workers, 3.3 hours. Spend $5.84 reported, $0.53 on the discarded attempt,
+under the $20 stop. Empty answers 110 of 12,711 (0.9%; by arm 38 / 31 / 41; the
+2% warning did not fire). The judge fell back to cosine on 335 of 4,237 (7.9%).
+Disclosure on order: the reported run's first calls went out shortly after
+12:05 local and the script was committed at 13:04 (989c110); the file as
+committed is byte-identical to the one that ran and has not changed since, so
+"committed before the first call" was met in content and missed by an hour in
+time.
+
+| arm | accuracy (n = 4,237) | hard (n = 629) | first half | second half | $ per question |
+|---|---|---|---|---|---|
+| sim | 0.598 | 0.382 | 0.615 | 0.581 | 0.00041 |
+| rfm | 0.600 | 0.377 | 0.604 | 0.596 | 0.00041 |
+| judge | 0.590 | 0.370 | 0.593 | 0.586 | 0.00057 |
+
+Bars (paired bootstrap, 10,000 resamples, seed 7):
+  A1  FAIL. judge − sim on hard: −0.011, CI [−0.045, +0.024], n = 629. Bar
+      ≥ +0.05 with CI excluding 0. Six points short and on the wrong side of
+      zero.
+  A2  FAIL. rfm − sim, second half: +0.015, CI [−0.003, +0.033], n = 2,128.
+      Right direction, interval touching zero: PrefEval's PE-P2 whisper
+      again, at the same size.
+  A3  FAIL. rfm − sim, first half: −0.011, CI [−0.030, +0.007], n = 2,109.
+      Bar: lower bound > −0.01. The point estimate sits at the bar and the
+      interval is three times too wide for it; a no-harm bar at one point
+      needs about nine times the questions. Registered as written, it fails.
+  A4  PASS. judge cost 1.39× sim per question (bar 3×).
+
+Reported, no bar. Normalized gain against sim with a ceiling of 1.0: rfm 0.005,
+judge −0.021. Memorilla's Table 11 on the same split (Qwen3-8B decoder; not
+pooled with ours, a different answerer): closed book 58.30 (hard 31.96), RAG
+top-1 62.21 (38.00), RAG top-5 64.98 (39.27), RAG top-50 65.78 (41.97), full
+context 59.12 (36.57), Mem0 65.07 (44.20), MemoRAG 67.88 (45.95), Memorilla
+66.65 (41.97). Full context is below RAG top-5 by the venue's own measurement,
+so the registered "full context as the ceiling where it is published" resolves
+to: published, and not a ceiling. Two hundred chats run past Qwen3-8B's native
+window (the paper doubles it with YaRN), which is the condition Amendment 19b
+attaches to the third arm; Track 36's full-history arm won because forty
+questions fit. Their RAG top-5 at 64.98 against our sim at 59.8 is a difference
+of answerer and answer style, not of retrieval: both deliver the five
+cosine-nearest chats.
+
+What moved, and where it did not:
+- The prior changed the delivered set against sim on 2,016 of 4,237 questions
+  (48%). On those, rfm alone was right on 191 and sim alone on 164: 27
+  questions, 0.6 points. Per user, rfm beat sim on 13, lost on 14, tied on 3,
+  range −0.056 to +0.086. Hard subset, second half: +0.003, CI [−0.049,
+  +0.052]. With oracle outcomes, which this venue grants and the live one never
+  will, the mechanism's ceiling here is under a point.
+- The judge delivered 3.8 chats a question against sim's 5. Where it ran (3,902
+  questions) it scored 0.593 to sim's 0.604 on the same questions; on the hard
+  subset where it ran (578), 0.374 to 0.389. It never adds, since the budget is
+  already full; it can only remove, and what it removed was needed more often
+  than the removal helped. The registered A1 tests the judge as a filter
+  inside a fixed budget, and as a filter it loses. A judge that re-ranks the
+  prefilter of 8 into exactly 5 would separate selection from pruning; that is
+  a new registration (next-work item 16), not a re-reading of this one.
+- Venue quirks, shared by every arm and removed from the bars by pairing, but
+  a cap on the absolute numbers: 941 of sim's 4,237 answers (22%) hedge ("I
+  don't have any record...") and those score 0.515 against 0.62 for the rest;
+  218 answers across the three arms dispute the question's persona name,
+  because for some users the questions name a persona the chats never use
+  (user 127's questions ask about "Evie"; its chats are "Leo:"). Synthetic
+  data, as disclosed at registration.
+
+Reading. PrefEval said profile retrieval fails on applicability. Track 37 says
+the two tools this project had for applicability do not fix it on a venue
+built for it: a one-call judge inside the budget loses a point, an outcome
+prior with oracle outcomes gains under one. The venue's leaderboard says the
+same from the other side: every published system, trained or not, lands within
+three points of plain top-5 retrieval. The hard subset moved by under a point
+across three arms whose delivered chats differed on half the questions. Track
+37 is closed; PersonalizationV4 stays the applicability venue for the
+re-ranking judge, and no claim about the ledger is made from it.
+
+
+
+## Track 38 — discretionary saving on a current model (registered 2026-11-17, not run)
+
+The rule "never ask an agent mid-task whether something is worth remembering"
+rests on one measurement: July 2026, 54 sessions, 17 volunteered saves, 15 of 16
+later outcomes negative, one model generation (lifecycle.md). Anthropic's
+write-up reports salience judgment improving sharply across generations and a
+"record only failures" rule costing the strongest models the most. This retests
+the rule on the model the operator works with now, against the shipped miner on
+the same sessions, so the two formation paths are compared where their evidence
+is.
+
+Protocol. 20 of the operator's interactive Claude Code sessions on real work,
+the next 20 after the change below, taken in order, none excluded. One change
+to the shipped install: the SessionStart trailer and the CLAUDE.md block stop
+saying "do not volunteer memory_save" and say instead what memory is for
+("save what a later session in this repository would otherwise have to
+rediscover: a convention, a constraint, a decision, an environment fact"),
+the write-up's advice of purpose over procedure. Nothing else changes: the
+miner still stages failed-then-fixed pairs, inference still records outcomes,
+the quarantine and gates stay. Model: whatever the operator's Claude Code
+runs, stamped per session from the transcript. Judging: every volunteered save
+and every miner-staged candidate from the same sessions is rated faithful and
+durable by the Track 32 judge, and by the operator, blind to which path
+produced it. Outcomes: the Track 31 replay over the following 20 sessions.
+
+Bars:
+  S1  >= 50% of volunteered saves rated faithful and durable by the operator
+      (July: 1 of 16 earned a positive outcome).
+  S2  saves per session <= 3 in at least 18 of 20 sessions (the opposite
+      failure, the 413-file run, is also a fail).
+  S3  volunteered saves' faithful-and-durable rate >= the miner's staged
+      candidates' rate on the same sessions, operator ratings.
+  S4  at least one volunteered save earns a condition-gated positive outcome
+      in the following 20 sessions. Reported, no bar, because 20 sessions may
+      not revisit anything: the funnel counts (shown, mentioned, acted,
+      outcome) for the saved rows.
+A pass on S1 and S3 dates the rule to its generation and reopens discretionary
+formation as a path; a fail on either, on a current model, makes it a law of
+the venue rather than of the models. Cost: the operator's own sessions, plus
+judge calls, under $5. Runs only when the operator makes the install change;
+registered here so the bars precede it.

@@ -127,6 +127,7 @@ it was needed.
 | `RFM_EMBEDDER` | `sentence-transformers/all-MiniLM-L6-v2` | any fastembed-supported id (a sentence-transformers id outside that registry needs `pip install sentence-transformers`, which the install above does not include) |
 | `RFM_PERTURN_GROUP` | off | with `RFM_PERTURN=1`: the 2 best sources, each with every memory of its conversation, latest first. No live gain over flat (Track 30) |
 | `RFM_PERTURN_BUDGET` | `2400` grouped, else `1200` | per-turn delivery's character cap |
+| `RFM_VERIFY_GATE` | on | `0` shows rows the verify pass marked `contradicted` again |
 
 `mem_rfm_cli.py decide TRANSCRIPT` forms a conversation's decisions into
 memories, with one LLM call per 12,000-character window of the conversation
@@ -135,13 +136,26 @@ much of the transcript to the model). It runs only when you point it at a transc
 and prints what it formed; `--save` stores it, and those rows skip quarantine, as a
 `memory_save` does. Read before saving: on 8 real sessions it formed about 33
 memories each, and a judge rated about a quarter of them both faithful to the
-session and worth keeping (Track 32). Formed memories cut
+session and worth keeping (Track 32). Each memory carries a quote from the
+session and is dropped if the quote is not there; that removes about 3%, no
+more (Track 33). Formed memories cut
 corrections from 1.22 to about 0.5 per task on SDE-bench's seeded conversation
 tasks, against 0.88 for raw chat turns; grouping them added nothing measurable
 (Tracks 29 and 30, `bench-quality/RESULTS.md`).
 Decision memories rarely earn outcomes, 11% of runs in Track 31, so the ranking
-does not learn from them and the floor will not demote a stale one: correct or
-delete it yourself.
+does not learn from them and the floor will not demote a stale one. The check
+that can is `mem_rfm_cli.py verify`: it re-reads the transcript each formed
+memory came from (saved rows keep their quote and the transcript path), finds
+the quote's window, and asks one LLM call per memory whether the conversation
+still supports the memory as stated. Verdicts are `confirmed`, `contradicted`
+(the model must quote the overriding turn, and the code checks the quote is in
+the window), `unsupported`, or `source_gone` once Claude Code has deleted the
+transcript. A `contradicted` row leaves every delivery path; nothing is deleted
+or rewritten, and a proposed correction is printed, never applied. `--all`
+re-checks rows already verified; a `memory_update` clears the verdict. Track
+35 measured the verdicts on 100 falsified memories: `contradicted` was wrong
+once in 133 true memories, so the gate acts on it; `confirmed` was given to
+43 of the 100 wrong memories, so it is not a mark of truth.
 
 Remove with `claude mcp remove rfm-memory`. The database is plain SQLite —
 inspect it with any sqlite3 client; scoring columns are plain REALs. Session-start

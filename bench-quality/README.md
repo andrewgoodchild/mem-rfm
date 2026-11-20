@@ -44,6 +44,9 @@ for i in $(seq 1 20); do mkdir -p data/beam/$i
   curl -sL -o data/beam/$i/probing_questions.json \
     "https://raw.githubusercontent.com/mohammadtavakoli78/BEAM/main/chats/100K/$i/probing_questions/probing_questions.json"
 done
+# PersonalizationV4 test split (pv4_eval.py, Track 37; CC BY 4.0, synthetic)
+mkdir -p data/pv4 && curl -sL -o data/pv4/test.parquet \
+  "https://huggingface.co/datasets/memorilla/PersonalizationV4/resolve/main/data/test.parquet"
 # LongMemEval oracle split (ku_eval.py)
 curl -sL -o data/longmemeval_oracle.json \
   "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main/longmemeval_oracle.json"

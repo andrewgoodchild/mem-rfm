@@ -182,6 +182,50 @@ parameters was verified bit-identical across all 1,065 BEAM rows.
 human annotations — the procedure, document or flowchart that actually
 applied. Anyone can reproduce the results for the cost of laptop time.
 
+## Standing measures
+
+Added 2026-11-08, after Anthropic's agent-memory write-up reported each of
+these and this program had been measuring them piecemeal. Every live track
+from Track 35 on reports the first three from the hooks' own log lines
+(`log_stats.py` prints them for a dogfooding store too), and every causal
+track reports the fourth beside its arm means.
+
+- **Exposure funnel.** Of the memories a session was shown: how many the
+  assistant's prose referred to, how many it acted on through a command,
+  how many earned an outcome. Counted in `session_end` from the transcript,
+  no judgment. Reading is the step before acting, and the ledger sees only
+  the acting.
+- **Memory-work share.** Memory tool calls among all tool calls in a
+  session, the attention memory costs in-session. Wall-clock tax was
+  measured before (+25% in several tracks); this says where it went.
+- **Store-to-source ratio.** Bytes of memory formed per byte of
+  conversation read, from `decide`. A memory layer approaching its source
+  in size has abstracted nothing; their wiki reached 1.77x its corpus.
+- **Normalized gain.** `(memory − control) / (ceiling − control)`,
+  `common.gain`: the share of the headroom above the control that memory
+  captured (CL-Bench's statefulness measure, arXiv 2606.05661). Track 22:
+  0.46 on fable, 0.21 on opus, the same memories; Track 29: 0.62 for
+  formed memories against 0.28 for raw transcript search. None when the
+  control sits at the ceiling, which is the finding, not a missing value.
+
+- **Hard subset** (added 2026-11-17, from Memorilla's PersonalizationV4).
+  For a retrieval-layer venue, the questions a reference answerer gets
+  wrong both with no memory and with the single most similar item
+  retrieved: where memory can matter and where naive retrieval fails.
+  Report accuracy on it beside the whole. The subset must be defined by a
+  run other than the ones scored on it, or regression to the mean reads as
+  a gain.
+
+Two rules join them (PROTOCOL.md Amendments 19 and 19b): where a track's
+source material is conversations or transcripts, its standard control is a
+search over the raw material, not "no memory"; and where the source fits
+the window, full context is the third standard arm. Track 30 is the
+precedent for the first; Track 36's `icl` arm for the second. The "fits
+the window" clause is load-bearing: on PersonalizationV4 the venue's own
+full-context arm, two hundred chats stretched past the decoder's native
+window, scores below its RAG top-5 (Track 37), so there the third arm is
+a published number, not a ceiling.
+
 ## Known limits
 
 Stated plainly, because they bound every number above:

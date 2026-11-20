@@ -66,7 +66,8 @@ def match(req):
             "SELECT id, content, condition_class, rfm_score(id) AS s "
             "FROM rfm_memories WHERE condition_class != '' "
             "AND NOT (outcome_count > 0 AND value_score < 0) "
-            f"AND {store.released()} AND {scoped} ORDER BY s DESC",
+            f"AND {store.released()} AND {store.not_contradicted()} "
+            f"AND {scoped} ORDER BY s DESC",
             scope_args).fetchall()
     finally:
         db.close()

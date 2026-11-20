@@ -759,6 +759,41 @@ def infer_outcomes(mems, events):
     return out
 
 
+def acted_ids(mems, events):
+    """In-play memories the session acted on at all, verdict or none: the
+    'acted' step of the exposure funnel (shown, mentioned, acted on, earned
+    an outcome) that log_stats reports."""
+    out = set()
+    for mid, (content, first_idx) in mems.items():
+        sig = _signature(content)
+        if any(acted_on(sig, e.cmd) for e in events[first_idx:]):
+            out.add(mid)
+    return out
+
+
+def mentioned_ids(mems, prose):
+    """In-play memories the assistant's own prose referred to: its id in
+    brackets, a quoted span of it, or its opening words. Reading a memory
+    is the step before acting on it, and the one Anthropic's write-up
+    measured (Sonnet 5 read memory 9 times in 10, Sonnet 4.6 under half);
+    the ledger sees only the acting."""
+    text = " ".join(" ".join(p.split()).lower() for p in prose if p)
+    if not text:
+        return set()
+    words = " ".join(re.findall(r"\w+", text))
+    out = set()
+    for mid, (content, _idx) in mems.items():
+        flat = str(content).lower()
+        spans = [sp.lower() for sp in re.findall(r"`([^`]{8,})`", str(content))]
+        # Opening words, punctuation aside: a memory restated in prose keeps
+        # its words and loses its commas.
+        head = " ".join(re.findall(r"\w+", flat)[:8])
+        if (f"[{mid}]" in text or any(sp in text for sp in spans)
+                or (len(head) >= 24 and head in words)):
+            out.add(mid)
+    return out
+
+
 def record_outcomes(inferred, session_start, fired=frozenset()):
     """Write outcomes, deferring to any loop the model already closed THIS
     session: an outstanding access gets the outcome attached; a memory with
@@ -887,7 +922,7 @@ def main():
     transcript = harnesses.payload_field(harness, "transcript", payload)
     if not transcript or not os.path.exists(transcript):
         return
-    sess = transcripts.read(transcript, harness.reader, prose=False)
+    sess = transcripts.read(transcript, harness.reader)
     events = sess.events
     session = (harnesses.payload_field(harness, "session", payload) or "?")[:8]
     notes = []
@@ -915,10 +950,19 @@ def main():
     # `readable` separates "nothing happened" from "could not read this
     # harness's transcript" — the degraded, MCP-only mode, in which
     # outcomes come only from explicit memory_feedback.
+    # The exposure funnel (in_play -> mentioned -> acted -> outcomes) and the
+    # memory-work share (memory tool calls among all tool calls) are the two
+    # standing measures log_stats reads from this line; both are counts of
+    # what the transcript shows, no judgment involved.
+    tools = sess.tools or {}
     _log({"op": "session_end", "session": session, "harness": harness.name,
           "readable": sess.readable, "events": len(events),
-          "in_play": len(mems), "staged": staged, "outcomes": recorded,
-          "conditions": sorted(fired), "pruned": pruned})
+          "in_play": len(mems), "mentioned": len(mentioned_ids(mems, sess.prose)),
+          "acted": len(acted_ids(mems, events)),
+          "staged": staged, "outcomes": recorded,
+          "conditions": sorted(fired), "pruned": pruned,
+          "tool_calls": sum(tools.values()),
+          "memory_calls": sum(v for k, v in tools.items() if "memory_" in k)})
     if notes:
         print("rfm: " + "; ".join(notes), file=sys.stderr)
 

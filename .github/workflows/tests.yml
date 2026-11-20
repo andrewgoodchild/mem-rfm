@@ -26,6 +26,7 @@ jobs:
       - run: python integrations/claude-code/test_subagent.py
       - run: python integrations/claude-code/test_store.py
       - run: python integrations/claude-code/test_decisions.py
+      - run: python integrations/claude-code/test_verify.py
       - run: python integrations/claude-code/hooks/test_acted_on.py
       - run: python integrations/claude-code/hooks/test_outcomes.py
       - run: python integrations/claude-code/hooks/test_perturn.py
